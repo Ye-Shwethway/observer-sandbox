@@ -15,6 +15,7 @@ from .ai import (
     set_binding,
 )
 from .ai_bootstrap import bootstrap_gemini_cognition
+from .autonomy import autonomy_status
 from .db import connect, migrate
 from .model_decision import dry_run_model_decision
 from .runtime import initialize, status
@@ -30,6 +31,7 @@ def build_parser() -> argparse.ArgumentParser:
     sub.add_parser("init")
     sub.add_parser("status")
     sub.add_parser("living-status")
+    sub.add_parser("autonomy-status")
     sub.add_parser("simulate-day")
 
     ai = sub.add_parser("ai")
@@ -38,7 +40,6 @@ def build_parser() -> argparse.ArgumentParser:
 
     models = ai_sub.add_parser("models")
     models.add_argument("provider")
-
     refresh = ai_sub.add_parser("refresh")
     refresh.add_argument("provider")
 
@@ -50,7 +51,6 @@ def build_parser() -> argparse.ArgumentParser:
     dry_run = ai_sub.add_parser("dry-run-decision")
     dry_run.add_argument("--character", default="char_darian")
     dry_run.add_argument("--role", default="cognition")
-
     ai_sub.add_parser("nanogpt-usage")
 
     provider = ai_sub.add_parser("provider")
@@ -96,19 +96,18 @@ def main() -> None:
         with _with_db(args.db) as conn:
             print(json.dumps(snapshot(conn), indent=2, sort_keys=True))
         return
+    if args.command == "autonomy-status":
+        initialize(args.db)
+        with _with_db(args.db) as conn:
+            print(json.dumps(autonomy_status(conn), indent=2, sort_keys=True))
+        return
     if args.command == "simulate-day":
         initialize(args.db)
         with _with_db(args.db) as conn:
             before = snapshot(conn)
             trace = run_one_simulated_day(conn)
             after = snapshot(conn)
-            print(json.dumps({
-                "ok": True,
-                "actions_completed": len(trace),
-                "started_at": before["sim_time"],
-                "ended_at": after["sim_time"],
-                "final_state": after,
-            }, indent=2, sort_keys=True))
+            print(json.dumps({"ok": True, "actions_completed": len(trace), "started_at": before["sim_time"], "ended_at": after["sim_time"], "final_state": after}, indent=2, sort_keys=True))
         return
 
     initialize(args.db)
@@ -121,19 +120,10 @@ def main() -> None:
             count = refresh_catalog(conn, args.provider)
             print(json.dumps({"ok": True, "provider": args.provider, "model_count": count}))
         elif args.ai_command == "bootstrap-gemini-cognition":
-            result = bootstrap_gemini_cognition(
-                conn,
-                character_id=args.character,
-                role=args.role,
-                force=args.force,
-            )
+            result = bootstrap_gemini_cognition(conn, character_id=args.character, role=args.role, force=args.force)
             print(json.dumps(result, indent=2, sort_keys=True))
         elif args.ai_command == "dry-run-decision":
-            result = dry_run_model_decision(
-                conn,
-                character_id=args.character,
-                role=args.role,
-            )
+            result = dry_run_model_decision(conn, character_id=args.character, role=args.role)
             print(json.dumps(result, indent=2, sort_keys=True))
         elif args.ai_command == "nanogpt-usage":
             print(json.dumps(nanogpt_subscription_usage(conn), indent=2, sort_keys=True))
@@ -141,34 +131,14 @@ def main() -> None:
             if args.enable and args.disable:
                 raise SystemExit("Choose only one of --enable or --disable")
             enabled = True if args.enable else False if args.disable else None
-            configure_provider(
-                conn,
-                args.provider,
-                enabled=enabled,
-                base_url=args.base_url,
-                credential_ref=args.credential_ref,
-            )
+            configure_provider(conn, args.provider, enabled=enabled, base_url=args.base_url, credential_ref=args.credential_ref)
             print(json.dumps({"ok": True, "provider": args.provider}))
         elif args.ai_command == "bind":
             parameters = json.loads(args.parameters)
             if not isinstance(parameters, dict):
                 raise SystemExit("--parameters must be a JSON object")
-            set_binding(
-                conn,
-                scope_type=args.scope_type,
-                scope_id=args.scope_id,
-                role=args.role,
-                provider_id=args.provider,
-                model_id=args.model,
-                parameters=parameters,
-            )
+            set_binding(conn, scope_type=args.scope_type, scope_id=args.scope_id, role=args.role, provider_id=args.provider, model_id=args.model, parameters=parameters)
             print(json.dumps({"ok": True, "scope": f"{args.scope_type}:{args.scope_id}", "role": args.role}))
         elif args.ai_command == "resolve":
-            binding = resolve_binding(
-                conn,
-                role=args.role,
-                character_id=args.character,
-                engine_id=args.engine,
-                task_id=args.task,
-            )
+            binding = resolve_binding(conn, role=args.role, character_id=args.character, engine_id=args.engine, task_id=args.task)
             print(json.dumps(binding, indent=2, sort_keys=True))
