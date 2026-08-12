@@ -71,6 +71,19 @@ def _send(token: str, chat_id: int, text: str) -> None:
     _api(token, "sendMessage", {"chat_id": chat_id, "text": text[:4096]}, timeout=15)
 
 
+def _boot_message() -> str:
+    return (
+        "🌌 OBSERVER SANDBOX\n"
+        "━━━━━━━━━━━━━━━━━━\n"
+        "✨ Universe is alive!\n"
+        "🟢 Observer link: online\n"
+        "🧠 Minds: wake-on-demand\n"
+        "📡 Creator channel: connected\n"
+        "━━━━━━━━━━━━━━━━━━\n"
+        "Use /status or /watch to observe."
+    )
+
+
 def _fmt_character(data: dict[str, Any]) -> str:
     c = data["character"]
     s = data["state"]
@@ -119,11 +132,13 @@ def _fmt_history(rows: list[dict[str, Any]]) -> str:
 def _fmt_status(data: dict[str, Any]) -> str:
     c = data["character"]
     pending = data.get("pending_action")
+    calls = int((data.get("cognition_stats") or {}).get("decision_calls", 0))
     return (
         f"Observer Sandbox\n"
         f"Autonomy: {'ON' if data['autonomy_enabled'] else 'OFF'} ({data['mode']})\n"
         f"Paused: {data['paused']} | Speed: {data['speed']}x\n"
-        f"Pending: {pending['action'] if pending else 'none'}\n\n"
+        f"Pending: {pending['action'] if pending else 'none'}\n"
+        f"Mind calls: {calls}\n\n"
         f"{c['location_name']} | {c['current_action']}\n"
         f"Sim time: {c['sim_time']}"
     )
@@ -201,6 +216,14 @@ def run_polling(db_path: str | Path = DEFAULT_DB) -> None:
     token = os.environ.get("OBSERVER_TELEGRAM_BOT_TOKEN", "").strip()
     if not token:
         return
+
+    owner_id = _owner_user_id()
+    if owner_id is not None:
+        try:
+            _send(token, owner_id, _boot_message())
+        except (urllib.error.URLError, TimeoutError, RuntimeError, OSError, ValueError):
+            # A notification failure must never prevent the observer transport from booting.
+            pass
 
     offset: int | None = None
     backoff = 1.0
