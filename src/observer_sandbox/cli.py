@@ -9,6 +9,7 @@ from .ai import (
     configure_provider,
     list_models,
     list_providers,
+    nanogpt_subscription_usage,
     refresh_catalog,
     resolve_binding,
     set_binding,
@@ -35,6 +36,8 @@ def build_parser() -> argparse.ArgumentParser:
 
     refresh = ai_sub.add_parser("refresh")
     refresh.add_argument("provider")
+
+    ai_sub.add_parser("nanogpt-usage")
 
     provider = ai_sub.add_parser("provider")
     provider.add_argument("provider")
@@ -84,6 +87,8 @@ def main() -> None:
         elif args.ai_command == "refresh":
             count = refresh_catalog(conn, args.provider)
             print(json.dumps({"ok": True, "provider": args.provider, "model_count": count}))
+        elif args.ai_command == "nanogpt-usage":
+            print(json.dumps(nanogpt_subscription_usage(conn), indent=2, sort_keys=True))
         elif args.ai_command == "provider":
             if args.enable and args.disable:
                 raise SystemExit("Choose only one of --enable or --disable")
