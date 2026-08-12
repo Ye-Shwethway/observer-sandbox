@@ -8,6 +8,7 @@ from observer_sandbox.autonomy import (
     PENDING_KEY,
     arm_canary_once,
     autonomy_tick,
+    run_canary_once,
     set_autonomy_enabled,
     set_autonomy_paused,
     set_autonomy_speed,
@@ -138,6 +139,25 @@ def test_canary_runs_exactly_one_action_then_disables(tmp_path):
         assert provider.calls == 1
 
 
+def test_synchronous_canary_command_completes_without_wall_time_wait(tmp_path):
+    db = tmp_path / "observer.sqlite3"
+    initialize(db)
+    provider = FixedProvider(Action("rest", 30, "obj_bed", "bounded synchronous canary"))
+    with connect(db) as conn:
+        before = snapshot(conn)
+        result = run_canary_once(conn, provider=provider, now_wall=1000)
+        assert result["ok"] is True
+        assert result["state"] == "completed"
+        assert result["plan"]["pending"]["due_wall_time"] == 2800.0
+        assert result["completion"]["state"] == "completed"
+        assert result["after"]["autonomy_enabled"] is False
+        assert result["after"]["mode"] == "normal"
+        assert result["after"]["pending_action"] is None
+        assert result["after"]["character"]["sim_time"] != before["sim_time"]
+        assert provider.calls == 1
+        assert conn.execute("SELECT COUNT(*) FROM events WHERE event_type='action_completed'").fetchone()[0] == 1
+
+
 def test_canary_decision_failure_disables_immediately(tmp_path):
     class BadProvider:
         def choose(self, state, available_actions):
@@ -146,8 +166,8 @@ def test_canary_decision_failure_disables_immediately(tmp_path):
     db = tmp_path / "observer.sqlite3"
     initialize(db)
     with connect(db) as conn:
-        arm_canary_once(conn)
-        result = autonomy_tick(conn, provider=BadProvider(), now_wall=1000)
+        result = run_canary_once(conn, provider=BadProvider(), now_wall=1000)
+        assert result["ok"] is False
         assert result["state"] == "decision_error"
         assert runtime_value(conn, "autonomy_enabled", True) is False
         assert runtime_value(conn, MODE_KEY, None) == "normal"
