@@ -158,11 +158,17 @@ Do not copy world state into Telegram session storage. World state remains autho
 
 The bot is a private Creator control surface, not a public chatbot.
 
-Initial P2 should be allowlisted to explicitly configured Telegram user/chat ids. Unknown users receive no world data and no control access.
+Authorization has three explicit roles:
 
-Bot token and allowed ids are secrets/config, never committed or logged.
+1. **Owner** — one privileged Telegram identity configured separately as `OBSERVER_TELEGRAM_OWNER_ID`. The owner is always authorized and does not need to be duplicated in the normal allowlist.
+2. **Allowed user** — identities listed in `OBSERVER_TELEGRAM_ALLOWED_USER_IDS`. They may use the currently exposed observer/control surface but are not the root authority for future user-management changes.
+3. **Unauthorized user** — receives no world data or control access; `/start` and `/whoami` may reveal only the caller's own Telegram id and authorization state for bootstrap.
 
-Control callbacks must re-check authorization server-side; hidden buttons alone are not authorization.
+The bot token, owner id, and allowed-user ids are secrets/config and are never committed or logged as values.
+
+Future user-management commands should be owner-only. The intended direction is owner-controlled list/add/remove/role management backed by a persistent authorization store; the initial environment-backed allowlist remains the bootstrap source until that layer is implemented. No allowed user may remove/demote the owner or grant owner authority through ordinary commands.
+
+Control callbacks and future user-management callbacks must re-check authorization server-side; hidden buttons alone are not authorization.
 
 ## Message design
 
@@ -181,7 +187,7 @@ Telegram message limits must never force the data model to become shallow. Large
 ### P2.1 — Mobile Observer MVP
 
 - bot process/service foundation
-- private authorization
+- private authorization with separate owner and allowed-user roles
 - generic observer/query service foundation
 - `/start`, `/status`, `/watch`, `/history`
 - generic character summary surfaced initially as `/darian`
@@ -200,6 +206,7 @@ Telegram message limits must never force the data model to become shallow. Large
 
 ### P2.3 — Creator control expansion
 
+- owner-only user management
 - provider/model catalog browsing and refresh
 - binding selection/change
 - richer runtime controls
@@ -219,4 +226,4 @@ Later phases may add relationships, inventory, physiology dashboards, memory vie
 
 ## Acceptance principle
 
-P2 MVP passes when the Creator can independently open Telegram and inspect the live sandbox and basic runtime state without relying on ChatGPT narration, while the codebase remains ready for hierarchical universe browsing and multiple characters/resources later.
+P2 MVP passes when the Creator can independently open Telegram and inspect the live sandbox and basic runtime state without relying on ChatGPT narration, while the codebase remains ready for hierarchical universe browsing, multiple characters/resources, and owner-managed users later.
