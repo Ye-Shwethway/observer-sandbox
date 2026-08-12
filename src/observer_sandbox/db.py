@@ -4,7 +4,7 @@ import json
 import sqlite3
 from pathlib import Path
 
-SCHEMA_VERSION = 2
+SCHEMA_VERSION = 3
 
 SCHEMA_SQL = """
 PRAGMA foreign_keys = ON;
@@ -57,6 +57,116 @@ CREATE TABLE IF NOT EXISTS runtime_state (
     key TEXT PRIMARY KEY,
     value_json TEXT NOT NULL,
     updated_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
+);
+
+-- Rich profile ontology. Definitions are stable schema; values remain per-character.
+CREATE TABLE IF NOT EXISTS profile_field_definitions (
+    field_key TEXT PRIMARY KEY,
+    domain TEXT NOT NULL,
+    label TEXT NOT NULL,
+    data_type TEXT NOT NULL CHECK(data_type IN ('integer','number','text','boolean','date','datetime','json')),
+    unit TEXT,
+    description TEXT,
+    default_mode TEXT NOT NULL DEFAULT 'static' CHECK(default_mode IN ('canonical','static','derived','simulated')),
+    default_authority TEXT NOT NULL DEFAULT 'profile_core',
+    sensitivity TEXT NOT NULL DEFAULT 'normal' CHECK(sensitivity IN ('normal','private','intimate')),
+    metadata_json TEXT NOT NULL DEFAULT '{}',
+    created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    updated_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE TABLE IF NOT EXISTS character_profiles (
+    entity_id TEXT PRIMARY KEY REFERENCES entities(id) ON DELETE CASCADE,
+    profile_schema_version INTEGER NOT NULL DEFAULT 1,
+    canonical_revision TEXT,
+    status TEXT NOT NULL DEFAULT 'active',
+    notes TEXT,
+    created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    updated_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE TABLE IF NOT EXISTS character_profile_values (
+    entity_id TEXT NOT NULL REFERENCES character_profiles(entity_id) ON DELETE CASCADE,
+    field_key TEXT NOT NULL REFERENCES profile_field_definitions(field_key),
+    value_json TEXT NOT NULL,
+    mode TEXT NOT NULL CHECK(mode IN ('canonical','static','derived','simulated')),
+    authority TEXT NOT NULL,
+    source TEXT,
+    confidence REAL CHECK(confidence IS NULL OR (confidence >= 0 AND confidence <= 1)),
+    observed_at TEXT,
+    updated_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    PRIMARY KEY(entity_id, field_key)
+);
+
+CREATE TABLE IF NOT EXISTS character_profile_history (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    entity_id TEXT NOT NULL REFERENCES character_profiles(entity_id) ON DELETE CASCADE,
+    field_key TEXT NOT NULL REFERENCES profile_field_definitions(field_key),
+    old_value_json TEXT,
+    new_value_json TEXT NOT NULL,
+    mode TEXT NOT NULL CHECK(mode IN ('canonical','static','derived','simulated')),
+    authority TEXT NOT NULL,
+    reason TEXT,
+    sim_time TEXT,
+    created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE TABLE IF NOT EXISTS character_preferences (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    entity_id TEXT NOT NULL REFERENCES character_profiles(entity_id) ON DELETE CASCADE,
+    preference_type TEXT NOT NULL CHECK(preference_type IN ('like','dislike','interest','aversion')),
+    subject TEXT NOT NULL,
+    intensity REAL,
+    metadata_json TEXT NOT NULL DEFAULT '{}',
+    UNIQUE(entity_id, preference_type, subject)
+);
+
+CREATE TABLE IF NOT EXISTS character_habits (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    entity_id TEXT NOT NULL REFERENCES character_profiles(entity_id) ON DELETE CASCADE,
+    name TEXT NOT NULL,
+    description TEXT,
+    frequency TEXT,
+    strength REAL,
+    metadata_json TEXT NOT NULL DEFAULT '{}',
+    UNIQUE(entity_id, name)
+);
+
+CREATE TABLE IF NOT EXISTS character_routines (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    entity_id TEXT NOT NULL REFERENCES character_profiles(entity_id) ON DELETE CASCADE,
+    routine_key TEXT NOT NULL,
+    daypart TEXT,
+    sequence_index INTEGER NOT NULL DEFAULT 0,
+    activity TEXT NOT NULL,
+    conditions_json TEXT NOT NULL DEFAULT '{}',
+    metadata_json TEXT NOT NULL DEFAULT '{}',
+    UNIQUE(entity_id, routine_key, sequence_index)
+);
+
+CREATE TABLE IF NOT EXISTS character_skills (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    entity_id TEXT NOT NULL REFERENCES character_profiles(entity_id) ON DELETE CASCADE,
+    skill_key TEXT NOT NULL,
+    category TEXT,
+    score REAL,
+    tier TEXT,
+    experience REAL,
+    metadata_json TEXT NOT NULL DEFAULT '{}',
+    UNIQUE(entity_id, skill_key)
+);
+
+CREATE TABLE IF NOT EXISTS character_relationship_state (
+    source_entity_id TEXT NOT NULL REFERENCES character_profiles(entity_id) ON DELETE CASCADE,
+    target_entity_id TEXT NOT NULL REFERENCES entities(id) ON DELETE CASCADE,
+    relationship_type TEXT,
+    trust REAL,
+    warmth REAL,
+    attachment REAL,
+    tension REAL,
+    metadata_json TEXT NOT NULL DEFAULT '{}',
+    updated_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    PRIMARY KEY(source_entity_id, target_entity_id)
 );
 
 CREATE TABLE IF NOT EXISTS ai_providers (
