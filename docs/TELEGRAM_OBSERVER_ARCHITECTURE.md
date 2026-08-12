@@ -170,7 +170,78 @@ Future user-management commands should be owner-only. The intended direction is 
 
 Control callbacks and future user-management callbacks must re-check authorization server-side; hidden buttons alone are not authorization.
 
-## Message design
+## Telegram presentation contract
+
+All Creator-facing Telegram commands, callbacks, notifications, menus, and future browse/detail views MUST use one consistent presentation system. Telegram output is a human-readable observer interface, not a raw runtime log.
+
+### Time display
+
+Canonical runtime/DB timestamps remain ISO-8601 internally. Telegram presentation converts simulated timestamps only at the formatting boundary.
+
+Required visible format:
+
+`dd-mm-yyyy (Day) hh:mm AM/PM`
+
+Example:
+
+`01-05-2025 (Thursday) 07:05 AM`
+
+Do not expose raw ISO timestamps in normal Telegram views unless a deliberately technical/debug view is requested later.
+
+### Human-readable entities
+
+Normal views must prefer display names over internal ids:
+
+- `room_gym` -> `Home Gym`
+- `room_living` -> `Living Room`
+- similar conversion for characters, items, locations, providers, models, and future resources where a human-readable name exists.
+
+Stable ids remain authoritative for callbacks/query lookup and may appear only where technically useful, such as an explicit detail/debug field.
+
+### Scanability and decoration
+
+Messages should use restrained visual structure:
+
+- a clear title/header;
+- short sections separated by whitespace or a light divider;
+- consistent icons for recurring concepts such as location, action, time, needs, autonomy, cognition, items, and navigation;
+- aligned concise labels where practical;
+- limited decoration: enough to scan quickly on mobile, never so much that information becomes noisy.
+
+Prefer `Yes/No`, `ON/OFF`, and friendly status words over Python/raw booleans such as `True/False` in normal user-facing messages.
+
+Use sentence case or readable title case for actions/status labels rather than internal enum casing.
+
+### History and event views
+
+Default history/watch views are narrative/observer views. They should prioritize meaningful character/world activity such as movement, training, eating, drinking, sleeping, interaction, and future world events.
+
+Engine bookkeeping such as `autonomy_control`, canary lifecycle events, scheduler leases, internal retries, or other control-plane noise should be omitted from default history unless it materially affects what the Creator needs to know.
+
+The underlying events remain stored; future `/history technical` or debug views may expose them separately without polluting the normal observer experience.
+
+### Large data and hierarchy
+
+Do not dump giant profiles, location contents, item registries, or histories into one Telegram message.
+
+Use layered views:
+
+- summary -> details
+- universe -> location -> room -> contents -> item
+- characters -> selected character -> profile section -> fields
+- history -> bounded page -> next/previous
+
+Inline buttons are preferred where they reduce command typing. Callback payloads carry stable ids; display text carries human-friendly names.
+
+### Reuse and testing
+
+Formatting should be implemented through shared formatter/helper functions rather than duplicated per command. New Telegram features must extend the existing visual vocabulary instead of inventing unrelated output styles.
+
+Relevant tests should cover presentation invariants such as timestamp format, friendly entity naming, safe pagination/length behavior, and suppression of internal control noise in default observer views.
+
+Presentation formatting must never become a second business-logic layer. It may transform labels, time strings, ordering, grouping, and visibility for human consumption, but authoritative state and rules remain in backend/query/control services.
+
+## Message design examples
 
 Prefer concise layered views over giant raw dumps.
 
@@ -194,6 +265,7 @@ Telegram message limits must never force the data model to become shallow. Large
 - generic location summary surfaced initially as `/home`
 - pause/resume/speed/status controls
 - live VPS deployment and readback
+- shared human-friendly presentation contract for all Telegram output
 
 ### P2.2 — Browse the sandbox
 
@@ -203,6 +275,7 @@ Telegram message limits must never force the data model to become shallow. Large
 - item list/detail
 - character list/selection
 - profile section browsing
+- every new view follows the Telegram presentation contract and uses hierarchical/inline-button navigation where useful
 
 ### P2.3 — Creator control expansion
 
@@ -212,6 +285,7 @@ Telegram message limits must never force the data model to become shallow. Large
 - richer runtime controls
 - scoped event/history filters
 - future notification/watch preferences
+- control/configuration views remain visually consistent with observer views while clearly distinguishing mutation actions from read-only navigation
 
 Later phases may add relationships, inventory, physiology dashboards, memory views, world events, additional locations and multiple characters without replacing this architecture.
 
@@ -227,3 +301,5 @@ Later phases may add relationships, inventory, physiology dashboards, memory vie
 ## Acceptance principle
 
 P2 MVP passes when the Creator can independently open Telegram and inspect the live sandbox and basic runtime state without relying on ChatGPT narration, while the codebase remains ready for hierarchical universe browsing, multiple characters/resources, and owner-managed users later.
+
+Every P2 acceptance review must also treat presentation quality as functional UX: normal Telegram output must be human-readable, consistently formatted, mobile-scannable, and compliant with the presentation contract above.
