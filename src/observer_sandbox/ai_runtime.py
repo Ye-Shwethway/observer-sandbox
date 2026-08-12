@@ -114,12 +114,8 @@ def _generate_gemini(
     if not base:
         raise AIConfigurationError("Gemini base_url is not configured")
     generation_config = {
-        "responseFormat": {
-            "text": {
-                "mimeType": "application/json",
-                "schema": DECISION_SCHEMA,
-            }
-        },
+        "responseMimeType": "application/json",
+        "responseJsonSchema": DECISION_SCHEMA,
         **parameters,
     }
     response = _post_json(
