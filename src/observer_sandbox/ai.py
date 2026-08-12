@@ -44,8 +44,8 @@ BUILTIN_PROVIDERS = (
     ProviderTemplate(
         id="nanogpt",
         display_name="NanoGPT",
-        adapter_type="openai_compatible",
-        base_url=None,
+        adapter_type="nanogpt",
+        base_url="https://nano-gpt.com/api",
         credential_ref="OBSERVER_NANOGPT_API_KEY",
     ),
 )
@@ -66,7 +66,15 @@ def seed_builtin_providers(conn: sqlite3.Connection) -> None:
             INSERT INTO ai_providers(
                 id, display_name, adapter_type, base_url, credential_ref, enabled
             ) VALUES (?, ?, ?, ?, ?, ?)
-            ON CONFLICT(id) DO NOTHING
+            ON CONFLICT(id) DO UPDATE SET
+                display_name=excluded.display_name,
+                adapter_type=excluded.adapter_type,
+                base_url=CASE
+                    WHEN ai_providers.base_url IS NULL OR ai_providers.id='nanogpt'
+                    THEN excluded.base_url
+                    ELSE ai_providers.base_url
+                END,
+                credential_ref=COALESCE(ai_providers.credential_ref, excluded.credential_ref)
             """,
             (
                 provider.id,
@@ -141,13 +149,20 @@ def _get_json(url: str, headers: dict[str, str] | None = None, timeout: float = 
     try:
         with urllib.request.urlopen(request, timeout=timeout) as response:
             return json.loads(response.read().decode("utf-8"))
-    except Exception as exc:  # network/provider errors are surfaced to runtime control
+    except Exception as exc:
         raise CatalogFetchError(str(exc)) from exc
 
 
 def _credential(provider: sqlite3.Row) -> str | None:
     ref = provider["credential_ref"]
     return os.environ.get(ref) if ref else None
+
+
+def _auth_headers(provider: sqlite3.Row) -> dict[str, str]:
+    key = _credential(provider)
+    if not key:
+        raise AIConfigurationError(f"Missing credential environment variable: {provider['credential_ref']}")
+    return {"Authorization": f"Bearer {key}", "Accept": "application/json"}
 
 
 def _fetch_gemini(provider: sqlite3.Row) -> list[dict[str, Any]]:
@@ -187,12 +202,9 @@ def _fetch_openai_compatible(provider: sqlite3.Row) -> list[dict[str, Any]]:
     base = provider["base_url"]
     if not base:
         raise AIConfigurationError(f"Provider {provider['id']} requires a base_url")
-    key = _credential(provider)
-    if not key:
-        raise AIConfigurationError(f"Missing credential environment variable: {provider['credential_ref']}")
     payload = _get_json(
         f"{base.rstrip('/')}/models",
-        headers={"Authorization": f"Bearer {key}", "Accept": "application/json"},
+        headers=_auth_headers(provider),
     )
     models = []
     for raw in payload.get("data", []):
@@ -217,6 +229,46 @@ def _fetch_openai_compatible(provider: sqlite3.Row) -> list[dict[str, Any]]:
     return models
 
 
+def _fetch_nanogpt(provider: sqlite3.Row) -> list[dict[str, Any]]:
+    """Fetch only subscription-included NanoGPT text models by default."""
+    base = provider["base_url"]
+    if not base:
+        raise AIConfigurationError("NanoGPT base_url is not configured")
+    payload = _get_json(
+        f"{base.rstrip('/')}/subscription/v1/models?detailed=true",
+        headers=_auth_headers(provider),
+    )
+    models: list[dict[str, Any]] = []
+    for raw in payload.get("data", []):
+        model_id = raw.get("id")
+        if not model_id:
+            continue
+        capabilities = raw.get("capabilities") or {}
+        models.append(
+            {
+                "model_id": model_id,
+                "display_name": raw.get("name") or model_id,
+                "context_window": raw.get("context_length") or raw.get("context_window"),
+                "capabilities": capabilities,
+                "metadata": raw,
+            }
+        )
+    return models
+
+
+def nanogpt_subscription_usage(conn: sqlite3.Connection) -> dict[str, Any]:
+    provider = conn.execute("SELECT * FROM ai_providers WHERE id='nanogpt'").fetchone()
+    if provider is None:
+        raise AIConfigurationError("NanoGPT provider is not configured")
+    base = provider["base_url"]
+    if not base:
+        raise AIConfigurationError("NanoGPT base_url is not configured")
+    return _get_json(
+        f"{base.rstrip('/')}/subscription/v1/usage",
+        headers=_auth_headers(provider),
+    )
+
+
 def refresh_catalog(conn: sqlite3.Connection, provider_id: str) -> int:
     provider = conn.execute("SELECT * FROM ai_providers WHERE id = ?", (provider_id,)).fetchone()
     if provider is None:
@@ -226,6 +278,8 @@ def refresh_catalog(conn: sqlite3.Connection, provider_id: str) -> int:
     try:
         if provider["adapter_type"] == "gemini":
             models = _fetch_gemini(provider)
+        elif provider["adapter_type"] == "nanogpt":
+            models = _fetch_nanogpt(provider)
         elif provider["adapter_type"] == "openai_compatible":
             models = _fetch_openai_compatible(provider)
         else:
