@@ -14,6 +14,9 @@ from .world import set_field
 LEASE_KEY = "autonomy_lease"
 PENDING_KEY = "autonomy_pending_action"
 RETRY_KEY = "autonomy_retry"
+MODE_KEY = "autonomy_mode"
+NORMAL_MODE = "normal"
+CANARY_MODE = "canary_once"
 
 
 def _wall_now() -> float:
@@ -76,6 +79,81 @@ def _clear_retry(conn: sqlite3.Connection) -> None:
         conn.commit()
 
 
+def _mode(conn: sqlite3.Connection) -> str:
+    return str(runtime_value(conn, MODE_KEY, NORMAL_MODE) or NORMAL_MODE)
+
+
+def _finish_canary(conn: sqlite3.Connection, actor_id: str, *, success: bool, action_id: str | None, detail: str | None = None) -> None:
+    set_runtime_value(conn, "autonomy_enabled", False)
+    set_runtime_value(conn, MODE_KEY, NORMAL_MODE)
+    if not success:
+        set_runtime_value(conn, PENDING_KEY, None)
+        set_field(conn, actor_id, "runtime.current_action", "idle")
+    conn.commit()
+    _event(
+        conn,
+        actor_id,
+        "autonomy_canary_completed" if success else "autonomy_canary_failed",
+        {"success": success, "action_id": action_id, "detail": detail},
+    )
+
+
+def set_autonomy_enabled(conn: sqlite3.Connection, enabled: bool, *, actor_id: str = "char_darian") -> dict[str, Any]:
+    if not enabled:
+        if runtime_value(conn, PENDING_KEY, None) is not None:
+            raise ValueError("Cannot disable autonomy while an action is pending; pause it or wait for completion")
+        set_runtime_value(conn, "autonomy_enabled", False)
+        set_runtime_value(conn, MODE_KEY, NORMAL_MODE)
+    else:
+        if runtime_value(conn, PENDING_KEY, None) is not None:
+            raise ValueError("Cannot enable autonomy with a pre-existing pending action")
+        set_runtime_value(conn, MODE_KEY, NORMAL_MODE)
+        set_runtime_value(conn, "autonomy_enabled", True)
+    conn.commit()
+    _event(conn, actor_id, "autonomy_control", {"enabled": enabled, "mode": _mode(conn)})
+    return autonomy_status(conn, actor_id)
+
+
+def set_autonomy_paused(conn: sqlite3.Connection, paused: bool, *, actor_id: str = "char_darian") -> dict[str, Any]:
+    set_runtime_value(conn, "paused", bool(paused))
+    conn.commit()
+    _event(conn, actor_id, "autonomy_control", {"paused": bool(paused)})
+    return autonomy_status(conn, actor_id)
+
+
+def set_autonomy_speed(conn: sqlite3.Connection, speed: float, *, actor_id: str = "char_darian") -> dict[str, Any]:
+    value = float(speed)
+    if value <= 0 or value > 3600:
+        raise ValueError("Autonomy speed must be greater than 0 and at most 3600")
+    if runtime_value(conn, PENDING_KEY, None) is not None:
+        raise ValueError("Cannot change speed while an action is pending")
+    set_runtime_value(conn, "speed", value)
+    conn.commit()
+    _event(conn, actor_id, "autonomy_control", {"speed": value})
+    return autonomy_status(conn, actor_id)
+
+
+def arm_canary_once(conn: sqlite3.Connection, *, actor_id: str = "char_darian") -> dict[str, Any]:
+    """Arm exactly one production-style autonomous action.
+
+    The service may plan and complete one action. Success or failure automatically
+    disables autonomy and returns the mode to normal. Merely defining this command
+    does not arm or run a canary.
+    """
+    if bool(runtime_value(conn, "autonomy_enabled", False)):
+        raise ValueError("Canary requires autonomy to be disabled first")
+    if bool(runtime_value(conn, "paused", False)):
+        raise ValueError("Canary requires runtime to be resumed")
+    if runtime_value(conn, PENDING_KEY, None) is not None:
+        raise ValueError("Canary requires no pending action")
+    _clear_retry(conn)
+    set_runtime_value(conn, MODE_KEY, CANARY_MODE)
+    set_runtime_value(conn, "autonomy_enabled", True)
+    conn.commit()
+    _event(conn, actor_id, "autonomy_canary_armed", {"mode": CANARY_MODE})
+    return autonomy_status(conn, actor_id)
+
+
 def autonomy_tick(
     conn: sqlite3.Connection,
     *,
@@ -104,6 +182,8 @@ def autonomy_tick(
                 set_runtime_value(conn, PENDING_KEY, None)
                 set_field(conn, actor_id, "runtime.current_action", "idle")
                 conn.commit()
+                if _mode(conn) == CANARY_MODE:
+                    _finish_canary(conn, actor_id, success=True, action_id=action_id, detail="recovered completed action")
                 return {"ok": True, "state": "recovered_completed", "action_id": action_id}
             if now < float(pending["due_wall_time"]):
                 return {"ok": True, "state": "in_progress", "action_id": action_id, "due_wall_time": pending["due_wall_time"]}
@@ -112,10 +192,14 @@ def autonomy_tick(
                 after = apply_action(conn, action, actor_id, action_id=action_id)
             except Exception as exc:
                 _record_failure(conn, actor_id, stage="complete", error=exc, now=now)
+                if _mode(conn) == CANARY_MODE:
+                    _finish_canary(conn, actor_id, success=False, action_id=action_id, detail=f"completion:{type(exc).__name__}")
                 return {"ok": False, "state": "completion_error", "error": type(exc).__name__}
             set_runtime_value(conn, PENDING_KEY, None)
             _clear_retry(conn)
             conn.commit()
+            if _mode(conn) == CANARY_MODE:
+                _finish_canary(conn, actor_id, success=True, action_id=action_id)
             return {"ok": True, "state": "completed", "action_id": action_id, "after": after}
 
         state = snapshot(conn, actor_id)
@@ -125,12 +209,16 @@ def autonomy_tick(
             validate_action(conn, actor_id, action)
         except Exception as exc:
             _record_failure(conn, actor_id, stage="decide", error=exc, now=now)
+            if _mode(conn) == CANARY_MODE:
+                _finish_canary(conn, actor_id, success=False, action_id=None, detail=f"decision:{type(exc).__name__}")
             return {"ok": False, "state": "decision_error", "error": type(exc).__name__}
 
         speed = float(runtime_value(conn, "speed", 1.0))
         if speed <= 0:
             error = ValueError("Runtime speed must be greater than zero")
             _record_failure(conn, actor_id, stage="schedule", error=error, now=now)
+            if _mode(conn) == CANARY_MODE:
+                _finish_canary(conn, actor_id, success=False, action_id=None, detail="schedule:ValueError")
             return {"ok": False, "state": "schedule_error", "error": type(error).__name__}
 
         action_id = str(uuid.uuid4())
@@ -144,12 +232,13 @@ def autonomy_tick(
             "planned_wall_time": now,
             "due_wall_time": now + (action.duration_minutes * 60.0 / speed),
             "speed_at_plan": speed,
+            "autonomy_mode": _mode(conn),
         }
         set_runtime_value(conn, PENDING_KEY, pending)
         set_field(conn, actor_id, "runtime.current_action", action.name)
         _clear_retry(conn)
         conn.commit()
-        _event(conn, actor_id, "action_started", {"action_id": action_id, "action": action.name, "target": action.target, "duration_minutes": action.duration_minutes, "reason": action.reason, "due_wall_time": pending["due_wall_time"]})
+        _event(conn, actor_id, "action_started", {"action_id": action_id, "action": action.name, "target": action.target, "duration_minutes": action.duration_minutes, "reason": action.reason, "due_wall_time": pending["due_wall_time"], "autonomy_mode": pending["autonomy_mode"]})
         return {"ok": True, "state": "planned", "pending": pending}
     finally:
         _release_lease(conn, owner)
@@ -158,6 +247,7 @@ def autonomy_tick(
 def autonomy_status(conn: sqlite3.Connection, actor_id: str = "char_darian") -> dict[str, Any]:
     return {
         "autonomy_enabled": bool(runtime_value(conn, "autonomy_enabled", False)),
+        "mode": _mode(conn),
         "paused": bool(runtime_value(conn, "paused", False)),
         "speed": float(runtime_value(conn, "speed", 1.0)),
         "pending_action": runtime_value(conn, PENDING_KEY, None),
