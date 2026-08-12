@@ -14,6 +14,7 @@ from .ai import (
     resolve_binding,
     set_binding,
 )
+from .ai_bootstrap import bootstrap_gemini_cognition
 from .db import connect, migrate
 from .runtime import initialize, status
 from .simulation import run_one_simulated_day, snapshot
@@ -39,6 +40,11 @@ def build_parser() -> argparse.ArgumentParser:
 
     refresh = ai_sub.add_parser("refresh")
     refresh.add_argument("provider")
+
+    bootstrap_gemini = ai_sub.add_parser("bootstrap-gemini-cognition")
+    bootstrap_gemini.add_argument("--character", default="char_darian")
+    bootstrap_gemini.add_argument("--role", default="cognition")
+    bootstrap_gemini.add_argument("--force", action="store_true")
 
     ai_sub.add_parser("nanogpt-usage")
 
@@ -109,6 +115,14 @@ def main() -> None:
         elif args.ai_command == "refresh":
             count = refresh_catalog(conn, args.provider)
             print(json.dumps({"ok": True, "provider": args.provider, "model_count": count}))
+        elif args.ai_command == "bootstrap-gemini-cognition":
+            result = bootstrap_gemini_cognition(
+                conn,
+                character_id=args.character,
+                role=args.role,
+                force=args.force,
+            )
+            print(json.dumps(result, indent=2, sort_keys=True))
         elif args.ai_command == "nanogpt-usage":
             print(json.dumps(nanogpt_subscription_usage(conn), indent=2, sort_keys=True))
         elif args.ai_command == "provider":
