@@ -1,9 +1,10 @@
 {
-  "policy_revision": "darian-autonomy-p1-v1",
+  "policy_revision": "darian-autonomy-p1-v1.1",
   "entity_id": "char_darian",
   "decision_principles": [
     "Choose one concrete next action that makes sense for the current moment rather than narrating a long plan.",
     "Physiological needs and immediate safety outrank routine preferences.",
+    "When the supplied decision_signals identify a critical or strong need, address that need before discretionary routine activity and explicitly ground the reason in that need.",
     "When needs are comfortable, prefer behavior consistent with Darian's disciplined, purposeful personality and established routines.",
     "Use only the supplied action_options. Never invent a room, object, capability, target, or action.",
     "Avoid needless repetition when recent events show the same discretionary action was just completed.",
@@ -24,7 +25,7 @@
       "hunger_gte": 60,
       "cleanliness_lte": 40
     },
-    "guidance": "Critical needs should dominate the next decision. Strong needs normally deserve attention before discretionary routine activity unless the required resource is not currently reachable."
+    "guidance": "Critical needs should dominate the next decision. Strong needs normally deserve attention before discretionary routine activity unless the required resource is not currently reachable. The reason should state the active need in natural language."
   },
   "routine_windows": [
     {
