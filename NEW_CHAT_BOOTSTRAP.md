@@ -2,11 +2,11 @@
 
 Status: ACTIVE
 Purpose: deterministic project recovery across ChatGPT sessions and protection against memory drift.
-Last synchronized: 2026-08-13 — P0 LIVE VERIFIED. P1 Living Darian autonomy is CONTINUOUSLY LIVE at 1x with wake-on-demand cognition. P2.1 Telegram Observer is transport-live and Creator-visible. Telegram presentation is now human-friendly with canonical display timestamps, friendly entity names, clean activity history, and boot notification UX.
+Last synchronized: 2026-08-13 — P0 LIVE VERIFIED. P1 Living Darian autonomy is CONTINUOUSLY LIVE at 1x with wake-on-demand cognition. P2.1 Telegram Observer is transport-live and Creator-visible. Telegram presentation is human-friendly and now governed by a durable presentation contract in `AGENTS.md`, `docs/TELEGRAM_OBSERVER_ARCHITECTURE.md`, and canonical `ROADMAP.md`.
 
 ## HARD RECOVERY RULES
 
-Read `AGENTS.md` first, then this file, then task-relevant repo files before changing the project.
+Read `AGENTS.md` first, then this file, then task-relevant repo files before changing the project. For roadmap/phase decisions, read `ROADMAP.md`. For Telegram work, always read `docs/TELEGRAM_OBSERVER_ARCHITECTURE.md`.
 After every material repository or verified runtime change, update this file in the same work session/change set.
 Never conflate committed, CI-validated, deployed, DB-applied, and live-verified state.
 
@@ -99,6 +99,7 @@ Activation proof:
 ## P2 Telegram Observer — canonical architecture
 
 Design doc: `docs/TELEGRAM_OBSERVER_ARCHITECTURE.md`.
+Canonical phase roadmap: `ROADMAP.md`.
 Long-term goal is **observe the universe**, not a Darian-status-only bot.
 
 Future navigation model:
@@ -112,6 +113,8 @@ Telegram presentation/session state may remember selected resources later, but a
 
 ## Telegram presentation contract
 
+The presentation contract is mandatory for every future Telegram command, callback, notification, menu, browse page, and detail view. It is implementation guidance in `AGENTS.md`, detailed in `docs/TELEGRAM_OBSERVER_ARCHITECTURE.md`, and a phase-acceptance rule in `ROADMAP.md`.
+
 Telegram output is a presentation layer only. DB/runtime timestamps remain canonical ISO values for scheduling and persistence; formatting happens only when rendering messages.
 
 Creator-facing timestamp format is:
@@ -120,12 +123,17 @@ Creator-facing timestamp format is:
 - 12-hour clock with AM/PM.
 
 Presentation conventions:
-- compact Unicode/emoji section headers and dividers for scanability;
-- booleans rendered as human terms such as `Yes` / `No`;
-- actions rendered title-style (`Move`, `Train`, etc.);
+- compact Unicode/emoji section headers and restrained dividers for mobile scanability;
+- booleans rendered as human terms such as `Yes` / `No` or `ON` / `OFF`;
+- actions/status labels rendered in readable title/sentence case;
 - internal entity ids such as `room_gym` resolve to display names such as `Home Gym` whenever possible;
-- default recent activity hides engine/control noise such as `autonomy_control` and canary bookkeeping and emphasizes character actions/reasons;
-- raw canonical events remain stored and may later be exposed through a detailed/debug history mode.
+- default recent activity hides engine/control noise such as `autonomy_control`, canary bookkeeping, leases and scheduler internals and emphasizes meaningful character/world activity;
+- raw canonical events remain stored and may later be exposed through a detailed/debug history mode;
+- large profiles, item registries, location contents and histories are sectioned/paginated rather than dumped;
+- shared formatter/helper functions should be reused instead of one-off raw strings;
+- formatting may change visibility/labels/grouping only; business logic remains in query/control/runtime services.
+
+A Telegram feature is not complete merely because the data is technically correct; normal output must be human-readable, consistent, mobile-scannable, and compliant with the presentation contract.
 
 Relevant implementation:
 - `src/observer_sandbox/telegram_bot.py` — message formatting + timestamp presentation;
@@ -175,14 +183,18 @@ Future user management remains owner-only. Environment-backed Owner ID is the bo
 - Creator-facing bot confirmed alive;
 - human-friendly message UI live;
 - basic observation/control commands available;
-- continuous autonomy live and observable through Telegram.
+- continuous autonomy live and observable through Telegram;
+- shared presentation contract established and mandatory for future Telegram work.
 
 ### P2.2 — Browse the sandbox (NEXT MAJOR TELEGRAM EXPANSION)
-- location list/selection;
-- room navigation;
-- room contents and item details;
-- character list/selection;
-- detailed profile section browsing/pagination.
+Recommended bounded order from `ROADMAP.md`:
+1. **P2.2.1 Observer Home Menu + reusable inline callback/navigation framework**;
+2. location list/selection and Home -> rooms navigation;
+3. room contents and item detail browsing;
+4. generic character list/selection;
+5. detailed profile section browsing/pagination.
+
+P2.2 should feel like navigating the universe, not memorizing bot commands.
 
 ### P2.3 — Creator control expansion
 - owner-only user management;
@@ -207,9 +219,10 @@ Future user management remains owner-only. Environment-backed Owner ID is the bo
 1. Continuous autonomy is LIVE at 1x. Do not casually reset or reseed production state.
 2. Preserve wake-on-demand cognition: no model calls while a physical action is pending; no periodic LLM heartbeat/reflection loop by default.
 3. `/status` exposes cumulative Mind Calls for cost observation.
-4. Preserve Telegram display timestamp format `dd-mm-yyyy (Day) hh:mm AM/PM`; do not mutate canonical DB timestamps just for UI.
-5. Keep default activity history character-focused; raw engine/control events stay durable for future detailed/debug views.
-6. Telegram boot must continue to notify Owner with `Universe is alive!` while notification failure remains non-fatal.
-7. Keep Telegram handlers thin; future rooms/items/full profiles/character selection go through generic query services.
-8. Next major Telegram slice is P2.2 hierarchical universe browsing.
-9. Synchronize this file after every material change/live proof.
+4. Every Telegram implementation must follow the mandatory presentation contract in `docs/TELEGRAM_OBSERVER_ARCHITECTURE.md`; `AGENTS.md` and `ROADMAP.md` reinforce it.
+5. Preserve display timestamp format `dd-mm-yyyy (Day) hh:mm AM/PM`; do not mutate canonical DB timestamps just for UI.
+6. Keep default activity history universe/character-focused; raw engine/control events stay durable for future detailed/debug views.
+7. Telegram boot must continue to notify Owner with `Universe is alive!` while notification failure remains non-fatal.
+8. Keep Telegram handlers thin; future rooms/items/full profiles/character selection go through generic query services.
+9. Next bounded implementation slice: **P2.2.1 Observer Home Menu + reusable inline callback/navigation framework**, then location -> room -> contents browsing.
+10. Synchronize this file after every material change/live proof.
