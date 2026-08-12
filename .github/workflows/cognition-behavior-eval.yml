@@ -31,6 +31,7 @@ jobs:
           VPS_USER: ${{ secrets.VPS_USER }}
           VPS_PORT: ${{ secrets.VPS_PORT || '22' }}
         run: |
+          # Scenarios require both a valid action path and a reason grounded in the active intent.
           ssh -p "$VPS_PORT" "$VPS_USER@$VPS_HOST" '
             set -euo pipefail
             cd /opt/observer-sandbox
