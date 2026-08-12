@@ -21,6 +21,7 @@ class BehaviorScenario:
     location: str
     accepts: Callable[[Action], bool]
     intent: str
+    reason_keywords: tuple[str, ...]
 
 
 def _move_to(*rooms: str) -> Callable[[Action], bool]:
@@ -37,6 +38,11 @@ def _either(*predicates: Callable[[Action], bool]) -> Callable[[Action], bool]:
     return lambda action: any(predicate(action) for predicate in predicates)
 
 
+def _reason_matches(action: Action, keywords: tuple[str, ...]) -> bool:
+    reason = (action.reason or "").lower()
+    return any(keyword.lower() in reason for keyword in keywords)
+
+
 SCENARIOS: tuple[BehaviorScenario, ...] = (
     BehaviorScenario(
         name="morning_ready",
@@ -49,6 +55,7 @@ SCENARIOS: tuple[BehaviorScenario, ...] = (
         location="room_bedroom",
         accepts=_move_to("room_living"),
         intent="begin the morning training path toward the Home Gym",
+        reason_keywords=("train", "gym", "physical"),
     ),
     BehaviorScenario(
         name="strong_thirst",
@@ -64,6 +71,7 @@ SCENARIOS: tuple[BehaviorScenario, ...] = (
             _action_target("drink", "obj_sink", "obj_water", "obj_fridge"),
         ),
         intent="prioritize hydration or move toward an available drink source",
+        reason_keywords=("thirst", "hydrat", "water", "drink"),
     ),
     BehaviorScenario(
         name="strong_hunger",
@@ -76,6 +84,7 @@ SCENARIOS: tuple[BehaviorScenario, ...] = (
         location="room_bedroom",
         accepts=_move_to("room_bathroom", "room_living"),
         intent="move toward the Kitchen to address hunger",
+        reason_keywords=("hunger", "food", "eat", "kitchen", "meal"),
     ),
     BehaviorScenario(
         name="high_sleep_pressure",
@@ -88,6 +97,7 @@ SCENARIOS: tuple[BehaviorScenario, ...] = (
         location="room_bedroom",
         accepts=_action_target("sleep", "obj_bed"),
         intent="sleep in the Bed when already in the Bedroom",
+        reason_keywords=("sleep", "rest", "tired"),
     ),
     BehaviorScenario(
         name="poor_cleanliness",
@@ -100,6 +110,7 @@ SCENARIOS: tuple[BehaviorScenario, ...] = (
         location="room_bedroom",
         accepts=_move_to("room_bathroom"),
         intent="move to the Bathroom to restore hygiene",
+        reason_keywords=("clean", "hygiene", "shower", "bathroom"),
     ),
 )
 
@@ -126,11 +137,14 @@ def evaluate_scenario(conn, scenario: BehaviorScenario, actor_id: str = "char_da
     state = snapshot(conn, actor_id)
     action = ModelDecisionProvider(conn, character_id=actor_id).choose(state, ACTION_NAMES)
     validate_action(conn, actor_id, action)
-    passed = bool(scenario.accepts(action))
+    action_passed = bool(scenario.accepts(action))
+    reason_passed = _reason_matches(action, scenario.reason_keywords)
     return {
         "scenario": scenario.name,
         "intent": scenario.intent,
-        "passed": passed,
+        "passed": action_passed and reason_passed,
+        "action_passed": action_passed,
+        "reason_passed": reason_passed,
         "proposal": {
             "action": action.name,
             "target": action.target,
