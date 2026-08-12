@@ -2,7 +2,7 @@
 
 Status: ACTIVE
 Purpose: deterministic project recovery across ChatGPT sessions and protection against memory drift.
-Last synchronized: 2026-08-13 — P0 remote deployment/control is COMPLETE / LIVE VERIFIED. P1 Living Darian Minimum is IN PROGRESS. Home/Darian/state/action/time/event mechanics and model-backed structured-decision adapters are implemented. Gemini-first live cognition is now provisioned and bound from the live catalog, while character autonomy remains intentionally disabled by Creator instruction.
+Last synchronized: 2026-08-13 — P0 remote deployment/control is COMPLETE / LIVE VERIFIED. P1 Living Darian Minimum is IN PROGRESS. Home/Darian/state/action/time/event mechanics, Gemini-first live cognition, and a non-mutating live decision dry-run are verified. Continuous character autonomy remains intentionally disabled by Creator instruction and is NOT yet production-ready after autonomy-engine audit.
 
 ## HARD RECOVERY RULES
 
@@ -67,23 +67,20 @@ Sexual physiology semantics:
 - `arousal_level`: separate dynamic field;
 - runtime default: flaccid / firmness 0 / arousal 0.
 
-## P1 Living Darian Minimum — established mechanics
+## P1 established mechanics
 
 World seed: `config/worlds/home.v1.json`.
-
 Home v1: Bedroom, Kitchen, Bathroom, Living Room, Home Gym; 15 useful objects.
-
 Runtime modules: `src/observer_sandbox/world.py`, `src/observer_sandbox/simulation.py`.
-
 Live character: `char_darian`.
 
 P1 runtime fields include location, current action, energy, hunger, thirst, sleepiness, cleanliness. Energy is reserve/high-good. Hunger/thirst/sleepiness are pressure/high-bad. Values clamp 0-100.
 
-Validated actions: move, sleep, eat, drink, shower, rest, inspect, use, train, read, idle.
+Validated action vocabulary: move, sleep, eat, drink, shower, rest, inspect, use, train, read, idle.
 
-Movement is graph constrained; no teleporting. Completed actions write durable `action_completed` events. CI proves Darian can complete exactly 24 simulated hours with bounded deterministic acceptance policy without mutating production time.
+Movement is graph constrained; no teleporting. Completed actions write durable `action_completed` events. CI proves Darian can complete exactly 24 simulated hours with the deterministic `BaselineLivingPolicy` without mutating production time.
 
-Live baseline remains intentionally stationary until explicitly enabled later:
+Live baseline remains intentionally stationary:
 - Bedroom;
 - idle;
 - energy 75;
@@ -99,44 +96,84 @@ Live baseline remains intentionally stationary until explicitly enabled later:
 Model IDs are never hard-coded into character or engine logic.
 
 Registry: Gemini, NanoGPT, OpenAI, OpenRouter.
-
 Resolution: Provider -> Catalog -> Model Binding -> Runtime Adapter.
-
 Binding precedence: task/role -> character/role -> engine/role -> character default -> global role -> global default.
 
-`src/observer_sandbox/ai_runtime.py` supports structured P1 decisions for Gemini and NanoGPT. Required output keys: `action`, `duration_minutes`, `target`, `reason`. `src/observer_sandbox/model_decision.py` resolves the logical cognition binding and still passes the returned action through runtime validation.
+`src/observer_sandbox/ai_runtime.py` supports structured P1 decisions for Gemini and NanoGPT. Required output keys: `action`, `duration_minutes`, `target`, `reason`.
+
+`src/observer_sandbox/model_decision.py` resolves the logical cognition binding, enriches the state with reachable rooms/local objects, and returns an `Action`; runtime validation still remains authoritative.
 
 Secrets are provisioned by GitHub Actions to `/var/lib/observer-sandbox/secrets.env` mode 0600. Never log or expose secret values.
 
 ### Current Gemini-first live state
 
-For early P1 testing use Gemini first. NanoGPT remains implemented and subscription-first but is temporarily secondary.
+NanoGPT remains implemented/subscription-first but is temporarily secondary. Gemini is the current early-P1 provider.
 
-`src/observer_sandbox/ai_bootstrap.py` implements catalog-driven Gemini cognition bootstrap:
-- enable Gemini;
-- fetch the live Gemini catalog using the configured API key;
-- consider usable `generateContent` Flash-family models;
-- prefer stable Flash-Lite, then stable Flash;
-- avoid preview/experimental/image/TTS/audio/embedding/live variants for bootstrap selection;
-- exact model IDs are never hard-coded;
-- bind the selected returned model to `character:char_darian / cognition`;
-- preserve any existing binding unless explicitly forced, so later Telegram/user model choices are not silently overwritten by deploys.
+`src/observer_sandbox/ai_bootstrap.py` performs catalog-driven Gemini bootstrap and preserves existing user/model bindings unless explicitly forced.
 
-CLI command: `sandboxctl ai bootstrap-gemini-cognition`.
+Deploy #38 / run `31632060868` proved:
+- Gemini secret provisioned privately;
+- live Gemini catalog refresh returned 52 models;
+- dynamic selector chose `gemini-3.5-flash-lite`;
+- binding created for `character:char_darian / cognition`;
+- service healthy;
+- Darian state/time unchanged;
+- `autonomy_enabled=false` unchanged.
 
-Live verification from Deploy #38 / run id `31632060868` / commit `16ffaed0069c0297b119aa728867f7333b5017b2`:
-- `OBSERVER_GEMINI_API_KEY` was present in GitHub Actions and provisioned to VPS private `secrets.env` without exposure;
-- Gemini catalog refresh succeeded with **52 models**;
-- dynamic bootstrap selected **`gemini-3.5-flash-lite`** from the returned live catalog;
-- binding created: provider `gemini`, scope `character:char_darian`, role `cognition`, model `gemini-3.5-flash-lite`;
-- service restarted and was active;
-- live runtime stayed healthy on schema v3;
-- Darian's location/needs/current action/sim time remained unchanged;
-- `autonomy_enabled=false` remained unchanged as explicitly requested.
+The Gemini generateContent structured-output REST contract was corrected after the first dry-run exposed HTTP 400. Current adapter uses `responseMimeType=application/json` plus `responseJsonSchema`.
 
-This binding is a current operational choice, not a hard-coded architectural default. Later Telegram model controls must use the same provider/catalog/binding backend to refresh available models, inspect active bindings, and change model assignments without code changes. Deploy must preserve an existing user-selected binding unless explicitly forced.
+## Controlled live dry-run proof
 
-NanoGPT remains subscription-safe: subscription catalog/usage/generation paths are retained and no upstream-provider forcing is used by default.
+Reusable CLI: `sandboxctl ai dry-run-decision`.
+Workflow: `.github/workflows/dry-run-decision.yml`.
+
+The dry-run loads the live credential, snapshots Darian, records event count, requests exactly one Gemini proposal, runs `validate_action`, then asserts snapshot and event count are unchanged. Any mutation fails the command.
+
+Dry Run Darian Decision #3 / run `31632548092`: **SUCCESS**.
+
+Gemini proposed:
+- action: `rest`;
+- duration: 30 minutes;
+- target: `obj_bed`;
+- reason: `Resting for a short duration to maintain energy.`
+
+Validation passed and invariants proved:
+- `mutated=false`;
+- events before=0, after=0;
+- Darian state before/after identical;
+- sim time remained `2025-05-01T07:00:00+00:00`;
+- `autonomy_enabled=false` remained unchanged.
+
+This dry-run also exposed a validator gap: a non-move action can currently carry a semantically unnecessary/unchecked target (`rest` targeted `obj_bed`) and still pass. Fix before continuous autonomy.
+
+## Autonomy-engine audit — current boundary
+
+Continuous autonomy is NOT complete yet.
+
+Established pieces:
+- persistent world/character state;
+- validated atomic action application;
+- event-driven simulated time inside action application;
+- deterministic one-day acceptance loop;
+- model-backed decision provider;
+- provider/catalog/binding abstraction;
+- live Gemini structured decision generation;
+- non-mutating dry-run safety path.
+
+Missing or insufficient before production autonomy:
+1. `src/observer_sandbox/service.py` currently only initializes DB and sleeps; it does not run an autonomy worker.
+2. `autonomy_enabled`, `paused`, and `speed` are stored but not consumed by a live scheduling loop.
+3. No persistent pending/in-progress action scheduler exists for crash-safe resume at action/event boundaries.
+4. No lease/lock prevents duplicate concurrent cognition/action execution.
+5. Validator target semantics are incomplete for non-move actions; object-targeted actions need local-object/capability validation and irrelevant targets should be rejected/normalized.
+6. Available actions given to the model are currently a static vocabulary rather than context-filtered action specifications.
+7. Model context is still too thin for believable Darian behavior: current needs/topology/local objects are present, but canonical personality, routines, preferences, skills, recent events/memory, and stronger time-of-day guidance are not yet integrated. The generic 07:00 `rest` proposal demonstrates this limitation.
+8. Model-chosen duration only has a global 1-720 bound; action-specific duration/default limits are needed.
+9. No robust retry/backoff/fallback path exists for API errors, rate limits, invalid JSON, invalid actions, or quota exhaustion.
+10. No explicit rejected-decision/error audit events/metrics exist.
+11. The existing one-day autonomy acceptance test proves `BaselineLivingPolicy`, not live-model continuous autonomy.
+
+Do NOT set `autonomy_enabled=true` until these P1 autonomy-runtime gaps are addressed and controlled bounded-live acceptance passes.
 
 ## Production boundary
 
@@ -148,30 +185,26 @@ Service: `observer-sandbox` systemd.
 SSH/runtime user: `observer`.
 DB is not publicly exposed.
 
-Deployment path: GitHub main -> Actions -> SSH/rsync -> app install -> DB init/migration -> optional AI-secret/cognition setup -> systemd restart -> status/living-state/binding verification.
-
-P0 deployment/readback is live verified. P1 mechanics are CI validated, deployed, and live-read verified. Gemini credential provisioning, live catalog fetch, and Darian cognition binding are now live verified. Continuous live autonomy remains disabled by Creator instruction.
-
-## Remote operation policy
+Deployment path: GitHub main -> Actions -> SSH/rsync -> app install -> DB init/migration -> AI-secret/cognition setup -> systemd restart -> verification.
 
 Normal VPS work goes through GitHub Actions. Do not ask the Creator for Termux/root commands unless an unavoidable host/bootstrap-level issue cannot be handled through the established lane.
 
 ## Roadmap
 
 - P0 Foundation & Remote Control: COMPLETE / LIVE VERIFIED.
-- P0.5 Provider Layer: FOUNDATION COMPLETE; Gemini/NanoGPT structured decision adapters implemented; Gemini live credential/catalog/binding verified.
+- P0.5 Provider Layer: FOUNDATION COMPLETE; Gemini live credential/catalog/binding verified.
 - Deep Character Profile: IMPLEMENTED; Darian instantiated live.
-- P1 Living Darian Minimum: IN PROGRESS; real Gemini cognition is bound, but live autonomy is intentionally not enabled yet. Next safe step is a controlled one-decision verification that does not begin continuous progression.
-- P2 Telegram Observer: next after P1; include provider/model fetch + binding/change controls.
+- P1 Living Darian Minimum: IN PROGRESS. Mechanics + live Gemini decision path are established, but production continuous autonomy runtime still needs the audit gaps above fixed.
+- P2 Telegram Observer: after P1; include provider/model refresh/list/rebinding controls.
 - P3 Rich State & Memory: later.
 - P4 First simulation module: later.
 - P5 Second character: later.
 
 ## RESUME HERE
 
-1. Do not redo VPS bootstrap, secret provisioning, or Gemini catalog bootstrap unless newer evidence shows a problem.
-2. Keep `autonomy_enabled=false` until Creator explicitly approves enabling it.
-3. Current live cognition binding is `gemini / gemini-3.5-flash-lite` for `character:char_darian / cognition`, selected dynamically from a 52-model live catalog.
-4. Next safe verification is one controlled Gemini decision proposal with mutation either disabled or tightly bounded; do not start a continuous autonomous loop yet.
-5. P2 Telegram must later provide model catalog refresh/list/selection/rebinding using this same backend, not hard-coded model IDs.
+1. Keep `autonomy_enabled=false` until Creator explicitly approves and P1 autonomy-runtime acceptance passes.
+2. Do not redo VPS bootstrap, Gemini secret provisioning, catalog bootstrap, or dry-run plumbing.
+3. Current live cognition binding is `gemini / gemini-3.5-flash-lite` for `character:char_darian / cognition`, dynamically selected from the live catalog.
+4. Next work: harden action contracts/context, build the actual service autonomy scheduler/worker with pause/speed/lease/crash-resume semantics, add retries/fallback/audit logging, then run bounded live-model acceptance without turning on indefinite autonomy.
+5. P2 Telegram later wraps the same provider/catalog/binding backend for model fetch/change.
 6. Synchronize this file after every material change/live proof.
