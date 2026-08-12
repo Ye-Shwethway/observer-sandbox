@@ -37,4 +37,14 @@ jobs:
             sudo -n /usr/bin/systemctl is-active observer-sandbox
             OBSERVER_SANDBOX_DB=/var/lib/observer-sandbox/observer.sqlite3 .venv/bin/sandboxctl status
             OBSERVER_SANDBOX_DB=/var/lib/observer-sandbox/observer.sqlite3 .venv/bin/sandboxctl living-status
+            if grep -q "^OBSERVER_NANOGPT_API_KEY=.\+" /var/lib/observer-sandbox/secrets.env 2>/dev/null; then
+              echo "NANOGPT_CREDENTIAL_PRESENT=true"
+            else
+              echo "NANOGPT_CREDENTIAL_PRESENT=false"
+            fi
+            if grep -q "^OBSERVER_GEMINI_API_KEY=.\+" /var/lib/observer-sandbox/secrets.env 2>/dev/null; then
+              echo "GEMINI_CREDENTIAL_PRESENT=true"
+            else
+              echo "GEMINI_CREDENTIAL_PRESENT=false"
+            fi
           '
