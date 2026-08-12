@@ -2,7 +2,7 @@
 
 Status: ACTIVE
 Purpose: deterministic project recovery across ChatGPT sessions and protection against memory drift.
-Last synchronized: 2026-08-13 — P0 is LIVE VERIFIED. P1 Living Darian core runtime/cognition/autonomy is hardened and first production canary passed; continuous production autonomy remains intentionally OFF. P2.1 Telegram Observer MVP code is now IMPLEMENTED / CI-VALIDATED / DEPLOYED, but Telegram transport is not live yet because no bot token is provisioned.
+Last synchronized: 2026-08-13 — P0 is LIVE VERIFIED. P1 Living Darian core runtime/cognition/autonomy is hardened and first production canary passed; continuous production autonomy remains intentionally OFF. P2.1 Telegram Observer MVP code is IMPLEMENTED / CI-VALIDATED / DEPLOYED. Telegram authorization now separates one privileged Owner identity from ordinary Allowed Users. Telegram transport is not live yet because no bot token is provisioned.
 
 ## HARD RECOVERY RULES
 
@@ -85,7 +85,7 @@ First real production autonomous action already passed:
 - reason: moving out of bedroom to begin morning training routine;
 - canary auto-disabled afterward.
 
-`sandboxctl autonomy canary-once` is now synchronous/bounded and completes exactly one action through the normal scheduler path before auto-disabling.
+`sandboxctl autonomy canary-once` is synchronous/bounded and completes exactly one action through the normal scheduler path before auto-disabling.
 Continuous production autonomy remains OFF until the Telegram observation surface is usable and the Creator explicitly approves activation.
 
 ## P2 Telegram Observer — canonical architecture
@@ -97,6 +97,7 @@ Future navigation model:
 - Universe -> Location -> Sublocation/Room -> Contents/Items
 - Characters -> selected character -> current state / full profile / history / later inventory / relationships / physiology
 - Provider/model browsing + refresh + binding changes later
+- Owner-managed user access later
 
 Stable IDs drive backend queries. `/darian` and `/home` are MVP convenience entry points only; they call generic character/location query services.
 Telegram presentation/session state may remember selected resources later, but authoritative world state remains in runtime/DB.
@@ -105,7 +106,7 @@ Telegram presentation/session state may remember selected resources later, but a
 
 Implemented files:
 - `src/observer_sandbox/observer_query.py` — reusable generic observer/query service;
-- `src/observer_sandbox/telegram_bot.py` — Telegram Bot API transport + command routing;
+- `src/observer_sandbox/telegram_bot.py` — Telegram Bot API transport + command routing + role-aware authorization;
 - `src/observer_sandbox/service.py` — starts Telegram polling thread only when token exists;
 - `tests/test_observer_query.py`;
 - `tests/test_telegram_bot.py`.
@@ -126,21 +127,37 @@ Current MVP commands:
 - `/speed <value>`
 - `/whoami`
 
-Authorization:
-- `OBSERVER_TELEGRAM_ALLOWED_USER_IDS` is a comma-separated private allowlist.
-- Unknown users receive no world data/control access.
-- If the bot token is present but the allowlist is not yet set, `/start` or `/whoami` returns only the caller's own Telegram user id, enabling safe bootstrap; all other commands remain unauthorized.
-- Telegram token and allowlist are provisioned only through `/var/lib/observer-sandbox/secrets.env` mode 0600.
+## Telegram authorization model
 
-GitHub deployment now supports optional secrets:
+Authorization is deliberately split into three roles:
+
+1. **Owner** — one privileged Telegram user id from `OBSERVER_TELEGRAM_OWNER_ID`. Owner is automatically authorized and does not need to appear in the normal allowlist.
+2. **Allowed user** — zero or more ids from comma-separated `OBSERVER_TELEGRAM_ALLOWED_USER_IDS`. These users can use the currently exposed observer/control surface but are not the root authority for future user management.
+3. **Unauthorized user** — no world data/control. `/start` and `/whoami` may reveal only that caller's own Telegram id and authorization state for bootstrap.
+
+`/whoami` reports both Telegram user id and role for authorized callers.
+
+Future user management should be owner-only and may add persistent list/add/remove/role operations. Ordinary allowed users must never be able to replace, remove, demote, or self-grant Owner authority. The environment-backed Owner ID remains the bootstrap/root trust anchor unless a later explicit migration changes this design.
+
+Telegram credential/config secrets:
 - `OBSERVER_TELEGRAM_BOT_TOKEN`
+- `OBSERVER_TELEGRAM_OWNER_ID`
 - `OBSERVER_TELEGRAM_ALLOWED_USER_IDS`
 
-CI #133 / run `31636840194`: SUCCESS.
-Deploy #67 / run `31636840198`: SUCCESS.
-Deploy #67 verified service healthy and production Darian/autonomy unchanged, but `TELEGRAM_BOT_TOKEN_PRESENT=false` because the Creator has not yet provisioned a Telegram bot token.
+All are provisioned only through `/var/lib/observer-sandbox/secrets.env` mode 0600; values are never logged.
 
-Therefore P2.1 is **code/deploy ready but not end-to-end live accepted**.
+GitHub deployment provisions all three fields separately and reports only boolean presence for the bot token / owner id.
+
+Authorization tests cover:
+- unauthorized identity-only bootstrap;
+- Owner authorized without duplicate allowlist entry;
+- Allowed User distinct from Owner;
+- unauthorized users denied world/control data;
+- existing MVP observer/control commands remain functional for authorized users.
+
+CI #137 / run `31637361430`: SUCCESS.
+Deploy #69 / run `31637361275`: SUCCESS.
+The owner/allowed-user role split is therefore code-validated and deployed. Telegram transport remains inactive until a bot token is provided.
 
 ## P2 staging
 
@@ -151,10 +168,11 @@ Remaining steps:
 2. add GitHub Actions secret `OBSERVER_TELEGRAM_BOT_TOKEN`;
 3. deploy and verify Bot API connectivity;
 4. Creator sends `/start` or `/whoami` to retrieve Telegram user id;
-5. add GitHub Actions secret `OBSERVER_TELEGRAM_ALLOWED_USER_IDS`;
-6. redeploy;
-7. live-test `/status`, `/watch`, `/history`, `/darian`, `/home`, pause/resume/speed;
-8. only then consider continuous autonomy activation.
+5. set that id as GitHub Actions secret `OBSERVER_TELEGRAM_OWNER_ID`;
+6. optionally configure `OBSERVER_TELEGRAM_ALLOWED_USER_IDS` separately for additional users; Owner must not be duplicated there;
+7. redeploy;
+8. live-test `/whoami`, `/status`, `/watch`, `/history`, `/darian`, `/home`, pause/resume/speed;
+9. only then consider continuous autonomy activation.
 
 ### P2.2 — Browse the sandbox
 - location list/selection;
@@ -164,6 +182,7 @@ Remaining steps:
 - detailed profile section browsing/pagination.
 
 ### P2.3 — Creator control expansion
+- owner-only user management;
 - provider/model catalog browse/refresh;
 - dynamic binding change;
 - richer controls/history filtering;
@@ -175,7 +194,7 @@ Remaining steps:
 - P0.5 Provider Layer: FOUNDATION COMPLETE; Gemini live binding verified.
 - Deep Character Profile: IMPLEMENTED / live Darian instantiated.
 - P1 Living Darian Minimum: CORE + HARDENING + FIRST PRODUCTION CANARY COMPLETE / LIVE VERIFIED; continuous autonomy OFF.
-- P2 Telegram Observer: ACTIVE. P2.1 code/deploy foundation complete; waiting only for Telegram bot credential + allowlist live acceptance.
+- P2 Telegram Observer: ACTIVE. P2.1 code/deploy foundation complete; Owner vs Allowed User architecture implemented/deployed; waiting for Telegram bot credential + Owner ID live acceptance.
 - P3 Rich State & Memory: later.
 - P4 First simulation module: later.
 - P5 Second character: later; observer architecture is already generic/multi-character ready.
@@ -186,7 +205,8 @@ Remaining steps:
 2. Do not redo P0/P1/Gemini/canary work unless newer evidence shows regression.
 3. P2.1 code is already deployed; next blocker is `OBSERVER_TELEGRAM_BOT_TOKEN`.
 4. After token provisioning, deploy, then use `/start` or `/whoami` to obtain Creator Telegram user id without exposing world data.
-5. Add that id to `OBSERVER_TELEGRAM_ALLOWED_USER_IDS`, redeploy, then perform live command acceptance.
-6. Keep Telegram handlers thin; add future rooms/items/full profiles/character selection through generic query services rather than bot-specific DB logic.
-7. Continuous `enable` remains intentionally absent from remote Actions control workflow until post-Telegram approval.
-8. Synchronize this file after every material change/live proof.
+5. Set Creator id in `OBSERVER_TELEGRAM_OWNER_ID`; do not duplicate it in `OBSERVER_TELEGRAM_ALLOWED_USER_IDS`.
+6. Additional users belong only in `OBSERVER_TELEGRAM_ALLOWED_USER_IDS`; future user-management mutations must be Owner-only.
+7. Keep Telegram handlers thin; add future rooms/items/full profiles/character selection through generic query services rather than bot-specific DB logic.
+8. Continuous `enable` remains intentionally absent from remote Actions control workflow until post-Telegram approval.
+9. Synchronize this file after every material change/live proof.
