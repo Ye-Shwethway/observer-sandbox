@@ -35,6 +35,31 @@ ACTION_NAMES = [
     "idle",
 ]
 
+# Next-hop routing for the authored Home v1 graph. The runtime still validates every
+# move against stored relations, so this policy never bypasses world topology.
+NEXT_HOP = {
+    ("room_bedroom", "room_bathroom"): "room_bathroom",
+    ("room_bedroom", "room_living"): "room_living",
+    ("room_bedroom", "room_kitchen"): "room_bathroom",
+    ("room_bedroom", "room_gym"): "room_living",
+    ("room_bathroom", "room_bedroom"): "room_bedroom",
+    ("room_bathroom", "room_living"): "room_bedroom",
+    ("room_bathroom", "room_kitchen"): "room_kitchen",
+    ("room_bathroom", "room_gym"): "room_bedroom",
+    ("room_living", "room_bedroom"): "room_bedroom",
+    ("room_living", "room_bathroom"): "room_bedroom",
+    ("room_living", "room_kitchen"): "room_kitchen",
+    ("room_living", "room_gym"): "room_gym",
+    ("room_kitchen", "room_bedroom"): "room_bathroom",
+    ("room_kitchen", "room_bathroom"): "room_bathroom",
+    ("room_kitchen", "room_living"): "room_living",
+    ("room_kitchen", "room_gym"): "room_living",
+    ("room_gym", "room_bedroom"): "room_living",
+    ("room_gym", "room_bathroom"): "room_living",
+    ("room_gym", "room_kitchen"): "room_living",
+    ("room_gym", "room_living"): "room_living",
+}
+
 
 def _clamp(value: float) -> float:
     return max(0.0, min(100.0, round(value, 3)))
@@ -216,6 +241,15 @@ def apply_action(conn: sqlite3.Connection, action: Action, actor_id: str = "char
     return after
 
 
+def _move_toward(location: str, destination: str, reason: str) -> Action:
+    if location == destination:
+        raise ValueError("move_toward called while already at destination")
+    target = NEXT_HOP.get((location, destination))
+    if target is None:
+        raise ValueError(f"No authored Home v1 route from {location} to {destination}")
+    return Action("move", 5, target, reason)
+
+
 class BaselineLivingPolicy:
     """Deterministic P1 acceptance policy behind the same boundary used by future LLM decisions."""
 
@@ -224,32 +258,32 @@ class BaselineLivingPolicy:
         if state["sleepiness"] >= 72 or state["energy"] <= 28:
             if location == "room_bedroom":
                 return Action("sleep", 480, reason="recover from high sleep pressure")
-            return Action("move", 5, "room_bedroom", "go to bed")
+            return _move_toward(location, "room_bedroom", "go to bed")
         if state["thirst"] >= 55:
             if location == "room_kitchen":
                 return Action("drink", 5, reason="respond to thirst")
-            return Action("move", 5, "room_kitchen", "get water")
+            return _move_toward(location, "room_kitchen", "get water")
         if state["hunger"] >= 60:
             if location == "room_kitchen":
                 return Action("eat", 25, reason="respond to hunger")
-            return Action("move", 5, "room_kitchen", "get food")
+            return _move_toward(location, "room_kitchen", "get food")
         if state["cleanliness"] <= 45:
             if location == "room_bathroom":
                 return Action("shower", 15, reason="restore cleanliness")
-            return Action("move", 5, "room_bathroom", "take a shower")
+            return _move_toward(location, "room_bathroom", "take a shower")
 
         hour = datetime.fromisoformat(state["sim_time"]).hour
         if 8 <= hour < 11 and state["energy"] >= 50:
             if location == "room_gym":
                 return Action("train", 60, reason="morning training block")
-            return Action("move", 5, "room_gym", "start morning training")
+            return _move_toward(location, "room_gym", "start morning training")
         if 19 <= hour < 22:
             if location == "room_living":
                 return Action("read", 45, reason="evening wind-down")
-            return Action("move", 5, "room_living", "wind down in living room")
+            return _move_toward(location, "room_living", "wind down in living room")
         if location == "room_living":
             return Action("rest", 30, reason="unstructured recovery time")
-        return Action("move", 5, "room_living", "return to common area")
+        return _move_toward(location, "room_living", "return to common area")
 
 
 def run_until(
