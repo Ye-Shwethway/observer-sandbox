@@ -36,4 +36,5 @@ jobs:
             cd /opt/observer-sandbox
             sudo -n /usr/bin/systemctl is-active observer-sandbox
             OBSERVER_SANDBOX_DB=/var/lib/observer-sandbox/observer.sqlite3 .venv/bin/sandboxctl status
+            OBSERVER_SANDBOX_DB=/var/lib/observer-sandbox/observer.sqlite3 .venv/bin/sandboxctl living-status
           '
