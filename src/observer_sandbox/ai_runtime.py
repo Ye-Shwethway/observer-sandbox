@@ -58,22 +58,17 @@ def _provider_and_key(conn: sqlite3.Connection, provider_id: str) -> tuple[sqlit
 def _decision_prompt(state: dict[str, Any], available_actions: list[str]) -> str:
     return (
         "You control one autonomous simulated human. Choose exactly one next action. "
-        "Respect the supplied world topology and local capabilities. Do not invent rooms, objects, "
-        "actions, or direct state changes. The runtime will reject invalid actions.\n\n"
-        f"Available action names: {json.dumps(available_actions)}\n"
-        f"Current state: {json.dumps(state, ensure_ascii=False, sort_keys=True)}\n\n"
-        "Return only the structured decision. For actions that do not need a target, use an empty string. "
-        "For move, target must be one of reachable_rooms. Keep reason short."
+        "Act consistently with the supplied character traits, preferences, habits, skills, routine guidance, recent events, current time, and physiological state. "
+        "Physiological needs and safety override routine preferences. Do not invent rooms, objects, actions, or direct state changes.\n\n"
+        f"Known action vocabulary: {json.dumps(available_actions)}\n"
+        f"Runtime context: {json.dumps(state, ensure_ascii=False, sort_keys=True)}\n\n"
+        "The action_options array is authoritative. Choose an action/target pair that appears there, and choose duration_minutes within that option's duration bounds. "
+        "For idle only, target must be an empty string. For every other action, copy the exact target id from action_options. "
+        "Return only the structured decision and keep reason short and character-grounded."
     )
 
 
-def _generate_nanogpt(
-    provider: sqlite3.Row,
-    key: str,
-    model_id: str,
-    prompt: str,
-    parameters: dict[str, Any],
-) -> dict[str, Any]:
+def _generate_nanogpt(provider: sqlite3.Row, key: str, model_id: str, prompt: str, parameters: dict[str, Any]) -> dict[str, Any]:
     base = provider["base_url"]
     if not base:
         raise AIConfigurationError("NanoGPT base_url is not configured")
@@ -83,11 +78,7 @@ def _generate_nanogpt(
         "stream": False,
         "response_format": {
             "type": "json_schema",
-            "json_schema": {
-                "name": "observer_sandbox_decision",
-                "strict": True,
-                "schema": DECISION_SCHEMA,
-            },
+            "json_schema": {"name": "observer_sandbox_decision", "strict": True, "schema": DECISION_SCHEMA},
         },
     }
     payload.update(parameters)
@@ -103,28 +94,15 @@ def _generate_nanogpt(
         raise AIDecisionError("NanoGPT returned an unusable structured decision") from exc
 
 
-def _generate_gemini(
-    provider: sqlite3.Row,
-    key: str,
-    model_id: str,
-    prompt: str,
-    parameters: dict[str, Any],
-) -> dict[str, Any]:
+def _generate_gemini(provider: sqlite3.Row, key: str, model_id: str, prompt: str, parameters: dict[str, Any]) -> dict[str, Any]:
     base = provider["base_url"]
     if not base:
         raise AIConfigurationError("Gemini base_url is not configured")
-    generation_config = {
-        "responseMimeType": "application/json",
-        "responseJsonSchema": DECISION_SCHEMA,
-        **parameters,
-    }
+    generation_config = {"responseMimeType": "application/json", "responseJsonSchema": DECISION_SCHEMA, **parameters}
     response = _post_json(
         f"{base.rstrip('/')}/models/{model_id}:generateContent",
         headers={"x-goog-api-key": key, "Accept": "application/json"},
-        payload={
-            "contents": [{"parts": [{"text": prompt}]}],
-            "generationConfig": generation_config,
-        },
+        payload={"contents": [{"parts": [{"text": prompt}]}], "generationConfig": generation_config},
     )
     try:
         text = response["candidates"][0]["content"]["parts"][0]["text"]
@@ -144,20 +122,15 @@ def generate_character_decision(
     binding = resolve_binding(conn, role=role, character_id=character_id)
     if binding is None:
         raise AIConfigurationError(f"No AI binding resolved for {character_id}/{role}")
-
     provider, key = _provider_and_key(conn, binding["provider_id"])
     prompt = _decision_prompt(state, available_actions)
     parameters = binding.get("parameters") or {}
-
     if provider["adapter_type"] == "nanogpt":
         decision = _generate_nanogpt(provider, key, binding["model_id"], prompt, parameters)
     elif provider["adapter_type"] == "gemini":
         decision = _generate_gemini(provider, key, binding["model_id"], prompt, parameters)
     else:
-        raise AIConfigurationError(
-            f"P1 live decision adapter not yet enabled for provider type: {provider['adapter_type']}"
-        )
-
+        raise AIConfigurationError(f"P1 live decision adapter not yet enabled for provider type: {provider['adapter_type']}")
     if not isinstance(decision, dict):
         raise AIDecisionError("AI decision must be a JSON object")
     required = {"action", "duration_minutes", "target", "reason"}
