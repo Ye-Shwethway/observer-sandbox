@@ -112,17 +112,16 @@ class ModelDecisionProvider:
 
         needs_attention: list[dict[str, Any]] = []
         for need, (direction, value) in checks.items():
-            critical_key = f"{need}_{direction}"
-            strong_key = f"{need}_{direction}"
+            key = f"{need}_{direction}"
             level = None
             threshold = None
-            if critical_key in critical:
-                candidate = float(critical[critical_key])
+            if key in critical:
+                candidate = float(critical[key])
                 if (direction == "gte" and value >= candidate) or (direction == "lte" and value <= candidate):
                     level = "critical"
                     threshold = candidate
-            if level is None and strong_key in strong:
-                candidate = float(strong[strong_key])
+            if level is None and key in strong:
+                candidate = float(strong[key])
                 if (direction == "gte" and value >= candidate) or (direction == "lte" and value <= candidate):
                     level = "strong"
                     threshold = candidate
@@ -146,12 +145,31 @@ class ModelDecisionProvider:
                 }
                 break
 
+        recommended_duration = None
+        highest = needs_attention[0] if needs_attention else None
+        if (
+            highest
+            and highest["need"] == "sleepiness"
+            and highest["level"] == "critical"
+            and active_routine
+            and active_routine["name"] == "night_sleep"
+        ):
+            guidance = self.policy.get("duration_guidance", {}).get("critical_night_sleep")
+            if guidance:
+                recommended_duration = {
+                    "action": guidance["action"],
+                    "min_minutes": guidance["min_minutes"],
+                    "max_minutes": guidance["max_minutes"],
+                    "guidance": guidance["guidance"],
+                }
+
         return {
             "needs_attention": needs_attention,
-            "highest_priority": needs_attention[0] if needs_attention else None,
+            "highest_priority": highest,
             "active_routine": active_routine,
+            "recommended_duration": recommended_duration,
             "instruction": (
-                "Address highest_priority before discretionary routine behavior and make the reason explicitly reflect it."
+                "Address highest_priority before discretionary routine behavior, make the reason explicitly reflect it, and follow recommended_duration when present."
                 if needs_attention
                 else "No strong physiological need is active; routine and character preferences may guide the next action."
             ),
