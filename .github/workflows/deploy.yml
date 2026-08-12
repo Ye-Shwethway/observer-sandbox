@@ -113,11 +113,13 @@ jobs:
             if grep -Eq "^OBSERVER_TELEGRAM_BOT_TOKEN=.+" /var/lib/observer-sandbox/secrets.env 2>/dev/null; then
               echo "TELEGRAM_BOT_TOKEN_PRESENT=true"
               TOKEN=$(sed -n "s/^OBSERVER_TELEGRAM_BOT_TOKEN=//p" /var/lib/observer-sandbox/secrets.env | head -n1)
-              TG_JSON=$(curl -fsS --max-time 15 "https://api.telegram.org/bot${TOKEN}/getMe")
-              if printf "%s\n" "$TG_JSON" | grep -Eq '"ok"[[:space:]]*:[[:space:]]*true'; then
+              TG_JSON=$(curl -sS --max-time 15 "https://api.telegram.org/bot${TOKEN}/getMe")
+              TG_OK=$(printf "%s\n" "$TG_JSON" | .venv/bin/python -c "import json,sys; d=json.load(sys.stdin); print(str(bool(d.get(\"ok\"))).lower())")
+              if [ "$TG_OK" = "true" ]; then
                 echo "TELEGRAM_API_CONNECTED=true"
               else
                 echo "TELEGRAM_API_CONNECTED=false"
+                printf "%s\n" "$TG_JSON" | .venv/bin/python -c "import json,sys; d=json.load(sys.stdin); print(\"TELEGRAM_API_ERROR_CODE=\" + str(d.get(\"error_code\", \"\"))); print(\"TELEGRAM_API_DESCRIPTION=\" + str(d.get(\"description\", \"\")))"
                 exit 1
               fi
             else
