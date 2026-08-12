@@ -44,4 +44,4 @@ def test_universe_boot_message_is_creator_facing():
     message = _boot_message()
     assert "Universe is alive!" in message
     assert "Wake-on-demand" in message
-    assert "/status" in message
+    assert "/start" in message
