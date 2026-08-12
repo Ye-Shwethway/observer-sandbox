@@ -93,7 +93,7 @@ jobs:
             .venv/bin/pip install -e .
             export OBSERVER_SANDBOX_DB=/var/lib/observer-sandbox/observer.sqlite3
             .venv/bin/sandboxctl init
-            if grep -q "^OBSERVER_GEMINI_API_KEY=.+" /var/lib/observer-sandbox/secrets.env 2>/dev/null; then
+            if grep -Eq "^OBSERVER_GEMINI_API_KEY=.+" /var/lib/observer-sandbox/secrets.env 2>/dev/null; then
               .venv/bin/sandboxctl ai bootstrap-gemini-cognition
             else
               echo "Gemini cognition bootstrap skipped: credential not provisioned"
@@ -103,4 +103,4 @@ jobs:
             .venv/bin/sandboxctl status
             .venv/bin/sandboxctl living-status
             .venv/bin/sandboxctl ai resolve cognition --character char_darian
-          '
+          ' 
