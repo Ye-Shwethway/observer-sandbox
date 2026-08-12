@@ -23,6 +23,13 @@ def _entity(conn: sqlite3.Connection, entity_id: str) -> dict[str, Any] | None:
     }
 
 
+def _entity_name(conn: sqlite3.Connection, entity_id: str | None) -> str | None:
+    if not entity_id:
+        return None
+    entity = _entity(conn, entity_id)
+    return entity["name"] if entity else None
+
+
 def character_summary(conn: sqlite3.Connection, character_id: str = "char_darian") -> dict[str, Any]:
     entity = _entity(conn, character_id)
     if entity is None:
@@ -96,13 +103,15 @@ def recent_history(conn: sqlite3.Connection, *, character_id: str = "char_darian
     result: list[dict[str, Any]] = []
     for row in rows:
         payload = json.loads(row["payload_json"])
+        target = payload.get("target")
         result.append(
             {
                 "id": row["id"],
                 "sim_time": row["sim_time"],
                 "event_type": row["event_type"],
                 "action": payload.get("action"),
-                "target": payload.get("target"),
+                "target": target,
+                "target_name": _entity_name(conn, target),
                 "reason": payload.get("reason"),
                 "payload": payload,
             }
@@ -112,5 +121,8 @@ def recent_history(conn: sqlite3.Connection, *, character_id: str = "char_darian
 
 def observer_status(conn: sqlite3.Connection, character_id: str = "char_darian") -> dict[str, Any]:
     status = autonomy_status(conn, character_id)
+    pending = status.get("pending_action")
+    if pending:
+        status["pending_target_name"] = _entity_name(conn, pending.get("target"))
     status["recent_history"] = recent_history(conn, character_id=character_id, limit=5)
     return status
