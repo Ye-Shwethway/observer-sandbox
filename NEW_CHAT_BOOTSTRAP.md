@@ -2,7 +2,7 @@
 
 Status: ACTIVE
 Purpose: deterministic project recovery across ChatGPT sessions and protection against memory drift.
-Last synchronized: 2026-08-13 — P0 remote deployment/control is COMPLETE / LIVE VERIFIED. P0.5 AI-provider foundation and Darian deep-profile foundation are established. P1 Living Darian Minimum is IN PROGRESS: Home v1, Darian runtime instantiation, validated action engine, event-driven time, one-day autonomous acceptance, model-backed structured decision adapters, and private AI-secret provisioning are implemented. Continuous live autonomy remains intentionally disabled until a real cognition provider/model is configured and verified.
+Last synchronized: 2026-08-13 — P0 remote deployment/control is COMPLETE / LIVE VERIFIED. P0.5 AI-provider foundation and Darian deep-profile foundation are established. P1 Living Darian Minimum is IN PROGRESS: Home v1, Darian runtime instantiation, validated action engine, event-driven time, one-day autonomous acceptance, model-backed structured decision adapters, and private AI-secret provisioning are implemented. Continuous live autonomy remains intentionally disabled because Runtime Read #3 verified that neither NanoGPT nor Gemini credential is currently provisioned in this repository/VPS path.
 
 ## HARD RECOVERY RULES
 
@@ -63,11 +63,8 @@ Important tables include `entities`, `relations`, `fields`, `events`, `runtime_s
 
 Field modes: `canonical`, `static`, `derived`, `simulated`. Every actively mutable field must have one clear update authority.
 
-Darian canonical fixture:
-- `config/characters/darian.canonical.json`
-
-Runtime baseline fixture:
-- `config/characters/darian.runtime-defaults.json`
+Darian canonical fixture: `config/characters/darian.canonical.json`.
+Runtime baseline fixture: `config/characters/darian.runtime-defaults.json`.
 
 Current locked profile decisions include age 22 in the May-2025 baseline, height 6'4", weight 215 lb, body fat 9%, IQ 140, approved RAPS values, rich body/genetic/visual/skill/preference/routine data, and first-class intimate anatomy.
 
@@ -85,11 +82,7 @@ Sexual physiology semantics:
 
 Model IDs must never be hard-coded into character or engine logic.
 
-Built-in provider registry:
-- Gemini
-- NanoGPT
-- OpenAI
-- OpenRouter
+Built-in registry: Gemini, NanoGPT, OpenAI, OpenRouter.
 
 Resolution concept: `Provider -> Catalog -> Model Binding -> Runtime Adapter`.
 
@@ -105,49 +98,32 @@ NanoGPT remains subscription-first:
 - base `https://nano-gpt.com/api`;
 - catalog `/subscription/v1/models?detailed=true`;
 - usage `/subscription/v1/usage`;
-- live subscription generation `/subscription/v1/chat/completions`;
+- subscription generation `/subscription/v1/chat/completions`;
 - do not force upstream provider selection for normal subscription traffic.
 
-Gemini and NanoGPT now have P1 structured-decision generation support in `src/observer_sandbox/ai_runtime.py`.
+Gemini and NanoGPT have P1 structured-decision generation support in `src/observer_sandbox/ai_runtime.py`.
 
-Structured decision schema:
-- `action`
-- `duration_minutes`
-- `target`
-- `reason`
+Structured decision schema: `action`, `duration_minutes`, `target`, `reason`.
 
-`src/observer_sandbox/model_decision.py` implements `ModelDecisionProvider`, enriches the snapshot with reachable rooms/local objects, resolves the logical `cognition` binding, and asks the selected model for exactly one structured action. Model output is still subject to the normal runtime validator; invalid AI output must never mutate the DB.
+`src/observer_sandbox/model_decision.py` implements `ModelDecisionProvider`, enriches snapshots with reachable rooms/local objects, resolves the logical `cognition` binding, and asks the selected model for one structured action. Model output is still subject to normal runtime validation; invalid AI output must never mutate the DB.
 
-Unit coverage in `tests/test_model_decision.py` proves that a NanoGPT-bound structured decision can resolve without direct world mutation.
+`tests/test_model_decision.py` proves NanoGPT-bound structured decision resolution without direct world mutation.
 
-Provider credentials remain secret references only. The deploy workflow now optionally provisions these GitHub Actions secrets to a private VPS file:
+Provider credentials remain secret references only. Deploy optionally provisions these GitHub Actions secrets to `/var/lib/observer-sandbox/secrets.env`:
 - `OBSERVER_GEMINI_API_KEY`
 - `OBSERVER_NANOGPT_API_KEY`
 - `OBSERVER_OPENAI_API_KEY`
 - `OBSERVER_OPENROUTER_API_KEY`
 
-VPS secret file:
-- `/var/lib/observer-sandbox/secrets.env`
-- owned/writable by the `observer` runtime user;
-- mode 0600;
-- never log or expose values.
-
-`src/observer_sandbox/secrets.py` self-loads non-empty values into the runtime environment before model decisions, avoiding another root/systemd bootstrap change.
-
-Runtime Read may report only boolean credential presence, never values.
+Secret file is mode 0600 and must never be logged or exposed. `src/observer_sandbox/secrets.py` loads non-empty values before model decisions, so no further root/systemd bootstrap is required.
 
 ## P1 Living Darian Minimum — implemented mechanics
 
 World seed: `config/worlds/home.v1.json`.
 
-Home v1 contains 5 rooms:
-- Bedroom
-- Kitchen
-- Bathroom
-- Living Room
-- Home Gym
+Home v1 has 5 rooms: Bedroom, Kitchen, Bathroom, Living Room, Home Gym.
 
-Home v1 contains 15 useful objects including bed, shower, sink, refrigerator, pantry, stove, dining table, sofa, bookshelf, drinking water, meal ingredients, free weights and heavy bag.
+It has 15 useful objects including bed, shower, sink, refrigerator, pantry, stove, dining table, sofa, bookshelf, drinking water, meal ingredients, free weights and heavy bag.
 
 Runtime/world modules:
 - `src/observer_sandbox/world.py`
@@ -155,7 +131,7 @@ Runtime/world modules:
 
 Darian is instantiated as `char_darian` from the canonical fixture.
 
-Current P1 live/runtime fields:
+Current P1 runtime fields:
 - `runtime.location`
 - `runtime.current_action`
 - `needs.energy`
@@ -164,33 +140,19 @@ Current P1 live/runtime fields:
 - `needs.sleepiness`
 - `physiology.cleanliness`
 
-Semantics:
-- energy = reserve; high is good;
-- hunger/thirst/sleepiness = pressure; high is bad;
-- values are clamped 0-100.
+Semantics: energy is reserve/high-good; hunger/thirst/sleepiness are pressure/high-bad; values clamp 0-100.
 
-Validated P1 action vocabulary:
-- move
-- sleep
-- eat
-- drink
-- shower
-- rest
-- inspect
-- use
-- train
-- read
-- idle
+Validated action vocabulary: move, sleep, eat, drink, shower, rest, inspect, use, train, read, idle.
 
-Movement is graph-constrained. Non-adjacent teleporting is rejected. Actions have durations and advance simulated time at event boundaries. Every completed action writes an `action_completed` event with before/after snapshots.
+Movement is graph-constrained. Non-adjacent teleporting is rejected. Actions advance simulated time at event boundaries. Every completed action writes an `action_completed` event with before/after snapshots.
 
-`DecisionProvider` is the stable selection interface. `BaselineLivingPolicy` is deterministic and exists only for mechanics/acceptance testing. `ModelDecisionProvider` is the live AI-compatible implementation.
+`DecisionProvider` is the stable selection interface. `BaselineLivingPolicy` is deterministic and only for mechanics/acceptance testing. `ModelDecisionProvider` is the live AI-compatible implementation.
 
 CLI:
 - `sandboxctl living-status`
 - `sandboxctl simulate-day`
 
-P1 acceptance test `tests/test_p1_living.py` proves Home/Darian seeding, invalid movement rejection, exactly 24 simulated hours of bounded autonomous activity, durable events and bounded final needs.
+`tests/test_p1_living.py` proves Home/Darian seeding, invalid movement rejection, exactly 24 simulated hours of bounded autonomous activity, durable events and bounded final needs.
 
 ## Current verified production boundary
 
@@ -208,13 +170,13 @@ VPS:
 Deployment transport:
 `GitHub main -> Actions -> SSH/rsync -> app install -> DB init/migration -> systemd restart -> status/living-state verification`.
 
-P1 mechanics live proof:
-- CI run #52 / id `31630284060` passed the first living acceptance slice.
-- Deploy run #28 / id `31630283999` deployed the living mechanics.
-- Runtime Read #2 / id `31630356571` verified service active, schema v3 healthy, and live Darian state.
+P1 mechanics proof:
+- CI #52 / id `31630284060`: success.
+- Deploy #28 / id `31630283999`: success.
+- Runtime Read #2 / id `31630356571`: service/schema/live Darian read success.
 
 Observed live Darian baseline:
-- location Bedroom;
+- Bedroom;
 - current action idle;
 - energy 75;
 - hunger 20;
@@ -223,13 +185,19 @@ Observed live Darian baseline:
 - cleanliness 80;
 - sim time `2025-05-01T07:00:00+00:00`.
 
-Latest model/secret-path validation:
-- CI run #60 / id `31630745170`: **SUCCESS**.
-- Deploy run #33 / id `31630745178`: **SUCCESS**.
-- deploy steps included optional AI secret provisioning plus install/init/restart/living-status verification.
-- deployed commit: `6c8edef3cf65bab3434836172b28cb1dc62ace17`.
+Latest model/secret-path proof:
+- CI #60 / id `31630745170`: **SUCCESS**.
+- Deploy #33 / id `31630745178`: **SUCCESS**.
+- deployed commit `6c8edef3cf65bab3434836172b28cb1dc62ace17`.
+- deploy included optional AI-secret provisioning and living-state verification.
 
-`autonomy_enabled=false` remains intentional. Do not turn on unattended continuous production progression merely because the deterministic acceptance loop or model adapter exists. First verify a real provider credential, refresh its catalog, bind one concrete model to `character:char_darian / cognition`, obtain a valid structured decision, and confirm runtime validation behavior.
+Latest credential-presence proof:
+- Runtime Read #3 / id `31630833063`: **SUCCESS**.
+- `NANOGPT_CREDENTIAL_PRESENT=false`.
+- `GEMINI_CREDENTIAL_PRESENT=false`.
+- no secret values were exposed.
+
+`autonomy_enabled=false` is intentional and must stay false until one real provider credential is provisioned, its catalog refreshed, one returned model bound to `character:char_darian / cognition`, and a controlled structured decision is validated live.
 
 ## Remote-operation policy
 
@@ -239,22 +207,23 @@ Exact sudo service verification command remains `systemctl is-active observer-sa
 
 ## Roadmap state
 
-- **P0 — Foundation & Remote Control:** COMPLETE / LIVE VERIFIED.
-- **P0.5 — AI Provider Layer:** FOUNDATION COMPLETE / CI-VALIDATED / model decision adapters implemented for Gemini + NanoGPT.
-- **Deep Character Profile Foundation:** IMPLEMENTED / CI-VALIDATED / Darian instantiated live.
-- **P1 — Living Darian Minimum:** IN PROGRESS. World/state/action/time/event mechanics are live; structured model-decision path is implemented and deployed; live provider credential/catalog/binding/decision verification and controlled continuous autonomy remain.
-- **P2 — Telegram Observer:** later.
-- **P3 — Rich State & Memory:** later.
-- **P4 — First plug-in simulation module:** later.
-- **P5 — Second character:** later.
+- **P0:** COMPLETE / LIVE VERIFIED.
+- **P0.5:** FOUNDATION COMPLETE / CI-VALIDATED / Gemini + NanoGPT decision adapters implemented.
+- **Deep Character Profile:** IMPLEMENTED / CI-VALIDATED / Darian instantiated live.
+- **P1:** IN PROGRESS. World/state/action/time/event mechanics are live; structured model-decision path and secret transport are deployed; real provider credential/catalog/binding/decision verification and controlled continuous autonomy remain.
+- **P2 Telegram Observer:** later.
+- **P3 Rich State & Memory:** later.
+- **P4 First simulation module:** later.
+- **P5 Second character:** later.
 
 ## RESUME HERE
 
 1. Do not redo P0 or VPS bootstrap.
-2. Keep `autonomy_enabled=false` until live AI selection is proven.
-3. Read `src/observer_sandbox/ai.py`, `ai_runtime.py`, `model_decision.py`, and `simulation.py` before continuing P1.
-4. Use Runtime Read credential-presence booleans to see whether NanoGPT or Gemini is provisioned.
-5. If NanoGPT is available, prefer it first because the Creator already uses a subscription and wants subscription quota efficiency. Keep the subscription-only catalog/generation path.
-6. Refresh the selected provider catalog, choose a real returned model ID, and create the logical character cognition binding. Never invent or hard-code a model ID.
-7. Add a controlled one-decision live verification before continuous autonomy. The model proposes; runtime validation decides; failed/invalid model output must leave world state unchanged.
-8. After every material change or live proof, synchronize this file again.
+2. Keep `autonomy_enabled=false`.
+3. The next external requirement is one API credential in this repo's GitHub Actions secrets. Prefer NanoGPT first because the Creator already uses a subscription and wants quota efficiency; Gemini is also supported.
+4. After a credential is added, push/dispatch Deploy so the private secret file is reprovisioned.
+5. Runtime Read must then show only the corresponding `*_CREDENTIAL_PRESENT=true` boolean.
+6. Refresh that provider catalog; choose a model ID returned by the live catalog; never invent/hard-code one.
+7. Bind it to `character:char_darian / cognition`.
+8. Perform a controlled one-decision live verification before continuous autonomy. The model proposes; runtime validation decides; invalid output leaves state unchanged.
+9. Synchronize this file after every material change/live proof.
