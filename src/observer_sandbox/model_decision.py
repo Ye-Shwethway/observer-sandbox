@@ -5,7 +5,8 @@ import sqlite3
 from typing import Any
 
 from .ai_runtime import generate_character_decision
-from .simulation import Action
+from .secrets import load_runtime_secrets
+from .simulation import ACTION_NAMES, Action, snapshot, validate_action
 
 
 class ModelDecisionProvider:
@@ -64,3 +65,42 @@ class ModelDecisionProvider:
             decision["target"] or None,
             decision["reason"],
         )
+
+
+def dry_run_model_decision(
+    conn: sqlite3.Connection,
+    *,
+    character_id: str = "char_darian",
+    role: str = "cognition",
+) -> dict[str, Any]:
+    """Ask the bound model for one action and validate it without mutating world state."""
+    load_runtime_secrets()
+    before = snapshot(conn, character_id)
+    event_count_before = int(conn.execute("SELECT COUNT(*) FROM events").fetchone()[0])
+
+    provider = ModelDecisionProvider(conn, character_id=character_id, role=role)
+    action = provider.choose(before, ACTION_NAMES)
+    validate_action(conn, character_id, action)
+
+    after = snapshot(conn, character_id)
+    event_count_after = int(conn.execute("SELECT COUNT(*) FROM events").fetchone()[0])
+    unchanged = before == after and event_count_before == event_count_after
+    if not unchanged:
+        raise RuntimeError("Dry-run invariant failed: model proposal mutated live state")
+
+    return {
+        "ok": True,
+        "validated": True,
+        "mutated": False,
+        "actor_id": character_id,
+        "proposal": {
+            "action": action.name,
+            "duration_minutes": action.duration_minutes,
+            "target": action.target,
+            "reason": action.reason,
+        },
+        "state_before": before,
+        "state_after": after,
+        "event_count_before": event_count_before,
+        "event_count_after": event_count_after,
+    }
