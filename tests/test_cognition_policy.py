@@ -5,10 +5,11 @@ from observer_sandbox.model_decision import load_autonomy_policy
 def test_darian_autonomy_policy_is_authored_and_bounded():
     policy = load_autonomy_policy()
     assert policy["entity_id"] == "char_darian"
-    assert policy["policy_revision"] == "darian-autonomy-p1-v1.1"
+    assert policy["policy_revision"] == "darian-autonomy-p1-v1.2"
     assert policy["decision_principles"]
     assert policy["need_priorities"]["critical"]["sleepiness_gte"] > policy["need_priorities"]["strong"]["sleepiness_gte"]
     assert len(policy["routine_windows"]) == 4
+    assert policy["duration_guidance"]["critical_night_sleep"]["min_minutes"] >= 360
     assert policy["repetition_policy"]["recent_event_window"] >= 4
 
 
