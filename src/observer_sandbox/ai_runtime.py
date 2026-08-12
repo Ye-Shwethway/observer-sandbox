@@ -7,6 +7,7 @@ import urllib.request
 from typing import Any
 
 from .ai import AIConfigurationError, resolve_binding
+from .secrets import load_runtime_secrets
 
 
 class AIDecisionError(RuntimeError):
@@ -41,6 +42,7 @@ def _post_json(url: str, *, headers: dict[str, str], payload: dict[str, Any], ti
 
 
 def _provider_and_key(conn: sqlite3.Connection, provider_id: str) -> tuple[sqlite3.Row, str]:
+    load_runtime_secrets()
     provider = conn.execute("SELECT * FROM ai_providers WHERE id=?", (provider_id,)).fetchone()
     if provider is None:
         raise AIConfigurationError(f"Unknown provider: {provider_id}")
