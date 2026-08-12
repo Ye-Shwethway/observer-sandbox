@@ -5,6 +5,7 @@ from dataclasses import dataclass
 from datetime import datetime, timezone
 from pathlib import Path
 
+from .ai import seed_builtin_providers
 from .db import connect, get_runtime_state, migrate
 
 
@@ -27,6 +28,7 @@ class RuntimeStatus:
 def initialize(db_path: str | Path) -> None:
     with connect(db_path) as conn:
         migrate(conn)
+        seed_builtin_providers(conn)
         defaults = {
             "paused": False,
             "speed": 1.0,
@@ -43,6 +45,7 @@ def initialize(db_path: str | Path) -> None:
 def status(db_path: str | Path) -> RuntimeStatus:
     with connect(db_path) as conn:
         migrate(conn)
+        seed_builtin_providers(conn)
         version = int(conn.execute(
             "SELECT value FROM schema_meta WHERE key='schema_version'"
         ).fetchone()[0])
