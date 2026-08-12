@@ -28,6 +28,22 @@ Every new Telegram command, callback, notification, menu, browse page, or detail
 
 A Telegram slice is not complete if its data is technically correct but presented as a raw log/database dump.
 
+## Notification policy
+
+Telegram proactive notifications are **default ON per authorized user**. Preferences are persisted independently per user and survive bot/service restarts.
+
+Canonical commands:
+- `/notify on`
+- `/notify off`
+
+Compatibility aliases currently supported:
+- `/notification on|off`
+- `/notifications on|off`
+- `/notion/on`
+- `/notion/off`
+
+The same preference gate should be reused by future proactive universe notifications rather than creating one-off notification toggles. Boot notification `Universe is alive!` obeys the Owner's notification preference.
+
 ## P0 — Foundation & Remote Control
 
 Status: COMPLETE / LIVE VERIFIED
@@ -72,33 +88,36 @@ Status: LIVE
 - pause/resume/speed controls
 - owner boot notification: `Universe is alive!`
 - human-friendly Telegram presentation contract established and live
+- persistent per-user notification preference, default ON
 
 ### P2.2 — Browse the Sandbox
 
-Status: NEXT
+Status: IN PROGRESS
 
 Goal: move from command-driven status checks to hierarchical Creator observation.
 
-Recommended implementation order:
+1. **Observer Home Menu + inline navigation — IMPLEMENTED**
+   - `/start` opens a compact Observer Home dashboard.
+   - inline buttons: Universe, Characters, Runtime, History.
+   - callback routing uses stable ids/action keys rather than display labels.
+   - callback navigation edits the existing Telegram message to reduce chat clutter.
+   - reusable Back/Home navigation is established.
+   - notification status is visible from Observer Home.
 
-1. **Observer Home Menu + inline navigation**
-   - `/start` becomes a compact dashboard with buttons such as Universe, Characters, Runtime, History.
-   - establish reusable callback routing and Back/Home navigation.
-
-2. **Location hierarchy**
-   - list locations;
-   - select Home;
-   - list rooms/sublocations;
+2. **Location hierarchy — NEXT**
+   - list rooms/sublocations from the canonical world graph;
    - open a room;
-   - show occupants, items/objects, exits/relations and current activity.
+   - show occupants, items/objects, exits/relations and current activity;
+   - preserve Back -> Universe -> Observer Home navigation.
 
 3. **Item browsing**
    - room contents -> item list -> item detail;
    - show capabilities and relevant state using human-readable labels.
 
 4. **Character selection**
-   - generic character list and selected-character session state;
-   - current Darian remains the only initial character, but no Telegram handler assumes that forever.
+   - generic character list is already exposed by the new callback framework;
+   - next add selected-character session state so future views follow the selected character;
+   - no Telegram handler may assume `char_darian` forever.
 
 5. **Profile section browsing**
    - character -> Profile -> section menu;
@@ -116,7 +135,7 @@ Status: LATER
 - live model binding changes
 - richer runtime controls
 - scoped history/event filters
-- notification/watch preferences
+- notification/watch-category preferences building on the global per-user notification gate
 
 ## P3 — Rich State & Memory
 
@@ -138,4 +157,4 @@ Add Quasi after generic character selection/profile/navigation is already proven
 
 ## Current resume point
 
-Proceed with **P2.2.1: Observer Home Menu + reusable inline callback/navigation framework**, then use that framework for location -> room -> contents browsing. Preserve continuous 1x wake-on-demand autonomy while building the observer UI.
+Proceed with **P2.2.2: Location hierarchy and room detail browsing** using the now-established inline callback framework. Preserve continuous 1x wake-on-demand autonomy, the Telegram presentation contract, and the shared per-user notification preference gate while building the observer UI.
