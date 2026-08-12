@@ -4,11 +4,12 @@ on:
   workflow_dispatch:
     inputs:
       command:
-        description: Safe autonomy control operation
+        description: Explicit autonomy control operation
         required: true
         type: choice
         options:
           - status
+          - enable
           - canary-once
           - disable
           - pause
@@ -48,6 +49,7 @@ jobs:
         run: |
           case "$COMMAND" in
             status) REMOTE_COMMAND="autonomy status" ;;
+            enable) REMOTE_COMMAND="autonomy enable" ;;
             canary-once) REMOTE_COMMAND="autonomy canary-once" ;;
             disable) REMOTE_COMMAND="autonomy disable" ;;
             pause) REMOTE_COMMAND="autonomy pause" ;;
@@ -63,5 +65,6 @@ jobs:
           ssh -p "$VPS_PORT" "$VPS_USER@$VPS_HOST" \
             "cd /opt/observer-sandbox && export OBSERVER_SANDBOX_DB=/var/lib/observer-sandbox/observer.sqlite3 && .venv/bin/sandboxctl $REMOTE_COMMAND && .venv/bin/sandboxctl autonomy-status"
 
-# Deliberately no continuous 'enable' option here. Production continuous autonomy
-# remains gated on an explicit Creator approval and a later intentional control change.
+# Continuous enable is available only because the Creator explicitly approved the
+# production transition after Telegram observation became live. Runtime validation,
+# pause/disable controls and wake-on-demand cognition remain authoritative.
