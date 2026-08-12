@@ -31,13 +31,12 @@ jobs:
           VPS_USER: ${{ secrets.VPS_USER }}
           VPS_PORT: ${{ secrets.VPS_PORT || '22' }}
         run: |
-          ssh -p "$VPS_PORT" "$VPS_USER@$VPS_HOST" '
-            set -euo pipefail
-            cd /opt/observer-sandbox
-            export OBSERVER_SANDBOX_DB=/var/lib/observer-sandbox/observer.sqlite3
-            .venv/bin/python - <<"PY"
+          ssh -p "$VPS_PORT" "$VPS_USER@$VPS_HOST" 'bash -s' <<'REMOTE'
+          set -euo pipefail
+          cd /opt/observer-sandbox
+          export OBSERVER_SANDBOX_DB=/var/lib/observer-sandbox/observer.sqlite3
+          .venv/bin/python - <<'PY'
           import json
-          import time
           from observer_sandbox.autonomy import CANARY_MODE, PENDING_KEY, autonomy_status, autonomy_tick
           from observer_sandbox.db import connect, migrate
           from observer_sandbox.simulation import runtime_value
@@ -49,35 +48,17 @@ jobs:
               print("CANARY_BEFORE=" + json.dumps(before, sort_keys=True))
               if before["mode"] != CANARY_MODE or not before["autonomy_enabled"]:
                   raise SystemExit("Expected an armed canary before completion")
-
               pending = runtime_value(conn, PENDING_KEY, None)
               if pending is None:
-                  # Give the normal service scheduler a chance; if still absent, plan through the same scheduler API.
-                  result = autonomy_tick(conn, now_wall=time.time())
-                  print("CANARY_PLAN_TICK=" + json.dumps(result, sort_keys=True))
-                  pending = runtime_value(conn, PENDING_KEY, None)
-
-              if pending is None:
-                  # A decision failure in canary mode must already have auto-disabled it.
-                  after = autonomy_status(conn)
-                  print("CANARY_AFTER_NO_PENDING=" + json.dumps(after, sort_keys=True))
-                  if after["autonomy_enabled"] or after["mode"] != "normal":
-                      raise SystemExit("Canary neither planned nor failed closed")
-                  raise SystemExit(0)
-
-              # Complete via the authoritative scheduler at the action's due point.
+                  raise SystemExit("Expected the already-planned canary action")
               result = autonomy_tick(conn, now_wall=float(pending["due_wall_time"]) + 0.001)
               print("CANARY_COMPLETE_TICK=" + json.dumps(result, sort_keys=True))
               after = autonomy_status(conn)
               print("CANARY_AFTER=" + json.dumps(after, sort_keys=True))
-              if after["autonomy_enabled"]:
-                  raise SystemExit("Canary did not auto-disable")
-              if after["mode"] != "normal":
-                  raise SystemExit("Canary mode did not return to normal")
-              if after["pending_action"] is not None:
-                  raise SystemExit("Canary pending action was not cleared")
+              if after["autonomy_enabled"] or after["mode"] != "normal" or after["pending_action"] is not None:
+                  raise SystemExit("Canary did not finish safely")
               if result.get("state") not in {"completed", "recovered_completed"}:
-                  raise SystemExit(f"Unexpected completion state: {result.get('state')}")
+                  raise SystemExit("Unexpected completion state: " + str(result.get("state")))
           PY
-            .venv/bin/sandboxctl autonomy-status
-          '
+          .venv/bin/sandboxctl autonomy-status
+          REMOTE
