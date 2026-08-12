@@ -59,7 +59,6 @@ CREATE TABLE IF NOT EXISTS runtime_state (
     updated_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
 
--- Rich profile ontology. Definitions are stable schema; values remain per-character.
 CREATE TABLE IF NOT EXISTS profile_field_definitions (
     field_key TEXT PRIMARY KEY,
     domain TEXT NOT NULL,
@@ -119,6 +118,17 @@ CREATE TABLE IF NOT EXISTS character_preferences (
     intensity REAL,
     metadata_json TEXT NOT NULL DEFAULT '{}',
     UNIQUE(entity_id, preference_type, subject)
+);
+
+CREATE TABLE IF NOT EXISTS character_hobbies (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    entity_id TEXT NOT NULL REFERENCES character_profiles(entity_id) ON DELETE CASCADE,
+    name TEXT NOT NULL,
+    proficiency REAL,
+    frequency TEXT,
+    enjoyment REAL,
+    metadata_json TEXT NOT NULL DEFAULT '{}',
+    UNIQUE(entity_id, name)
 );
 
 CREATE TABLE IF NOT EXISTS character_habits (
