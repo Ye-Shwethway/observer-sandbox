@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-import json
 import sqlite3
 from dataclasses import dataclass
 
@@ -19,7 +18,6 @@ class ProfileField:
 
 
 FIELDS = (
-    # Identity / chronology
     ProfileField("identity.full_name", "identity", "Full name", "text", default_mode="canonical"),
     ProfileField("identity.date_of_birth", "identity", "Date of birth", "date", default_mode="canonical"),
     ProfileField("identity.age_years", "identity", "Age", "number", "years", "derived", "time_engine"),
@@ -29,7 +27,6 @@ FIELDS = (
     ProfileField("identity.zodiac_sign", "identity", "Zodiac sign", "text", default_mode="derived", authority="time_engine"),
     ProfileField("identity.current_status", "identity", "Current status", "text"),
 
-    # Core visual/body metrics
     ProfileField("body.height_in", "body", "Height", unit="in", default_mode="canonical"),
     ProfileField("body.weight_lb", "body", "Weight", unit="lb", default_mode="static", authority="physiology_engine"),
     ProfileField("body.body_fat_pct", "body", "Body fat", unit="percent", authority="physiology_engine"),
@@ -50,13 +47,11 @@ FIELDS = (
     ProfileField("body.abdominal_definition", "appearance", "Abdominal definition", "text"),
     ProfileField("body.chest_hair", "appearance", "Chest hair", "text", default_mode="canonical"),
 
-    # Sexual anatomy / physiology; intimate but first-class, not hidden in prose.
     ProfileField("sexual_anatomy.penis_length_in", "sexual_anatomy", "Penis length", unit="in", default_mode="canonical", sensitivity="intimate"),
     ProfileField("sexual_anatomy.penis_girth_in", "sexual_anatomy", "Penis girth", unit="in", default_mode="canonical", sensitivity="intimate"),
-    ProfileField("sexual_anatomy.erection_firmness", "sexual_anatomy", "Erection firmness", "number", default_mode="static", authority="sexual_physiology_engine", sensitivity="intimate"),
-    ProfileField("sexual_anatomy.sensitivity", "sexual_anatomy", "Genital sensitivity", "number", default_mode="static", authority="sexual_physiology_engine", sensitivity="intimate"),
+    ProfileField("sexual_anatomy.erection_firmness", "sexual_anatomy", "Erection firmness", "number", authority="sexual_physiology_engine", sensitivity="intimate"),
+    ProfileField("sexual_anatomy.sensitivity", "sexual_anatomy", "Genital sensitivity", "number", authority="sexual_physiology_engine", sensitivity="intimate"),
 
-    # Face / appearance
     ProfileField("appearance.face_shape", "appearance", "Face shape", "text", default_mode="canonical"),
     ProfileField("appearance.jawline", "appearance", "Jawline", "text", default_mode="canonical"),
     ProfileField("appearance.cheekbones", "appearance", "Cheekbones", "text", default_mode="canonical"),
@@ -67,13 +62,12 @@ FIELDS = (
     ProfileField("appearance.hair_color", "appearance", "Hair color", "text", default_mode="canonical"),
     ProfileField("appearance.hair_style", "appearance", "Hair style", "text", default_mode="canonical"),
     ProfileField("appearance.facial_hair", "appearance", "Facial hair", "text", default_mode="canonical"),
-    ProfileField("appearance.skin_quality", "appearance", "Skin quality", "number", default_mode="static", authority="physiology_engine"),
+    ProfileField("appearance.skin_quality", "appearance", "Skin quality", "number", authority="physiology_engine"),
     ProfileField("appearance.smile_appeal", "appearance", "Smile appeal", "number", default_mode="canonical"),
     ProfileField("appearance.facial_beauty", "appearance", "Overall facial beauty", "number", default_mode="canonical"),
     ProfileField("appearance.pars", "appearance", "Physical Appeal Rating", "number", default_mode="derived", authority="appearance_engine"),
     ProfileField("appearance.distinctive_features", "appearance", "Distinctive features", "json", default_mode="canonical"),
 
-    # Physical attributes / RAPS-PA
     ProfileField("raps_pa.strength", "raps_pa", "Strength"),
     ProfileField("raps_pa.stamina", "raps_pa", "Stamina"),
     ProfileField("raps_pa.agility", "raps_pa", "Agility"),
@@ -85,8 +79,9 @@ FIELDS = (
     ProfileField("raps_pa.weapons_proficiency", "raps_pa", "Weapons proficiency"),
     ProfileField("raps_pa.survival_skill", "raps_pa", "Survival skill"),
     ProfileField("raps_pa.powerlifting_capacity", "raps_pa", "Powerlifting capacity"),
+    ProfileField("raps_pa.focus_precision", "raps_pa", "Focus and precision"),
+    ProfileField("raps_pa.practical_skills", "raps_pa", "Practical skills"),
 
-    # Mental / emotional / intellectual
     ProfileField("raps_ma.confidence", "raps_ma", "Confidence"),
     ProfileField("raps_ma.resilience", "raps_ma", "Resilience"),
     ProfileField("raps_ma.adaptability", "raps_ma", "Adaptability"),
@@ -95,6 +90,8 @@ FIELDS = (
     ProfileField("raps_ma.leadership", "raps_ma", "Leadership"),
     ProfileField("raps_ma.stress_management", "raps_ma", "Stress management", authority="emotion_engine"),
     ProfileField("raps_ma.curiosity", "raps_ma", "Curiosity"),
+    ProfileField("raps_ma.tactical_leadership", "raps_ma", "Tactical leadership"),
+
     ProfileField("raps_ia.iq", "raps_ia", "IQ", default_mode="canonical"),
     ProfileField("raps_ia.problem_solving", "raps_ia", "Problem solving"),
     ProfileField("raps_ia.tactical_thinking", "raps_ia", "Tactical thinking"),
@@ -104,7 +101,6 @@ FIELDS = (
     ProfileField("raps_ia.social_intelligence", "raps_ia", "Social intelligence"),
     ProfileField("raps_ia.strategic_ingenuity", "raps_ia", "Strategic ingenuity"),
 
-    # Social / verbal charisma
     ProfileField("social.charisma", "social", "Charisma"),
     ProfileField("social.emotional_intelligence", "social", "Emotional intelligence"),
     ProfileField("raps_vc.tone_resonance", "raps_vc", "Tone resonance"),
@@ -113,9 +109,9 @@ FIELDS = (
     ProfileField("raps_vc.empathy_in_speech", "raps_vc", "Empathy in speech"),
     ProfileField("raps_vc.overall", "raps_vc", "Verbal charisma"),
 
-    # Sexual attributes / RAPS-SA
     ProfileField("raps_sa.libido", "raps_sa", "Libido", authority="sexual_physiology_engine", sensitivity="private"),
     ProfileField("raps_sa.sensitivity", "raps_sa", "Sensitivity", authority="sexual_physiology_engine", sensitivity="private"),
+    ProfileField("raps_sa.charisma", "raps_sa", "Sexual charisma", sensitivity="private"),
     ProfileField("raps_sa.performance", "raps_sa", "Sexual performance", sensitivity="private"),
     ProfileField("raps_sa.experience", "raps_sa", "Sexual experience", sensitivity="private"),
     ProfileField("raps_sa.arousal_control", "raps_sa", "Arousal control", authority="sexual_physiology_engine", sensitivity="private"),
@@ -124,7 +120,6 @@ FIELDS = (
     ProfileField("raps_sa.self_satisfaction_weekly", "raps_sa", "Self-satisfaction weekly count", "integer", default_mode="simulated", authority="sexual_behavior_engine", sensitivity="intimate"),
     ProfileField("raps_sa.partnered_satisfaction_weekly", "raps_sa", "Partnered satisfaction weekly count", "integer", default_mode="simulated", authority="sexual_behavior_engine", sensitivity="intimate"),
 
-    # Dynamic physical/needs state planned for progressive activation
     ProfileField("needs.energy", "needs", "Energy", authority="needs_engine"),
     ProfileField("needs.hunger", "needs", "Hunger", authority="needs_engine"),
     ProfileField("needs.hydration", "needs", "Hydration", authority="needs_engine"),
@@ -135,7 +130,6 @@ FIELDS = (
     ProfileField("physiology.illness_state", "physiology", "Illness state", "json", authority="health_engine"),
     ProfileField("physiology.recovery", "physiology", "Recovery readiness", authority="recovery_engine"),
 
-    # Genetics / limits
     ProfileField("genetics.height_max_in", "genetics", "Genetic maximum height", unit="in", default_mode="canonical"),
     ProfileField("genetics.weight_lean_min_lb", "genetics", "Genetic lean-weight range minimum", unit="lb", default_mode="canonical"),
     ProfileField("genetics.weight_lean_max_lb", "genetics", "Genetic lean-weight range maximum", unit="lb", default_mode="canonical"),
@@ -153,7 +147,6 @@ FIELDS = (
     ProfileField("genetics.penis_length_in", "genetics", "Genetically fixed penis length", unit="in", default_mode="canonical", sensitivity="intimate"),
     ProfileField("genetics.penis_girth_in", "genetics", "Genetically fixed penis girth", unit="in", default_mode="canonical", sensitivity="intimate"),
 
-    # Personality / narrative / background
     ProfileField("personality.primary_motivation", "personality", "Primary motivation", "text", default_mode="canonical"),
     ProfileField("personality.primary_traits", "personality", "Primary traits", "json", default_mode="canonical"),
     ProfileField("personality.complexity_notes", "personality", "Personality complexity", "text", default_mode="canonical"),
@@ -183,10 +176,7 @@ def seed_profile_field_definitions(conn: sqlite3.Connection) -> None:
                 sensitivity=excluded.sensitivity,
                 updated_at=CURRENT_TIMESTAMP
             """,
-            (
-                f.key, f.domain, f.label, f.data_type, f.unit, f.description,
-                f.default_mode, f.authority, f.sensitivity,
-            ),
+            (f.key, f.domain, f.label, f.data_type, f.unit, f.description, f.default_mode, f.authority, f.sensitivity),
         )
     conn.commit()
 
