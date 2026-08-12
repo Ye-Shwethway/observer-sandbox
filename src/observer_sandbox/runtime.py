@@ -10,6 +10,7 @@ from .db import connect, get_runtime_state, migrate
 from .profile_schema import seed_profile_field_definitions
 from .profile_schema_source_union import seed_source_union_extensions
 from .sexual_state_schema import seed_sexual_state_fields
+from .world import seed_home_and_darian
 
 
 @dataclass(slots=True)
@@ -35,10 +36,12 @@ def initialize(db_path: str | Path) -> None:
         seed_profile_field_definitions(conn)
         seed_source_union_extensions(conn)
         seed_sexual_state_fields(conn)
+        seed_home_and_darian(conn)
         defaults = {
             "paused": False,
             "speed": 1.0,
             "world_id": "home",
+            "autonomy_enabled": False,
         }
         for key, value in defaults.items():
             conn.execute(
@@ -55,6 +58,7 @@ def status(db_path: str | Path) -> RuntimeStatus:
         seed_profile_field_definitions(conn)
         seed_source_union_extensions(conn)
         seed_sexual_state_fields(conn)
+        seed_home_and_darian(conn)
         version = int(conn.execute(
             "SELECT value FROM schema_meta WHERE key='schema_version'"
         ).fetchone()[0])
