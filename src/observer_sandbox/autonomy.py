@@ -136,9 +136,8 @@ def set_autonomy_speed(conn: sqlite3.Connection, speed: float, *, actor_id: str 
 def arm_canary_once(conn: sqlite3.Connection, *, actor_id: str = "char_darian") -> dict[str, Any]:
     """Arm exactly one production-style autonomous action.
 
-    The service may plan and complete one action. Success or failure automatically
-    disables autonomy and returns the mode to normal. Merely defining this command
-    does not arm or run a canary.
+    Low-level primitive retained for tests/service coordination. User-facing control
+    should normally call run_canary_once(), which bounds wall time as well as action count.
     """
     if bool(runtime_value(conn, "autonomy_enabled", False)):
         raise ValueError("Canary requires autonomy to be disabled first")
@@ -242,6 +241,84 @@ def autonomy_tick(
         return {"ok": True, "state": "planned", "pending": pending}
     finally:
         _release_lease(conn, owner)
+
+
+def run_canary_once(
+    conn: sqlite3.Connection,
+    *,
+    actor_id: str = "char_darian",
+    provider: Any | None = None,
+    now_wall: float | None = None,
+    lease_retries: int = 20,
+) -> dict[str, Any]:
+    """Run one production-style action synchronously, then auto-disable.
+
+    The simulated action keeps its authored duration, but the control command advances
+    the scheduler directly to that action's due point so a canary cannot remain armed
+    for minutes or hours of wall time. Runtime validation, persistence, lease handling,
+    idempotency, state mutation, and canary auto-disable all stay on the normal scheduler path.
+    """
+    start = _wall_now() if now_wall is None else float(now_wall)
+    before = snapshot(conn, actor_id)
+    arm_canary_once(conn, actor_id=actor_id)
+
+    planned: dict[str, Any] | None = None
+    for attempt in range(max(1, lease_retries)):
+        pending = runtime_value(conn, PENDING_KEY, None)
+        if pending is not None:
+            planned = {"ok": True, "state": "planned_elsewhere", "pending": pending}
+            break
+        current = autonomy_status(conn, actor_id)
+        if not current["autonomy_enabled"]:
+            return {"ok": False, "state": "failed_closed", "before": before, "after": current, "plan": planned}
+        result = autonomy_tick(conn, actor_id=actor_id, provider=provider, now_wall=start + attempt * 0.001)
+        if result.get("state") == "planned":
+            planned = result
+            break
+        if result.get("state") in {"decision_error", "schedule_error", "completion_error"}:
+            return {"ok": False, "state": result["state"], "before": before, "after": autonomy_status(conn, actor_id), "plan": result}
+        if result.get("state") == "leased_elsewhere":
+            time.sleep(0.05)
+            continue
+
+    pending = runtime_value(conn, PENDING_KEY, None)
+    if pending is None:
+        current = autonomy_status(conn, actor_id)
+        if current["autonomy_enabled"]:
+            _finish_canary(conn, actor_id, success=False, action_id=None, detail="control:no_pending_action")
+        return {"ok": False, "state": "no_pending_action", "before": before, "after": autonomy_status(conn, actor_id), "plan": planned}
+
+    completion: dict[str, Any] | None = None
+    due = float(pending["due_wall_time"]) + 0.001
+    for _ in range(max(1, lease_retries)):
+        completion = autonomy_tick(conn, actor_id=actor_id, provider=provider, now_wall=due)
+        if completion.get("state") in {"completed", "recovered_completed", "completion_error"}:
+            break
+        if completion.get("state") == "leased_elsewhere":
+            time.sleep(0.05)
+            continue
+        if completion.get("state") == "disabled":
+            break
+
+    after = autonomy_status(conn, actor_id)
+    success = (
+        completion is not None
+        and completion.get("state") in {"completed", "recovered_completed"}
+        and not after["autonomy_enabled"]
+        and after["mode"] == NORMAL_MODE
+        and after["pending_action"] is None
+    )
+    if not success and after["autonomy_enabled"]:
+        _finish_canary(conn, actor_id, success=False, action_id=pending.get("action_id"), detail="control:incomplete")
+        after = autonomy_status(conn, actor_id)
+    return {
+        "ok": success,
+        "state": "completed" if success else "failed_closed",
+        "before": before,
+        "plan": planned,
+        "completion": completion,
+        "after": after,
+    }
 
 
 def autonomy_status(conn: sqlite3.Connection, actor_id: str = "char_darian") -> dict[str, Any]:
