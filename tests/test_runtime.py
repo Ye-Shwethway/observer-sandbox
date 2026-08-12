@@ -29,6 +29,7 @@ def test_initialize_and_status(tmp_path):
         "character_profile_values",
         "character_profile_history",
         "character_preferences",
+        "character_hobbies",
         "character_habits",
         "character_routines",
         "character_skills",
