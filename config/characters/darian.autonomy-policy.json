@@ -1,5 +1,5 @@
 {
-  "policy_revision": "darian-autonomy-p1-v1.1",
+  "policy_revision": "darian-autonomy-p1-v1.2",
   "entity_id": "char_darian",
   "decision_principles": [
     "Choose one concrete next action that makes sense for the current moment rather than narrating a long plan.",
@@ -9,7 +9,7 @@
     "Use only the supplied action_options. Never invent a room, object, capability, target, or action.",
     "Avoid needless repetition when recent events show the same discretionary action was just completed.",
     "Movement is a useful next step when a desired activity is available in another reachable room; do not pretend to perform the distant activity immediately.",
-    "Choose a realistic duration within the supplied duration bounds."
+    "Choose a realistic duration within the supplied duration bounds and follow any recommended_duration signal when present."
   ],
   "need_priorities": {
     "critical": {
@@ -53,6 +53,14 @@
       "guidance": "Sleep is normally preferred when sleep pressure is meaningful; otherwise choose quiet low-intensity behavior rather than unnecessary training."
     }
   ],
+  "duration_guidance": {
+    "critical_night_sleep": {
+      "action": "sleep",
+      "min_minutes": 360,
+      "max_minutes": 540,
+      "guidance": "When sleepiness is critical during the night window and Darian is at a usable bed, choose a normal overnight sleep duration rather than a short nap."
+    }
+  },
   "repetition_policy": {
     "recent_event_window": 8,
     "guidance": "Do not repeat the same discretionary action-target pair merely because it is available. Repetition is appropriate when a persistent physiological need or an unfinished practical purpose justifies it."
