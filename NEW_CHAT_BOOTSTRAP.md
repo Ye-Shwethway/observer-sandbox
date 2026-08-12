@@ -2,7 +2,7 @@
 
 Status: ACTIVE
 Purpose: deterministic project recovery across ChatGPT sessions and protection against memory drift.
-Last synchronized: 2026-08-13 — P0 remote deployment/control is COMPLETE / LIVE VERIFIED. P1 Living Darian Minimum core runtime, Gemini cognition, authored autonomy policy, persistent scheduler, behavior-quality matrix, first production canary, and bounded canary/control gate are IMPLEMENTED / CI-VALIDATED / DEPLOYED / LIVE VERIFIED. Production continuous character autonomy remains explicitly DISABLED.
+Last synchronized: 2026-08-13 — P0 remote deployment/control is COMPLETE / LIVE VERIFIED. P1 Living Darian Minimum core runtime, Gemini cognition, authored autonomy policy, persistent scheduler, behavior-quality matrix, first production canary, and bounded canary/control gate are IMPLEMENTED / CI-VALIDATED / DEPLOYED / LIVE VERIFIED. Production continuous character autonomy remains explicitly DISABLED. P2 Telegram Observer architecture is now canonically defined around the long-term Creator goal of progressively observing the universe, with a minimal P2.1 mobile observer MVP next.
 
 ## HARD RECOVERY RULES
 
@@ -19,11 +19,11 @@ Authority order:
 6. This bootstrap.
 7. Older chat/model memory.
 
-GitHub config/schema = authored definitions. VPS SQLite = mutable operational reality. Python runtime = state-transition authority. AI models only propose structured actions. GitHub Actions/SSH = deployment/control transport. Telegram will be observer/control UI, not core business logic. Chat/model memory is never authoritative over newer repo/live evidence.
+GitHub config/schema = authored definitions. VPS SQLite = mutable operational reality. Python runtime = state-transition authority. AI models only propose structured actions. GitHub Actions/SSH = deployment/control transport. Telegram is a Creator-facing observer/control adapter, not core business logic. Chat/model memory is never authoritative over newer repo/live evidence.
 
 ## Project scope / architecture
 
-Observer Sandbox is intentionally small and modular, not another EIDOLON/Simiverse-scale architecture. Initial product: one Home, one character (Darian), persistent autonomous structured actions, later Telegram observation/control, then progressively richer physiology/memory/relationships.
+Observer Sandbox is intentionally small and modular, not another EIDOLON/Simiverse-scale architecture. Initial product: one Home, one character (Darian), persistent autonomous structured actions, then Telegram observation/control, then progressively richer physiology/memory/relationships/world scope.
 
 Core principle: **deep profile, partial simulation**.
 
@@ -216,6 +216,53 @@ Remote manual workflow: `.github/workflows/autonomy-control.yml`.
 It exposes safe commands: status, canary-once, disable, pause, resume, speed.
 It deliberately does **not** expose continuous `enable` yet. Continuous production enable remains gated on explicit Creator approval and a later intentional control change.
 
+## P2 Telegram Observer architecture
+
+Canonical design: `docs/TELEGRAM_OBSERVER_ARCHITECTURE.md`.
+
+The Telegram bot is the first mobile shell for the Creator's long-term goal: **observe the universe**, not merely read Darian's current action.
+
+Architecture is deliberately future-compatible while the first implementation remains minimal:
+
+- Telegram is an adapter/UI layer only; handlers do not own simulation/world/profile/model logic and do not directly mutate SQLite.
+- P2 introduces a reusable observer/query service boundary that future Telegram, web, mobile, or CLI observer surfaces can share.
+- Resources are addressed by stable ids, not hard-coded display names or Darian/Home assumptions.
+- Generic resource classes include universe/world, location, sublocation/room, item/object, character, profile section/field, runtime state, event/history, provider/model/binding, and control state.
+- Long-term navigation is hierarchical: `Universe -> Location -> Sublocation -> Contents`; character navigation is `Characters -> selected character -> state/profile/history/...`.
+- `/darian` and `/home` may exist as MVP convenience entry points, but internally they must call generic character/location lookup services.
+- Telegram session state may keep selected character/location and pagination preferences, but never duplicate authoritative world state.
+- The private bot must be allowlisted; unknown users get no world data or control access. Bot token and allowed ids are secrets and control callbacks re-check authorization server-side.
+- Full profiles are sectioned/paginated at the presentation layer rather than flattened or truncated in the data model.
+- Future AI provider/model catalog refresh and binding changes must wrap the existing dynamic provider/catalog/binding backend; no hard-coded model ids in Telegram.
+
+P2 staging:
+
+### P2.1 — Mobile Observer MVP
+- bot process/service foundation;
+- private authorization;
+- generic observer/query service foundation;
+- `/start`, `/status`, `/watch`, `/history`;
+- generic character summary surfaced initially as `/darian`;
+- generic location summary surfaced initially as `/home`;
+- pause/resume/speed/status controls;
+- live VPS deployment and readback.
+
+### P2.2 — Browse the sandbox
+- location list/selection;
+- room/sublocation navigation;
+- room contents;
+- item list/detail;
+- character list/selection;
+- detailed profile section browsing.
+
+### P2.3 — Creator control expansion
+- provider/model catalog browsing and refresh;
+- binding selection/change;
+- richer runtime controls;
+- scoped history/event filters and later watch/notification preferences.
+
+Acceptance principle: P2.1 passes when the Creator can independently open Telegram and inspect the live sandbox/basic runtime without depending on ChatGPT narration, while the architecture remains ready for rooms/items/full profiles/multiple characters and broader universe observation.
+
 ## Current verified production boundary
 
 Repository: `Ye-Shwethway/observer-sandbox` private.
@@ -239,6 +286,8 @@ Latest verified live state after first production canary:
 - Gemini credential present;
 - NanoGPT credential absent.
 
+Runtime Read #6 / run `31635672876`: SUCCESS and re-confirmed this safe post-canary state.
+
 Normal VPS work goes through GitHub Actions. Do not ask the Creator for Termux/root commands unless an unavoidable host/bootstrap-level issue cannot be handled through the established lane.
 
 ## Roadmap
@@ -246,19 +295,22 @@ Normal VPS work goes through GitHub Actions. Do not ask the Creator for Termux/r
 - P0 Foundation & Remote Control: COMPLETE / LIVE VERIFIED.
 - P0.5 Provider Layer: FOUNDATION COMPLETE; Gemini live credential/catalog/binding verified.
 - Deep Character Profile: IMPLEMENTED; Darian instantiated live.
-- P1 Living Darian Minimum: **CORE IMPLEMENTATION + HARDENING + FIRST PRODUCTION CANARY COMPLETE / LIVE VERIFIED.** Continuous production autonomy remains OFF by deliberate gate. The remaining P1 decision is whether to permit continuous autonomy and under what initial speed/observation conditions.
-- P2 Telegram Observer: after P1 activation decision; status/watch/history/pause/resume/speed plus provider/model refresh/list/rebinding controls should wrap the existing backend.
+- P1 Living Darian Minimum: **CORE IMPLEMENTATION + HARDENING + FIRST PRODUCTION CANARY COMPLETE / LIVE VERIFIED.** Continuous production autonomy remains OFF by deliberate gate.
+- P2 Telegram Observer: **ACTIVE NEXT PRIORITY.** Canonical future architecture defined; implement P2.1 Mobile Observer MVP next so the Creator can directly observe the sandbox before continuous autonomy is enabled.
 - P3 Rich State & Memory: later.
 - P4 First simulation module: later.
-- P5 Second character: later.
+- P5 Second character: later; Telegram architecture already reserves generic character selection rather than Darian-only contracts.
 
 ## RESUME HERE
 
-1. Production continuous autonomy is currently OFF. Do not enable it without explicit Creator approval.
-2. Do not redo VPS bootstrap, Gemini secret/catalog binding, action hardening, scheduler, cognition policy, behavior matrix, or first production canary unless newer evidence shows a regression.
-3. Current live cognition binding is `gemini / gemini-3.5-flash-lite` for Darian.
-4. First real production action already occurred successfully: Bedroom -> Living Room, 07:00 -> 07:05, then auto-disable.
-5. `sandboxctl autonomy canary-once` is now synchronous and bounded; do not recreate the temporary trigger/recovery workflow.
-6. Continuous `enable` remains intentionally absent from the remote Actions control workflow. Add/use it only after a separate explicit Creator decision.
-7. P2 Telegram later wraps the same runtime/provider/catalog/control backend; do not duplicate business logic in the bot.
-8. Synchronize this file after every material change/live proof.
+1. Production continuous autonomy is currently OFF. Do not enable it before the Creator has a working Telegram observation surface unless the Creator explicitly changes that sequencing.
+2. Start/continue **P2.1 Mobile Observer MVP** using `docs/TELEGRAM_OBSERVER_ARCHITECTURE.md` as the canonical P2 design.
+3. Do not build a Darian-status-only backend. Introduce generic observer/query services with stable ids; `/darian` and `/home` are convenience presentation routes only.
+4. P2.1 minimum useful commands/views: start/home, status, watch, history, character summary, Home summary, autonomy pause/resume/speed/status, plus private allowlist authentication.
+5. Preserve future compatibility for location -> room -> contents, item detail, full profile section browsing, multiple character selection, provider/model catalog and binding controls.
+6. Do not redo VPS bootstrap, Gemini secret/catalog binding, action hardening, scheduler, cognition policy, behavior matrix, or first production canary unless newer evidence shows a regression.
+7. Current live cognition binding is `gemini / gemini-3.5-flash-lite` for Darian.
+8. First real production action already occurred successfully: Bedroom -> Living Room, 07:00 -> 07:05, then auto-disable.
+9. `sandboxctl autonomy canary-once` is synchronous and bounded; do not recreate temporary trigger/recovery workflows.
+10. Continuous `enable` remains intentionally absent from the remote Actions control workflow until the post-Telegram activation decision.
+11. Synchronize this file after every material change/live proof.
