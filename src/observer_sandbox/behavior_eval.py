@@ -69,7 +69,7 @@ SCENARIOS: tuple[BehaviorScenario, ...] = (
         location="room_bedroom",
         accepts=_move_to("room_living"),
         intent="begin the morning training path toward the Home Gym",
-        reason_keywords=("train", "gym", "physical"),
+        reason_keywords=("train", "gym", "physical", "morning routine"),
     ),
     BehaviorScenario(
         name="strong_thirst",
