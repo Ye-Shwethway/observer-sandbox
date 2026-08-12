@@ -16,6 +16,7 @@ from .ai import (
 )
 from .ai_bootstrap import bootstrap_gemini_cognition
 from .db import connect, migrate
+from .model_decision import dry_run_model_decision
 from .runtime import initialize, status
 from .simulation import run_one_simulated_day, snapshot
 
@@ -45,6 +46,10 @@ def build_parser() -> argparse.ArgumentParser:
     bootstrap_gemini.add_argument("--character", default="char_darian")
     bootstrap_gemini.add_argument("--role", default="cognition")
     bootstrap_gemini.add_argument("--force", action="store_true")
+
+    dry_run = ai_sub.add_parser("dry-run-decision")
+    dry_run.add_argument("--character", default="char_darian")
+    dry_run.add_argument("--role", default="cognition")
 
     ai_sub.add_parser("nanogpt-usage")
 
@@ -121,6 +126,13 @@ def main() -> None:
                 character_id=args.character,
                 role=args.role,
                 force=args.force,
+            )
+            print(json.dumps(result, indent=2, sort_keys=True))
+        elif args.ai_command == "dry-run-decision":
+            result = dry_run_model_decision(
+                conn,
+                character_id=args.character,
+                role=args.role,
             )
             print(json.dumps(result, indent=2, sort_keys=True))
         elif args.ai_command == "nanogpt-usage":
