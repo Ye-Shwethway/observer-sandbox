@@ -2,13 +2,13 @@
 
 Status: ACTIVE
 Purpose: deterministic project recovery across ChatGPT sessions and protection against memory drift.
-Last synchronized: 2026-08-13 — P0 remote deployment/control is COMPLETE / LIVE VERIFIED. P1 Living Darian Minimum core runtime, Gemini cognition, authored autonomy policy, persistent scheduler, behavior-quality matrix, first production canary, and bounded canary/control gate are IMPLEMENTED / CI-VALIDATED / DEPLOYED / LIVE VERIFIED. Production continuous character autonomy remains explicitly DISABLED. P2 Telegram Observer architecture is now canonically defined around the long-term Creator goal of progressively observing the universe, with a minimal P2.1 mobile observer MVP next.
+Last synchronized: 2026-08-13 — P0 is LIVE VERIFIED. P1 Living Darian core runtime/cognition/autonomy is hardened and first production canary passed; continuous production autonomy remains intentionally OFF. P2.1 Telegram Observer MVP code is now IMPLEMENTED / CI-VALIDATED / DEPLOYED, but Telegram transport is not live yet because no bot token is provisioned.
 
 ## HARD RECOVERY RULES
 
 Read `AGENTS.md` first, then this file, then task-relevant repo files before changing the project.
-
-After every material repository or verified runtime change, update this file in the same work session/change set. Never conflate committed, CI-validated, deployed, DB-applied, and live-verified state. State only the strongest level actually proven.
+After every material repository or verified runtime change, update this file in the same work session/change set.
+Never conflate committed, CI-validated, deployed, DB-applied, and live-verified state.
 
 Authority order:
 1. Explicit current Creator instruction.
@@ -19,298 +19,174 @@ Authority order:
 6. This bootstrap.
 7. Older chat/model memory.
 
-GitHub config/schema = authored definitions. VPS SQLite = mutable operational reality. Python runtime = state-transition authority. AI models only propose structured actions. GitHub Actions/SSH = deployment/control transport. Telegram is a Creator-facing observer/control adapter, not core business logic. Chat/model memory is never authoritative over newer repo/live evidence.
+Telegram is a Creator-facing observer/control adapter only. Python runtime remains state-transition authority. AI models only propose structured actions. Telegram handlers must not become a second business-logic layer.
 
-## Project scope / architecture
+## Project architecture
 
-Observer Sandbox is intentionally small and modular, not another EIDOLON/Simiverse-scale architecture. Initial product: one Home, one character (Darian), persistent autonomous structured actions, then Telegram observation/control, then progressively richer physiology/memory/relationships/world scope.
+Observer Sandbox is intentionally small/modular. Core principle: **deep profile, partial simulation**.
+Logical world model: graph; persistence: SQLite relational tables; core model: Entity + Relation + State + Capability.
+Definitions/templates live in Git/config; mutable instances/runtime state live in DB. Deploys must not overwrite mutable live state.
 
-Core principle: **deep profile, partial simulation**.
-
-Logical world model: graph. Physical persistence: SQLite relational tables. Core model: Entity + Relation + State + Capability. Definitions/templates live in Git/config; mutable instances/runtime state live in DB. Deploys must not overwrite mutable live state.
-
-LLM flow:
+LLM decision flow:
 1. runtime builds current state + character context + valid action options;
 2. model proposes one structured action;
 3. runtime validates target/topology/capability/duration;
-4. scheduler persists it as pending;
-5. when due, runtime applies exactly one state transition and advances sim time;
-6. events are durable and duplicate completion is guarded by action id.
+4. scheduler persists pending action;
+5. when due, runtime applies exactly one transition and advances sim time;
+6. durable events + action ids protect recovery/idempotency.
 
-The LLM never gets arbitrary DB-write authority.
+## Current live production
 
-## Darian profile boundary
-
-Canonical fixture: `config/characters/darian.canonical.json`.
-Runtime defaults: `config/characters/darian.runtime-defaults.json`.
-DB schema version: 3.
-
-Locked profile highlights include 6'4", 215 lb, 9% body fat, IQ 140, approved RAPS values, rich measurements/genetic/visual/skill/preference data, and first-class intimate anatomy. Canonical penis measurement: 10 x 5 inches.
-
-Sexual physiology semantics:
-- `erectile_state`: flaccid | developing | erect | subsiding;
-- `erection_firmness`: contextual simulated 0-100;
-- flaccid baseline firmness 0 is normal, not dysfunction;
-- Darian `erection_firmness_cap`: 100;
-- `arousal_level`: separate dynamic field;
-- runtime default: flaccid / firmness 0 / arousal 0.
-
-## P1 world/state/action mechanics
-
-World seed: `config/worlds/home.v1.json`.
-Home v1: Bedroom, Kitchen, Bathroom, Living Room, Home Gym; 15 useful objects.
-Live character: `char_darian`.
-
-Current needs/state: location, current action, energy, hunger, thirst, sleepiness, cleanliness. Energy is high-good reserve; hunger/thirst/sleepiness are high-bad pressures; values clamp 0-100.
-
-Action vocabulary: move, sleep, eat, drink, shower, rest, inspect, use, train, read, idle.
-
-`src/observer_sandbox/simulation.py` has explicit action contracts:
-- action-specific duration bounds;
-- move target must be an adjacent room;
-- idle must have no target;
-- all object actions require a local object target with the matching capability;
-- valid context-specific options come from `action_options()`;
-- completed actions may carry an `action_id` and are idempotent against duplicate completion records.
-
-Deterministic one-day mechanics acceptance remains available through `BaselineLivingPolicy` on test DB only.
-
-## AI provider/model architecture
-
-Model IDs are never hard-coded into character or engine logic.
-Registry: Gemini, NanoGPT, OpenAI, OpenRouter.
-Resolution: Provider -> Catalog -> Model Binding -> Runtime Adapter.
-Binding precedence: task/role -> character/role -> engine/role -> character default -> global role -> global default.
-
-Current live cognition binding: `gemini / gemini-3.5-flash-lite` for `character:char_darian / cognition`, dynamically selected from a 52-model live Gemini catalog. NanoGPT remains implemented/subscription-first but temporarily secondary.
-
-Gemini secret is provisioned privately to `/var/lib/observer-sandbox/secrets.env` mode 0600. Never log or expose values.
-Gemini structured output uses `responseMimeType=application/json` + `responseJsonSchema`.
-
-## Authored Darian autonomy policy
-
-Character-specific policy lives in `config/characters/darian.autonomy-policy.json`.
-Current policy revision: `darian-autonomy-p1-v1.2`.
-
-The policy is character behavior guidance, not runtime safety authority. Universal action legality remains in the runtime validator.
-
-Policy content includes:
-- immediate physiology/safety outranks discretionary routines;
-- critical thresholds: sleepiness >=80, energy <=20, thirst >=75, hunger >=80;
-- strong thresholds: sleepiness >=65, energy <=30, thirst >=55, hunger >=60, cleanliness <=40;
-- routine windows: morning training 07-11, midday productive 11-17, evening wind-down 17-22, night sleep 22-07;
-- recent-event repetition guidance over the latest 8 events;
-- reasons should be short and naturally grounded in the active need/routine/purpose;
-- critical night sleep at a usable bed gets recommended overnight duration 360-540 minutes rather than a short nap.
-
-`src/observer_sandbox/model_decision.py` enriches each decision with current needs/state/time/location, authoritative `action_options`, canonical traits/motivation/preferences/habits/skills, recent events, the authored policy, and computed decision signals.
-
-## Cognition behavior-quality proof
-
-Evaluator: `src/observer_sandbox/behavior_eval.py`.
-Workflow: `.github/workflows/cognition-behavior-eval.yml`.
-Safety: scenarios run against a disposable production-DB copy on the VPS using the live Gemini credential; production DB is read back afterward.
-
-Cognition Behavior Eval #4 / run `31634364165`: **SUCCESS, 5/5** with real Gemini:
-1. morning-ready -> move toward morning training path;
-2. strong thirst -> hydration path with thirst-grounded reason;
-3. strong hunger -> food path with hunger-grounded reason;
-4. critical night sleepiness -> bed sleep for **480m**;
-5. poor cleanliness -> Bathroom/hygiene path.
-
-CI #107 / run `31634364163`: SUCCESS for the same behavior-quality head.
-
-## Persistent autonomy runtime
-
-`src/observer_sandbox/autonomy.py` implements the live scheduler. `src/observer_sandbox/service.py` calls one scheduler tick every ~2 seconds.
-
-Semantics:
-- `autonomy_enabled=false` => no model call;
-- `paused=true` => no planning/completion;
-- `speed` controls wall-time duration for normal newly planned actions;
-- at most one scheduler transition per tick;
-- pending actions persist in `runtime_state`;
-- `runtime.current_action` reflects pending activity;
-- completion advances sim time only when due;
-- lease prevents concurrent scheduler ownership;
-- action ids make crash recovery idempotent;
-- API/decision/completion failures create `autonomy_error` events and exponential backoff capped at 300s;
-- failure policy is fail-closed/backoff, never silent scripted substitution.
-
-Operational readback: `sandboxctl autonomy-status` or `sandboxctl autonomy status`.
-
-## Live model proofs
-
-### Non-mutating dry-run
-`Dry Run Darian Decision` #3 / run `31632548092`: SUCCESS. Real Gemini proposal passed runtime validation while state/event counts remained unchanged.
-
-### Bounded scheduler acceptance on disposable DB
-`.github/workflows/autonomy-acceptance.yml`.
-Bounded Autonomy Acceptance #1 / run `31633358752`: SUCCESS. Real Gemini planned and completed one action on a production-DB copy; production DB remained untouched.
-
-### Production cognition behavior matrix
-Cognition Behavior Eval #4 / run `31634364165`: SUCCESS, 5/5.
-
-### First real production canary — LIVE VERIFIED
-Autonomy Control #1 / run `31635032005` armed the first production canary. This exposed an activation-semantics flaw: the original `canary-once` command bounded **action count** but not **wall time**; at speed 1.0 it armed the normal scheduler and could remain enabled until the action's real due wall time.
-
-The live model nevertheless planned exactly one valid production action:
-- action: `move`;
-- target: `room_living`;
-- duration: 5 minutes;
-- reason: `Moving out of the bedroom to begin the morning training routine.`;
-- action id: `2d856b9e-6feb-4420-a716-03987c1719b6`.
-
-A temporary recovery workflow was used only to complete that already-planned action through the authoritative `autonomy_tick()` scheduler at its due point; it did not bypass validation/state-transition/idempotency logic.
-
-Production Canary Completion #2 / run `31635250326`: **SUCCESS**.
-Live result:
-- Bedroom -> Living Room;
-- sim time `2025-05-01T07:00:00+00:00` -> `2025-05-01T07:05:00+00:00`;
-- energy 75.0 -> 74.75;
-- hunger 20.0 -> 20.333;
-- thirst 15.0 -> 15.417;
-- sleepiness 15.0 -> 15.292;
-- cleanliness 80.0 -> 79.9;
-- current action returned to idle;
-- pending cleared;
-- canary auto-disabled;
-- mode returned to normal;
-- retry remained null.
-
-This is the first real production autonomous Darian action.
-
-## Permanent bounded canary fix
-
-The wall-time flaw found by the first live canary is now fixed in code.
-
-`run_canary_once()` in `src/observer_sandbox/autonomy.py` now makes the user-facing canary synchronous and bounded:
-1. arm canary mode;
-2. plan exactly one model action through the normal scheduler;
-3. preserve the authored simulated duration;
-4. advance the scheduler directly to that action's due point for canary verification instead of waiting minutes/hours of wall time;
-5. complete through normal `autonomy_tick()` / validator / state-transition / lease / action-id path;
-6. verify auto-disable, normal mode, and no pending action before returning.
-
-The low-level `arm_canary_once()` remains only as a primitive for tests/service coordination.
-`sandboxctl autonomy canary-once` now calls `run_canary_once()` and exits nonzero if the canary does not finish safely.
-
-CI #120 / run `31635452458`: SUCCESS for synchronous bounded canary tests.
-Deploy #62 / run `31635371198`: SUCCESS for bounded canary runtime.
-Deploy #63 / run `31635404645`: SUCCESS for CLI integration.
-
-Temporary one-time trigger and recovery workflow used for the first live canary were removed after the permanent fix. `.github/workflows/autonomy-control.yml` is restored to manual `workflow_dispatch` only.
-
-## Production activation/control gate
-
-CLI commands:
-- `sandboxctl autonomy status`
-- `sandboxctl autonomy enable`
-- `sandboxctl autonomy disable`
-- `sandboxctl autonomy pause`
-- `sandboxctl autonomy resume`
-- `sandboxctl autonomy speed <value>` where 0 < value <= 3600
-- `sandboxctl autonomy canary-once` (synchronous bounded canary)
-
-Remote manual workflow: `.github/workflows/autonomy-control.yml`.
-It exposes safe commands: status, canary-once, disable, pause, resume, speed.
-It deliberately does **not** expose continuous `enable` yet. Continuous production enable remains gated on explicit Creator approval and a later intentional control change.
-
-## P2 Telegram Observer architecture
-
-Canonical design: `docs/TELEGRAM_OBSERVER_ARCHITECTURE.md`.
-
-The Telegram bot is the first mobile shell for the Creator's long-term goal: **observe the universe**, not merely read Darian's current action.
-
-Architecture is deliberately future-compatible while the first implementation remains minimal:
-
-- Telegram is an adapter/UI layer only; handlers do not own simulation/world/profile/model logic and do not directly mutate SQLite.
-- P2 introduces a reusable observer/query service boundary that future Telegram, web, mobile, or CLI observer surfaces can share.
-- Resources are addressed by stable ids, not hard-coded display names or Darian/Home assumptions.
-- Generic resource classes include universe/world, location, sublocation/room, item/object, character, profile section/field, runtime state, event/history, provider/model/binding, and control state.
-- Long-term navigation is hierarchical: `Universe -> Location -> Sublocation -> Contents`; character navigation is `Characters -> selected character -> state/profile/history/...`.
-- `/darian` and `/home` may exist as MVP convenience entry points, but internally they must call generic character/location lookup services.
-- Telegram session state may keep selected character/location and pagination preferences, but never duplicate authoritative world state.
-- The private bot must be allowlisted; unknown users get no world data or control access. Bot token and allowed ids are secrets and control callbacks re-check authorization server-side.
-- Full profiles are sectioned/paginated at the presentation layer rather than flattened or truncated in the data model.
-- Future AI provider/model catalog refresh and binding changes must wrap the existing dynamic provider/catalog/binding backend; no hard-coded model ids in Telegram.
-
-P2 staging:
-
-### P2.1 — Mobile Observer MVP
-- bot process/service foundation;
-- private authorization;
-- generic observer/query service foundation;
-- `/start`, `/status`, `/watch`, `/history`;
-- generic character summary surfaced initially as `/darian`;
-- generic location summary surfaced initially as `/home`;
-- pause/resume/speed/status controls;
-- live VPS deployment and readback.
-
-### P2.2 — Browse the sandbox
-- location list/selection;
-- room/sublocation navigation;
-- room contents;
-- item list/detail;
-- character list/selection;
-- detailed profile section browsing.
-
-### P2.3 — Creator control expansion
-- provider/model catalog browsing and refresh;
-- binding selection/change;
-- richer runtime controls;
-- scoped history/event filters and later watch/notification preferences.
-
-Acceptance principle: P2.1 passes when the Creator can independently open Telegram and inspect the live sandbox/basic runtime without depending on ChatGPT narration, while the architecture remains ready for rooms/items/full profiles/multiple characters and broader universe observation.
-
-## Current verified production boundary
-
-Repository: `Ye-Shwethway/observer-sandbox` private.
-VPS: `107.175.30.238`, Ubuntu 24.04.
-App: `/opt/observer-sandbox`.
-DB: `/var/lib/observer-sandbox/observer.sqlite3`.
-Service: `observer-sandbox` systemd.
-SSH/runtime user: `observer`.
+Repository: `Ye-Shwethway/observer-sandbox` (private)
+VPS: `107.175.30.238`, Ubuntu 24.04
+App: `/opt/observer-sandbox`
+DB: `/var/lib/observer-sandbox/observer.sqlite3`
+Service: `observer-sandbox` systemd
+Runtime user: `observer`
+Schema version: 3
 DB is not publicly exposed.
 
-Latest verified live state after first production canary:
+Latest verified state:
 - service healthy/active;
-- schema v3;
-- `autonomy_enabled=false`;
-- `mode=normal`;
-- `paused=false`;
-- `speed=1.0`;
-- `pending_action=null`;
-- `retry=null`;
-- Darian is now in **Living Room**, idle, at `2025-05-01T07:05:00+00:00`;
+- autonomy_enabled=false;
+- autonomy_mode=normal;
+- paused=false;
+- speed=1.0;
+- pending_action=null;
+- retry=null;
+- Darian: Living Room / idle / 2025-05-01T07:05:00+00:00;
+- energy 74.75, hunger 20.333, thirst 15.417, sleepiness 15.292, cleanliness 79.9;
 - Gemini credential present;
 - NanoGPT credential absent.
 
-Runtime Read #6 / run `31635672876`: SUCCESS and re-confirmed this safe post-canary state.
+## Darian / P1 boundary
 
-Normal VPS work goes through GitHub Actions. Do not ask the Creator for Termux/root commands unless an unavoidable host/bootstrap-level issue cannot be handled through the established lane.
+Canonical fixture: `config/characters/darian.canonical.json`
+Runtime defaults: `config/characters/darian.runtime-defaults.json`
+Autonomy policy: `config/characters/darian.autonomy-policy.json` (`darian-autonomy-p1-v1.2`)
+World seed: `config/worlds/home.v1.json`
+
+Home v1: Bedroom, Kitchen, Bathroom, Living Room, Home Gym; 15 useful objects.
+Action vocabulary: move, sleep, eat, drink, shower, rest, inspect, use, train, read, idle.
+Action validator enforces action-specific duration bounds, room adjacency, local object/capability requirements, and context-specific action options.
+
+AI provider architecture: Provider -> Catalog -> Model Binding -> Runtime Adapter.
+Registry includes Gemini, NanoGPT, OpenAI, OpenRouter. Model IDs are not hard-coded into character/engine logic.
+Current live cognition binding: `gemini / gemini-3.5-flash-lite` for `character:char_darian / cognition`, dynamically selected from the live Gemini catalog.
+
+Persistent scheduler: `src/observer_sandbox/autonomy.py`; service ticks about every 2 seconds.
+It supports disabled/paused state, speed scaling, durable pending actions, lease protection, idempotent crash recovery, error audit events, exponential backoff, and fail-closed behavior.
+
+Real Gemini behavior matrix passed 5/5: morning training path, thirst/hydration, hunger/food, critical overnight sleep (480m), hygiene.
+
+First real production autonomous action already passed:
+- Bedroom -> Living Room;
+- 07:00 -> 07:05;
+- reason: moving out of bedroom to begin morning training routine;
+- canary auto-disabled afterward.
+
+`sandboxctl autonomy canary-once` is now synchronous/bounded and completes exactly one action through the normal scheduler path before auto-disabling.
+Continuous production autonomy remains OFF until the Telegram observation surface is usable and the Creator explicitly approves activation.
+
+## P2 Telegram Observer — canonical architecture
+
+Design doc: `docs/TELEGRAM_OBSERVER_ARCHITECTURE.md`.
+Long-term goal is **observe the universe**, not a Darian-status-only bot.
+
+Future navigation model:
+- Universe -> Location -> Sublocation/Room -> Contents/Items
+- Characters -> selected character -> current state / full profile / history / later inventory / relationships / physiology
+- Provider/model browsing + refresh + binding changes later
+
+Stable IDs drive backend queries. `/darian` and `/home` are MVP convenience entry points only; they call generic character/location query services.
+Telegram presentation/session state may remember selected resources later, but authoritative world state remains in runtime/DB.
+
+## P2.1 implementation state
+
+Implemented files:
+- `src/observer_sandbox/observer_query.py` — reusable generic observer/query service;
+- `src/observer_sandbox/telegram_bot.py` — Telegram Bot API transport + command routing;
+- `src/observer_sandbox/service.py` — starts Telegram polling thread only when token exists;
+- `tests/test_observer_query.py`;
+- `tests/test_telegram_bot.py`.
+
+Telegram transport uses official Bot API long polling (`getUpdates`) and `sendMessage`; no webhook, public HTTP listener, extra port, or third-party Python dependency is required for P2.1.
+Polling advances `offset` to last processed update id + 1 to avoid duplicate updates.
+Only private chats are processed.
+
+Current MVP commands:
+- `/start`, `/help`
+- `/status`
+- `/watch`
+- `/history [n]`
+- `/darian`
+- `/home`
+- `/pause`
+- `/resume`
+- `/speed <value>`
+- `/whoami`
+
+Authorization:
+- `OBSERVER_TELEGRAM_ALLOWED_USER_IDS` is a comma-separated private allowlist.
+- Unknown users receive no world data/control access.
+- If the bot token is present but the allowlist is not yet set, `/start` or `/whoami` returns only the caller's own Telegram user id, enabling safe bootstrap; all other commands remain unauthorized.
+- Telegram token and allowlist are provisioned only through `/var/lib/observer-sandbox/secrets.env` mode 0600.
+
+GitHub deployment now supports optional secrets:
+- `OBSERVER_TELEGRAM_BOT_TOKEN`
+- `OBSERVER_TELEGRAM_ALLOWED_USER_IDS`
+
+CI #133 / run `31636840194`: SUCCESS.
+Deploy #67 / run `31636840198`: SUCCESS.
+Deploy #67 verified service healthy and production Darian/autonomy unchanged, but `TELEGRAM_BOT_TOKEN_PRESENT=false` because the Creator has not yet provisioned a Telegram bot token.
+
+Therefore P2.1 is **code/deploy ready but not end-to-end live accepted**.
+
+## P2 staging
+
+### P2.1 — Mobile Observer MVP (ACTIVE)
+Acceptance: Creator can independently open Telegram and inspect/control the basic live sandbox without relying on ChatGPT narration.
+Remaining steps:
+1. create/select Telegram bot via BotFather;
+2. add GitHub Actions secret `OBSERVER_TELEGRAM_BOT_TOKEN`;
+3. deploy and verify Bot API connectivity;
+4. Creator sends `/start` or `/whoami` to retrieve Telegram user id;
+5. add GitHub Actions secret `OBSERVER_TELEGRAM_ALLOWED_USER_IDS`;
+6. redeploy;
+7. live-test `/status`, `/watch`, `/history`, `/darian`, `/home`, pause/resume/speed;
+8. only then consider continuous autonomy activation.
+
+### P2.2 — Browse the sandbox
+- location list/selection;
+- room navigation;
+- room contents and item details;
+- character list/selection;
+- detailed profile section browsing/pagination.
+
+### P2.3 — Creator control expansion
+- provider/model catalog browse/refresh;
+- dynamic binding change;
+- richer controls/history filtering;
+- later watch/notification preferences.
 
 ## Roadmap
 
 - P0 Foundation & Remote Control: COMPLETE / LIVE VERIFIED.
-- P0.5 Provider Layer: FOUNDATION COMPLETE; Gemini live credential/catalog/binding verified.
-- Deep Character Profile: IMPLEMENTED; Darian instantiated live.
-- P1 Living Darian Minimum: **CORE IMPLEMENTATION + HARDENING + FIRST PRODUCTION CANARY COMPLETE / LIVE VERIFIED.** Continuous production autonomy remains OFF by deliberate gate.
-- P2 Telegram Observer: **ACTIVE NEXT PRIORITY.** Canonical future architecture defined; implement P2.1 Mobile Observer MVP next so the Creator can directly observe the sandbox before continuous autonomy is enabled.
+- P0.5 Provider Layer: FOUNDATION COMPLETE; Gemini live binding verified.
+- Deep Character Profile: IMPLEMENTED / live Darian instantiated.
+- P1 Living Darian Minimum: CORE + HARDENING + FIRST PRODUCTION CANARY COMPLETE / LIVE VERIFIED; continuous autonomy OFF.
+- P2 Telegram Observer: ACTIVE. P2.1 code/deploy foundation complete; waiting only for Telegram bot credential + allowlist live acceptance.
 - P3 Rich State & Memory: later.
 - P4 First simulation module: later.
-- P5 Second character: later; Telegram architecture already reserves generic character selection rather than Darian-only contracts.
+- P5 Second character: later; observer architecture is already generic/multi-character ready.
 
 ## RESUME HERE
 
-1. Production continuous autonomy is currently OFF. Do not enable it before the Creator has a working Telegram observation surface unless the Creator explicitly changes that sequencing.
-2. Start/continue **P2.1 Mobile Observer MVP** using `docs/TELEGRAM_OBSERVER_ARCHITECTURE.md` as the canonical P2 design.
-3. Do not build a Darian-status-only backend. Introduce generic observer/query services with stable ids; `/darian` and `/home` are convenience presentation routes only.
-4. P2.1 minimum useful commands/views: start/home, status, watch, history, character summary, Home summary, autonomy pause/resume/speed/status, plus private allowlist authentication.
-5. Preserve future compatibility for location -> room -> contents, item detail, full profile section browsing, multiple character selection, provider/model catalog and binding controls.
-6. Do not redo VPS bootstrap, Gemini secret/catalog binding, action hardening, scheduler, cognition policy, behavior matrix, or first production canary unless newer evidence shows a regression.
-7. Current live cognition binding is `gemini / gemini-3.5-flash-lite` for Darian.
-8. First real production action already occurred successfully: Bedroom -> Living Room, 07:00 -> 07:05, then auto-disable.
-9. `sandboxctl autonomy canary-once` is synchronous and bounded; do not recreate temporary trigger/recovery workflows.
-10. Continuous `enable` remains intentionally absent from the remote Actions control workflow until the post-Telegram activation decision.
-11. Synchronize this file after every material change/live proof.
+1. Do not enable continuous production autonomy before Telegram is live unless Creator explicitly overrides this gate.
+2. Do not redo P0/P1/Gemini/canary work unless newer evidence shows regression.
+3. P2.1 code is already deployed; next blocker is `OBSERVER_TELEGRAM_BOT_TOKEN`.
+4. After token provisioning, deploy, then use `/start` or `/whoami` to obtain Creator Telegram user id without exposing world data.
+5. Add that id to `OBSERVER_TELEGRAM_ALLOWED_USER_IDS`, redeploy, then perform live command acceptance.
+6. Keep Telegram handlers thin; add future rooms/items/full profiles/character selection through generic query services rather than bot-specific DB logic.
+7. Continuous `enable` remains intentionally absent from remote Actions control workflow until post-Telegram approval.
+8. Synchronize this file after every material change/live proof.
