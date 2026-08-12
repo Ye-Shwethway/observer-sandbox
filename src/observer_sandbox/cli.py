@@ -16,6 +16,7 @@ from .ai import (
 )
 from .db import connect, migrate
 from .runtime import initialize, status
+from .simulation import run_one_simulated_day, snapshot
 
 DEFAULT_DB = Path(os.environ.get("OBSERVER_SANDBOX_DB", "runtime-data/observer.sqlite3"))
 
@@ -26,6 +27,8 @@ def build_parser() -> argparse.ArgumentParser:
     sub = parser.add_subparsers(dest="command", required=True)
     sub.add_parser("init")
     sub.add_parser("status")
+    sub.add_parser("living-status")
+    sub.add_parser("simulate-day")
 
     ai = sub.add_parser("ai")
     ai_sub = ai.add_subparsers(dest="ai_command", required=True)
@@ -76,6 +79,25 @@ def main() -> None:
         return
     if args.command == "status":
         print(json.dumps(status(args.db).to_dict(), indent=2, sort_keys=True))
+        return
+    if args.command == "living-status":
+        initialize(args.db)
+        with _with_db(args.db) as conn:
+            print(json.dumps(snapshot(conn), indent=2, sort_keys=True))
+        return
+    if args.command == "simulate-day":
+        initialize(args.db)
+        with _with_db(args.db) as conn:
+            before = snapshot(conn)
+            trace = run_one_simulated_day(conn)
+            after = snapshot(conn)
+            print(json.dumps({
+                "ok": True,
+                "actions_completed": len(trace),
+                "started_at": before["sim_time"],
+                "ended_at": after["sim_time"],
+                "final_state": after,
+            }, indent=2, sort_keys=True))
         return
 
     initialize(args.db)
