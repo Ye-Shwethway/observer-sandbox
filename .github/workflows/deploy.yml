@@ -112,12 +112,25 @@ jobs:
             .venv/bin/sandboxctl ai resolve cognition --character char_darian
             if grep -Eq "^OBSERVER_TELEGRAM_BOT_TOKEN=.+" /var/lib/observer-sandbox/secrets.env 2>/dev/null; then
               echo "TELEGRAM_BOT_TOKEN_PRESENT=true"
+              TOKEN=$(sed -n "s/^OBSERVER_TELEGRAM_BOT_TOKEN=//p" /var/lib/observer-sandbox/secrets.env | head -n1)
+              if curl -fsS --max-time 15 "https://api.telegram.org/bot${TOKEN}/getMe" | grep -q '"ok":true'; then
+                echo "TELEGRAM_API_CONNECTED=true"
+              else
+                echo "TELEGRAM_API_CONNECTED=false"
+                exit 1
+              fi
             else
               echo "TELEGRAM_BOT_TOKEN_PRESENT=false"
+              echo "TELEGRAM_API_CONNECTED=false"
             fi
             if grep -Eq "^OBSERVER_TELEGRAM_OWNER_ID=[0-9]+$" /var/lib/observer-sandbox/secrets.env 2>/dev/null; then
               echo "TELEGRAM_OWNER_ID_PRESENT=true"
             else
               echo "TELEGRAM_OWNER_ID_PRESENT=false"
+            fi
+            if grep -Eq "^OBSERVER_TELEGRAM_ALLOWED_USER_IDS=.+" /var/lib/observer-sandbox/secrets.env 2>/dev/null; then
+              echo "TELEGRAM_ALLOWED_USERS_PRESENT=true"
+            else
+              echo "TELEGRAM_ALLOWED_USERS_PRESENT=false"
             fi
           '
