@@ -34,6 +34,20 @@ def _action_target(action_name: str, *targets: str) -> Callable[[Action], bool]:
     return lambda action: action.name == action_name and action.target in allowed
 
 
+def _action_target_duration(
+    action_name: str,
+    targets: tuple[str, ...],
+    min_minutes: int,
+    max_minutes: int,
+) -> Callable[[Action], bool]:
+    allowed = set(targets)
+    return lambda action: (
+        action.name == action_name
+        and action.target in allowed
+        and min_minutes <= action.duration_minutes <= max_minutes
+    )
+
+
 def _either(*predicates: Callable[[Action], bool]) -> Callable[[Action], bool]:
     return lambda action: any(predicate(action) for predicate in predicates)
 
@@ -95,9 +109,9 @@ SCENARIOS: tuple[BehaviorScenario, ...] = (
         sleepiness=88,
         cleanliness=65,
         location="room_bedroom",
-        accepts=_action_target("sleep", "obj_bed"),
-        intent="sleep in the Bed when already in the Bedroom",
-        reason_keywords=("sleep", "rest", "tired"),
+        accepts=_action_target_duration("sleep", ("obj_bed",), 360, 540),
+        intent="take a normal overnight sleep in the Bed when critically sleepy at night",
+        reason_keywords=("sleep", "rest", "tired", "recover"),
     ),
     BehaviorScenario(
         name="poor_cleanliness",
