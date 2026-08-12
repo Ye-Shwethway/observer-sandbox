@@ -30,6 +30,69 @@ def _entity_name(conn: sqlite3.Connection, entity_id: str | None) -> str | None:
     return entity["name"] if entity else None
 
 
+def list_worlds(conn: sqlite3.Connection) -> list[dict[str, Any]]:
+    rows = conn.execute(
+        "SELECT id, entity_type, name, capabilities_json FROM entities WHERE entity_type='world' ORDER BY name"
+    ).fetchall()
+    return [
+        {
+            "id": row["id"],
+            "type": row["entity_type"],
+            "name": row["name"],
+            "capabilities": json.loads(row["capabilities_json"]),
+        }
+        for row in rows
+    ]
+
+
+def list_locations(conn: sqlite3.Connection, world_id: str | None = None) -> list[dict[str, Any]]:
+    if world_id:
+        rows = conn.execute(
+            """
+            SELECT e.id, e.entity_type, e.name, e.capabilities_json
+            FROM relations r
+            JOIN entities e ON e.id=r.target_id
+            WHERE r.source_id=? AND r.relation_type='contains' AND e.entity_type='location'
+            ORDER BY e.name
+            """,
+            (world_id,),
+        ).fetchall()
+    else:
+        rows = conn.execute(
+            "SELECT id, entity_type, name, capabilities_json FROM entities WHERE entity_type='location' ORDER BY name"
+        ).fetchall()
+    return [
+        {
+            "id": row["id"],
+            "type": row["entity_type"],
+            "name": row["name"],
+            "capabilities": json.loads(row["capabilities_json"]),
+        }
+        for row in rows
+    ]
+
+
+def list_characters(conn: sqlite3.Connection) -> list[dict[str, Any]]:
+    rows = conn.execute(
+        "SELECT id, entity_type, name, capabilities_json FROM entities WHERE entity_type='character' ORDER BY name"
+    ).fetchall()
+    result: list[dict[str, Any]] = []
+    for row in rows:
+        state = snapshot(conn, row["id"])
+        result.append(
+            {
+                "id": row["id"],
+                "type": row["entity_type"],
+                "name": row["name"],
+                "capabilities": json.loads(row["capabilities_json"]),
+                "location": state["location"],
+                "location_name": state["location_name"],
+                "current_action": state["current_action"],
+            }
+        )
+    return result
+
+
 def character_summary(conn: sqlite3.Connection, character_id: str = "char_darian") -> dict[str, Any]:
     entity = _entity(conn, character_id)
     if entity is None:
