@@ -4,8 +4,6 @@ import json
 import sqlite3
 import time
 import uuid
-from dataclasses import asdict
-from datetime import datetime, timezone
 from typing import Any
 
 from .model_decision import ModelDecisionProvider
@@ -50,18 +48,11 @@ def _release_lease(conn: sqlite3.Connection, owner: str) -> None:
 
 
 def _action_from_pending(pending: dict[str, Any]) -> Action:
-    return Action(
-        pending["action"],
-        int(pending["duration_minutes"]),
-        pending.get("target"),
-        pending.get("reason"),
-    )
+    return Action(pending["action"], int(pending["duration_minutes"]), pending.get("target"), pending.get("reason"))
 
 
 def _completion_already_recorded(conn: sqlite3.Connection, action_id: str) -> bool:
-    rows = conn.execute(
-        "SELECT payload_json FROM events WHERE event_type='action_completed' ORDER BY id DESC LIMIT 50"
-    ).fetchall()
+    rows = conn.execute("SELECT payload_json FROM events WHERE event_type='action_completed' ORDER BY id DESC LIMIT 50").fetchall()
     return any(json.loads(row[0]).get("action_id") == action_id for row in rows)
 
 
@@ -92,11 +83,7 @@ def autonomy_tick(
     provider: Any | None = None,
     now_wall: float | None = None,
 ) -> dict[str, Any]:
-    """Advance at most one autonomy scheduler transition.
-
-    A tick either does nothing, plans one persistent action, or completes one due
-    action. It never chains multiple model calls/actions in a single tick.
-    """
+    """Advance at most one scheduler transition: idle, plan, or complete."""
     now = _wall_now() if now_wall is None else float(now_wall)
     if not bool(runtime_value(conn, "autonomy_enabled", False)):
         return {"ok": True, "state": "disabled"}
@@ -145,10 +132,14 @@ def autonomy_tick(
             error = ValueError("Runtime speed must be greater than zero")
             _record_failure(conn, actor_id, stage="schedule", error=error, now=now)
             return {"ok": False, "state": "schedule_error", "error": type(error).__name__}
+
         action_id = str(uuid.uuid4())
         pending = {
             "action_id": action_id,
-            **asdict(action),
+            "action": action.name,
+            "duration_minutes": action.duration_minutes,
+            "target": action.target,
+            "reason": action.reason,
             "planned_sim_time": state["sim_time"],
             "planned_wall_time": now,
             "due_wall_time": now + (action.duration_minutes * 60.0 / speed),
