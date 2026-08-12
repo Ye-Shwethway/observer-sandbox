@@ -23,6 +23,7 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
+      # First live-run also validates the bootstrap secret set and SSH trust path.
       - name: Require deployment secrets
         env:
           VPS_HOST: ${{ secrets.VPS_HOST }}
