@@ -12,10 +12,20 @@ from typing import Any
 
 from .autonomy import set_autonomy_paused, set_autonomy_speed
 from .db import connect, migrate
-from .observer_query import character_summary, location_summary, observer_status, recent_history
+from .observer_query import (
+    character_summary,
+    list_characters,
+    list_locations,
+    list_worlds,
+    location_summary,
+    observer_status,
+    recent_history,
+)
 from .secrets import load_runtime_secrets
+from .simulation import runtime_value, set_runtime_value
 
 DEFAULT_DB = Path(os.environ.get("OBSERVER_SANDBOX_DB", "/var/lib/observer-sandbox/observer.sqlite3"))
+NOTIFY_KEY_PREFIX = "telegram_notifications:"
 
 
 def _parse_user_ids(raw: str) -> set[int]:
@@ -68,8 +78,24 @@ def _api(token: str, method: str, payload: dict[str, Any] | None = None, *, time
     return body.get("result")
 
 
-def _send(token: str, chat_id: int, text: str) -> None:
-    _api(token, "sendMessage", {"chat_id": chat_id, "text": text[:4096]}, timeout=15)
+def _reply_markup(keyboard: list[list[dict[str, str]]] | None) -> str | None:
+    return json.dumps({"inline_keyboard": keyboard}) if keyboard else None
+
+
+def _send(token: str, chat_id: int, text: str, keyboard: list[list[dict[str, str]]] | None = None) -> None:
+    payload: dict[str, Any] = {"chat_id": chat_id, "text": text[:4096]}
+    markup = _reply_markup(keyboard)
+    if markup:
+        payload["reply_markup"] = markup
+    _api(token, "sendMessage", payload, timeout=15)
+
+
+def _edit(token: str, chat_id: int, message_id: int, text: str, keyboard: list[list[dict[str, str]]] | None = None) -> None:
+    payload: dict[str, Any] = {"chat_id": chat_id, "message_id": message_id, "text": text[:4096]}
+    markup = _reply_markup(keyboard)
+    if markup:
+        payload["reply_markup"] = markup
+    _api(token, "editMessageText", payload, timeout=15)
 
 
 def _fmt_time(value: str | None) -> str:
@@ -90,6 +116,16 @@ def _title_action(value: str | None) -> str:
     return (value or "idle").replace("_", " ").title()
 
 
+def _notifications_enabled(conn, user_id: int) -> bool:
+    return bool(runtime_value(conn, f"{NOTIFY_KEY_PREFIX}{user_id}", True))
+
+
+def _set_notifications(conn, user_id: int, enabled: bool) -> bool:
+    set_runtime_value(conn, f"{NOTIFY_KEY_PREFIX}{user_id}", bool(enabled))
+    conn.commit()
+    return bool(enabled)
+
+
 def _boot_message() -> str:
     return (
         "🌌 OBSERVER SANDBOX\n"
@@ -99,8 +135,41 @@ def _boot_message() -> str:
         "🧠 Minds: Wake-on-demand\n"
         "📡 Creator channel: Connected\n"
         "━━━━━━━━━━━━━━━━━━\n"
-        "Use /status or /watch to observe."
+        "Use /start to open the Observer Home."
     )
+
+
+def _home_message(conn, user_id: int) -> str:
+    status = observer_status(conn)
+    c = status["character"]
+    notify = "ON" if _notifications_enabled(conn, user_id) else "OFF"
+    return (
+        "🌌 OBSERVER HOME\n"
+        "━━━━━━━━━━━━━━━━━━\n"
+        "✨ Universe is alive.\n\n"
+        f"👤 Darian · {_title_action(c['current_action'])}\n"
+        f"📍 {c['location_name']}\n"
+        f"🕒 {_fmt_time(c['sim_time'])}\n"
+        f"🔔 Notifications {notify}\n\n"
+        "Choose what you want to observe:"
+    )
+
+
+def _home_keyboard() -> list[list[dict[str, str]]]:
+    return [
+        [
+            {"text": "🌍 Universe", "callback_data": "nav:universe"},
+            {"text": "👥 Characters", "callback_data": "nav:characters"},
+        ],
+        [
+            {"text": "🕒 Runtime", "callback_data": "nav:runtime"},
+            {"text": "📜 History", "callback_data": "nav:history"},
+        ],
+    ]
+
+
+def _back_home_keyboard() -> list[list[dict[str, str]]]:
+    return [[{"text": "⌂ Observer Home", "callback_data": "nav:home"}]]
 
 
 def _fmt_character(data: dict[str, Any]) -> str:
@@ -108,7 +177,7 @@ def _fmt_character(data: dict[str, Any]) -> str:
     s = data["state"]
     return (
         f"👤 {c['name']}\n"
-        f"━━━━━━━━━━━━━━━━━━\n"
+        "━━━━━━━━━━━━━━━━━━\n"
         f"📍 Location   {s['location_name']}\n"
         f"🎬 Action     {_title_action(s['current_action'])}\n"
         f"🕒 Sim Time   {_fmt_time(s['sim_time'])}\n\n"
@@ -122,23 +191,20 @@ def _fmt_character(data: dict[str, Any]) -> str:
 
 def _fmt_location(data: dict[str, Any]) -> str:
     loc = data["location"]
-    lines = [f"🏠 {loc['name']}", "━━━━━━━━━━━━━━━━━━"]
+    icon = "🌍" if loc["type"] == "world" else "📍"
+    lines = [f"{icon} {loc['name']}", "━━━━━━━━━━━━━━━━━━"]
     if data["children"]:
         lines.append("📂 Contents")
         for child in data["children"]:
-            caps = ", ".join(child["capabilities"])
-            suffix = f" · {caps}" if caps else ""
-            lines.append(f"• {child['name']}{suffix}")
+            lines.append(f"• {child['name']}")
     if data["residents"]:
-        lines.append("")
-        lines.append("👥 Residents: " + ", ".join(row["name"] for row in data["residents"]))
+        lines.extend(["", "👥 Residents: " + ", ".join(row["name"] for row in data["residents"])])
     if data["occupants"]:
         lines.append("📍 Present now: " + ", ".join(row["name"] for row in data["occupants"]))
     return "\n".join(lines)
 
 
 def _fmt_history(rows: list[dict[str, Any]]) -> str:
-    # Default observer history is intentionally human-facing: hide engine/control noise.
     visible = [row for row in rows if row.get("action")]
     if not visible:
         return "🕰 Recent Activity\n━━━━━━━━━━━━━━━━━━\nNo character activity yet."
@@ -181,16 +247,68 @@ def _fmt_status(data: dict[str, Any]) -> str:
     )
 
 
+def _universe_view(conn) -> tuple[str, list[list[dict[str, str]]]]:
+    worlds = list_worlds(conn)
+    lines = ["🌍 UNIVERSE", "━━━━━━━━━━━━━━━━━━", "Select a place to observe:"]
+    keyboard: list[list[dict[str, str]]] = []
+    for world in worlds:
+        lines.append(f"• {world['name']}")
+        rooms = list_locations(conn, world["id"])
+        for room in rooms:
+            keyboard.append([{"text": f"📍 {room['name']}", "callback_data": f"loc:{room['id']}"}])
+    keyboard.append([{"text": "⌂ Observer Home", "callback_data": "nav:home"}])
+    return "\n".join(lines), keyboard
+
+
+def _characters_view(conn) -> tuple[str, list[list[dict[str, str]]]]:
+    chars = list_characters(conn)
+    lines = ["👥 CHARACTERS", "━━━━━━━━━━━━━━━━━━", "Select a character:"]
+    keyboard: list[list[dict[str, str]]] = []
+    for char in chars:
+        lines.append(f"• {char['name']} · {_title_action(char['current_action'])} · {char['location_name']}")
+        keyboard.append([{"text": f"👤 {char['name']}", "callback_data": f"char:{char['id']}"}])
+    keyboard.append([{"text": "⌂ Observer Home", "callback_data": "nav:home"}])
+    return "\n".join(lines), keyboard
+
+
+def _callback_view(conn, user_id: int, callback_data: str) -> tuple[str, list[list[dict[str, str]]] | None]:
+    if callback_data == "nav:home":
+        return _home_message(conn, user_id), _home_keyboard()
+    if callback_data == "nav:universe":
+        return _universe_view(conn)
+    if callback_data == "nav:characters":
+        return _characters_view(conn)
+    if callback_data == "nav:runtime":
+        return _fmt_status(observer_status(conn)), _back_home_keyboard()
+    if callback_data == "nav:history":
+        return _fmt_history(recent_history(conn, limit=16)), _back_home_keyboard()
+    if callback_data.startswith("loc:"):
+        location_id = callback_data.split(":", 1)[1]
+        return _fmt_location(location_summary(conn, location_id)), [
+            [{"text": "← Universe", "callback_data": "nav:universe"}],
+            [{"text": "⌂ Observer Home", "callback_data": "nav:home"}],
+        ]
+    if callback_data.startswith("char:"):
+        character_id = callback_data.split(":", 1)[1]
+        return _fmt_character(character_summary(conn, character_id)), [
+            [{"text": "← Characters", "callback_data": "nav:characters"}],
+            [{"text": "⌂ Observer Home", "callback_data": "nav:home"}],
+        ]
+    return "Unknown observer destination.", _back_home_keyboard()
+
+
 def _help(role: str) -> str:
     role_label = "Owner" if role == "owner" else "Authorized User"
     return (
         f"🌌 Observer Sandbox · {role_label}\n"
         "━━━━━━━━━━━━━━━━━━\n"
+        "/start — Observer Home\n"
         "/status — Runtime overview\n"
         "/watch — Darian now + recent activity\n"
         "/history [n] — Recent activity\n"
         "/darian — Character summary\n"
         "/home — Home summary\n"
+        "/notify on|off — Proactive notifications\n"
         "/pause — Pause autonomy\n"
         "/resume — Resume autonomy\n"
         "/speed <value> — Set runtime speed\n"
@@ -205,10 +323,7 @@ def handle_command(db_path: str | Path, *, user_id: int, text: str) -> str:
     command = first.split("@", 1)[0].lower() if first else ""
 
     if command in {"/whoami", "/start"} and role == "unauthorized":
-        return (
-            f"Observer Sandbox bot is connected. Your Telegram user id is {user_id}. "
-            "Role: unauthorized. Ask the owner to authorize this id."
-        )
+        return f"Observer Sandbox bot is connected. Your Telegram user id is {user_id}. Role: unauthorized. Ask the owner to authorize this id."
     if role == "unauthorized":
         return "Not authorized. Use /whoami to obtain your Telegram user id."
     if command == "/whoami":
@@ -216,7 +331,9 @@ def handle_command(db_path: str | Path, *, user_id: int, text: str) -> str:
 
     with connect(db_path) as conn:
         migrate(conn)
-        if command in {"/start", "/help"}:
+        if command == "/start":
+            return _home_message(conn, user_id)
+        if command == "/help":
             return _help(role)
         if command == "/status":
             return _fmt_status(observer_status(conn))
@@ -234,6 +351,14 @@ def handle_command(db_path: str | Path, *, user_id: int, text: str) -> str:
                 except ValueError:
                     return "Usage: /history [1-20]"
             return _fmt_history(recent_history(conn, limit=max(limit * 2, 12)))
+        if command in {"/notify", "/notification", "/notifications"}:
+            if not rest or rest[0].lower() not in {"on", "off"}:
+                return f"🔔 Notifications are {'ON' if _notifications_enabled(conn, user_id) else 'OFF'}.\nUse /notify on or /notify off."
+            enabled = _set_notifications(conn, user_id, rest[0].lower() == "on")
+            return f"🔔 Notifications {'ON' if enabled else 'OFF'}\n━━━━━━━━━━━━━━━━━━\nPreference saved."
+        if command in {"/notion/on", "/notion/off"}:
+            enabled = _set_notifications(conn, user_id, command.endswith("/on"))
+            return f"🔔 Notifications {'ON' if enabled else 'OFF'}\n━━━━━━━━━━━━━━━━━━\nPreference saved."
         if command == "/pause":
             return _fmt_status(set_autonomy_paused(conn, True))
         if command == "/resume":
@@ -242,11 +367,14 @@ def handle_command(db_path: str | Path, *, user_id: int, text: str) -> str:
             if not rest:
                 return "Usage: /speed <0-3600>"
             try:
-                value = float(rest[0])
-                return _fmt_status(set_autonomy_speed(conn, value))
+                return _fmt_status(set_autonomy_speed(conn, float(rest[0])))
             except ValueError as exc:
                 return f"Speed rejected: {exc}"
         return _help(role)
+
+
+def _command_keyboard(command: str) -> list[list[dict[str, str]]] | None:
+    return _home_keyboard() if command == "/start" else None
 
 
 def run_polling(db_path: str | Path = DEFAULT_DB) -> None:
@@ -258,9 +386,12 @@ def run_polling(db_path: str | Path = DEFAULT_DB) -> None:
     owner_id = _owner_user_id()
     if owner_id is not None:
         try:
-            _send(token, owner_id, _boot_message())
+            with connect(db_path) as conn:
+                migrate(conn)
+                notify_owner = _notifications_enabled(conn, owner_id)
+            if notify_owner:
+                _send(token, owner_id, _boot_message())
         except (urllib.error.URLError, TimeoutError, RuntimeError, OSError, ValueError):
-            # A notification failure must never prevent the observer transport from booting.
             pass
 
     offset: int | None = None
@@ -269,15 +400,34 @@ def run_polling(db_path: str | Path = DEFAULT_DB) -> None:
         try:
             payload: dict[str, Any] = {
                 "timeout": 20,
-                "allowed_updates": json.dumps(["message"]),
+                "allowed_updates": json.dumps(["message", "callback_query"]),
             }
             if offset is not None:
                 payload["offset"] = offset
             updates = _api(token, "getUpdates", payload, timeout=30) or []
             backoff = 1.0
             for update in updates:
-                update_id = int(update["update_id"])
-                offset = update_id + 1
+                offset = int(update["update_id"]) + 1
+
+                callback = update.get("callback_query") or {}
+                if callback:
+                    sender = callback.get("from") or {}
+                    user_id = int(sender.get("id", 0))
+                    message = callback.get("message") or {}
+                    chat = message.get("chat") or {}
+                    if chat.get("type") != "private" or _user_role(user_id) == "unauthorized":
+                        _api(token, "answerCallbackQuery", {"callback_query_id": callback.get("id"), "text": "Not authorized"}, timeout=10)
+                        continue
+                    try:
+                        with connect(db_path) as conn:
+                            migrate(conn)
+                            text, keyboard = _callback_view(conn, user_id, str(callback.get("data", "")))
+                        _edit(token, int(chat["id"]), int(message["message_id"]), text, keyboard)
+                        _api(token, "answerCallbackQuery", {"callback_query_id": callback.get("id")}, timeout=10)
+                    except Exception:
+                        _api(token, "answerCallbackQuery", {"callback_query_id": callback.get("id"), "text": "Observer action failed safely"}, timeout=10)
+                    continue
+
                 message = update.get("message") or {}
                 chat = message.get("chat") or {}
                 sender = message.get("from") or {}
@@ -290,7 +440,8 @@ def run_polling(db_path: str | Path = DEFAULT_DB) -> None:
                     reply = handle_command(db_path, user_id=user_id, text=text)
                 except Exception as exc:
                     reply = f"Observer command failed safely: {type(exc).__name__}"
-                _send(token, chat_id, reply)
+                command = text.strip().split()[0].split("@", 1)[0].lower() if text.strip() else ""
+                _send(token, chat_id, reply, _command_keyboard(command))
         except (urllib.error.URLError, TimeoutError, RuntimeError, OSError, ValueError):
             time.sleep(backoff)
             backoff = min(backoff * 2.0, 30.0)
