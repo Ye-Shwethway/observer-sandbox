@@ -1,0 +1,67 @@
+name: Bounded Autonomy Acceptance
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths:
+      - '.github/workflows/autonomy-acceptance.yml'
+
+jobs:
+  acceptance:
+    if: ${{ vars.VPS_DEPLOY_ENABLED == 'true' }}
+    runs-on: ubuntu-latest
+    steps:
+      - name: Configure SSH
+        env:
+          VPS_SSH_KEY: ${{ secrets.VPS_SSH_KEY }}
+          VPS_HOST: ${{ secrets.VPS_HOST }}
+          VPS_PORT: ${{ secrets.VPS_PORT || '22' }}
+        run: |
+          test -n "$VPS_HOST"
+          test -n "$VPS_SSH_KEY"
+          install -m 700 -d ~/.ssh
+          printf '%s\n' "$VPS_SSH_KEY" > ~/.ssh/id_ed25519
+          chmod 600 ~/.ssh/id_ed25519
+          ssh-keyscan -p "$VPS_PORT" -H "$VPS_HOST" >> ~/.ssh/known_hosts
+
+      - name: Run bounded scheduler on disposable DB copy
+        env:
+          VPS_HOST: ${{ secrets.VPS_HOST }}
+          VPS_USER: ${{ secrets.VPS_USER }}
+          VPS_PORT: ${{ secrets.VPS_PORT || '22' }}
+        run: |
+          ssh -p "$VPS_PORT" "$VPS_USER@$VPS_HOST" '
+            set -euo pipefail
+            cd /opt/observer-sandbox
+            TMP_DB=$(mktemp /tmp/observer-autonomy-acceptance.XXXXXX.sqlite3)
+            trap "rm -f $TMP_DB $TMP_DB-wal $TMP_DB-shm" EXIT
+            cp /var/lib/observer-sandbox/observer.sqlite3 "$TMP_DB"
+            export OBSERVER_SANDBOX_DB="$TMP_DB"
+            .venv/bin/python - <<"PY"
+          import json
+          from observer_sandbox.autonomy import autonomy_tick
+          from observer_sandbox.db import connect
+          from observer_sandbox.simulation import runtime_value, set_runtime_value, snapshot
+
+          db = __import__("os").environ["OBSERVER_SANDBOX_DB"]
+          with connect(db) as conn:
+              set_runtime_value(conn, "autonomy_enabled", True)
+              set_runtime_value(conn, "paused", False)
+              set_runtime_value(conn, "speed", 3600.0)
+              conn.commit()
+              before = snapshot(conn)
+              planned = autonomy_tick(conn, now_wall=1000.0)
+              assert planned["state"] == "planned", planned
+              due = float(planned["pending"]["due_wall_time"])
+              completed = autonomy_tick(conn, now_wall=due)
+              assert completed["state"] == "completed", completed
+              after = snapshot(conn)
+              assert before["sim_time"] != after["sim_time"]
+              assert runtime_value(conn, "autonomy_pending_action", None) is None
+              print(json.dumps({"ok": True, "planned": planned["pending"], "completed_state": completed["state"], "before": before, "after": after}, indent=2, sort_keys=True))
+          PY
+            export OBSERVER_SANDBOX_DB=/var/lib/observer-sandbox/observer.sqlite3
+            .venv/bin/sandboxctl status
+            .venv/bin/sandboxctl living-status
+          '
