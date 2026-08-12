@@ -8,7 +8,7 @@ def test_initialize_and_status(tmp_path):
 
     result = status(db)
     assert result.healthy is True
-    assert result.schema_version == 1
+    assert result.schema_version == 2
     assert result.runtime_state["paused"] is False
     assert result.runtime_state["speed"] == 1.0
     assert result.runtime_state["world_id"] == "home"
@@ -18,4 +18,14 @@ def test_initialize_and_status(tmp_path):
             row[0]
             for row in conn.execute("SELECT name FROM sqlite_master WHERE type='table'")
         }
-    assert {"entities", "relations", "fields", "events", "runtime_state"} <= tables
+    assert {
+        "entities",
+        "relations",
+        "fields",
+        "events",
+        "runtime_state",
+        "ai_providers",
+        "ai_models",
+        "ai_bindings",
+        "ai_catalog_sync",
+    } <= tables
