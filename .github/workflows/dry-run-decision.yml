@@ -32,6 +32,7 @@ jobs:
           VPS_PORT: ${{ secrets.VPS_PORT || '22' }}
         run: |
           # This workflow deliberately never applies the returned action.
+          # It asserts state and event-count invariants around the model proposal.
           ssh -p "$VPS_PORT" "$VPS_USER@$VPS_HOST" '
             set -euo pipefail
             cd /opt/observer-sandbox
