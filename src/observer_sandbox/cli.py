@@ -15,7 +15,13 @@ from .ai import (
     set_binding,
 )
 from .ai_bootstrap import bootstrap_gemini_cognition
-from .autonomy import autonomy_status
+from .autonomy import (
+    arm_canary_once,
+    autonomy_status,
+    set_autonomy_enabled,
+    set_autonomy_paused,
+    set_autonomy_speed,
+)
 from .db import connect, migrate
 from .model_decision import dry_run_model_decision
 from .runtime import initialize, status
@@ -33,6 +39,17 @@ def build_parser() -> argparse.ArgumentParser:
     sub.add_parser("living-status")
     sub.add_parser("autonomy-status")
     sub.add_parser("simulate-day")
+
+    autonomy = sub.add_parser("autonomy")
+    autonomy_sub = autonomy.add_subparsers(dest="autonomy_command", required=True)
+    autonomy_sub.add_parser("status")
+    autonomy_sub.add_parser("enable")
+    autonomy_sub.add_parser("disable")
+    autonomy_sub.add_parser("pause")
+    autonomy_sub.add_parser("resume")
+    autonomy_sub.add_parser("canary-once")
+    speed = autonomy_sub.add_parser("speed")
+    speed.add_argument("value", type=float)
 
     ai = sub.add_parser("ai")
     ai_sub = ai.add_subparsers(dest="ai_command", required=True)
@@ -100,6 +117,27 @@ def main() -> None:
         initialize(args.db)
         with _with_db(args.db) as conn:
             print(json.dumps(autonomy_status(conn), indent=2, sort_keys=True))
+        return
+    if args.command == "autonomy":
+        initialize(args.db)
+        with _with_db(args.db) as conn:
+            if args.autonomy_command == "status":
+                result = autonomy_status(conn)
+            elif args.autonomy_command == "enable":
+                result = set_autonomy_enabled(conn, True)
+            elif args.autonomy_command == "disable":
+                result = set_autonomy_enabled(conn, False)
+            elif args.autonomy_command == "pause":
+                result = set_autonomy_paused(conn, True)
+            elif args.autonomy_command == "resume":
+                result = set_autonomy_paused(conn, False)
+            elif args.autonomy_command == "speed":
+                result = set_autonomy_speed(conn, args.value)
+            elif args.autonomy_command == "canary-once":
+                result = arm_canary_once(conn)
+            else:
+                raise SystemExit("Unknown autonomy command")
+            print(json.dumps(result, indent=2, sort_keys=True))
         return
     if args.command == "simulate-day":
         initialize(args.db)
