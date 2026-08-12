@@ -43,5 +43,5 @@ def test_mind_wakes_only_at_decision_boundaries(tmp_path):
 def test_universe_boot_message_is_creator_facing():
     message = _boot_message()
     assert "Universe is alive!" in message
-    assert "wake-on-demand" in message
+    assert "Wake-on-demand" in message
     assert "/status" in message
