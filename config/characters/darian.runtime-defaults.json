@@ -1,0 +1,35 @@
+{
+  "entity_id": "char_darian",
+  "runtime_profile_defaults_revision": "darian-runtime-defaults-v1",
+  "values": {
+    "sexual_anatomy.erectile_state": {
+      "value": "flaccid",
+      "mode": "simulated",
+      "authority": "sexual_physiology_engine"
+    },
+    "sexual_anatomy.erection_firmness": {
+      "value": 0,
+      "mode": "simulated",
+      "authority": "sexual_physiology_engine"
+    },
+    "sexual_anatomy.erection_firmness_cap": {
+      "value": 100,
+      "mode": "canonical",
+      "authority": "profile_core"
+    },
+    "sexual_state.arousal_level": {
+      "value": 0,
+      "mode": "simulated",
+      "authority": "sexual_physiology_engine"
+    }
+  },
+  "semantics": {
+    "normal_baseline": "flaccid",
+    "firmness_zero_meaning": "No erection is present; zero does not imply erectile dysfunction.",
+    "firmness_is_contextual": true,
+    "firmness_scale": "0-100 within an active erectile response",
+    "firmness_cap_meaning": "Personal physiological maximum rigidity ceiling, not a persistent current state.",
+    "arousal_is_separate": true,
+    "transition_states": ["flaccid", "developing", "erect", "subsiding"]
+  }
+}
