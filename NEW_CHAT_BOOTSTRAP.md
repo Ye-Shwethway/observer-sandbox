@@ -2,7 +2,7 @@
 
 Status: ACTIVE
 Purpose: deterministic project recovery across ChatGPT sessions and protection against memory drift.
-Last synchronized: 2026-08-13 — P0 LIVE VERIFIED. P1 Living Darian autonomy is now CONTINUOUSLY LIVE at 1x with wake-on-demand cognition. P2.1 Telegram Observer is transport-live and Creator-visible. Telegram boot notification and cognition-call telemetry are implemented.
+Last synchronized: 2026-08-13 — P0 LIVE VERIFIED. P1 Living Darian autonomy is CONTINUOUSLY LIVE at 1x with wake-on-demand cognition. P2.1 Telegram Observer is transport-live and Creator-visible. Telegram presentation is now human-friendly with canonical display timestamps, friendly entity names, clean activity history, and boot notification UX.
 
 ## HARD RECOVERY RULES
 
@@ -39,11 +39,9 @@ Latest verified activation state:
 - paused=false;
 - speed=1.0;
 - retry=null;
-- first continuous cognition wake completed successfully;
-- cognition decision_calls=1 at activation readback;
-- wake reason=`autonomy_enabled`;
-- Darian remained in Living Room while first physical action was pending;
-- first continuous pending action: `move -> room_gym`, authored duration 10 simulated minutes / 10 wall minutes at 1x;
+- continuous wake-on-demand autonomy has begun;
+- first continuous cognition wake produced exactly one model call;
+- first continuous action was `move -> room_gym` from Living Room, 10 simulated minutes / 10 wall minutes at 1x;
 - reason: moving toward the home gym to begin the morning physical training routine;
 - Gemini credential present;
 - Telegram Bot API connectivity verified true;
@@ -61,14 +59,14 @@ The service may tick the scheduler about every 2 seconds, but the model mind is 
 
 While an action is pending, all scheduler ticks are deterministic and make zero LLM calls. At 1x speed, a 10-minute action creates roughly 10 wall minutes with no new cognition call; a 60-minute action creates roughly one wall hour with no new cognition call.
 
-`src/observer_sandbox/autonomy.py` now persists cognition telemetry:
+`src/observer_sandbox/autonomy.py` persists cognition telemetry:
 - `cognition_wake_stats.decision_calls`;
 - last model-call wall time;
 - last model-call simulated time;
 - last wake reason;
 - next/queued wake reason at action boundaries.
 
-`/status` exposes the durable `Mind calls` count. Tests verify repeated scheduler ticks during an in-progress action do not increment model calls and that the next model wake occurs only after the action boundary.
+`/status` exposes the durable `Mind Calls` count. Tests verify repeated scheduler ticks during an in-progress action do not increment model calls and that the next model wake occurs only after the action boundary.
 
 This is the cost-control baseline for free-key operation and future paid-provider cost reduction. Do not add background reflection loops, periodic LLM heartbeats, or model calls on every service tick without explicit Creator approval.
 
@@ -90,14 +88,13 @@ Current live cognition binding: `gemini / gemini-3.5-flash-lite` for `character:
 Persistent scheduler: `src/observer_sandbox/autonomy.py`; service ticks about every 2 seconds.
 It supports pause/resume, 1x or configured speed scaling, durable pending actions, lease protection, idempotent crash recovery, error audit events, exponential backoff, and fail-closed behavior.
 
-First production canary passed before continuous activation. Continuous activation was later explicitly approved after Telegram became live.
+First production canary passed before continuous activation. Continuous activation was explicitly approved after Telegram became live.
 
 Activation proof:
 - wake-on-demand tests: CI #148 / run `31638949447`: SUCCESS;
 - continuous activation run `31639042104`: SUCCESS;
 - first live wake produced exactly one cognition call and one pending action;
-- one-shot activation workflow was removed after successful use;
-- `.github/workflows/autonomy-control.yml` now intentionally exposes explicit `enable` alongside status/canary/disable/pause/resume/speed because Creator approval has been granted.
+- `.github/workflows/autonomy-control.yml` intentionally exposes explicit `enable` alongside status/canary/disable/pause/resume/speed because Creator approval has been granted.
 
 ## P2 Telegram Observer — canonical architecture
 
@@ -112,6 +109,31 @@ Future navigation model:
 
 Stable IDs drive backend queries. `/darian` and `/home` are MVP convenience entry points only; they call generic character/location query services.
 Telegram presentation/session state may remember selected resources later, but authoritative world state remains in runtime/DB.
+
+## Telegram presentation contract
+
+Telegram output is a presentation layer only. DB/runtime timestamps remain canonical ISO values for scheduling and persistence; formatting happens only when rendering messages.
+
+Creator-facing timestamp format is:
+- `dd-mm-yyyy (Day) hh:mm AM/PM`
+- example: `01-05-2025 (Thursday) 07:05 AM`
+- 12-hour clock with AM/PM.
+
+Presentation conventions:
+- compact Unicode/emoji section headers and dividers for scanability;
+- booleans rendered as human terms such as `Yes` / `No`;
+- actions rendered title-style (`Move`, `Train`, etc.);
+- internal entity ids such as `room_gym` resolve to display names such as `Home Gym` whenever possible;
+- default recent activity hides engine/control noise such as `autonomy_control` and canary bookkeeping and emphasizes character actions/reasons;
+- raw canonical events remain stored and may later be exposed through a detailed/debug history mode.
+
+Relevant implementation:
+- `src/observer_sandbox/telegram_bot.py` — message formatting + timestamp presentation;
+- `src/observer_sandbox/observer_query.py` — resolves friendly target entity names for observer output.
+
+UI validation/deploy proof:
+- CI #156 / run `31639733118`: SUCCESS;
+- Deploy #77 / run `31639643492`: SUCCESS.
 
 ## Telegram live state and boot UX
 
@@ -129,13 +151,13 @@ Current MVP commands:
 - `/speed <value>`
 - `/whoami`
 
-Every Telegram polling-process boot now attempts an Owner-only startup notification:
+Every Telegram polling-process boot attempts an Owner-only startup notification:
 
 `🌌 OBSERVER SANDBOX`
 `✨ Universe is alive!`
-`🟢 Observer link: online`
-`🧠 Minds: wake-on-demand`
-`📡 Creator channel: connected`
+`🟢 Observer link: Online`
+`🧠 Minds: Wake-on-demand`
+`📡 Creator channel: Connected`
 
 A notification failure must not prevent the bot transport from starting.
 
@@ -151,9 +173,9 @@ Future user management remains owner-only. Environment-backed Owner ID is the bo
 ### P2.1 — Mobile Observer MVP (LIVE)
 - transport live;
 - Creator-facing bot confirmed alive;
+- human-friendly message UI live;
 - basic observation/control commands available;
-- continuous autonomy is now live and observable through Telegram;
-- next work may improve message/UI quality and complete command acceptance as needed.
+- continuous autonomy live and observable through Telegram.
 
 ### P2.2 — Browse the sandbox (NEXT MAJOR TELEGRAM EXPANSION)
 - location list/selection;
@@ -184,8 +206,10 @@ Future user management remains owner-only. Environment-backed Owner ID is the bo
 
 1. Continuous autonomy is LIVE at 1x. Do not casually reset or reseed production state.
 2. Preserve wake-on-demand cognition: no model calls while a physical action is pending; no periodic LLM heartbeat/reflection loop by default.
-3. `/status` exposes cumulative Mind calls for cost observation.
-4. Telegram boot must continue to notify Owner with `Universe is alive!` while notification failure remains non-fatal.
-5. Keep Telegram handlers thin; future rooms/items/full profiles/character selection go through generic query services.
-6. Next major Telegram slice is P2.2 hierarchical universe browsing.
-7. Synchronize this file after every material change/live proof.
+3. `/status` exposes cumulative Mind Calls for cost observation.
+4. Preserve Telegram display timestamp format `dd-mm-yyyy (Day) hh:mm AM/PM`; do not mutate canonical DB timestamps just for UI.
+5. Keep default activity history character-focused; raw engine/control events stay durable for future detailed/debug views.
+6. Telegram boot must continue to notify Owner with `Universe is alive!` while notification failure remains non-fatal.
+7. Keep Telegram handlers thin; future rooms/items/full profiles/character selection go through generic query services.
+8. Next major Telegram slice is P2.2 hierarchical universe browsing.
+9. Synchronize this file after every material change/live proof.
