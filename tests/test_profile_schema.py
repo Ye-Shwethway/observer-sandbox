@@ -19,11 +19,12 @@ def test_profile_schema_is_deep_and_domain_complete(tmp_path):
             )
         }
 
-    assert summary["field_count"] >= 100
+    assert summary["field_count"] >= 120
     assert {
         "identity", "body", "appearance", "sexual_anatomy", "raps_pa", "raps_ma",
         "raps_ia", "raps_sa", "raps_vc", "social", "needs", "physiology",
-        "genetics", "personality", "background", "narrative",
+        "sleep", "nutrition", "training", "emotion", "goal", "genetics",
+        "personality", "background", "narrative",
     } <= set(summary["domains"])
     assert {
         "body.biceps_relaxed_in",
@@ -33,8 +34,15 @@ def test_profile_schema_is_deep_and_domain_complete(tmp_path):
         "sexual_anatomy.penis_length_in",
         "sexual_anatomy.penis_girth_in",
         "sexual_anatomy.erection_firmness",
+        "raps_pa.focus_precision",
+        "raps_pa.practical_skill",
+        "raps_ma.tactical_leadership",
+        "raps_ia.capability_notes",
+        "raps_sa.charisma",
         "raps_sa.self_satisfaction_weekly",
         "genetics.penis_length_in",
+        "appearance.marks_scars_tattoos",
     } <= keys
     assert "sexual_anatomy.penis_length_in" in intimate
     assert "sexual_anatomy.penis_girth_in" in intimate
+    assert "sexual_anatomy.erection_firmness" in intimate
