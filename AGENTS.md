@@ -4,7 +4,7 @@
 
 Before making material changes, read `NEW_CHAT_BOOTSTRAP.md` and treat newer repository/runtime evidence as authoritative over remembered chat context.
 
-Also read the directly relevant source/config files for the task. For architecture work, read `docs/ARCHITECTURE.md`; for character-profile work, inspect `config/characters/` and the profile schema modules; for deployment/runtime work, inspect `.github/workflows/` and `deploy/`.
+Also read the directly relevant source/config files for the task. For architecture work, read `docs/ARCHITECTURE.md`; for Telegram work, read `docs/TELEGRAM_OBSERVER_ARCHITECTURE.md`; for character-profile work, inspect `config/characters/` and the profile schema modules; for deployment/runtime work, inspect `.github/workflows/` and `deploy/`.
 
 ## Continuity rule
 
@@ -35,6 +35,25 @@ The bootstrap must state the strongest level actually proven.
 7. Older handoffs or chat/model memory.
 
 Chat/model memory is context only and must not override newer repository or live evidence.
+
+## Telegram presentation contract
+
+Every new or modified Creator-facing Telegram message must follow the presentation rules in `docs/TELEGRAM_OBSERVER_ARCHITECTURE.md`.
+
+Telegram output is a human-facing observer UI, not a raw log or database dump. New commands and callbacks must therefore reuse the shared formatting conventions rather than introducing one-off raw output.
+
+At minimum:
+
+- simulated timestamps shown to users use `dd-mm-yyyy (Day) hh:mm AM/PM` in 12-hour format;
+- canonical ISO timestamps remain unchanged in storage/runtime internals;
+- prefer human-readable entity names over internal ids in normal views;
+- use concise sections, whitespace, icons, and restrained decoration for scanability;
+- use friendly labels such as Yes/No or ON/OFF rather than raw booleans where appropriate;
+- default activity/history views emphasize meaningful universe/character events and suppress engine/control bookkeeping noise;
+- large datasets are sectioned or paginated instead of dumped into one message;
+- presentation changes must not move business logic into Telegram handlers.
+
+Tests for Telegram features should validate these presentation contracts where relevant.
 
 ## Scope discipline
 
