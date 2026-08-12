@@ -1,0 +1,37 @@
+{
+  "world_id": "home",
+  "revision": "home-v1",
+  "name": "Darian Home",
+  "start_location": "room_bedroom",
+  "rooms": [
+    {"id": "room_bedroom", "name": "Bedroom"},
+    {"id": "room_kitchen", "name": "Kitchen"},
+    {"id": "room_bathroom", "name": "Bathroom"},
+    {"id": "room_living", "name": "Living Room"},
+    {"id": "room_gym", "name": "Home Gym"}
+  ],
+  "objects": [
+    {"id": "obj_bed", "name": "Bed", "room": "room_bedroom", "capabilities": ["sleep", "rest"]},
+    {"id": "obj_nightstand", "name": "Nightstand", "room": "room_bedroom", "capabilities": ["inspect", "use"]},
+    {"id": "obj_shower", "name": "Shower", "room": "room_bathroom", "capabilities": ["shower"]},
+    {"id": "obj_sink", "name": "Sink", "room": "room_bathroom", "capabilities": ["drink", "use"]},
+    {"id": "obj_toilet", "name": "Toilet", "room": "room_bathroom", "capabilities": ["use"]},
+    {"id": "obj_fridge", "name": "Refrigerator", "room": "room_kitchen", "capabilities": ["inspect", "eat", "drink"]},
+    {"id": "obj_pantry", "name": "Pantry", "room": "room_kitchen", "capabilities": ["inspect", "eat"]},
+    {"id": "obj_stove", "name": "Stove", "room": "room_kitchen", "capabilities": ["cook", "use"]},
+    {"id": "obj_table", "name": "Dining Table", "room": "room_kitchen", "capabilities": ["eat", "use"]},
+    {"id": "obj_sofa", "name": "Sofa", "room": "room_living", "capabilities": ["rest", "read"]},
+    {"id": "obj_bookshelf", "name": "Bookshelf", "room": "room_living", "capabilities": ["inspect", "read"]},
+    {"id": "obj_water", "name": "Drinking Water", "room": "room_kitchen", "capabilities": ["drink"]},
+    {"id": "obj_meal_stock", "name": "Meal Ingredients", "room": "room_kitchen", "capabilities": ["cook", "eat"]},
+    {"id": "obj_weights", "name": "Free Weights", "room": "room_gym", "capabilities": ["train", "inspect"]},
+    {"id": "obj_heavy_bag", "name": "Heavy Bag", "room": "room_gym", "capabilities": ["train", "inspect"]}
+  ],
+  "connections": [
+    ["room_bedroom", "room_bathroom"],
+    ["room_bedroom", "room_living"],
+    ["room_living", "room_kitchen"],
+    ["room_living", "room_gym"],
+    ["room_kitchen", "room_bathroom"]
+  ]
+}
