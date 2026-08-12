@@ -6,6 +6,7 @@ import time
 import urllib.error
 import urllib.parse
 import urllib.request
+from datetime import datetime
 from pathlib import Path
 from typing import Any
 
@@ -71,14 +72,32 @@ def _send(token: str, chat_id: int, text: str) -> None:
     _api(token, "sendMessage", {"chat_id": chat_id, "text": text[:4096]}, timeout=15)
 
 
+def _fmt_time(value: str | None) -> str:
+    if not value:
+        return "Unknown"
+    try:
+        dt = datetime.fromisoformat(value.replace("Z", "+00:00"))
+        return dt.strftime("%d-%m-%Y (%A) %I:%M %p")
+    except (ValueError, TypeError):
+        return str(value)
+
+
+def _yes_no(value: bool) -> str:
+    return "Yes" if value else "No"
+
+
+def _title_action(value: str | None) -> str:
+    return (value or "idle").replace("_", " ").title()
+
+
 def _boot_message() -> str:
     return (
         "🌌 OBSERVER SANDBOX\n"
         "━━━━━━━━━━━━━━━━━━\n"
         "✨ Universe is alive!\n"
-        "🟢 Observer link: online\n"
-        "🧠 Minds: wake-on-demand\n"
-        "📡 Creator channel: connected\n"
+        "🟢 Observer link: Online\n"
+        "🧠 Minds: Wake-on-demand\n"
+        "📡 Creator channel: Connected\n"
         "━━━━━━━━━━━━━━━━━━\n"
         "Use /status or /watch to observe."
     )
@@ -88,44 +107,51 @@ def _fmt_character(data: dict[str, Any]) -> str:
     c = data["character"]
     s = data["state"]
     return (
-        f"{c['name']}\n"
-        f"Location: {s['location_name']}\n"
-        f"Action: {s['current_action']}\n"
-        f"Sim time: {s['sim_time']}\n"
-        f"Energy: {s['energy']:.1f}\n"
-        f"Hunger: {s['hunger']:.1f}\n"
-        f"Thirst: {s['thirst']:.1f}\n"
-        f"Sleepiness: {s['sleepiness']:.1f}\n"
-        f"Cleanliness: {s['cleanliness']:.1f}"
+        f"👤 {c['name']}\n"
+        f"━━━━━━━━━━━━━━━━━━\n"
+        f"📍 Location   {s['location_name']}\n"
+        f"🎬 Action     {_title_action(s['current_action'])}\n"
+        f"🕒 Sim Time   {_fmt_time(s['sim_time'])}\n\n"
+        f"⚡ Energy       {s['energy']:.1f}\n"
+        f"🍽 Hunger       {s['hunger']:.1f}\n"
+        f"💧 Thirst       {s['thirst']:.1f}\n"
+        f"🌙 Sleepiness   {s['sleepiness']:.1f}\n"
+        f"🫧 Cleanliness  {s['cleanliness']:.1f}"
     )
 
 
 def _fmt_location(data: dict[str, Any]) -> str:
     loc = data["location"]
-    lines = [f"{loc['name']} ({loc['type']})"]
+    lines = [f"🏠 {loc['name']}", "━━━━━━━━━━━━━━━━━━"]
     if data["children"]:
-        lines.append("Contents:")
+        lines.append("📂 Contents")
         for child in data["children"]:
             caps = ", ".join(child["capabilities"])
-            suffix = f" [{caps}]" if caps else ""
-            lines.append(f"- {child['name']} ({child['id']}){suffix}")
+            suffix = f" · {caps}" if caps else ""
+            lines.append(f"• {child['name']}{suffix}")
     if data["residents"]:
-        lines.append("Residents: " + ", ".join(row["name"] for row in data["residents"]))
+        lines.append("")
+        lines.append("👥 Residents: " + ", ".join(row["name"] for row in data["residents"]))
     if data["occupants"]:
-        lines.append("Occupants: " + ", ".join(row["name"] for row in data["occupants"]))
+        lines.append("📍 Present now: " + ", ".join(row["name"] for row in data["occupants"]))
     return "\n".join(lines)
 
 
 def _fmt_history(rows: list[dict[str, Any]]) -> str:
-    if not rows:
-        return "No history yet."
-    lines = ["Recent history:"]
-    for row in rows:
-        detail = row.get("action") or row["event_type"]
-        if row.get("target"):
-            detail += f" → {row['target']}"
-        reason = f" — {row['reason']}" if row.get("reason") else ""
-        lines.append(f"- {row['sim_time']} | {detail}{reason}")
+    # Default observer history is intentionally human-facing: hide engine/control noise.
+    visible = [row for row in rows if row.get("action")]
+    if not visible:
+        return "🕰 Recent Activity\n━━━━━━━━━━━━━━━━━━\nNo character activity yet."
+    lines = ["🕰 Recent Activity", "━━━━━━━━━━━━━━━━━━"]
+    for row in visible:
+        detail = _title_action(row.get("action"))
+        target = row.get("target_name") or row.get("target")
+        if target:
+            detail += f" → {target}"
+        lines.append(f"• {_fmt_time(row['sim_time'])}")
+        lines.append(f"  {detail}")
+        if row.get("reason"):
+            lines.append(f"  ↳ {row['reason']}")
     return "\n".join(lines)
 
 
@@ -133,30 +159,42 @@ def _fmt_status(data: dict[str, Any]) -> str:
     c = data["character"]
     pending = data.get("pending_action")
     calls = int((data.get("cognition_stats") or {}).get("decision_calls", 0))
+    autonomy_icon = "🟢" if data["autonomy_enabled"] else "⚪"
+    pending_text = "None"
+    if pending:
+        pending_text = _title_action(pending.get("action"))
+        target = data.get("pending_target_name")
+        if target:
+            pending_text += f" → {target}"
     return (
-        f"Observer Sandbox\n"
-        f"Autonomy: {'ON' if data['autonomy_enabled'] else 'OFF'} ({data['mode']})\n"
-        f"Paused: {data['paused']} | Speed: {data['speed']}x\n"
-        f"Pending: {pending['action'] if pending else 'none'}\n"
-        f"Mind calls: {calls}\n\n"
-        f"{c['location_name']} | {c['current_action']}\n"
-        f"Sim time: {c['sim_time']}"
+        "🌌 OBSERVER SANDBOX\n"
+        "━━━━━━━━━━━━━━━━━━\n"
+        f"{autonomy_icon} Autonomy   {'ON' if data['autonomy_enabled'] else 'OFF'} · {str(data['mode']).replace('_', ' ').title()}\n"
+        f"⏸ Paused     {_yes_no(data['paused'])}\n"
+        f"⏩ Speed      {data['speed']}x\n"
+        f"🧠 Mind Calls {calls}\n"
+        f"⏳ Pending    {pending_text}\n\n"
+        "👤 Darian Thorne\n"
+        f"📍 {c['location_name']}\n"
+        f"🎬 {_title_action(c['current_action'])}\n"
+        f"🕒 {_fmt_time(c['sim_time'])}"
     )
 
 
 def _help(role: str) -> str:
-    role_label = "Owner" if role == "owner" else "Authorized user"
+    role_label = "Owner" if role == "owner" else "Authorized User"
     return (
-        f"Observer Sandbox — P2.1\nRole: {role_label}\n"
-        "/status — runtime overview\n"
-        "/watch — Darian now + recent history\n"
-        "/history [n] — recent events\n"
-        "/darian — character summary\n"
+        f"🌌 Observer Sandbox · {role_label}\n"
+        "━━━━━━━━━━━━━━━━━━\n"
+        "/status — Runtime overview\n"
+        "/watch — Darian now + recent activity\n"
+        "/history [n] — Recent activity\n"
+        "/darian — Character summary\n"
         "/home — Home summary\n"
-        "/pause — pause autonomy\n"
-        "/resume — resume autonomy\n"
-        "/speed <value> — set runtime speed\n"
-        "/whoami — show your Telegram user id and role"
+        "/pause — Pause autonomy\n"
+        "/resume — Resume autonomy\n"
+        "/speed <value> — Set runtime speed\n"
+        "/whoami — Show your Telegram identity"
     )
 
 
@@ -174,7 +212,7 @@ def handle_command(db_path: str | Path, *, user_id: int, text: str) -> str:
     if role == "unauthorized":
         return "Not authorized. Use /whoami to obtain your Telegram user id."
     if command == "/whoami":
-        return f"Telegram user id: {user_id}\nRole: {role}"
+        return f"🪪 Telegram Identity\n━━━━━━━━━━━━━━━━━━\nUser ID: {user_id}\nRole: {role.title()}"
 
     with connect(db_path) as conn:
         migrate(conn)
@@ -187,7 +225,7 @@ def handle_command(db_path: str | Path, *, user_id: int, text: str) -> str:
         if command == "/home":
             return _fmt_location(location_summary(conn, "home"))
         if command == "/watch":
-            return _fmt_character(character_summary(conn, "char_darian")) + "\n\n" + _fmt_history(recent_history(conn, limit=5))
+            return _fmt_character(character_summary(conn, "char_darian")) + "\n\n" + _fmt_history(recent_history(conn, limit=12))
         if command == "/history":
             limit = 8
             if rest:
@@ -195,7 +233,7 @@ def handle_command(db_path: str | Path, *, user_id: int, text: str) -> str:
                     limit = max(1, min(int(rest[0]), 20))
                 except ValueError:
                     return "Usage: /history [1-20]"
-            return _fmt_history(recent_history(conn, limit=limit))
+            return _fmt_history(recent_history(conn, limit=max(limit * 2, 12)))
         if command == "/pause":
             return _fmt_status(set_autonomy_paused(conn, True))
         if command == "/resume":
