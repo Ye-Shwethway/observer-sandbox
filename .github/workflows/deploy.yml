@@ -1,5 +1,5 @@
 name: Deploy Observer Sandbox
-# Control-plane trigger: provision Gemini secret and cognition binding; do not enable autonomy.
+# Control-plane deploy. Secrets are provisioned privately; deploy does not enable autonomy.
 
 on:
   workflow_dispatch:
@@ -58,7 +58,7 @@ jobs:
             -e "ssh -p $VPS_PORT" \
             ./ "$VPS_USER@$VPS_HOST:/opt/observer-sandbox/"
 
-      - name: Provision optional AI secrets
+      - name: Provision optional runtime secrets
         env:
           VPS_HOST: ${{ secrets.VPS_HOST }}
           VPS_USER: ${{ secrets.VPS_USER }}
@@ -67,12 +67,16 @@ jobs:
           OBSERVER_NANOGPT_API_KEY: ${{ secrets.OBSERVER_NANOGPT_API_KEY }}
           OBSERVER_OPENAI_API_KEY: ${{ secrets.OBSERVER_OPENAI_API_KEY }}
           OBSERVER_OPENROUTER_API_KEY: ${{ secrets.OBSERVER_OPENROUTER_API_KEY }}
+          OBSERVER_TELEGRAM_BOT_TOKEN: ${{ secrets.OBSERVER_TELEGRAM_BOT_TOKEN }}
+          OBSERVER_TELEGRAM_ALLOWED_USER_IDS: ${{ secrets.OBSERVER_TELEGRAM_ALLOWED_USER_IDS }}
         run: |
           {
             printf 'OBSERVER_GEMINI_API_KEY=%s\n' "$OBSERVER_GEMINI_API_KEY"
             printf 'OBSERVER_NANOGPT_API_KEY=%s\n' "$OBSERVER_NANOGPT_API_KEY"
             printf 'OBSERVER_OPENAI_API_KEY=%s\n' "$OBSERVER_OPENAI_API_KEY"
             printf 'OBSERVER_OPENROUTER_API_KEY=%s\n' "$OBSERVER_OPENROUTER_API_KEY"
+            printf 'OBSERVER_TELEGRAM_BOT_TOKEN=%s\n' "$OBSERVER_TELEGRAM_BOT_TOKEN"
+            printf 'OBSERVER_TELEGRAM_ALLOWED_USER_IDS=%s\n' "$OBSERVER_TELEGRAM_ALLOWED_USER_IDS"
           } | ssh -p "$VPS_PORT" "$VPS_USER@$VPS_HOST" '
             set -euo pipefail
             umask 077
@@ -104,4 +108,9 @@ jobs:
             .venv/bin/sandboxctl status
             .venv/bin/sandboxctl living-status
             .venv/bin/sandboxctl ai resolve cognition --character char_darian
+            if grep -Eq "^OBSERVER_TELEGRAM_BOT_TOKEN=.+" /var/lib/observer-sandbox/secrets.env 2>/dev/null; then
+              echo "TELEGRAM_BOT_TOKEN_PRESENT=true"
+            else
+              echo "TELEGRAM_BOT_TOKEN_PRESENT=false"
+            fi
           '
