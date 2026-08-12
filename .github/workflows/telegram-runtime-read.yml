@@ -1,0 +1,55 @@
+name: Telegram Runtime Read
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths:
+      - '.github/workflows/telegram-runtime-read.yml'
+
+jobs:
+  read-telegram:
+    if: ${{ vars.VPS_DEPLOY_ENABLED == 'true' }}
+    runs-on: ubuntu-latest
+    steps:
+      - name: Configure SSH
+        env:
+          VPS_SSH_KEY: ${{ secrets.VPS_SSH_KEY }}
+          VPS_HOST: ${{ secrets.VPS_HOST }}
+          VPS_PORT: ${{ secrets.VPS_PORT || '22' }}
+        run: |
+          test -n "$VPS_HOST"
+          test -n "$VPS_SSH_KEY"
+          install -m 700 -d ~/.ssh
+          printf '%s\n' "$VPS_SSH_KEY" > ~/.ssh/id_ed25519
+          chmod 600 ~/.ssh/id_ed25519
+          ssh-keyscan -p "$VPS_PORT" -H "$VPS_HOST" >> ~/.ssh/known_hosts
+
+      - name: Probe Telegram runtime safely
+        env:
+          VPS_HOST: ${{ secrets.VPS_HOST }}
+          VPS_USER: ${{ secrets.VPS_USER }}
+          VPS_PORT: ${{ secrets.VPS_PORT || '22' }}
+        run: |
+          ssh -p "$VPS_PORT" "$VPS_USER@$VPS_HOST" '
+            set -euo pipefail
+            sudo -n /usr/bin/systemctl is-active observer-sandbox
+            if grep -Eq "^OBSERVER_TELEGRAM_BOT_TOKEN=.+" /var/lib/observer-sandbox/secrets.env 2>/dev/null; then
+              echo "TELEGRAM_BOT_TOKEN_PRESENT=true"
+              TOKEN=$(sed -n "s/^OBSERVER_TELEGRAM_BOT_TOKEN=//p" /var/lib/observer-sandbox/secrets.env | head -n1)
+              TG_JSON=$(curl -sS --max-time 15 "https://api.telegram.org/bot${TOKEN}/getMe")
+              printf "%s\n" "$TG_JSON" | /opt/observer-sandbox/.venv/bin/python -c "import json,sys; d=json.load(sys.stdin); print(\"TELEGRAM_API_OK=\" + str(bool(d.get(\"ok\"))).lower()); print(\"TELEGRAM_API_ERROR_CODE=\" + str(d.get(\"error_code\", \"\"))); print(\"TELEGRAM_API_DESCRIPTION=\" + str(d.get(\"description\", \"\")))"
+            else
+              echo "TELEGRAM_BOT_TOKEN_PRESENT=false"
+            fi
+            if grep -Eq "^OBSERVER_TELEGRAM_OWNER_ID=[0-9]+$" /var/lib/observer-sandbox/secrets.env 2>/dev/null; then
+              echo "TELEGRAM_OWNER_ID_PRESENT=true"
+            else
+              echo "TELEGRAM_OWNER_ID_PRESENT=false"
+            fi
+            if grep -Eq "^OBSERVER_TELEGRAM_ALLOWED_USER_IDS=.+" /var/lib/observer-sandbox/secrets.env 2>/dev/null; then
+              echo "TELEGRAM_ALLOWED_USERS_PRESENT=true"
+            else
+              echo "TELEGRAM_ALLOWED_USERS_PRESENT=false"
+            fi
+          '
