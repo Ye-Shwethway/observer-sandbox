@@ -2,6 +2,10 @@ name: Runtime Read
 
 on:
   workflow_dispatch:
+  push:
+    branches: [main]
+    paths:
+      - '.github/workflows/runtime-read.yml'
 
 jobs:
   read-runtime:
@@ -28,7 +32,8 @@ jobs:
           VPS_PORT: ${{ secrets.VPS_PORT || '22' }}
         run: |
           ssh -p "$VPS_PORT" "$VPS_USER@$VPS_HOST" '
+            set -euo pipefail
             cd /opt/observer-sandbox
-            sudo systemctl is-active observer-sandbox
+            sudo -n /usr/bin/systemctl is-active observer-sandbox
             OBSERVER_SANDBOX_DB=/var/lib/observer-sandbox/observer.sqlite3 .venv/bin/sandboxctl status
           '
