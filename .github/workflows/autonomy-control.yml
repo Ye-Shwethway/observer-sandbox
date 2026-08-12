@@ -19,6 +19,10 @@ on:
         required: false
         default: "1"
         type: string
+  push:
+    branches: [main]
+    paths:
+      - '.github/triggers/production-canary-once'
 
 jobs:
   control:
@@ -43,8 +47,8 @@ jobs:
           VPS_HOST: ${{ secrets.VPS_HOST }}
           VPS_USER: ${{ secrets.VPS_USER }}
           VPS_PORT: ${{ secrets.VPS_PORT || '22' }}
-          COMMAND: ${{ inputs.command }}
-          SPEED: ${{ inputs.speed }}
+          COMMAND: ${{ github.event_name == 'push' && 'canary-once' || inputs.command }}
+          SPEED: ${{ inputs.speed || '1' }}
         run: |
           case "$COMMAND" in
             status) REMOTE_COMMAND="autonomy status" ;;
@@ -65,3 +69,4 @@ jobs:
 
 # Deliberately no continuous 'enable' option here. Production continuous autonomy
 # remains gated on an explicit Creator approval and a later intentional control change.
+# The push trigger above is temporary and exists only to execute the approved first canary.
