@@ -143,6 +143,7 @@ def _home_message(conn, user_id: int) -> str:
     status = observer_status(conn)
     c = status["character"]
     notify = "ON" if _notifications_enabled(conn, user_id) else "OFF"
+    role = _user_role(user_id).title()
     return (
         "🌌 OBSERVER HOME\n"
         "━━━━━━━━━━━━━━━━━━\n"
@@ -150,7 +151,8 @@ def _home_message(conn, user_id: int) -> str:
         f"👤 Darian · {_title_action(c['current_action'])}\n"
         f"📍 {c['location_name']}\n"
         f"🕒 {_fmt_time(c['sim_time'])}\n"
-        f"🔔 Notifications {notify}\n\n"
+        f"🔔 Notifications {notify}\n"
+        f"🔐 Access {role}\n\n"
         "Choose what you want to observe:"
     )
 
@@ -253,8 +255,7 @@ def _universe_view(conn) -> tuple[str, list[list[dict[str, str]]]]:
     keyboard: list[list[dict[str, str]]] = []
     for world in worlds:
         lines.append(f"• {world['name']}")
-        rooms = list_locations(conn, world["id"])
-        for room in rooms:
+        for room in list_locations(conn, world["id"]):
             keyboard.append([{"text": f"📍 {room['name']}", "callback_data": f"loc:{room['id']}"}])
     keyboard.append([{"text": "⌂ Observer Home", "callback_data": "nav:home"}])
     return "\n".join(lines), keyboard
