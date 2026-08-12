@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import json
 import sqlite3
+from datetime import datetime
 from pathlib import Path
 from typing import Any
 
@@ -96,11 +97,72 @@ class ModelDecisionProvider:
             ],
         }
 
+    def _decision_signals(self, state: dict[str, Any]) -> dict[str, Any]:
+        priorities = self.policy.get("need_priorities", {})
+        strong = priorities.get("strong", {})
+        critical = priorities.get("critical", {})
+
+        checks = {
+            "sleepiness": ("gte", float(state["sleepiness"])),
+            "energy": ("lte", float(state["energy"])),
+            "thirst": ("gte", float(state["thirst"])),
+            "hunger": ("gte", float(state["hunger"])),
+            "cleanliness": ("lte", float(state["cleanliness"])),
+        }
+
+        needs_attention: list[dict[str, Any]] = []
+        for need, (direction, value) in checks.items():
+            critical_key = f"{need}_{direction}"
+            strong_key = f"{need}_{direction}"
+            level = None
+            threshold = None
+            if critical_key in critical:
+                candidate = float(critical[critical_key])
+                if (direction == "gte" and value >= candidate) or (direction == "lte" and value <= candidate):
+                    level = "critical"
+                    threshold = candidate
+            if level is None and strong_key in strong:
+                candidate = float(strong[strong_key])
+                if (direction == "gte" and value >= candidate) or (direction == "lte" and value <= candidate):
+                    level = "strong"
+                    threshold = candidate
+            if level:
+                needs_attention.append(
+                    {"need": need, "level": level, "value": value, "threshold": threshold}
+                )
+
+        needs_attention.sort(key=lambda item: 0 if item["level"] == "critical" else 1)
+
+        hour = datetime.fromisoformat(state["sim_time"]).hour
+        active_routine = None
+        for window in self.policy.get("routine_windows", []):
+            start = int(window["start_hour"])
+            end = int(window["end_hour"])
+            active = start <= hour < end if start < end else hour >= start or hour < end
+            if active:
+                active_routine = {
+                    "name": window["name"],
+                    "guidance": window["guidance"],
+                }
+                break
+
+        return {
+            "needs_attention": needs_attention,
+            "highest_priority": needs_attention[0] if needs_attention else None,
+            "active_routine": active_routine,
+            "instruction": (
+                "Address highest_priority before discretionary routine behavior and make the reason explicitly reflect it."
+                if needs_attention
+                else "No strong physiological need is active; routine and character preferences may guide the next action."
+            ),
+        }
+
     def _enrich_state(self, state: dict[str, Any]) -> dict[str, Any]:
         enriched = dict(state)
         enriched["action_options"] = action_options(self.conn, self.character_id)
         enriched["character"] = self._character_context()
         enriched["autonomy_policy"] = self.policy
+        enriched["decision_signals"] = self._decision_signals(state)
         enriched["recent_events"] = self._recent_events()
         return enriched
 
