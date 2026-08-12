@@ -2,7 +2,7 @@
 
 Status: ACTIVE
 Purpose: deterministic project recovery across ChatGPT sessions and protection against memory drift.
-Last synchronized: 2026-08-13 — P0 remote deployment/control is COMPLETE / LIVE VERIFIED. P1 Living Darian Minimum core runtime, Gemini cognition, authored autonomy policy, persistent scheduler, bounded-live acceptance, behavior-quality matrix, and production canary/control gate are IMPLEMENTED / CI-VALIDATED / DEPLOYED. Production character autonomy remains explicitly DISABLED by Creator instruction and has not been canary-armed or continuously enabled.
+Last synchronized: 2026-08-13 — P0 remote deployment/control is COMPLETE / LIVE VERIFIED. P1 Living Darian Minimum core runtime, Gemini cognition, authored autonomy policy, persistent scheduler, behavior-quality matrix, first production canary, and bounded canary/control gate are IMPLEMENTED / CI-VALIDATED / DEPLOYED / LIVE VERIFIED. Production continuous character autonomy remains explicitly DISABLED.
 
 ## HARD RECOVERY RULES
 
@@ -103,33 +103,22 @@ Policy content includes:
 - reasons should be short and naturally grounded in the active need/routine/purpose;
 - critical night sleep at a usable bed gets recommended overnight duration 360-540 minutes rather than a short nap.
 
-`src/observer_sandbox/model_decision.py` enriches each decision with:
-- current needs/state/time/location;
-- authoritative `action_options` with exact targets and duration bounds;
-- canonical traits, motivation, complexity notes;
-- preferences, hobbies, habits, skills;
-- recent event summaries;
-- full authored autonomy policy;
-- computed `decision_signals`: active strong/critical needs, highest priority, active routine, and optional recommended duration.
+`src/observer_sandbox/model_decision.py` enriches each decision with current needs/state/time/location, authoritative `action_options`, canonical traits/motivation/preferences/habits/skills, recent events, the authored policy, and computed decision signals.
 
 ## Cognition behavior-quality proof
 
 Evaluator: `src/observer_sandbox/behavior_eval.py`.
 Workflow: `.github/workflows/cognition-behavior-eval.yml`.
-Safety: all scenarios run against a disposable copy of the production DB on the VPS using the live Gemini credential; production DB is read back afterward.
-
-The evaluator requires meaningful action-path semantics plus reason grounding, and checks realistic overnight sleep duration.
+Safety: scenarios run against a disposable production-DB copy on the VPS using the live Gemini credential; production DB is read back afterward.
 
 Cognition Behavior Eval #4 / run `31634364165`: **SUCCESS, 5/5** with real Gemini:
-1. morning-ready -> move Bedroom toward Living Room / morning training path, 5m;
-2. strong thirst -> move toward hydration source with explicit thirst/water reason, 5m;
-3. strong hunger -> move toward Kitchen path with explicit hunger reason, 5m;
-4. critical night sleepiness -> sleep in `obj_bed` for **480m**, explicit overnight-rest reason;
-5. poor cleanliness -> move to Bathroom with hygiene reason, 5m.
+1. morning-ready -> move toward morning training path;
+2. strong thirst -> hydration path with thirst-grounded reason;
+3. strong hunger -> food path with hunger-grounded reason;
+4. critical night sleepiness -> bed sleep for **480m**;
+5. poor cleanliness -> Bathroom/hygiene path.
 
-Earlier matrix runs were used diagnostically: they exposed need-reason grounding and short-night-sleep weaknesses; policy/decision signals were corrected rather than treating weak outputs as acceptable. Final #4 is the current acceptance evidence.
-
-CI #107 / run `31634364163`: SUCCESS for the same head used by final behavior evaluation.
+CI #107 / run `31634364163`: SUCCESS for the same behavior-quality head.
 
 ## Persistent autonomy runtime
 
@@ -138,7 +127,7 @@ CI #107 / run `31634364163`: SUCCESS for the same head used by final behavior ev
 Semantics:
 - `autonomy_enabled=false` => no model call;
 - `paused=true` => no planning/completion;
-- `speed` controls wall-time duration for newly planned actions;
+- `speed` controls wall-time duration for normal newly planned actions;
 - at most one scheduler transition per tick;
 - pending actions persist in `runtime_state`;
 - `runtime.current_action` reflects pending activity;
@@ -150,19 +139,69 @@ Semantics:
 
 Operational readback: `sandboxctl autonomy-status` or `sandboxctl autonomy status`.
 
-## Live model proofs before production activation
+## Live model proofs
 
 ### Non-mutating dry-run
 `Dry Run Darian Decision` #3 / run `31632548092`: SUCCESS. Real Gemini proposal passed runtime validation while state/event counts remained unchanged.
 
-### Bounded scheduler acceptance
+### Bounded scheduler acceptance on disposable DB
 `.github/workflows/autonomy-acceptance.yml`.
-Bounded Autonomy Acceptance #1 / run `31633358752`: SUCCESS.
-A production DB copy was used; real Gemini planned one action, scheduler completed exactly one due action, sim time advanced, pending cleared, then the copy was deleted. Production DB remained untouched.
+Bounded Autonomy Acceptance #1 / run `31633358752`: SUCCESS. Real Gemini planned and completed one action on a production-DB copy; production DB remained untouched.
+
+### Production cognition behavior matrix
+Cognition Behavior Eval #4 / run `31634364165`: SUCCESS, 5/5.
+
+### First real production canary — LIVE VERIFIED
+Autonomy Control #1 / run `31635032005` armed the first production canary. This exposed an activation-semantics flaw: the original `canary-once` command bounded **action count** but not **wall time**; at speed 1.0 it armed the normal scheduler and could remain enabled until the action's real due wall time.
+
+The live model nevertheless planned exactly one valid production action:
+- action: `move`;
+- target: `room_living`;
+- duration: 5 minutes;
+- reason: `Moving out of the bedroom to begin the morning training routine.`;
+- action id: `2d856b9e-6feb-4420-a716-03987c1719b6`.
+
+A temporary recovery workflow was used only to complete that already-planned action through the authoritative `autonomy_tick()` scheduler at its due point; it did not bypass validation/state-transition/idempotency logic.
+
+Production Canary Completion #2 / run `31635250326`: **SUCCESS**.
+Live result:
+- Bedroom -> Living Room;
+- sim time `2025-05-01T07:00:00+00:00` -> `2025-05-01T07:05:00+00:00`;
+- energy 75.0 -> 74.75;
+- hunger 20.0 -> 20.333;
+- thirst 15.0 -> 15.417;
+- sleepiness 15.0 -> 15.292;
+- cleanliness 80.0 -> 79.9;
+- current action returned to idle;
+- pending cleared;
+- canary auto-disabled;
+- mode returned to normal;
+- retry remained null.
+
+This is the first real production autonomous Darian action.
+
+## Permanent bounded canary fix
+
+The wall-time flaw found by the first live canary is now fixed in code.
+
+`run_canary_once()` in `src/observer_sandbox/autonomy.py` now makes the user-facing canary synchronous and bounded:
+1. arm canary mode;
+2. plan exactly one model action through the normal scheduler;
+3. preserve the authored simulated duration;
+4. advance the scheduler directly to that action's due point for canary verification instead of waiting minutes/hours of wall time;
+5. complete through normal `autonomy_tick()` / validator / state-transition / lease / action-id path;
+6. verify auto-disable, normal mode, and no pending action before returning.
+
+The low-level `arm_canary_once()` remains only as a primitive for tests/service coordination.
+`sandboxctl autonomy canary-once` now calls `run_canary_once()` and exits nonzero if the canary does not finish safely.
+
+CI #120 / run `31635452458`: SUCCESS for synchronous bounded canary tests.
+Deploy #62 / run `31635371198`: SUCCESS for bounded canary runtime.
+Deploy #63 / run `31635404645`: SUCCESS for CLI integration.
+
+Temporary one-time trigger and recovery workflow used for the first live canary were removed after the permanent fix. `.github/workflows/autonomy-control.yml` is restored to manual `workflow_dispatch` only.
 
 ## Production activation/control gate
-
-The control layer is now implemented but production autonomy is still OFF.
 
 CLI commands:
 - `sandboxctl autonomy status`
@@ -171,26 +210,11 @@ CLI commands:
 - `sandboxctl autonomy pause`
 - `sandboxctl autonomy resume`
 - `sandboxctl autonomy speed <value>` where 0 < value <= 3600
-- `sandboxctl autonomy canary-once`
-
-`canary-once` semantics:
-- requires continuous autonomy currently disabled, runtime not paused, and no pending action;
-- arms mode `canary_once` and allows exactly one model-planned action;
-- after that action completes, autonomy automatically turns OFF and mode returns to `normal`;
-- decision/completion failure also automatically turns OFF and records `autonomy_canary_failed`;
-- after successful canary completion it records `autonomy_canary_completed`;
-- a second action cannot begin after canary completion because the flag is already OFF.
-
-Control tests in `tests/test_autonomy_runtime.py` prove success auto-disable, failure auto-disable, no second action, pending guards, and speed guards.
-CI #110 / run `31634698836`: SUCCESS.
-CI #111 / run `31634731902`: SUCCESS on the final control-workflow head.
+- `sandboxctl autonomy canary-once` (synchronous bounded canary)
 
 Remote manual workflow: `.github/workflows/autonomy-control.yml`.
-It is **workflow_dispatch only** and has safe commands: status, canary-once, disable, pause, resume, speed.
+It exposes safe commands: status, canary-once, disable, pause, resume, speed.
 It deliberately does **not** expose continuous `enable` yet. Continuous production enable remains gated on explicit Creator approval and a later intentional control change.
-
-Deploy #61 / run `31634658609`: SUCCESS for deployed control CLI/canary runtime.
-No canary command or enable command was executed against production.
 
 ## Current verified production boundary
 
@@ -202,16 +226,16 @@ Service: `observer-sandbox` systemd.
 SSH/runtime user: `observer`.
 DB is not publicly exposed.
 
-Runtime Read #5 / run `31634798297`: SUCCESS after control-gate deploy and verified:
-- service active;
-- schema v3 healthy;
+Latest verified live state after first production canary:
+- service healthy/active;
+- schema v3;
 - `autonomy_enabled=false`;
 - `mode=normal`;
 - `paused=false`;
 - `speed=1.0`;
 - `pending_action=null`;
 - `retry=null`;
-- Darian remains Bedroom / idle / `2025-05-01T07:00:00+00:00` with baseline needs unchanged;
+- Darian is now in **Living Room**, idle, at `2025-05-01T07:05:00+00:00`;
 - Gemini credential present;
 - NanoGPT credential absent.
 
@@ -222,7 +246,7 @@ Normal VPS work goes through GitHub Actions. Do not ask the Creator for Termux/r
 - P0 Foundation & Remote Control: COMPLETE / LIVE VERIFIED.
 - P0.5 Provider Layer: FOUNDATION COMPLETE; Gemini live credential/catalog/binding verified.
 - Deep Character Profile: IMPLEMENTED; Darian instantiated live.
-- P1 Living Darian Minimum: CORE IMPLEMENTATION / HARDENING COMPLETE; action safety, model cognition, authored policy, scheduler, bounded-live tests, behavior-quality matrix, and canary control gate all pass. Production autonomy itself is intentionally still OFF. Remaining P1 decision is explicit Creator approval for the first production canary and, only after reviewing that result, whether/when to permit continuous enable.
+- P1 Living Darian Minimum: **CORE IMPLEMENTATION + HARDENING + FIRST PRODUCTION CANARY COMPLETE / LIVE VERIFIED.** Continuous production autonomy remains OFF by deliberate gate. The remaining P1 decision is whether to permit continuous autonomy and under what initial speed/observation conditions.
 - P2 Telegram Observer: after P1 activation decision; status/watch/history/pause/resume/speed plus provider/model refresh/list/rebinding controls should wrap the existing backend.
 - P3 Rich State & Memory: later.
 - P4 First simulation module: later.
@@ -230,10 +254,11 @@ Normal VPS work goes through GitHub Actions. Do not ask the Creator for Termux/r
 
 ## RESUME HERE
 
-1. Keep production `autonomy_enabled=false` until Creator explicitly approves a production canary or continuous activation.
-2. Do not redo VPS bootstrap, Gemini secret/catalog binding, action hardening, scheduler, cognition policy, behavior matrix, or canary-control implementation unless newer evidence shows a regression.
+1. Production continuous autonomy is currently OFF. Do not enable it without explicit Creator approval.
+2. Do not redo VPS bootstrap, Gemini secret/catalog binding, action hardening, scheduler, cognition policy, behavior matrix, or first production canary unless newer evidence shows a regression.
 3. Current live cognition binding is `gemini / gemini-3.5-flash-lite` for Darian.
-4. The safest next production step is **one explicit `canary-once` approval**: exactly one real Darian action on production, then automatic disable/readback. Do not run it without explicit Creator approval.
-5. Continuous `enable` is intentionally absent from the remote Actions control workflow; only add/use it after a separate explicit Creator decision following canary review.
-6. P2 Telegram later wraps the same runtime/provider/catalog/control backend; do not duplicate business logic in the bot.
-7. Synchronize this file after every material change/live proof.
+4. First real production action already occurred successfully: Bedroom -> Living Room, 07:00 -> 07:05, then auto-disable.
+5. `sandboxctl autonomy canary-once` is now synchronous and bounded; do not recreate the temporary trigger/recovery workflow.
+6. Continuous `enable` remains intentionally absent from the remote Actions control workflow. Add/use it only after a separate explicit Creator decision.
+7. P2 Telegram later wraps the same runtime/provider/catalog/control backend; do not duplicate business logic in the bot.
+8. Synchronize this file after every material change/live proof.
