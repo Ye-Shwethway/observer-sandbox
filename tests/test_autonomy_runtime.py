@@ -1,6 +1,17 @@
 from __future__ import annotations
 
-from observer_sandbox.autonomy import PENDING_KEY, autonomy_tick
+import pytest
+
+from observer_sandbox.autonomy import (
+    CANARY_MODE,
+    MODE_KEY,
+    PENDING_KEY,
+    arm_canary_once,
+    autonomy_tick,
+    set_autonomy_enabled,
+    set_autonomy_paused,
+    set_autonomy_speed,
+)
 from observer_sandbox.db import connect
 from observer_sandbox.runtime import initialize
 from observer_sandbox.simulation import Action, runtime_value, set_runtime_value, snapshot, validate_action
@@ -33,12 +44,8 @@ def test_action_contract_rejects_wrong_or_remote_targets(tmp_path):
             Action("idle", 10, "obj_bed"),
             Action("sleep", 5, "obj_bed"),
         ):
-            try:
+            with pytest.raises(ValueError):
                 validate_action(conn, "char_darian", action)
-            except ValueError:
-                pass
-            else:
-                raise AssertionError(f"Expected invalid action contract: {action}")
         validate_action(conn, "char_darian", Action("rest", 30, "obj_bed"))
 
 
@@ -96,10 +103,71 @@ def test_scheduler_recovers_completed_pending_without_duplicate(tmp_path):
         action_id = planned["pending"]["action_id"]
         from observer_sandbox.simulation import apply_action
         apply_action(conn, Action("rest", 30, "obj_bed", "short recovery"), action_id=action_id)
-        # Simulate a crash after durable completion but before pending cleanup.
         assert runtime_value(conn, PENDING_KEY, None) is not None
         recovered = autonomy_tick(conn, provider=provider, now_wall=1031)
         assert recovered["state"] == "recovered_completed"
         assert runtime_value(conn, PENDING_KEY, None) is None
         completed_events = conn.execute("SELECT payload_json FROM events WHERE event_type='action_completed'").fetchall()
         assert len(completed_events) == 1
+
+
+def test_canary_runs_exactly_one_action_then_disables(tmp_path):
+    db = tmp_path / "observer.sqlite3"
+    initialize(db)
+    provider = FixedProvider(Action("rest", 30, "obj_bed", "bounded canary recovery"))
+    with connect(db) as conn:
+        set_autonomy_speed(conn, 60.0)
+        armed = arm_canary_once(conn)
+        assert armed["autonomy_enabled"] is True
+        assert armed["mode"] == CANARY_MODE
+
+        planned = autonomy_tick(conn, provider=provider, now_wall=1000)
+        assert planned["state"] == "planned"
+        assert planned["pending"]["autonomy_mode"] == CANARY_MODE
+
+        completed = autonomy_tick(conn, provider=provider, now_wall=1030)
+        assert completed["state"] == "completed"
+        assert runtime_value(conn, "autonomy_enabled", True) is False
+        assert runtime_value(conn, MODE_KEY, None) == "normal"
+        assert runtime_value(conn, PENDING_KEY, None) is None
+        assert provider.calls == 1
+        assert conn.execute("SELECT COUNT(*) FROM events WHERE event_type='action_completed'").fetchone()[0] == 1
+        assert conn.execute("SELECT COUNT(*) FROM events WHERE event_type='autonomy_canary_completed'").fetchone()[0] == 1
+
+        assert autonomy_tick(conn, provider=provider, now_wall=1031)["state"] == "disabled"
+        assert provider.calls == 1
+
+
+def test_canary_decision_failure_disables_immediately(tmp_path):
+    class BadProvider:
+        def choose(self, state, available_actions):
+            raise RuntimeError("fixture failure")
+
+    db = tmp_path / "observer.sqlite3"
+    initialize(db)
+    with connect(db) as conn:
+        arm_canary_once(conn)
+        result = autonomy_tick(conn, provider=BadProvider(), now_wall=1000)
+        assert result["state"] == "decision_error"
+        assert runtime_value(conn, "autonomy_enabled", True) is False
+        assert runtime_value(conn, MODE_KEY, None) == "normal"
+        assert conn.execute("SELECT COUNT(*) FROM events WHERE event_type='autonomy_canary_failed'").fetchone()[0] == 1
+
+
+def test_control_guards_pending_action_and_speed(tmp_path):
+    db = tmp_path / "observer.sqlite3"
+    initialize(db)
+    provider = FixedProvider(Action("rest", 30, "obj_bed", "recover"))
+    with connect(db) as conn:
+        set_autonomy_paused(conn, False)
+        with pytest.raises(ValueError):
+            set_autonomy_speed(conn, 0)
+        with pytest.raises(ValueError):
+            set_autonomy_speed(conn, 3601)
+        set_autonomy_speed(conn, 60)
+        set_autonomy_enabled(conn, True)
+        autonomy_tick(conn, provider=provider, now_wall=1000)
+        with pytest.raises(ValueError):
+            set_autonomy_enabled(conn, False)
+        with pytest.raises(ValueError):
+            set_autonomy_speed(conn, 5)
