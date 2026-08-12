@@ -79,7 +79,7 @@ jobs:
             chmod 600 /var/lib/observer-sandbox/secrets.env
           '
 
-      - name: Install, migrate, restart, and verify
+      - name: Install, configure cognition, restart, and verify
         env:
           VPS_HOST: ${{ secrets.VPS_HOST }}
           VPS_USER: ${{ secrets.VPS_USER }}
@@ -91,9 +91,16 @@ jobs:
             test -d .venv || python3 -m venv .venv
             .venv/bin/python -m pip install --upgrade pip
             .venv/bin/pip install -e .
-            OBSERVER_SANDBOX_DB=/var/lib/observer-sandbox/observer.sqlite3 .venv/bin/sandboxctl init
+            export OBSERVER_SANDBOX_DB=/var/lib/observer-sandbox/observer.sqlite3
+            .venv/bin/sandboxctl init
+            if grep -q "^OBSERVER_GEMINI_API_KEY=.+" /var/lib/observer-sandbox/secrets.env 2>/dev/null; then
+              .venv/bin/sandboxctl ai bootstrap-gemini-cognition
+            else
+              echo "Gemini cognition bootstrap skipped: credential not provisioned"
+            fi
             sudo -n /usr/bin/systemctl restart observer-sandbox
             sudo -n /usr/bin/systemctl is-active observer-sandbox
-            OBSERVER_SANDBOX_DB=/var/lib/observer-sandbox/observer.sqlite3 .venv/bin/sandboxctl status
-            OBSERVER_SANDBOX_DB=/var/lib/observer-sandbox/observer.sqlite3 .venv/bin/sandboxctl living-status
+            .venv/bin/sandboxctl status
+            .venv/bin/sandboxctl living-status
+            .venv/bin/sandboxctl ai resolve cognition --character char_darian
           '
