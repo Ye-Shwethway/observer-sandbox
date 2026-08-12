@@ -35,8 +35,34 @@ ACTION_NAMES = [
     "idle",
 ]
 
-# Next-hop routing for the authored Home v1 graph. The runtime still validates every
-# move against stored relations, so this policy never bypasses world topology.
+ACTION_DURATION_BOUNDS: dict[str, tuple[int, int]] = {
+    "move": (1, 30),
+    "sleep": (30, 720),
+    "eat": (5, 90),
+    "drink": (1, 30),
+    "shower": (5, 60),
+    "rest": (5, 240),
+    "inspect": (1, 60),
+    "use": (1, 120),
+    "train": (10, 240),
+    "read": (5, 240),
+    "idle": (1, 120),
+}
+
+ACTION_CAPABILITY: dict[str, str] = {
+    "sleep": "sleep",
+    "eat": "eat",
+    "drink": "drink",
+    "shower": "shower",
+    "rest": "rest",
+    "inspect": "inspect",
+    "use": "use",
+    "train": "train",
+    "read": "read",
+}
+
+# Next-hop routing for the authored Home v1 graph. Runtime validation still checks
+# the stored graph, so this helper never bypasses topology.
 NEXT_HOP = {
     ("room_bedroom", "room_bathroom"): "room_bathroom",
     ("room_bedroom", "room_living"): "room_living",
@@ -65,12 +91,12 @@ def _clamp(value: float) -> float:
     return max(0.0, min(100.0, round(value, 3)))
 
 
-def _runtime_value(conn: sqlite3.Connection, key: str, default: Any) -> Any:
+def runtime_value(conn: sqlite3.Connection, key: str, default: Any) -> Any:
     row = conn.execute("SELECT value_json FROM runtime_state WHERE key=?", (key,)).fetchone()
     return default if row is None else json.loads(row[0])
 
 
-def _set_runtime_value(conn: sqlite3.Connection, key: str, value: Any) -> None:
+def set_runtime_value(conn: sqlite3.Connection, key: str, value: Any) -> None:
     conn.execute(
         """
         INSERT INTO runtime_state(key, value_json) VALUES (?, ?)
@@ -81,10 +107,10 @@ def _set_runtime_value(conn: sqlite3.Connection, key: str, value: Any) -> None:
 
 
 def ensure_sim_clock(conn: sqlite3.Connection) -> datetime:
-    raw = _runtime_value(conn, "sim_time", None)
+    raw = runtime_value(conn, "sim_time", None)
     if raw is None:
         start = datetime(2025, 5, 1, 7, 0, tzinfo=timezone.utc)
-        _set_runtime_value(conn, "sim_time", start.isoformat())
+        set_runtime_value(conn, "sim_time", start.isoformat())
         conn.commit()
         return start
     return datetime.fromisoformat(raw)
@@ -114,23 +140,55 @@ def _connected(conn: sqlite3.Connection, left: str, right: str) -> bool:
     ).fetchone() is not None
 
 
-def _room_has_capability(conn: sqlite3.Connection, room_id: str, capability: str) -> bool:
+def local_objects(conn: sqlite3.Connection, room_id: str) -> list[dict[str, Any]]:
     rows = conn.execute(
         """
-        SELECT e.capabilities_json
+        SELECT e.id, e.name, e.capabilities_json
         FROM relations r JOIN entities e ON e.id=r.target_id
-        WHERE r.source_id=? AND r.relation_type='contains'
+        WHERE r.source_id=? AND r.relation_type='contains' AND e.entity_type='object'
+        ORDER BY e.id
         """,
         (room_id,),
     ).fetchall()
-    return any(capability in json.loads(row[0]) for row in rows)
+    return [
+        {"id": row["id"], "name": row["name"], "capabilities": json.loads(row["capabilities_json"])}
+        for row in rows
+    ]
+
+
+def reachable_rooms(conn: sqlite3.Connection, room_id: str) -> list[dict[str, str]]:
+    rows = conn.execute(
+        """
+        SELECT e.id, e.name FROM relations r JOIN entities e ON e.id=r.target_id
+        WHERE r.source_id=? AND r.relation_type='connected_to' AND e.entity_type='location'
+        ORDER BY e.id
+        """,
+        (room_id,),
+    ).fetchall()
+    return [{"id": row["id"], "name": row["name"]} for row in rows]
+
+
+def action_options(conn: sqlite3.Connection, actor_id: str = "char_darian") -> list[dict[str, Any]]:
+    state = snapshot(conn, actor_id)
+    room_id = state["location"]
+    objects = local_objects(conn, room_id)
+    options: list[dict[str, Any]] = []
+    for room in reachable_rooms(conn, room_id):
+        options.append({"action": "move", "target": room["id"], "target_name": room["name"], "duration": ACTION_DURATION_BOUNDS["move"]})
+    for obj in objects:
+        for action, capability in ACTION_CAPABILITY.items():
+            if capability in obj["capabilities"]:
+                options.append({"action": action, "target": obj["id"], "target_name": obj["name"], "duration": ACTION_DURATION_BOUNDS[action]})
+    options.append({"action": "idle", "target": None, "target_name": None, "duration": ACTION_DURATION_BOUNDS["idle"]})
+    return options
 
 
 def validate_action(conn: sqlite3.Connection, actor_id: str, action: Action) -> None:
     if action.name not in ACTION_NAMES:
         raise ValueError(f"Unknown action: {action.name}")
-    if action.duration_minutes <= 0 or action.duration_minutes > 720:
-        raise ValueError("Action duration must be between 1 and 720 minutes")
+    low, high = ACTION_DURATION_BOUNDS[action.name]
+    if action.duration_minutes < low or action.duration_minutes > high:
+        raise ValueError(f"Action {action.name} duration must be between {low} and {high} minutes")
 
     location = get_field(conn, actor_id, "runtime.location", "room_bedroom")
     if action.name == "move":
@@ -140,19 +198,26 @@ def validate_action(conn: sqlite3.Connection, actor_id: str, action: Action) -> 
             raise ValueError(f"Room {action.target} is not reachable from {location}")
         return
 
-    capability = {
-        "sleep": "sleep",
-        "eat": "eat",
-        "drink": "drink",
-        "shower": "shower",
-        "rest": "rest",
-        "inspect": "inspect",
-        "use": "use",
-        "train": "train",
-        "read": "read",
-    }.get(action.name)
-    if capability and not _room_has_capability(conn, location, capability):
-        raise ValueError(f"Action {action.name} is not available in {location}")
+    if action.name == "idle":
+        if action.target:
+            raise ValueError("idle must not specify a target")
+        return
+
+    capability = ACTION_CAPABILITY[action.name]
+    if not action.target:
+        raise ValueError(f"Action {action.name} requires a target object")
+    row = conn.execute(
+        """
+        SELECT e.capabilities_json
+        FROM relations r JOIN entities e ON e.id=r.target_id
+        WHERE r.source_id=? AND r.relation_type='contains' AND e.id=? AND e.entity_type='object'
+        """,
+        (location, action.target),
+    ).fetchone()
+    if row is None:
+        raise ValueError(f"Target {action.target} is not a local object in {location}")
+    if capability not in json.loads(row[0]):
+        raise ValueError(f"Target {action.target} does not support {action.name}")
 
 
 def _advance_needs(conn: sqlite3.Connection, actor_id: str, action: Action) -> None:
@@ -212,7 +277,7 @@ def apply_action(conn: sqlite3.Connection, action: Action, actor_id: str = "char
 
     _advance_needs(conn, actor_id, action)
     ended = started + timedelta(minutes=action.duration_minutes)
-    _set_runtime_value(conn, "sim_time", ended.isoformat())
+    set_runtime_value(conn, "sim_time", ended.isoformat())
     set_field(conn, actor_id, "runtime.current_action", "idle")
 
     after = snapshot(conn, actor_id)
@@ -224,17 +289,7 @@ def apply_action(conn: sqlite3.Connection, action: Action, actor_id: str = "char
         (
             ended.isoformat(),
             actor_id,
-            json.dumps(
-                {
-                    "action": action.name,
-                    "target": action.target,
-                    "duration_minutes": action.duration_minutes,
-                    "reason": action.reason,
-                    "before": before,
-                    "after": after,
-                },
-                ensure_ascii=False,
-            ),
+            json.dumps({"action": action.name, "target": action.target, "duration_minutes": action.duration_minutes, "reason": action.reason, "before": before, "after": after}, ensure_ascii=False),
         ),
     )
     conn.commit()
@@ -251,49 +306,42 @@ def _move_toward(location: str, destination: str, reason: str) -> Action:
 
 
 class BaselineLivingPolicy:
-    """Deterministic P1 acceptance policy behind the same boundary used by future LLM decisions."""
+    """Deterministic acceptance policy behind the same action contract used by models."""
 
     def choose(self, state: dict[str, Any], available_actions: list[str]) -> Action:
         location = state["location"]
         if state["sleepiness"] >= 72 or state["energy"] <= 28:
             if location == "room_bedroom":
-                return Action("sleep", 480, reason="recover from high sleep pressure")
+                return Action("sleep", 480, "obj_bed", "recover from high sleep pressure")
             return _move_toward(location, "room_bedroom", "go to bed")
         if state["thirst"] >= 55:
             if location == "room_kitchen":
-                return Action("drink", 5, reason="respond to thirst")
+                return Action("drink", 5, "obj_water", "respond to thirst")
             return _move_toward(location, "room_kitchen", "get water")
         if state["hunger"] >= 60:
             if location == "room_kitchen":
-                return Action("eat", 25, reason="respond to hunger")
+                return Action("eat", 25, "obj_meal_stock", "respond to hunger")
             return _move_toward(location, "room_kitchen", "get food")
         if state["cleanliness"] <= 45:
             if location == "room_bathroom":
-                return Action("shower", 15, reason="restore cleanliness")
+                return Action("shower", 15, "obj_shower", "restore cleanliness")
             return _move_toward(location, "room_bathroom", "take a shower")
 
         hour = datetime.fromisoformat(state["sim_time"]).hour
         if 8 <= hour < 11 and state["energy"] >= 50:
             if location == "room_gym":
-                return Action("train", 60, reason="morning training block")
+                return Action("train", 60, "obj_weights", "morning training block")
             return _move_toward(location, "room_gym", "start morning training")
         if 19 <= hour < 22:
             if location == "room_living":
-                return Action("read", 45, reason="evening wind-down")
+                return Action("read", 45, "obj_bookshelf", "evening wind-down")
             return _move_toward(location, "room_living", "wind down in living room")
         if location == "room_living":
-            return Action("rest", 30, reason="unstructured recovery time")
+            return Action("rest", 30, "obj_sofa", "unstructured recovery time")
         return _move_toward(location, "room_living", "return to common area")
 
 
-def run_until(
-    conn: sqlite3.Connection,
-    end_time: datetime,
-    *,
-    decision_provider: DecisionProvider | None = None,
-    actor_id: str = "char_darian",
-    max_actions: int = 200,
-) -> list[dict[str, Any]]:
+def run_until(conn: sqlite3.Connection, end_time: datetime, *, decision_provider: DecisionProvider | None = None, actor_id: str = "char_darian", max_actions: int = 200) -> list[dict[str, Any]]:
     provider = decision_provider or BaselineLivingPolicy()
     trace: list[dict[str, Any]] = []
     for _ in range(max_actions):
@@ -304,7 +352,11 @@ def run_until(
         action = provider.choose(state, ACTION_NAMES)
         remaining = max(1, int((end_time - now).total_seconds() // 60))
         if action.duration_minutes > remaining:
-            action = Action(action.name, remaining, action.target, action.reason)
+            low, _ = ACTION_DURATION_BOUNDS[action.name]
+            if remaining < low:
+                action = Action("idle", min(remaining, ACTION_DURATION_BOUNDS["idle"][1]), None, "finish bounded simulation window")
+            else:
+                action = Action(action.name, remaining, action.target, action.reason)
         trace.append(apply_action(conn, action, actor_id))
     else:
         raise RuntimeError("P1 autonomous loop exceeded max_actions before reaching target time")
