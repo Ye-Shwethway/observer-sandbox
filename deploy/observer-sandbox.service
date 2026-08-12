@@ -1,0 +1,19 @@
+[Unit]
+Description=Observer Sandbox Runtime
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=observer
+Group=observer
+WorkingDirectory=/opt/observer-sandbox
+Environment=OBSERVER_SANDBOX_DB=/var/lib/observer-sandbox/observer.sqlite3
+ExecStart=/opt/observer-sandbox/.venv/bin/python -m observer_sandbox.service
+Restart=on-failure
+RestartSec=5
+NoNewPrivileges=true
+PrivateTmp=true
+
+[Install]
+WantedBy=multi-user.target
