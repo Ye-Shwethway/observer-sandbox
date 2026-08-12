@@ -17,8 +17,7 @@ from .secrets import load_runtime_secrets
 DEFAULT_DB = Path(os.environ.get("OBSERVER_SANDBOX_DB", "/var/lib/observer-sandbox/observer.sqlite3"))
 
 
-def _allowed_user_ids() -> set[int]:
-    raw = os.environ.get("OBSERVER_TELEGRAM_ALLOWED_USER_IDS", "")
+def _parse_user_ids(raw: str) -> set[int]:
     result: set[int] = set()
     for part in raw.replace(";", ",").split(","):
         part = part.strip()
@@ -28,6 +27,29 @@ def _allowed_user_ids() -> set[int]:
             except ValueError:
                 continue
     return result
+
+
+def _owner_user_id() -> int | None:
+    raw = os.environ.get("OBSERVER_TELEGRAM_OWNER_ID", "").strip()
+    if not raw:
+        return None
+    try:
+        return int(raw)
+    except ValueError:
+        return None
+
+
+def _allowed_user_ids() -> set[int]:
+    return _parse_user_ids(os.environ.get("OBSERVER_TELEGRAM_ALLOWED_USER_IDS", ""))
+
+
+def _user_role(user_id: int) -> str:
+    owner_id = _owner_user_id()
+    if owner_id is not None and user_id == owner_id:
+        return "owner"
+    if user_id in _allowed_user_ids():
+        return "allowed"
+    return "unauthorized"
 
 
 def _api(token: str, method: str, payload: dict[str, Any] | None = None, *, timeout: int = 30) -> Any:
@@ -107,9 +129,10 @@ def _fmt_status(data: dict[str, Any]) -> str:
     )
 
 
-def _help() -> str:
+def _help(role: str) -> str:
+    role_label = "Owner" if role == "owner" else "Authorized user"
     return (
-        "Observer Sandbox — P2.1\n"
+        f"Observer Sandbox — P2.1\nRole: {role_label}\n"
         "/status — runtime overview\n"
         "/watch — Darian now + recent history\n"
         "/history [n] — recent events\n"
@@ -118,25 +141,30 @@ def _help() -> str:
         "/pause — pause autonomy\n"
         "/resume — resume autonomy\n"
         "/speed <value> — set runtime speed\n"
-        "/whoami — show your Telegram user id"
+        "/whoami — show your Telegram user id and role"
     )
 
 
 def handle_command(db_path: str | Path, *, user_id: int, text: str) -> str:
-    allowed = _allowed_user_ids()
+    role = _user_role(user_id)
     command_line = (text or "").strip()
     first, *rest = command_line.split()
     command = first.split("@", 1)[0].lower() if first else ""
 
-    if command in {"/whoami", "/start"} and user_id not in allowed:
-        return f"Observer Sandbox bot is connected. Your Telegram user id is {user_id}. Authorization is not enabled for this id yet."
-    if user_id not in allowed:
+    if command in {"/whoami", "/start"} and role == "unauthorized":
+        return (
+            f"Observer Sandbox bot is connected. Your Telegram user id is {user_id}. "
+            "Role: unauthorized. Ask the owner to authorize this id."
+        )
+    if role == "unauthorized":
         return "Not authorized. Use /whoami to obtain your Telegram user id."
+    if command == "/whoami":
+        return f"Telegram user id: {user_id}\nRole: {role}"
 
     with connect(db_path) as conn:
         migrate(conn)
         if command in {"/start", "/help"}:
-            return _help()
+            return _help(role)
         if command == "/status":
             return _fmt_status(observer_status(conn))
         if command == "/darian":
@@ -165,7 +193,7 @@ def handle_command(db_path: str | Path, *, user_id: int, text: str) -> str:
                 return _fmt_status(set_autonomy_speed(conn, value))
             except ValueError as exc:
                 return f"Speed rejected: {exc}"
-        return _help()
+        return _help(role)
 
 
 def run_polling(db_path: str | Path = DEFAULT_DB) -> None:
