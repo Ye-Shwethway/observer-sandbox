@@ -15,6 +15,8 @@ LEASE_KEY = "autonomy_lease"
 PENDING_KEY = "autonomy_pending_action"
 RETRY_KEY = "autonomy_retry"
 MODE_KEY = "autonomy_mode"
+MIND_STATS_KEY = "cognition_wake_stats"
+MIND_WAKE_REASON_KEY = "cognition_wake_reason"
 NORMAL_MODE = "normal"
 CANARY_MODE = "canary_once"
 
@@ -83,9 +85,24 @@ def _mode(conn: sqlite3.Connection) -> str:
     return str(runtime_value(conn, MODE_KEY, NORMAL_MODE) or NORMAL_MODE)
 
 
+def _record_cognition_wake(conn: sqlite3.Connection, actor_id: str, *, now: float, reason: str) -> None:
+    """Record exactly one model-mind wake immediately before an LLM decision call."""
+    stats = runtime_value(conn, MIND_STATS_KEY, {}) or {}
+    stats = {
+        "decision_calls": int(stats.get("decision_calls", 0)) + 1,
+        "last_call_wall_time": now,
+        "last_call_sim_time": snapshot(conn, actor_id)["sim_time"],
+        "last_wake_reason": reason,
+    }
+    set_runtime_value(conn, MIND_STATS_KEY, stats)
+    set_runtime_value(conn, MIND_WAKE_REASON_KEY, None)
+    conn.commit()
+
+
 def _finish_canary(conn: sqlite3.Connection, actor_id: str, *, success: bool, action_id: str | None, detail: str | None = None) -> None:
     set_runtime_value(conn, "autonomy_enabled", False)
     set_runtime_value(conn, MODE_KEY, NORMAL_MODE)
+    set_runtime_value(conn, MIND_WAKE_REASON_KEY, None)
     if not success:
         set_runtime_value(conn, PENDING_KEY, None)
         set_field(conn, actor_id, "runtime.current_action", "idle")
@@ -104,10 +121,12 @@ def set_autonomy_enabled(conn: sqlite3.Connection, enabled: bool, *, actor_id: s
             raise ValueError("Cannot disable autonomy while an action is pending; pause it or wait for completion")
         set_runtime_value(conn, "autonomy_enabled", False)
         set_runtime_value(conn, MODE_KEY, NORMAL_MODE)
+        set_runtime_value(conn, MIND_WAKE_REASON_KEY, None)
     else:
         if runtime_value(conn, PENDING_KEY, None) is not None:
             raise ValueError("Cannot enable autonomy with a pre-existing pending action")
         set_runtime_value(conn, MODE_KEY, NORMAL_MODE)
+        set_runtime_value(conn, MIND_WAKE_REASON_KEY, "autonomy_enabled")
         set_runtime_value(conn, "autonomy_enabled", True)
     conn.commit()
     _event(conn, actor_id, "autonomy_control", {"enabled": enabled, "mode": _mode(conn)})
@@ -116,6 +135,8 @@ def set_autonomy_enabled(conn: sqlite3.Connection, enabled: bool, *, actor_id: s
 
 def set_autonomy_paused(conn: sqlite3.Connection, paused: bool, *, actor_id: str = "char_darian") -> dict[str, Any]:
     set_runtime_value(conn, "paused", bool(paused))
+    if not paused and bool(runtime_value(conn, "autonomy_enabled", False)) and runtime_value(conn, PENDING_KEY, None) is None:
+        set_runtime_value(conn, MIND_WAKE_REASON_KEY, "resume")
     conn.commit()
     _event(conn, actor_id, "autonomy_control", {"paused": bool(paused)})
     return autonomy_status(conn, actor_id)
@@ -134,11 +155,7 @@ def set_autonomy_speed(conn: sqlite3.Connection, speed: float, *, actor_id: str 
 
 
 def arm_canary_once(conn: sqlite3.Connection, *, actor_id: str = "char_darian") -> dict[str, Any]:
-    """Arm exactly one production-style autonomous action.
-
-    Low-level primitive retained for tests/service coordination. User-facing control
-    should normally call run_canary_once(), which bounds wall time as well as action count.
-    """
+    """Arm exactly one production-style autonomous action."""
     if bool(runtime_value(conn, "autonomy_enabled", False)):
         raise ValueError("Canary requires autonomy to be disabled first")
     if bool(runtime_value(conn, "paused", False)):
@@ -147,6 +164,7 @@ def arm_canary_once(conn: sqlite3.Connection, *, actor_id: str = "char_darian") 
         raise ValueError("Canary requires no pending action")
     _clear_retry(conn)
     set_runtime_value(conn, MODE_KEY, CANARY_MODE)
+    set_runtime_value(conn, MIND_WAKE_REASON_KEY, "canary_armed")
     set_runtime_value(conn, "autonomy_enabled", True)
     conn.commit()
     _event(conn, actor_id, "autonomy_canary_armed", {"mode": CANARY_MODE})
@@ -160,7 +178,12 @@ def autonomy_tick(
     provider: Any | None = None,
     now_wall: float | None = None,
 ) -> dict[str, Any]:
-    """Advance at most one scheduler transition: idle, plan, or complete."""
+    """Advance at most one scheduler transition.
+
+    The service may call this frequently, but the LLM mind wakes only at a real
+    decision boundary: autonomy enabled, not paused/backing off, and no physical
+    action pending. In-progress action ticks are deterministic and make zero model calls.
+    """
     now = _wall_now() if now_wall is None else float(now_wall)
     if not bool(runtime_value(conn, "autonomy_enabled", False)):
         return {"ok": True, "state": "disabled"}
@@ -180,6 +203,7 @@ def autonomy_tick(
             if _completion_already_recorded(conn, action_id):
                 set_runtime_value(conn, PENDING_KEY, None)
                 set_field(conn, actor_id, "runtime.current_action", "idle")
+                set_runtime_value(conn, MIND_WAKE_REASON_KEY, "recovered_action_boundary")
                 conn.commit()
                 if _mode(conn) == CANARY_MODE:
                     _finish_canary(conn, actor_id, success=True, action_id=action_id, detail="recovered completed action")
@@ -195,6 +219,7 @@ def autonomy_tick(
                     _finish_canary(conn, actor_id, success=False, action_id=action_id, detail=f"completion:{type(exc).__name__}")
                 return {"ok": False, "state": "completion_error", "error": type(exc).__name__}
             set_runtime_value(conn, PENDING_KEY, None)
+            set_runtime_value(conn, MIND_WAKE_REASON_KEY, "action_completed")
             _clear_retry(conn)
             conn.commit()
             if _mode(conn) == CANARY_MODE:
@@ -203,7 +228,9 @@ def autonomy_tick(
 
         state = snapshot(conn, actor_id)
         decider = provider or ModelDecisionProvider(conn, character_id=actor_id)
+        wake_reason = str(runtime_value(conn, MIND_WAKE_REASON_KEY, None) or "decision_boundary")
         try:
+            _record_cognition_wake(conn, actor_id, now=now, reason=wake_reason)
             action = decider.choose(state, ACTION_NAMES)
             validate_action(conn, actor_id, action)
         except Exception as exc:
@@ -251,13 +278,7 @@ def run_canary_once(
     now_wall: float | None = None,
     lease_retries: int = 20,
 ) -> dict[str, Any]:
-    """Run one production-style action synchronously, then auto-disable.
-
-    The simulated action keeps its authored duration, but the control command advances
-    the scheduler directly to that action's due point so a canary cannot remain armed
-    for minutes or hours of wall time. Runtime validation, persistence, lease handling,
-    idempotency, state mutation, and canary auto-disable all stay on the normal scheduler path.
-    """
+    """Run one production-style action synchronously, then auto-disable."""
     start = _wall_now() if now_wall is None else float(now_wall)
     before = snapshot(conn, actor_id)
     arm_canary_once(conn, actor_id=actor_id)
@@ -329,5 +350,7 @@ def autonomy_status(conn: sqlite3.Connection, actor_id: str = "char_darian") -> 
         "speed": float(runtime_value(conn, "speed", 1.0)),
         "pending_action": runtime_value(conn, PENDING_KEY, None),
         "retry": runtime_value(conn, RETRY_KEY, None),
+        "cognition_wake_reason": runtime_value(conn, MIND_WAKE_REASON_KEY, None),
+        "cognition_stats": runtime_value(conn, MIND_STATS_KEY, {}) or {"decision_calls": 0},
         "character": snapshot(conn, actor_id),
     }
