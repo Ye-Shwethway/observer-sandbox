@@ -1,4 +1,5 @@
 name: Deploy Observer Sandbox
+# Control-plane trigger: provision Gemini secret and cognition binding; do not enable autonomy.
 
 on:
   workflow_dispatch:
@@ -103,4 +104,4 @@ jobs:
             .venv/bin/sandboxctl status
             .venv/bin/sandboxctl living-status
             .venv/bin/sandboxctl ai resolve cognition --character char_darian
-          ' 
+          '
