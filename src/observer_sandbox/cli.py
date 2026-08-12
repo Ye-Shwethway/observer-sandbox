@@ -16,8 +16,8 @@ from .ai import (
 )
 from .ai_bootstrap import bootstrap_gemini_cognition
 from .autonomy import (
-    arm_canary_once,
     autonomy_status,
+    run_canary_once,
     set_autonomy_enabled,
     set_autonomy_paused,
     set_autonomy_speed,
@@ -134,10 +134,12 @@ def main() -> None:
             elif args.autonomy_command == "speed":
                 result = set_autonomy_speed(conn, args.value)
             elif args.autonomy_command == "canary-once":
-                result = arm_canary_once(conn)
+                result = run_canary_once(conn)
             else:
                 raise SystemExit("Unknown autonomy command")
             print(json.dumps(result, indent=2, sort_keys=True))
+            if args.autonomy_command == "canary-once" and not result.get("ok", False):
+                raise SystemExit(1)
         return
     if args.command == "simulate-day":
         initialize(args.db)
