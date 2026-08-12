@@ -2,228 +2,170 @@
 
 Status: ACTIVE
 Purpose: deterministic project recovery across ChatGPT sessions and protection against memory drift.
-Last synchronized: 2026-08-13 — P0 remote deployment/control is COMPLETE / LIVE VERIFIED. P0.5 AI-provider foundation and Darian deep-profile foundation are established. P1 Living Darian Minimum is IN PROGRESS: Home v1, Darian runtime instantiation, validated action engine, event-driven time, one-day autonomous acceptance, model-backed structured decision adapters, and private AI-secret provisioning are implemented. Continuous live autonomy remains intentionally disabled because Runtime Read #3 verified that neither NanoGPT nor Gemini credential is currently provisioned in this repository/VPS path.
+Last synchronized: 2026-08-13 — P0 remote deployment/control is COMPLETE / LIVE VERIFIED. P1 Living Darian Minimum is IN PROGRESS. Home/Darian/state/action/time/event mechanics and model-backed structured-decision adapters are implemented. The current live-cognition plan is GEMINI-FIRST for early testing; NanoGPT remains supported but is not the current primary because the Creator's subscription quota is temporarily exhausted.
 
 ## HARD RECOVERY RULES
 
-Read `AGENTS.md` first, then this file, then the directly relevant current repository files before modifying the project.
+Read `AGENTS.md` first, then this file, then task-relevant repo files before changing the project.
 
-After every material repository or verified runtime change, synchronize this file in the same work session/change set. Never confuse committed, CI-validated, deployed, migration-applied, and live-runtime-verified state. State only the strongest level actually proven.
+After every material repository or verified runtime change, update this file in the same work session/change set. Never conflate committed, CI-validated, deployed, DB-applied, and live-verified state. State only the strongest level actually proven.
 
 Authority order:
 1. Explicit current Creator instruction.
-2. Current canonical repository config/schema and architecture contracts.
-3. Verified live VPS/runtime/database evidence.
-4. Deployed repository/workflow evidence.
+2. Current canonical repo config/schema/architecture.
+3. Verified live VPS/runtime/DB evidence.
+4. Deployed repo/workflow evidence.
 5. Current CI/test evidence.
 6. This bootstrap.
-7. Older handoffs or chat/model memory.
+7. Older chat/model memory.
 
-> GitHub config/schema = authored canonical definitions.  
-> VPS SQLite = mutable operational reality.  
-> Python runtime = validation/state-transition authority.  
-> AI model = proposes structured intentions; it never directly mutates world state.  
-> GitHub Actions/SSH = deployment/control transport, not world-state authority.  
-> Telegram = observer/control UI, not business-logic authority.  
-> Chat/model memory = never authoritative over newer repo/live evidence.
+GitHub config/schema = authored definitions. VPS SQLite = mutable operational reality. Python runtime = state-transition authority. AI models only propose structured actions. GitHub Actions/SSH = deployment/control transport. Telegram will be observer/control UI, not core business logic. Chat/model memory is never authoritative over newer repo/live evidence.
 
-## Project intent and anti-sprawl rule
+## Project scope / anti-sprawl
 
-Observer Sandbox is a small persistent AI-life sandbox, not another EIDOLON/Simiverse-scale system. Start with one home and one character, keep the runtime modular, and add richer physiology/memory/relationships later without rewriting the core.
+Observer Sandbox is intentionally small and modular, not another EIDOLON/Simiverse-scale architecture.
 
-Do not introduce multi-agent orchestration, giant cognition stacks, vector databases, large UI systems, or broad subsystem frameworks unless the Creator explicitly requests them and the current milestone needs them.
+Initial product: one Home, one character (Darian), autonomous structured actions, persistent state/events, later Telegram observation/control, then progressively richer physiology/memory/relationships.
 
 Core principle: **deep profile, partial simulation**.
 
 ## Architecture contract
 
-Logical world model: graph. Physical persistence: relational SQLite.
+Logical world model: graph. Physical persistence: SQLite relational tables.
 
-Core entity model: Entity + Relation + State + Capability.
+Core model: Entity + Relation + State + Capability.
 
-Definitions/templates are authored in Git/config. Concrete instances and mutable runtime state live in the database. Deployments must not overwrite mutable live state.
+Definitions/templates live in Git/config. Mutable instances/runtime state live in DB. Deploys must not overwrite mutable live state.
 
-LLM contract:
-1. runtime prepares context and allowed actions;
-2. model returns one structured intention/action;
-3. runtime validates topology, capabilities, prerequisites and state;
-4. runtime applies the transition;
-5. runtime advances simulated time and records events;
-6. observer surfaces derived human-readable state.
+LLM flow:
+1. runtime prepares current state/topology/local capabilities;
+2. model proposes exactly one structured action;
+3. runtime validates action/topology/prerequisites;
+4. only validated transition mutates DB;
+5. simulated time advances at action/event boundaries;
+6. event history is durable.
 
-The LLM never receives arbitrary DB-write authority.
+The LLM never gets arbitrary DB-write authority.
 
 Primary architecture reference: `docs/ARCHITECTURE.md`.
 
-## Persistence / profile boundary
+## Darian profile boundary
 
-Current database schema version: **3**.
+Canonical fixture: `config/characters/darian.canonical.json`.
+Runtime defaults: `config/characters/darian.runtime-defaults.json`.
+DB schema version: 3.
 
-Important tables include `entities`, `relations`, `fields`, `events`, `runtime_state`, deep profile tables, and AI provider/model/binding/catalog tables.
+Locked profile facts include 6'4", 215 lb, 9% body fat, IQ 140, approved RAPS values, rich measurements/genetic/visual/skill/preference/routine data, and first-class intimate anatomy.
 
-Field modes: `canonical`, `static`, `derived`, `simulated`. Every actively mutable field must have one clear update authority.
-
-Darian canonical fixture: `config/characters/darian.canonical.json`.
-Runtime baseline fixture: `config/characters/darian.runtime-defaults.json`.
-
-Current locked profile decisions include age 22 in the May-2025 baseline, height 6'4", weight 215 lb, body fat 9%, IQ 140, approved RAPS values, rich body/genetic/visual/skill/preference/routine data, and first-class intimate anatomy.
-
-Canonical penis measurement: **10 x 5 inches**.
+Canonical penis measurement: 10 x 5 inches.
 
 Sexual physiology semantics:
-- `erectile_state`: `flaccid | developing | erect | subsiding`;
-- `erection_firmness`: contextual simulated 0-100 response;
-- flaccid baseline firmness 0 does not mean dysfunction;
-- `erection_firmness_cap`: Darian 100;
-- `arousal_level`: separate dynamic state;
+- `erectile_state`: flaccid | developing | erect | subsiding;
+- `erection_firmness`: contextual simulated 0-100;
+- flaccid baseline firmness 0 is normal, not dysfunction;
+- Darian `erection_firmness_cap`: 100;
+- `arousal_level`: separate dynamic field;
 - runtime default: flaccid / firmness 0 / arousal 0.
 
-## AI provider layer
-
-Model IDs must never be hard-coded into character or engine logic.
-
-Built-in registry: Gemini, NanoGPT, OpenAI, OpenRouter.
-
-Resolution concept: `Provider -> Catalog -> Model Binding -> Runtime Adapter`.
-
-Binding precedence:
-1. task + role
-2. character + role
-3. engine + role
-4. character default
-5. global + role
-6. global default
-
-NanoGPT remains subscription-first:
-- base `https://nano-gpt.com/api`;
-- catalog `/subscription/v1/models?detailed=true`;
-- usage `/subscription/v1/usage`;
-- subscription generation `/subscription/v1/chat/completions`;
-- do not force upstream provider selection for normal subscription traffic.
-
-Gemini and NanoGPT have P1 structured-decision generation support in `src/observer_sandbox/ai_runtime.py`.
-
-Structured decision schema: `action`, `duration_minutes`, `target`, `reason`.
-
-`src/observer_sandbox/model_decision.py` implements `ModelDecisionProvider`, enriches snapshots with reachable rooms/local objects, resolves the logical `cognition` binding, and asks the selected model for one structured action. Model output is still subject to normal runtime validation; invalid AI output must never mutate the DB.
-
-`tests/test_model_decision.py` proves NanoGPT-bound structured decision resolution without direct world mutation.
-
-Provider credentials remain secret references only. Deploy optionally provisions these GitHub Actions secrets to `/var/lib/observer-sandbox/secrets.env`:
-- `OBSERVER_GEMINI_API_KEY`
-- `OBSERVER_NANOGPT_API_KEY`
-- `OBSERVER_OPENAI_API_KEY`
-- `OBSERVER_OPENROUTER_API_KEY`
-
-Secret file is mode 0600 and must never be logged or exposed. `src/observer_sandbox/secrets.py` loads non-empty values before model decisions, so no further root/systemd bootstrap is required.
-
-## P1 Living Darian Minimum — implemented mechanics
+## P1 Living Darian Minimum — established mechanics
 
 World seed: `config/worlds/home.v1.json`.
 
-Home v1 has 5 rooms: Bedroom, Kitchen, Bathroom, Living Room, Home Gym.
+Home v1: Bedroom, Kitchen, Bathroom, Living Room, Home Gym; 15 useful objects.
 
-It has 15 useful objects including bed, shower, sink, refrigerator, pantry, stove, dining table, sofa, bookshelf, drinking water, meal ingredients, free weights and heavy bag.
+Runtime modules: `src/observer_sandbox/world.py`, `src/observer_sandbox/simulation.py`.
 
-Runtime/world modules:
-- `src/observer_sandbox/world.py`
-- `src/observer_sandbox/simulation.py`
+Live character: `char_darian`.
 
-Darian is instantiated as `char_darian` from the canonical fixture.
+P1 runtime fields include location, current action, energy, hunger, thirst, sleepiness, cleanliness. Energy is reserve/high-good. Hunger/thirst/sleepiness are pressure/high-bad. Values clamp 0-100.
 
-Current P1 runtime fields:
-- `runtime.location`
-- `runtime.current_action`
-- `needs.energy`
-- `needs.hunger`
-- `needs.thirst`
-- `needs.sleepiness`
-- `physiology.cleanliness`
+Validated actions: move, sleep, eat, drink, shower, rest, inspect, use, train, read, idle.
 
-Semantics: energy is reserve/high-good; hunger/thirst/sleepiness are pressure/high-bad; values clamp 0-100.
+Movement is graph constrained; no teleporting. Completed actions write durable `action_completed` events. CI proves Darian can complete exactly 24 simulated hours with bounded deterministic acceptance policy without mutating production time.
 
-Validated action vocabulary: move, sleep, eat, drink, shower, rest, inspect, use, train, read, idle.
-
-Movement is graph-constrained. Non-adjacent teleporting is rejected. Actions advance simulated time at event boundaries. Every completed action writes an `action_completed` event with before/after snapshots.
-
-`DecisionProvider` is the stable selection interface. `BaselineLivingPolicy` is deterministic and only for mechanics/acceptance testing. `ModelDecisionProvider` is the live AI-compatible implementation.
-
-CLI:
-- `sandboxctl living-status`
-- `sandboxctl simulate-day`
-
-`tests/test_p1_living.py` proves Home/Darian seeding, invalid movement rejection, exactly 24 simulated hours of bounded autonomous activity, durable events and bounded final needs.
-
-## Current verified production boundary
-
-Repository: `Ye-Shwethway/observer-sandbox` (private).
-
-VPS:
-- host `107.175.30.238`;
-- Ubuntu 24.04;
-- app `/opt/observer-sandbox`;
-- DB `/var/lib/observer-sandbox/observer.sqlite3`;
-- service `observer-sandbox`;
-- SSH/runtime user `observer`;
-- DB not publicly exposed.
-
-Deployment transport:
-`GitHub main -> Actions -> SSH/rsync -> app install -> DB init/migration -> systemd restart -> status/living-state verification`.
-
-P1 mechanics proof:
-- CI #52 / id `31630284060`: success.
-- Deploy #28 / id `31630283999`: success.
-- Runtime Read #2 / id `31630356571`: service/schema/live Darian read success.
-
-Observed live Darian baseline:
+Live baseline remains intentionally stationary until controlled real-model verification:
 - Bedroom;
-- current action idle;
+- idle;
 - energy 75;
 - hunger 20;
 - thirst 15;
 - sleepiness 15;
 - cleanliness 80;
-- sim time `2025-05-01T07:00:00+00:00`.
+- sim time `2025-05-01T07:00:00+00:00`;
+- `autonomy_enabled=false`.
 
-Latest model/secret-path proof:
-- CI #60 / id `31630745170`: **SUCCESS**.
-- Deploy #33 / id `31630745178`: **SUCCESS**.
-- deployed commit `6c8edef3cf65bab3434836172b28cb1dc62ace17`.
-- deploy included optional AI-secret provisioning and living-state verification.
+## AI provider/model architecture
 
-Latest credential-presence proof:
-- Runtime Read #3 / id `31630833063`: **SUCCESS**.
-- `NANOGPT_CREDENTIAL_PRESENT=false`.
-- `GEMINI_CREDENTIAL_PRESENT=false`.
-- no secret values were exposed.
+Model IDs are never hard-coded into character or engine logic.
 
-`autonomy_enabled=false` is intentional and must stay false until one real provider credential is provisioned, its catalog refreshed, one returned model bound to `character:char_darian / cognition`, and a controlled structured decision is validated live.
+Registry: Gemini, NanoGPT, OpenAI, OpenRouter.
 
-## Remote-operation policy
+Resolution: Provider -> Catalog -> Model Binding -> Runtime Adapter.
 
-Normal VPS work goes through GitHub Actions. Do not ask the Creator for Termux/root commands unless an unavoidable host-level bootstrap issue cannot be handled through the established lane.
+Binding precedence: task/role -> character/role -> engine/role -> character default -> global role -> global default.
 
-Exact sudo service verification command remains `systemctl is-active observer-sandbox`; do not add `--quiet` unless sudoers changes too.
+`src/observer_sandbox/ai_runtime.py` supports structured P1 decisions for Gemini and NanoGPT. Required output keys: `action`, `duration_minutes`, `target`, `reason`. `src/observer_sandbox/model_decision.py` resolves the logical cognition binding and still passes the returned action through runtime validation.
 
-## Roadmap state
+Secrets are provisioned by GitHub Actions to `/var/lib/observer-sandbox/secrets.env` mode 0600. Never log or expose secret values.
 
-- **P0:** COMPLETE / LIVE VERIFIED.
-- **P0.5:** FOUNDATION COMPLETE / CI-VALIDATED / Gemini + NanoGPT decision adapters implemented.
-- **Deep Character Profile:** IMPLEMENTED / CI-VALIDATED / Darian instantiated live.
-- **P1:** IN PROGRESS. World/state/action/time/event mechanics are live; structured model-decision path and secret transport are deployed; real provider credential/catalog/binding/decision verification and controlled continuous autonomy remain.
-- **P2 Telegram Observer:** later.
-- **P3 Rich State & Memory:** later.
-- **P4 First simulation module:** later.
-- **P5 Second character:** later.
+### Current Gemini-first decision
+
+For early P1 testing use Gemini first. NanoGPT remains implemented and subscription-first but is temporarily secondary.
+
+`src/observer_sandbox/ai_bootstrap.py` implements catalog-driven Gemini cognition bootstrap:
+- enable Gemini;
+- fetch the live Gemini catalog using the configured API key;
+- consider usable `generateContent` Flash-family models;
+- prefer stable Flash-Lite, then stable Flash;
+- avoid preview/experimental/image/TTS/audio/embedding/live variants for the bootstrap selection;
+- exact model IDs are never hard-coded;
+- bind the selected returned model to `character:char_darian / cognition`;
+- preserve any existing binding unless explicitly forced, so later Telegram/user model choices are not silently overwritten by deploys.
+
+CLI command: `sandboxctl ai bootstrap-gemini-cognition`.
+
+Deploy automatically attempts this bootstrap only when a non-empty `OBSERVER_GEMINI_API_KEY` exists. If no key exists, deployment remains healthy and cognition binding stays unset.
+
+Future Telegram model control must wrap the existing provider/catalog/binding layer so the Creator can refresh provider catalogs, inspect available models, see the active binding, and change Darian/engine model assignments without code changes. Deploy must not overwrite a model choice made through Telegram.
+
+NanoGPT remains subscription-safe: subscription catalog/usage/generation paths are retained and no upstream-provider forcing is used by default.
+
+## Production boundary
+
+Repository: `Ye-Shwethway/observer-sandbox` private.
+VPS: `107.175.30.238`, Ubuntu 24.04.
+App: `/opt/observer-sandbox`.
+DB: `/var/lib/observer-sandbox/observer.sqlite3`.
+Service: `observer-sandbox` systemd.
+SSH/runtime user: `observer`.
+DB is not publicly exposed.
+
+Deployment path: GitHub main -> Actions -> SSH/rsync -> app install -> DB init/migration -> optional AI-secret/cognition setup -> systemd restart -> status/living-state/binding verification.
+
+P0 deployment/readback is live verified. P1 mechanics are CI validated, deployed, and live-read verified. Gemini dynamic-bootstrap code/tests are implemented; deployment with no Gemini secret safely skips binding. Continuous live autonomy remains disabled until a real Gemini credential is provisioned and one controlled model decision is verified.
+
+## Remote operation policy
+
+Normal VPS work goes through GitHub Actions. Do not ask the Creator for Termux/root commands unless an unavoidable host/bootstrap-level issue cannot be handled through the established lane.
+
+## Roadmap
+
+- P0 Foundation & Remote Control: COMPLETE / LIVE VERIFIED.
+- P0.5 Provider Layer: FOUNDATION COMPLETE; Gemini/NanoGPT structured decision adapters implemented.
+- Deep Character Profile: IMPLEMENTED; Darian instantiated live.
+- P1 Living Darian Minimum: IN PROGRESS; real Gemini credential/catalog/binding/single-decision verification and controlled autonomy remain.
+- P2 Telegram Observer: next after P1; include provider/model fetch + binding/change controls.
+- P3 Rich State & Memory: later.
+- P4 First simulation module: later.
+- P5 Second character: later.
 
 ## RESUME HERE
 
-1. Do not redo P0 or VPS bootstrap.
-2. Keep `autonomy_enabled=false`.
-3. The next external requirement is one API credential in this repo's GitHub Actions secrets. Prefer NanoGPT first because the Creator already uses a subscription and wants quota efficiency; Gemini is also supported.
-4. After a credential is added, push/dispatch Deploy so the private secret file is reprovisioned.
-5. Runtime Read must then show only the corresponding `*_CREDENTIAL_PRESENT=true` boolean.
-6. Refresh that provider catalog; choose a model ID returned by the live catalog; never invent/hard-code one.
-7. Bind it to `character:char_darian / cognition`.
-8. Perform a controlled one-decision live verification before continuous autonomy. The model proposes; runtime validation decides; invalid output leaves state unchanged.
-9. Synchronize this file after every material change/live proof.
+1. Do not redo VPS bootstrap or P1 mechanics.
+2. Keep `autonomy_enabled=false` until controlled live Gemini decision verification passes.
+3. Next external requirement: GitHub Actions secret `OBSERVER_GEMINI_API_KEY`.
+4. After the secret is added, deploy through the normal Actions lane. Deployment should provision the secret, refresh Gemini's live catalog, select a stable Flash-family candidate dynamically, and bind it to Darian cognition only if no binding already exists.
+5. Verify credential presence, fetched catalog, selected binding, and one real structured decision. Never expose the key.
+6. Only after the single-decision test passes should continuous live autonomy be enabled.
+7. P2 Telegram must later provide model catalog refresh/list/selection/rebinding using this same backend, not hard-coded model IDs.
+8. Synchronize this file after every material change/live proof.
