@@ -113,7 +113,8 @@ jobs:
             if grep -Eq "^OBSERVER_TELEGRAM_BOT_TOKEN=.+" /var/lib/observer-sandbox/secrets.env 2>/dev/null; then
               echo "TELEGRAM_BOT_TOKEN_PRESENT=true"
               TOKEN=$(sed -n "s/^OBSERVER_TELEGRAM_BOT_TOKEN=//p" /var/lib/observer-sandbox/secrets.env | head -n1)
-              if curl -fsS --max-time 15 "https://api.telegram.org/bot${TOKEN}/getMe" | grep -Eq '"ok"[[:space:]]*:[[:space:]]*true'; then
+              TG_JSON=$(curl -fsS --max-time 15 "https://api.telegram.org/bot${TOKEN}/getMe")
+              if printf "%s\n" "$TG_JSON" | grep -Eq '"ok"[[:space:]]*:[[:space:]]*true'; then
                 echo "TELEGRAM_API_CONNECTED=true"
               else
                 echo "TELEGRAM_API_CONNECTED=false"
