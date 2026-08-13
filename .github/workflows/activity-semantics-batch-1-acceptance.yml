@@ -2,6 +2,14 @@ name: Activity Semantics Batch 1 Acceptance
 
 on:
   workflow_dispatch:
+  pull_request:
+    paths:
+      - '.github/workflows/activity-semantics-batch-1-acceptance.yml'
+      - 'config/worlds/home.v1.json'
+      - 'src/observer_sandbox/composition_schema.py'
+      - 'src/observer_sandbox/duration_planning.py'
+      - 'tests/test_monitor_action_semantics_batch.py'
+      - 'tests/test_duration_planning_scope.py'
   push:
     branches: [main]
     paths:
@@ -14,7 +22,7 @@ on:
 
 jobs:
   acceptance:
-    if: ${{ vars.VPS_DEPLOY_ENABLED == 'true' }}
+    if: ${{ vars.VPS_DEPLOY_ENABLED == 'true' && (github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository) }}
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
