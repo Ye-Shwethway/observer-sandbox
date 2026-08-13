@@ -24,6 +24,7 @@ from .observer_query import (
 )
 from .secrets import load_runtime_secrets
 from .simulation import runtime_value, set_runtime_value
+from .telegram_profile_browser import character_keyboard, profile_callback_view
 
 DEFAULT_DB = Path(os.environ.get("OBSERVER_SANDBOX_DB", "/var/lib/observer-sandbox/observer.sqlite3"))
 NOTIFY_KEY_PREFIX = "telegram_notifications:"
@@ -445,6 +446,11 @@ def _callback_view(conn, user_id: int, callback_data: str) -> tuple[str, list[li
         return _fmt_status(observer_status(conn)), _back_home_keyboard()
     if callback_data == "nav:history":
         return _fmt_history(recent_history(conn, limit=16)), _back_home_keyboard()
+
+    profile_view = profile_callback_view(conn, callback_data)
+    if profile_view is not None:
+        return profile_view
+
     if callback_data.startswith("loc:"):
         location_id = callback_data.split(":", 1)[1]
         data = location_summary(conn, location_id)
@@ -455,10 +461,7 @@ def _callback_view(conn, user_id: int, callback_data: str) -> tuple[str, list[li
         return _fmt_object(data), _object_keyboard(data)
     if callback_data.startswith("char:"):
         character_id = callback_data.split(":", 1)[1]
-        return _fmt_character(character_summary(conn, character_id)), [
-            [{"text": "← Characters", "callback_data": "nav:characters"}],
-            [{"text": "⌂ Observer Home", "callback_data": "nav:home"}],
-        ]
+        return _fmt_character(character_summary(conn, character_id)), character_keyboard(character_id)
     return "Unknown observer destination.", _back_home_keyboard()
 
 
