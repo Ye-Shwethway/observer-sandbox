@@ -106,6 +106,7 @@ def format_action_completion(
 
     changes = [
         _fmt_delta("Energy", "⚡", before["energy"], after["energy"], high_is_good=True),
+        _fmt_delta("Fatigue", "💢", before["fatigue"], after["fatigue"], high_is_good=False),
         _fmt_delta("Hunger", "🍽", before["hunger"], after["hunger"], high_is_good=False),
         _fmt_delta("Thirst", "💧", before["thirst"], after["thirst"], high_is_good=False),
         _fmt_delta("Sleepiness", "🌙", before["sleepiness"], after["sleepiness"], high_is_good=False),
