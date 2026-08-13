@@ -33,7 +33,19 @@
     },
     {"id": "obj_toilet", "name": "Toilet", "room": "room_bathroom", "capabilities": ["use"]},
     {"id": "obj_fridge", "name": "Refrigerator", "room": "room_kitchen", "capabilities": ["inspect", "use"]},
-    {"id": "obj_pantry", "name": "Pantry", "room": "room_kitchen", "capabilities": ["inspect", "use"]},
+    {
+      "id": "obj_pantry",
+      "name": "Pantry",
+      "room": "room_kitchen",
+      "capabilities": ["inspect", "eat", "use"],
+      "effects": {
+        "eat": {
+          "needs.hunger": -40.0,
+          "needs.energy": 5.0,
+          "needs.thirst": 1.0
+        }
+      }
+    },
     {"id": "obj_stove", "name": "Stove", "room": "room_kitchen", "capabilities": ["cook", "use"]},
     {"id": "obj_table", "name": "Dining Table", "room": "room_kitchen", "capabilities": ["use"]},
     {"id": "obj_sofa", "name": "Sofa", "room": "room_living", "capabilities": ["rest", "read"]},
