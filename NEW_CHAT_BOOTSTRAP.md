@@ -47,6 +47,7 @@ LLMs propose structured actions only. Deterministic runtime owns legality and mu
 - P3.5 Effective Training Load — COMPLETE / ACCEPTANCE VERIFIED / DEPLOYED.
 - Minimum Training Stimulus v1 — COMPLETE / PRE-MERGE PRODUCTION-COPY ACCEPTANCE VERIFIED / DEPLOYED.
 - Adaptation Curve v1 — COMPLETE / PRE-MERGE PRODUCTION-COPY ACCEPTANCE VERIFIED / DEPLOYED / READ-ONLY.
+- Stimulus Saturation / Diminishing Returns v1 — COMPLETE / PRE-MERGE PRODUCTION-COPY ACCEPTANCE VERIFIED / DEPLOYED / READ-ONLY.
 - Autonomy Breadth + Time Observability v1 — DEPLOYED / ACCEPTANCE VERIFIED.
 - Current Action ETA Observability v1 — COMPLETE / ACCEPTANCE VERIFIED / DEPLOYED / LIVE UX VERIFIED.
 - Runtime Speed Control v1 — COMPLETE / ACCEPTANCE VERIFIED / DEPLOYED / LIVE UX VERIFIED.
@@ -59,7 +60,7 @@ LLMs propose structured actions only. Deterministic runtime owns legality and mu
 ## Training progression state
 
 Current evidence chain:
-`target -> readiness -> fatigue inefficiency -> effectiveness -> effective workload -> immediate physiology -> session stimulus evidence -> read-only level/ceiling adaptation factor`.
+`target -> readiness -> fatigue inefficiency -> effectiveness -> effective workload -> immediate physiology -> session stimulus evidence -> read-only level/ceiling factor -> read-only recent-stimulus saturation factor`.
 
 Minimum Training Stimulus v1:
 - Free Weights train session only;
@@ -74,10 +75,19 @@ Adaptation Curve v1:
 - `level_factor = clamp((effective_ceiling-current)/effective_ceiling,0,1)^2` by default;
 - default natural ceiling 100;
 - Strength 90 -> 0.01, 95 -> 0.0025, 99 -> 0.0001;
-- ceiling multiplier is an abstract simulation socket distinct from future rate/recovery modifiers;
 - raw Strength/grade remain unchanged.
 
-Evidence: Training Stimulus PR #14 / Deploy #140; Adaptation Curve PR #15 merge `52644bfcbb8b7b9cb4196d8b5f253a32e053aaf2`, acceptance `31686888383`, release `abfe82d279fb1c85a027109185b1d28ae859fbd1`, Deploy #141 `31686957768` SUCCESS.
+Stimulus Saturation v1:
+- curve id `strength-stimulus-saturation-v1`;
+- source existing action-completion training-stimulus event evidence;
+- 72 simulated-hour rolling window;
+- Strength domain only;
+- `saturation_factor = 1 / (1 + 0.3 * recent_strength_stimulus_units)`;
+- 0 units -> 1.0, 1 -> ~0.7692, 2 -> 0.625, 4 -> ~0.4545;
+- no stimulus consumption/event mutation/raw Strength mutation;
+- event insertion IDs are not treated as simulated-time chronology.
+
+Evidence: Adaptation Curve PR #15 merge `52644bfcbb8b7b9cb4196d8b5f253a32e053aaf2`, acceptance `31686888383`, Deploy #141 `31686957768`; Stimulus Saturation PR #16 merge `f02f2407957872dad192701b3726c3f2d8ff096d`, CI #405 SUCCESS, acceptance #2 `31687327606`, release `052931125b23f1f50166bea8142f8da358b694ec`, Deploy #142 `31687401802` SUCCESS.
 
 ## Stat mutation gate
 
@@ -85,7 +95,7 @@ Raw stat mutation is **not authorized**.
 
 Mandatory sequence:
 1. Adaptation Curve v1 — COMPLETE / read-only.
-2. Stimulus Saturation / Diminishing Returns v1 — pending.
+2. Stimulus Saturation / Diminishing Returns v1 — COMPLETE / read-only.
 3. Recovery Realization v1 — pending.
 4. Detraining / Prolonged-Untrained Decay v1 — pending and mandatory.
 5. Adaptation Preview v1 — pending; compose projected positive/negative delta with no mutation.
@@ -116,4 +126,4 @@ Action duration remains integer simulated minutes with minimum 1 minute. `1 sim 
 
 ## Exact resume point
 
-**Adaptation Curve v1 is live/read-only.** Resume with **Stimulus Saturation / Diminishing Returns v1 — Free Weights + Strength only**. Do not mutate Strength. After saturation, implement Recovery Realization, then mandatory Detraining/Prolonged-Untrained Decay, then Adaptation Preview. Only after all are accepted may Stat Mutation Gate v1 be considered.
+**Adaptation Curve v1 + Stimulus Saturation v1 are live/read-only.** Resume with **Recovery Realization v1 — Free Weights + Strength only**. Do not mutate Strength. After recovery, implement mandatory Detraining/Prolonged-Untrained Decay, then Adaptation Preview. Only after all are accepted may Stat Mutation Gate v1 be considered.
