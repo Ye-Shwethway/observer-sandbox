@@ -11,9 +11,7 @@ Authority: current Creator instruction > canonical repo/contracts > verified liv
 
 ## Development policy
 
-Use minimum runnable expansion, plus the repository-wide **exemplar-first, then batch-by-pattern** rule in `AGENTS.md`.
-
-For a new structural pattern: prove one small exemplar end-to-end. Once that invariant is green/deployed, structurally equivalent follow-ons should normally use one branch/PR, one focused test suite, one **pre-merge disposable production-copy dry-run covering the whole batch**, iterative fixes if needed, then merge only when the whole batch is green, followed by one deploy/readback. Items requiring a new state/authority/runtime invariant leave the batch and become a new exemplar.
+Use minimum runnable expansion plus **exemplar-first, then batch-by-pattern**. Prove one structural pattern end-to-end; once green/deployed, equivalent follow-ons should normally use one branch/PR, one focused test suite, one pre-merge disposable production-copy dry-run covering the whole batch, iterative fixes if needed, then one merge and one deploy/readback.
 
 ## Production baseline
 
@@ -26,11 +24,11 @@ For a new structural pattern: prove one small exemplar end-to-end. Once that inv
 - estate `loc_thorne_estate`
 - world revision `thorne-estate-v3.0-scoped-ids`
 - Darian autonomy enabled / normal / wake-on-demand
-- global speed is Creator-controlled and must be re-read live; Deploy #137 observed `5x`
+- global speed is Creator-controlled and must be re-read live
 - Gemini cognition binding preserved
 - Telegram connected private Creator observer
 
-Production continues autonomously. Re-read live state whenever exact current Darian action/stats/speed matter.
+Production continues autonomously. Re-read live state whenever exact current action/stats/speed matter.
 
 ## Canonical runtime rule
 
@@ -52,29 +50,31 @@ LLMs propose structured actions only. Deterministic runtime owns legality and mu
 - Runtime Speed Control v1 — COMPLETE / ACCEPTANCE VERIFIED / DEPLOYED / LIVE UX VERIFIED.
 - Deterministic Action Duration Planning Profiles v1 — COMPLETE / ACCEPTANCE VERIFIED / DEPLOYED.
 - Research Action Semantics v1 — COMPLETE / ACCEPTANCE VERIFIED / DEPLOYED.
-- Activity Semantics Batch 1 (`monitor`) — COMPLETE / PRE-MERGE PRODUCTION-COPY ACCEPTANCE VERIFIED / DEPLOYED.
+- Activity Semantics Batch 1 (`monitor`) — COMPLETE / PRE-MERGE ACCEPTANCE VERIFIED / DEPLOYED.
+- Read-Only Grading Strength Exemplar — COMPLETE / PRE-MERGE ACCEPTANCE VERIFIED / DEPLOYED.
+- Attribute Grading Batch 1 — COMPLETE / PRE-MERGE ACCEPTANCE VERIFIED / DEPLOYED.
 
-## Activity semantics state
+## Grading state
 
-`research` remains the exemplar semantic verb: Research Desk only, legal 10–180m, preferred 30–90m.
+`raps-100-proof-v1` is a named derived-only proof family for explicitly opted-in compatible 0..100 Attributes fields. Raw profile values remain authoritative; grade metadata is derived at query time and displayed by Telegram without profile mutation or schema v5.
 
-Batch 1 proves the batching policy on the same invariant. `monitor` is first-class, legal 5–120m, preferred 15–45m, and is authored on exactly three console targets:
-- Surveillance Console;
-- Secure Communications Terminal;
-- Emergency Console.
+Attribute Grading Batch 1 covers 36 explicit fields across Physical, Mental, Intellectual (except IQ), Social and Verbal Charisma sections. Explicit membership prevents future numeric fields from silently inheriting this scheme.
 
-All three use the same local-object capability/colocation validation, model option-derived vocabulary, passive physiology/time behavior and first-class action/event persistence. No findings, alerts, communications payloads, intelligence engine or environment subsystem is created.
+Separate grading families are mandatory where semantics differ:
+- `raps_ia.iq` is excluded because its scale differs;
+- Skills are excluded because score/progression/experience semantics may differ;
+- Body measurements/composition are excluded and require a **separate exemplar + batch**. Do not reuse flat attribute thresholds by default; body grading may depend on units, stature/proportion context, composition and/or genetic ceilings.
 
-Pre-merge evidence: PR #11 branch CI #374 / `31682656794` SUCCESS and Activity Semantics Batch 1 Acceptance #1 / `31682656839` SUCCESS against one disposable copy of the live production DB, covering all three targets with zero model calls and rejecting an unsupported Media Console.
-
-Merge/release: PR #11 merge `8a8f14b7da13ac0ab0ecbb461fefcdfc3639d7f8`; release `5e650c11ef6c144f4816f3d77704562cba3156d6`; Deploy #137 / `31682743508` SUCCESS. Deploy readback: service healthy, schema v4, autonomy enabled/normal/unpaused, speed 5x at snapshot, Gemini preserved, Telegram connected.
+Evidence: Strength exemplar PR #12 merge `d0bdabc1faaede8adb6c3e8dd29a9b5ff9ba3cb3`, acceptance `31683547092`, Deploy #138 `31683632205`; Attribute Batch PR #13 merge `76bcf7fe7225a9504909f9d939bbcdd673bac7c6`, CI #386 SUCCESS, batch acceptance `31683936844`, release `d14cae7ef88fc9e157caa5fa0b930f36aba3cf77`, Deploy #139 `31684009154` SUCCESS.
 
 ## Time and planning state
 
-Action duration remains integer simulated minutes with minimum 1 minute. Regression coverage proves `1 sim min @ 3600x` schedules a positive `1/60` real-second delay and completes safely. Sleep remains intentionally unclamped until nap/night-sleep semantics are separated.
+Action duration remains integer simulated minutes with minimum 1 minute. `1 sim min @ 3600x` remains a positive `1/60` real-second due interval. Sleep remains intentionally unclamped until nap/night-sleep semantics are separated.
 
 ## Exact resume point
 
-The exemplar-first/batch expansion pattern is now proven in production. Do not keep adding semantic verbs merely to fill vocabulary. `maintain/repair/diagnose/practice` each risk requiring materially different state or consequences and should become new exemplars only when a concrete runnable need exists.
+Attribute grading is live and the body-family separation is locked. Next choose one of two bounded paths:
+1. **Body grading exemplar** with its own calculation semantics, then batch compatible body fields only after that exemplar is proven; or
+2. **Minimum Training Stimulus** on one target/domain, leaving body grading deferred.
 
-Unless Creator redirects, resume the planned sequence with the **first read-only grading proof on one existing raw value**, preserving raw authoritative values and deriving any grade from a named scheme without schema v5.
+Do not mix Body, IQ or Skills into the existing attribute grading family merely because their values are numeric.
