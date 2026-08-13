@@ -1,0 +1,7 @@
+Observer Sandbox production release marker
+
+release: P3.3-minimum-training-readiness-modifier
+accepted_main: 6d61696610c149d30d6ed8624659985eef2c9029
+acceptance_workflow: P3 Training Readiness Acceptance #5
+acceptance_run: 31673341881
+status: accepted-for-production
