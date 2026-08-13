@@ -46,8 +46,12 @@ LLMs propose structured actions only. Deterministic runtime owns legality and mu
 - P3.4 Training Effectiveness Outcome — COMPLETE / ACCEPTANCE VERIFIED / DEPLOYED.
 - P3.5 Effective Training Load — COMPLETE / ACCEPTANCE VERIFIED / DEPLOYED.
 - Minimum Training Stimulus v1 — COMPLETE / PRE-MERGE PRODUCTION-COPY ACCEPTANCE VERIFIED / DEPLOYED.
-- Adaptation Curve v1 — COMPLETE / PRE-MERGE PRODUCTION-COPY ACCEPTANCE VERIFIED / DEPLOYED / READ-ONLY.
-- Stimulus Saturation / Diminishing Returns v1 — COMPLETE / PRE-MERGE PRODUCTION-COPY ACCEPTANCE VERIFIED / DEPLOYED / READ-ONLY.
+- Adaptation Curve v1 — COMPLETE / DEPLOYED / READ-ONLY.
+- Stimulus Saturation / Diminishing Returns v1 — COMPLETE / DEPLOYED / READ-ONLY.
+- Recovery Realization v1 — COMPLETE / DEPLOYED / READ-ONLY.
+- Detraining / Prolonged-Untrained Decay v1 — COMPLETE / DEPLOYED / READ-ONLY.
+- Adaptation Preview v1 — COMPLETE / DEPLOYED / READ-ONLY.
+- Strength Progression Settlement v1 Core — COMPLETE / PRE-MERGE PRODUCTION-COPY ACCEPTANCE VERIFIED / DEPLOYED / NOT AUTOMATICALLY ACTIVE.
 - Autonomy Breadth + Time Observability v1 — DEPLOYED / ACCEPTANCE VERIFIED.
 - Current Action ETA Observability v1 — COMPLETE / ACCEPTANCE VERIFIED / DEPLOYED / LIVE UX VERIFIED.
 - Runtime Speed Control v1 — COMPLETE / ACCEPTANCE VERIFIED / DEPLOYED / LIVE UX VERIFIED.
@@ -57,73 +61,54 @@ LLMs propose structured actions only. Deterministic runtime owns legality and mu
 - Read-Only Grading Strength Exemplar — COMPLETE / PRE-MERGE ACCEPTANCE VERIFIED / DEPLOYED.
 - Attribute Grading Batch 1 — COMPLETE / PRE-MERGE ACCEPTANCE VERIFIED / DEPLOYED.
 
-## Training progression state
+## Strength progression state
 
-Current evidence chain:
-`target -> readiness -> fatigue inefficiency -> effectiveness -> effective workload -> immediate physiology -> session stimulus evidence -> read-only level/ceiling factor -> read-only recent-stimulus saturation factor`.
+Current chain:
+`Free Weights -> effective workload -> Strength stimulus -> level/ceiling difficulty -> recent-stimulus saturation -> recovery realization -> detraining pressure -> positive/negative preview -> idempotent settlement core`.
 
-Minimum Training Stimulus v1:
-- Free Weights train session only;
-- Strength domain only;
-- `stimulus_units = effective_minutes / 60`;
-- Heavy Bag and other targets emit no Strength stimulus in v1;
-- raw Strength remains unchanged.
+Key formulas / contracts:
+- stimulus: `effective_minutes / 60`;
+- level factor: `clamp((effective_ceiling-current)/effective_ceiling,0,1)^2`;
+- saturation: `1/(1+0.3*recent_strength_stimulus)` over 72 sim hours;
+- recovery: zero <=6h, linear to full at 48h, state-quality gated, fatigue >=70 hard-block;
+- detraining: 14-day grace, then `1-exp(-overdue_days/60)`, scaled by `(current/effective_ceiling)^2`;
+- preview positive proof scale: `0.25 * stimulus * level * saturation * recovery * adaptation_rate_multiplier`;
+- preview negative proof rate: `0.02 * decay_pressure * preview_days * decay_rate_multiplier`.
 
-Adaptation Curve v1:
-- curve id `strength-level-curve-v1`;
-- `effective_ceiling = natural_ceiling * ceiling_multiplier`;
-- `level_factor = clamp((effective_ceiling-current)/effective_ceiling,0,1)^2` by default;
-- default natural ceiling 100;
-- Strength 90 -> 0.01, 95 -> 0.0025, 99 -> 0.0001;
-- raw Strength/grade remain unchanged.
+Special modifiers stay abstract and factorized (ceiling, positive-rate, recovery, detraining-pressure, negative-rate). Do not implement real-world drug dosing/medical guidance.
 
-Stimulus Saturation v1:
-- curve id `strength-stimulus-saturation-v1`;
-- source existing action-completion training-stimulus event evidence;
-- 72 simulated-hour rolling window;
-- Strength domain only;
-- `saturation_factor = 1 / (1 + 0.3 * recent_strength_stimulus_units)`;
-- 0 units -> 1.0, 1 -> ~0.7692, 2 -> 0.625, 4 -> ~0.4545;
-- no stimulus consumption/event mutation/raw Strength mutation;
-- event insertion IDs are not treated as simulated-time chronology.
+## Strength settlement core
 
-Evidence: Adaptation Curve PR #15 merge `52644bfcbb8b7b9cb4196d8b5f253a32e053aaf2`, acceptance `31686888383`, Deploy #141 `31686957768`; Stimulus Saturation PR #16 merge `f02f2407957872dad192701b3726c3f2d8ff096d`, CI #405 SUCCESS, acceptance #2 `31687327606`, release `052931125b23f1f50166bea8142f8da358b694ec`, Deploy #142 `31687401802` SUCCESS.
+`settle_strength_progression()` exists in production but is **not service-wired**.
 
-## Stat mutation gate
+Safety invariants:
+- first call is non-mutating bootstrap and consumes pre-feature historical Strength stimulus evidence;
+- later positive stimulus is credited at most once via consumed event ids;
+- positive stimulus remains pending until >=48 sim hours and fatigue <70;
+- detraining is analytically integrated over the exact unsettled simulated-time interval and reset by Strength training events;
+- same-boundary replay is a no-op;
+- every cursor advance is `strength_progression_settled` audit evidence;
+- every actual mutation writes `character_profile_history`;
+- mutated Strength becomes six-decimal simulated authority `strength-progression-settlement-v1`, bounded 0..100;
+- derived grade continues to read raw Strength.
 
-Raw stat mutation is **not authorized**.
+Evidence: PR #20 merge `d6c94c90aec354faedd42656c42d078cb5bd42a3`; CI #420 SUCCESS; acceptance #2 `31688789743` SUCCESS on disposable live DB copy; release `028f1bf4506f2a0192a2df987d1c3cb24b8a4fe5`; Deploy #146 `31688891757` SUCCESS.
 
-Mandatory sequence:
-1. Adaptation Curve v1 — COMPLETE / read-only.
-2. Stimulus Saturation / Diminishing Returns v1 — COMPLETE / read-only.
-3. Recovery Realization v1 — pending.
-4. Detraining / Prolonged-Untrained Decay v1 — pending and mandatory.
-5. Adaptation Preview v1 — pending; compose projected positive/negative delta with no mutation.
-6. Stat Mutation Gate v1 — only after all prior gates are accepted; tiny audited decimal mutation only.
+## Activation rule
 
-Positive path:
-`eligible stimulus -> level/ceiling difficulty -> saturation/diminishing return -> recovery realization -> previewed positive delta`.
+Do not call settlement every tight service tick. The next slice must activate it at bounded simulation boundaries.
 
-Regression path:
-`elapsed relevant untrained time -> detraining eligibility -> decay curve -> previewed negative delta`.
-
-Special modifiers stay abstract/factorized (effective-ceiling, adaptation-rate, recovery, etc.); no real-world drug dosing or medical guidance.
-
-Canonical progression contract: `docs/TRAINING_PROGRESSION_GATES.md`.
+Preferred policy:
+- bootstrap once when automatic activation first observes no settlement history;
+- thereafter settle immediately when an eligible unconsumed Strength stimulus exists;
+- otherwise evaluate pure detraining at most once per simulated day;
+- action-completion is a suitable trigger/check boundary, but no-op event spam must remain bounded;
+- automatic activation requires its own pre-merge production-copy acceptance and one production deploy/readback.
 
 ## Grading state
 
-`raps-100-proof-v1` is derived-only for 36 explicitly opted-in compatible 0..100 Attributes fields. Raw values remain authoritative.
-
-Separate grading families remain mandatory:
-- IQ excluded because its scale differs;
-- Skills excluded because score/progression/experience semantics may differ;
-- Body measurements/composition require a **separate exemplar + batch** and must not inherit flat attribute thresholds by default.
-
-## Time and planning state
-
-Action duration remains integer simulated minutes with minimum 1 minute. `1 sim min @ 3600x` remains a positive `1/60` real-second due interval. Sleep remains intentionally unclamped until nap/night-sleep semantics are separated.
+`raps-100-proof-v1` is derived-only for 36 explicitly opted-in compatible 0..100 Attributes fields. Body measurements remain a separate grading family; IQ and Skills remain separate scale/progression families.
 
 ## Exact resume point
 
-**Adaptation Curve v1 + Stimulus Saturation v1 are live/read-only.** Resume with **Recovery Realization v1 — Free Weights + Strength only**. Do not mutate Strength. After recovery, implement mandatory Detraining/Prolonged-Untrained Decay, then Adaptation Preview. Only after all are accepted may Stat Mutation Gate v1 be considered.
+Resume with **Strength Progression Automatic Activation v1**. Keep this as the first and only mutation activation exemplar. Do not batch other attributes/skills/body progression into it. The settlement core is already deployed but production Strength must remain unchanged until the activation slice is separately accepted and deployed.
