@@ -42,23 +42,42 @@ jobs:
             .venv/bin/python - <<"PY"
           import json
           import os
+          from observer_sandbox.actor_runtime import actor_runtime, pending_action, set_actor_runtime, set_retry
           from observer_sandbox.autonomy import autonomy_tick
           from observer_sandbox.db import connect
-          from observer_sandbox.simulation import runtime_value, set_runtime_value, snapshot
+          from observer_sandbox.runtime import initialize
+          from observer_sandbox.simulation import set_runtime_value, snapshot
           from observer_sandbox.world import set_field
 
           db = os.environ["OBSERVER_SANDBOX_DB"]
+          initialize(db)
           with connect(db) as conn:
-              set_runtime_value(conn, "autonomy_enabled", True)
+              actor_id = "char_darian"
+              existing = actor_runtime(conn, actor_id)
+              if existing["pending_action_id"]:
+                  conn.execute(
+                      "UPDATE action_instances SET status='cancelled', updated_at=CURRENT_TIMESTAMP WHERE id=? AND status IN ('planned','in_progress')",
+                      (existing["pending_action_id"],),
+                  )
+              set_actor_runtime(
+                  conn,
+                  actor_id,
+                  autonomy_enabled=True,
+                  autonomy_mode="normal",
+                  pending_action_id=None,
+                  wake_reason="accelerated_acceptance",
+              )
+              conn.execute(
+                  "UPDATE actor_runtime SET lease_owner=NULL,lease_expires_at=NULL WHERE actor_id=?",
+                  (actor_id,),
+              )
+              set_retry(conn, actor_id, None)
               set_runtime_value(conn, "paused", False)
               set_runtime_value(conn, "speed", 3600.0)
-              set_runtime_value(conn, "autonomy_pending_action", None)
-              set_runtime_value(conn, "autonomy_lease", None)
-              set_runtime_value(conn, "autonomy_retry", None)
-              set_field(conn, "char_darian", "runtime.current_action", "idle")
+              set_field(conn, actor_id, "runtime.current_action", "idle")
               conn.commit()
 
-              before = snapshot(conn)
+              before = snapshot(conn, actor_id)
               trajectory = []
               now_wall = 1000.0
               max_actions = 6
@@ -73,30 +92,34 @@ jobs:
                   )
 
               for index in range(max_actions):
-                  if index > 0 and needs_acceptable(snapshot(conn)):
+                  if index > 0 and needs_acceptable(snapshot(conn, actor_id)):
                       break
-                  planned = autonomy_tick(conn, now_wall=now_wall)
+                  planned = autonomy_tick(conn, actor_id=actor_id, now_wall=now_wall)
                   assert planned["state"] == "planned", planned
                   pending = planned["pending"]
                   due = float(pending["due_wall_time"])
-                  completed = autonomy_tick(conn, now_wall=due)
+                  completed = autonomy_tick(conn, actor_id=actor_id, now_wall=due)
                   assert completed["state"] == "completed", completed
-                  state_after = snapshot(conn)
+                  state_after = snapshot(conn, actor_id)
                   trajectory.append({
                       "step": index + 1,
+                      "action_id": pending["action_id"],
                       "action": pending["action"],
                       "target": pending.get("target"),
+                      "place_id": pending.get("place_id"),
                       "duration_minutes": pending["duration_minutes"],
                       "reason": pending.get("reason"),
                       "after": state_after,
                   })
                   now_wall = due + 1.0
 
-              after = snapshot(conn)
-              assert runtime_value(conn, "autonomy_pending_action", None) is None
+              after = snapshot(conn, actor_id)
+              assert pending_action(conn, actor_id) is None
               print(json.dumps({
                   "ok": True,
                   "disposable": True,
+                  "schema": 4,
+                  "actor_id": actor_id,
                   "speed": 3600.0,
                   "max_model_calls": max_actions,
                   "before": before,
