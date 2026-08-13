@@ -22,6 +22,10 @@ PROFILE_SECTIONS: tuple[dict[str, Any], ...] = (
     {"id": "background", "label": "Background", "icon": "📜", "domains": ("background",)},
 )
 
+_RUNTIME_DEFAULTS: dict[str, Any] = {
+    "physiology.fatigue": 0.0,
+}
+
 _SECTION_BY_ID = {section["id"]: section for section in PROFILE_SECTIONS}
 
 
@@ -62,10 +66,10 @@ def _section_has_data(conn: sqlite3.Connection, character_id: str, section: dict
     if runtime_fields:
         placeholders = ",".join("?" for _ in runtime_fields)
         row = conn.execute(
-            f"SELECT 1 FROM fields WHERE entity_id=? AND field_key IN ({placeholders}) LIMIT 1",
-            (character_id, *runtime_fields),
+            f"SELECT COUNT(*) FROM profile_field_definitions WHERE field_key IN ({placeholders}) AND sensitivity='normal'",
+            runtime_fields,
         ).fetchone()
-        return row is not None
+        return bool(row and int(row[0]) == len(runtime_fields))
 
     collection = section.get("collection")
     if collection == "skills":
@@ -120,37 +124,34 @@ def profile_section(conn: sqlite3.Connection, character_id: str, section_id: str
 
 
 def _runtime_values(conn: sqlite3.Connection, character_id: str, field_keys: tuple[str, ...]) -> list[dict[str, Any]]:
-    if not field_keys:
-        return []
-    placeholders = ",".join("?" for _ in field_keys)
-    rows = conn.execute(
-        f"""
-        SELECT f.field_key, f.value_json, f.mode,
-               COALESCE(d.domain, 'runtime') AS domain,
-               COALESCE(d.label, f.field_key) AS label,
-               COALESCE(d.data_type, 'number') AS data_type,
-               d.unit
-        FROM fields f
-        LEFT JOIN profile_field_definitions d ON d.field_key=f.field_key
-        WHERE f.entity_id=? AND f.field_key IN ({placeholders})
-          AND COALESCE(d.sensitivity, 'normal')='normal'
-        ORDER BY f.field_key
-        """,
-        (character_id, *field_keys),
-    ).fetchall()
-    return [
-        {
-            "kind": "field",
-            "field_key": row["field_key"],
-            "domain": row["domain"],
-            "label": row["label"],
-            "value": json.loads(row["value_json"]),
-            "data_type": row["data_type"],
-            "unit": row["unit"],
-            "mode": row["mode"],
-        }
-        for row in rows
-    ]
+    content: list[dict[str, Any]] = []
+    for field_key in field_keys:
+        definition = conn.execute(
+            "SELECT domain,label,data_type,unit,sensitivity FROM profile_field_definitions WHERE field_key=?",
+            (field_key,),
+        ).fetchone()
+        if definition is None or definition["sensitivity"] != "normal":
+            continue
+        row = conn.execute(
+            "SELECT value_json,mode FROM fields WHERE entity_id=? AND field_key=?",
+            (character_id, field_key),
+        ).fetchone()
+        value = json.loads(row["value_json"]) if row is not None else _RUNTIME_DEFAULTS.get(field_key)
+        if value is None:
+            continue
+        content.append(
+            {
+                "kind": "field",
+                "field_key": field_key,
+                "domain": definition["domain"],
+                "label": definition["label"],
+                "value": value,
+                "data_type": definition["data_type"],
+                "unit": definition["unit"],
+                "mode": row["mode"] if row is not None else "simulated",
+            }
+        )
+    return content
 
 
 def _profile_values(conn: sqlite3.Connection, character_id: str, domains: tuple[str, ...]) -> list[dict[str, Any]]:
