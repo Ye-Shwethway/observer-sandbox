@@ -4,7 +4,7 @@
 
 Before making material changes, read `NEW_CHAT_BOOTSTRAP.md` and treat newer repository/runtime evidence as authoritative over remembered chat context.
 
-Also read the directly relevant source/config files for the task. For architecture work, read `docs/ARCHITECTURE.md`; for Telegram work, read `docs/TELEGRAM_OBSERVER_ARCHITECTURE.md`; for character-profile work, inspect `config/characters/` and the profile schema modules; for deployment/runtime work, inspect `.github/workflows/` and `deploy/`.
+Also read the directly relevant source/config files for the task. For architecture work, read `docs/ARCHITECTURE.md`; for Telegram work, read `docs/TELEGRAM_OBSERVER_ARCHITECTURE.md`; for living-needs, recovery, world-resource or item-effect work, read `docs/PHYSIOLOGY_AND_ITEM_EFFECTS.md`; for character-profile work, inspect `config/characters/` and the profile schema modules; for deployment/runtime work, inspect `.github/workflows/` and `deploy/`.
 
 ## Continuity rule
 
@@ -35,6 +35,17 @@ The bootstrap must state the strongest level actually proven.
 7. Older handoffs or chat/model memory.
 
 Chat/model memory is context only and must not override newer repository or live evidence.
+
+## Living physiology and item-effect contract
+
+All basic living-needs and recovery changes must preserve `docs/PHYSIOLOGY_AND_ITEM_EFFECTS.md`.
+
+- Recovery-labelled actions must improve the intended need after passive drift.
+- Every basic physiological stat must retain a reachable restoration path.
+- Food/drink/shower effects belong to authored world/item effect profiles rather than prompt prose or Telegram handlers.
+- `action_options()` must expose relevant authored effects to cognition while the deterministic engine remains authoritative.
+- Do not add a restorative capability without its deterministic effect definition and regression coverage.
+- Because autonomy persists pending actions across restarts, world/capability/effect changes must account for currently pending plans before removing or invalidating targets.
 
 ## Telegram presentation contract
 
