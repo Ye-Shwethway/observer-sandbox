@@ -288,6 +288,21 @@ def _apply_effect_spec(values: dict[str, float], effects: dict[str, Any]) -> Non
                 values[stat] = min(values[stat], float(spec["clamp_max"]))
 
 
+def _training_load_evidence(action: Action) -> dict[str, Any] | None:
+    if action.name != "train":
+        return None
+    modifier = action.modifiers.get("training_readiness")
+    if not isinstance(modifier, dict):
+        return None
+    effectiveness = max(0.0, min(1.0, float(modifier.get("effectiveness", modifier.get("readiness", 1.0)))))
+    return {
+        "planned_minutes": int(action.duration_minutes),
+        "effectiveness": round(effectiveness, 3),
+        "effective_minutes": round(float(action.duration_minutes) * effectiveness, 3),
+        "source": "p3.5-effective-training-load-v1",
+    }
+
+
 def _advance_needs(conn: sqlite3.Connection, actor_id: str, action: Action) -> None:
     hours = action.duration_minutes / 60.0
     values = {
@@ -302,8 +317,18 @@ def _advance_needs(conn: sqlite3.Connection, actor_id: str, action: Action) -> N
         values[stat] += rate * hours
     readiness = action.modifiers.get("training_readiness") if action.name == "train" else None
     fatigue_multiplier = float(readiness.get("fatigue_cost_multiplier", 1.0)) if isinstance(readiness, dict) else 1.0
+    effectiveness = (
+        max(0.0, min(1.0, float(readiness.get("effectiveness", readiness.get("readiness", 1.0)))))
+        if isinstance(readiness, dict)
+        else 1.0
+    )
     for stat, rate in ACTION_EFFECTS_PER_HOUR.get(action.name, {}).items():
-        effective_rate = rate * fatigue_multiplier if action.name == "train" and stat == "fatigue" else rate
+        effective_rate = rate
+        if action.name == "train":
+            if stat == "fatigue":
+                effective_rate = rate * fatigue_multiplier
+            else:
+                effective_rate = rate * effectiveness
         values[stat] += effective_rate * hours
     if action.target:
         effects = _object_effects(conn, action.target).get(action.name, {})
@@ -409,6 +434,10 @@ def apply_action(
     set_field(conn, actor_id, "runtime.current_action", "idle")
     after = snapshot(conn, actor_id)
     changes = _state_changes(before, after)
+    training_load = _training_load_evidence(action)
+    outcome: dict[str, Any] = {"state_changes": changes, "modifiers": action.modifiers}
+    if training_load is not None:
+        outcome["training_load"] = training_load
 
     conn.execute(
         """UPDATE action_instances
@@ -416,10 +445,24 @@ def apply_action(
         WHERE id=?""",
         (
             started.isoformat(), ended.isoformat(),
-            json.dumps({"state_changes": changes, "modifiers": action.modifiers}, ensure_ascii=False), action_id,
+            json.dumps(outcome, ensure_ascii=False), action_id,
         ),
     )
     participants = [{"entity_id": participant, "role": "participant"} for participant in action.participants]
+    payload: dict[str, Any] = {
+        "action_id": action_id,
+        "action": action.name,
+        "target": action.target,
+        "duration_minutes": action.duration_minutes,
+        "reason": action.reason,
+        "modifiers": action.modifiers,
+        "before": before,
+        "after": after,
+        "action_started_sim_time": started.isoformat(),
+        "action_ended_sim_time": ended.isoformat(),
+    }
+    if training_load is not None:
+        payload["training_load"] = training_load
     record_event(
         conn,
         sim_time=ended.isoformat(),
@@ -429,18 +472,7 @@ def apply_action(
         location_id=after["location"],
         participants=participants,
         state_changes=changes,
-        payload={
-            "action_id": action_id,
-            "action": action.name,
-            "target": action.target,
-            "duration_minutes": action.duration_minutes,
-            "reason": action.reason,
-            "modifiers": action.modifiers,
-            "before": before,
-            "after": after,
-            "action_started_sim_time": started.isoformat(),
-            "action_ended_sim_time": ended.isoformat(),
-        },
+        payload=payload,
     )
     conn.commit()
     return after
