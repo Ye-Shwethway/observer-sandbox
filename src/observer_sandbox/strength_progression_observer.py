@@ -101,7 +101,7 @@ def strength_progression_observation(
     unconsumed = [item for item in stimulus if item["id"] not in consumed]
 
     if recovery.latest_stimulus_sim_time is None:
-        adaptation_status = "No Strength stimulus yet"
+        adaptation_status = "No qualifying Strength stimulus yet"
     elif recovery.blocked:
         adaptation_status = "Blocked by systemic fatigue"
     elif recovery.elapsed_hours < FULL_RECOVERY_HOURS:
@@ -113,12 +113,14 @@ def strength_progression_observation(
 
     latest_delta = 0.0
     latest_settlement_time = None
+    latest_settlement_bootstrap = False
     if latest_settlement:
         latest_delta = float(latest_settlement.get("net_delta") or 0.0)
         latest_settlement_time = str(latest_settlement.get("settled_through_sim_time") or latest_settlement.get("sim_time"))
+        latest_settlement_bootstrap = bool(latest_settlement.get("bootstrap"))
 
     if detraining.last_strength_stimulus_sim_time is None:
-        detraining_status = "No Strength-training history"
+        detraining_status = "Inactive · no qualifying Strength stimulus history yet"
     elif detraining.eligible:
         detraining_status = f"Active · pressure {detraining.decay_pressure * 100:.2f}%"
     else:
@@ -142,7 +144,7 @@ def strength_progression_observation(
     elif stimulus:
         next_boundary = "Next 24 h detraining checkpoint"
     else:
-        next_boundary = "After first Strength stimulus"
+        next_boundary = "After first qualifying Strength stimulus"
 
     return {
         "strength": round(strength, 6),
@@ -155,6 +157,7 @@ def strength_progression_observation(
         "adaptation_status": adaptation_status,
         "latest_settlement_delta": round(latest_delta, 9),
         "latest_settlement_time": latest_settlement_time,
+        "latest_settlement_bootstrap": latest_settlement_bootstrap,
         "detraining_status": detraining_status,
         "next_boundary": next_boundary,
         "due_reason": due.reason,
@@ -163,14 +166,16 @@ def strength_progression_observation(
 
 def strength_progression_profile_items(conn: sqlite3.Connection, actor_id: str, *, state: dict[str, Any]) -> list[dict[str, Any]]:
     obs = strength_progression_observation(conn, actor_id, state=state)
-    latest_settlement = (
-        f"{obs['latest_settlement_delta']:+.6f} · {_fmt_time(obs['latest_settlement_time'])}"
-        if obs["latest_settlement_time"] else "No settlement yet"
-    )
+    if obs["latest_settlement_time"] and obs["latest_settlement_bootstrap"]:
+        latest_settlement = f"Bootstrap · no stat change · {_fmt_time(obs['latest_settlement_time'])}"
+    elif obs["latest_settlement_time"]:
+        latest_settlement = f"{obs['latest_settlement_delta']:+.6f} · {_fmt_time(obs['latest_settlement_time'])}"
+    else:
+        latest_settlement = "No settlement yet"
     return [
         {"kind": "derived", "field_key": "strength.progression.raw", "domain": "progression", "label": "Strength raw", "value": f"{obs['strength']:.6f}", "mode": "derived"},
         {"kind": "derived", "field_key": "strength.progression.stimulus", "domain": "progression", "label": "Recent Strength stimulus", "value": f"{obs['recent_stimulus_units']:.3f} units / 72 h", "mode": "derived"},
-        {"kind": "derived", "field_key": "strength.progression.level_factor", "domain": "progression", "label": "Level gain factor", "value": f"{obs['level_factor'] * 100:.3f}%", "mode": "derived"},
+        {"kind": "derived", "field_key": "strength.progression.level_factor", "domain": "progression", "label": "Level adaptation factor", "value": f"{obs['level_factor'] * 100:.3f}%", "mode": "derived"},
         {"kind": "derived", "field_key": "strength.progression.saturation", "domain": "progression", "label": "Saturation yield", "value": f"{obs['saturation_factor'] * 100:.1f}%", "mode": "derived"},
         {"kind": "derived", "field_key": "strength.progression.recovery", "domain": "progression", "label": "Recovery realization", "value": f"{obs['recovery_factor'] * 100:.1f}%", "mode": "derived"},
         {"kind": "derived", "field_key": "strength.progression.status", "domain": "progression", "label": "Adaptation status", "value": obs["adaptation_status"], "mode": "derived"},
