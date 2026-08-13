@@ -191,19 +191,89 @@ def _fmt_character(data: dict[str, Any]) -> str:
     )
 
 
+def _location_icon(location: dict[str, Any]) -> str:
+    if location.get("access") != "open":
+        return "🔒"
+    kind = str(location.get("kind") or "").lower()
+    if kind in {"estate", "residence", "building"}:
+        return "🏛"
+    if kind in {"floor", "level", "zone"}:
+        return "🏢"
+    if kind in {"room", "interior"}:
+        return "🚪"
+    return "📍"
+
+
 def _fmt_location(data: dict[str, Any]) -> str:
     loc = data["location"]
-    icon = "🌍" if loc["type"] == "world" else "📍"
+    icon = _location_icon(loc)
     lines = [f"{icon} {loc['name']}", "━━━━━━━━━━━━━━━━━━"]
-    if data["children"]:
-        lines.append("📂 Contents")
-        for child in data["children"]:
-            lines.append(f"• {child['name']}")
-    if data["residents"]:
-        lines.extend(["", "👥 Residents: " + ", ".join(row["name"] for row in data["residents"])])
-    if data["occupants"]:
-        lines.append("📍 Present now: " + ", ".join(row["name"] for row in data["occupants"]))
+
+    kind = str(loc.get("kind") or "location").replace("_", " ").title()
+    if kind and kind != "Location":
+        lines.append(f"🧭 {kind}")
+    if loc.get("access") != "open":
+        lines.append("🔒 Access unavailable")
+
+    child_locations = data.get("child_locations") or []
+    if child_locations:
+        lines.extend(["", "🗺 Areas"])
+        for child in child_locations:
+            child_icon = _location_icon(child)
+            lines.append(f"• {child_icon} {child['name']}")
+
+    occupants = data.get("occupants") or []
+    if occupants:
+        lines.extend(["", "👥 Present now"])
+        for occupant in occupants:
+            lines.append(f"• {occupant['name']} · {_title_action(occupant.get('current_action'))}")
+
+    objects = data.get("objects") or []
+    if objects:
+        lines.extend(["", "📦 Objects"])
+        for obj in objects:
+            lines.append(f"• {obj['name']}")
+
+    exits = data.get("exits") or []
+    if exits:
+        lines.extend(["", "🚪 Exits"])
+        for exit_node in exits:
+            lines.append(f"• {exit_node['name']}")
+
+    activity = data.get("recent_activity") or []
+    if activity:
+        lines.extend(["", "🎬 Recent activity"])
+        for event in activity:
+            action = _title_action(event.get("action"))
+            target = event.get("target_name")
+            detail = f"{action} → {target}" if target else action
+            actor = event.get("actor_name") or "Character"
+            lines.append(f"• {actor} · {detail}")
+            lines.append(f"  {_fmt_time(event.get('sim_time'))}")
+
+    if not child_locations and not occupants and not objects and not exits and not activity:
+        lines.extend(["", "No observable contents yet."])
+
     return "\n".join(lines)
+
+
+def _location_keyboard(data: dict[str, Any]) -> list[list[dict[str, str]]]:
+    keyboard: list[list[dict[str, str]]] = []
+    for child in data.get("child_locations") or []:
+        icon = _location_icon(child)
+        keyboard.append([{"text": f"{icon} {child['name']}", "callback_data": f"loc:{child['id']}"}])
+
+    parent = data.get("parent")
+    if parent:
+        if parent.get("type") == "world":
+            keyboard.append([{"text": "← Universe", "callback_data": "nav:universe"}])
+        else:
+            keyboard.append([{"text": f"← {parent['name']}", "callback_data": f"loc:{parent['id']}"}])
+    else:
+        keyboard.append([{"text": "← Universe", "callback_data": "nav:universe"}])
+
+    keyboard.append([{"text": "⌂ Observer Home", "callback_data": "nav:home"}])
+    return keyboard
 
 
 def _fmt_history(rows: list[dict[str, Any]]) -> str:
@@ -255,8 +325,9 @@ def _universe_view(conn) -> tuple[str, list[list[dict[str, str]]]]:
     keyboard: list[list[dict[str, str]]] = []
     for world in worlds:
         lines.append(f"• {world['name']}")
-        for room in list_locations(conn, world["id"]):
-            keyboard.append([{"text": f"📍 {room['name']}", "callback_data": f"loc:{room['id']}"}])
+        for location in list_locations(conn, world["id"]):
+            icon = _location_icon(location)
+            keyboard.append([{"text": f"{icon} {location['name']}", "callback_data": f"loc:{location['id']}"}])
     keyboard.append([{"text": "⌂ Observer Home", "callback_data": "nav:home"}])
     return "\n".join(lines), keyboard
 
@@ -285,10 +356,8 @@ def _callback_view(conn, user_id: int, callback_data: str) -> tuple[str, list[li
         return _fmt_history(recent_history(conn, limit=16)), _back_home_keyboard()
     if callback_data.startswith("loc:"):
         location_id = callback_data.split(":", 1)[1]
-        return _fmt_location(location_summary(conn, location_id)), [
-            [{"text": "← Universe", "callback_data": "nav:universe"}],
-            [{"text": "⌂ Observer Home", "callback_data": "nav:home"}],
-        ]
+        data = location_summary(conn, location_id)
+        return _fmt_location(data), _location_keyboard(data)
     if callback_data.startswith("char:"):
         character_id = callback_data.split(":", 1)[1]
         return _fmt_character(character_summary(conn, character_id)), [
@@ -308,7 +377,7 @@ def _help(role: str) -> str:
         "/watch — Darian now + recent activity\n"
         "/history [n] — Recent activity\n"
         "/darian — Character summary\n"
-        "/home — Home summary\n"
+        "/home — Thorne Estate summary\n"
         "/notify on|off — Proactive notifications\n"
         "/pause — Pause autonomy\n"
         "/resume — Resume autonomy\n"
