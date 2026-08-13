@@ -18,6 +18,19 @@ FREE_WEIGHTS = "obj_thorne_estate_gym_free_weights"
 HEAVY_BAG = "obj_thorne_estate_gym_heavy_bag"
 MASTER_SUITE = "loc_thorne_estate_master_suite"
 
+GYM_TRAINING_TARGETS = {
+    (FREE_WEIGHTS, "Free Weights"),
+    (HEAVY_BAG, "Heavy Bag"),
+    ("obj_thorne_estate_gym_olympic_platform", "Olympic Weightlifting Platform"),
+    ("obj_thorne_estate_gym_power_rack", "Power Rack"),
+    ("obj_thorne_estate_gym_adjustable_bench", "Adjustable Bench"),
+    ("obj_thorne_estate_gym_strength_machines", "Strength Machine Circuit"),
+    ("obj_thorne_estate_gym_high_speed_treadmill", "High-Speed Treadmill"),
+    ("obj_thorne_estate_gym_rowing_ergometer", "Rowing Ergometer"),
+    ("obj_thorne_estate_gym_speed_agility_station", "Speed & Agility Station"),
+    ("obj_thorne_estate_gym_altitude_chamber", "Altitude Training Chamber"),
+}
+
 
 class FixedTargetedTrainingProvider:
     def __init__(self, target: str) -> None:
@@ -60,10 +73,7 @@ def test_gym_exposes_real_training_targets_only_when_colocated(tmp_path):
         set_field(conn, "char_darian", "runtime.location", HOME_GYM)
         conn.commit()
         training = [option for option in action_options(conn) if option["action"] == "train"]
-        assert {(row["target"], row["target_name"]) for row in training} == {
-            (FREE_WEIGHTS, "Free Weights"),
-            (HEAVY_BAG, "Heavy Bag"),
-        }
+        assert {(row["target"], row["target_name"]) for row in training} == GYM_TRAINING_TARGETS
 
         set_field(conn, "char_darian", "runtime.location", MASTER_SUITE)
         conn.commit()
