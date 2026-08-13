@@ -1,7 +1,7 @@
 Observer Sandbox production release marker
 
-release: causal-need-resolution-v3
-accepted_main: e1e6d79479fa4d2ae837c395ec3b2fdb7391dc8f
-acceptance_workflow: Causal Need Resolution v2 Acceptance #12
-acceptance_run: 31698384587
+release: strength-progression-observability-v1
+accepted_main: d291e77f4c290bc4b0487888e52a4c6063349f36
+acceptance_workflow: CI #457 + read-only grading regression acceptances
+acceptance_run: 31699319018
 status: accepted-for-production
