@@ -4,7 +4,7 @@
 
 Before making material changes, read `NEW_CHAT_BOOTSTRAP.md` and treat newer repository/runtime evidence as authoritative over remembered chat context.
 
-Also read the directly relevant source/config files for the task. For architecture work, read `docs/ARCHITECTURE.md`; for Telegram work, read `docs/TELEGRAM_OBSERVER_ARCHITECTURE.md`; for living-needs, recovery, world-resource or item-effect work, read `docs/PHYSIOLOGY_AND_ITEM_EFFECTS.md`; for character-profile work, inspect `config/characters/` and the profile schema modules; for deployment/runtime work, inspect `.github/workflows/` and `deploy/`.
+Also read the directly relevant source/config files for the task. For architecture work, read `docs/ARCHITECTURE.md`; for world/location/topology work, read `docs/WORLD_LOCATION_NODE_MODEL.md`; for Telegram work, read `docs/TELEGRAM_OBSERVER_ARCHITECTURE.md`; for living-needs, recovery, world-resource or item-effect work, read `docs/PHYSIOLOGY_AND_ITEM_EFFECTS.md`; for character-profile work, inspect `config/characters/` and the profile schema modules; for deployment/runtime work, inspect `.github/workflows/` and `deploy/`.
 
 ## Continuity rule
 
@@ -35,6 +35,19 @@ The bootstrap must state the strongest level actually proven.
 7. Older handoffs or chat/model memory.
 
 Chat/model memory is context only and must not override newer repository or live evidence.
+
+## World / location node contract
+
+All spatial/world changes must preserve `docs/WORLD_LOCATION_NODE_MODEL.md`.
+
+- Locations are recursively nestable graph nodes, not hard-coded screen labels.
+- Containment (`contains`) and physical traversal (`connected_to`) are separate concepts.
+- `home` is the stable Thorne Estate **location node**, not the universe/world root.
+- The generic root is `observer_universe`; a future South Lake Tahoe regional node may be inserted above Thorne Estate without changing the estate id.
+- Existing stable room ids should be preserved during topology migrations whenever practical so runtime locations, pending actions, event history, notifications, and observer links remain valid.
+- Locked/unimplemented boundaries must have no traversable edge; do not rely on prompt wording to keep characters inside an unfinished region.
+- Canonical source facts and provisional implementation layout must remain distinguishable through metadata/documentation.
+- Telegram and other UIs must consume generic location-query contracts rather than encode mansion-specific topology in handlers.
 
 ## Living physiology and item-effect contract
 
