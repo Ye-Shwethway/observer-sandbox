@@ -2,6 +2,7 @@ from observer_sandbox.db import connect
 from observer_sandbox.model_decision import load_autonomy_policy
 from observer_sandbox.runtime import initialize
 from observer_sandbox.simulation import action_options
+from observer_sandbox.telegram_bot import _fmt_character, _fmt_status
 from observer_sandbox.telegram_notifications import format_action_completion
 from observer_sandbox.world import set_field
 
@@ -87,3 +88,48 @@ def test_completion_notification_shows_elapsed_and_next_eta():
     assert "~5 min real @ 1x" in text
     assert "Next: Move → Living Room" in text
     assert "Expected update: 01-05-2025 (Thursday) 03:30 PM" in text
+
+
+def test_current_character_and_runtime_cards_show_pending_eta():
+    character = {
+        "character": {"name": "Darian Thorne"},
+        "state": {
+            "location_name": "Living Room",
+            "current_action": "read",
+            "sim_time": "2025-05-01T16:20:00+00:00",
+            "energy": 80.0,
+            "hunger": 0.2,
+            "thirst": 21.5,
+            "sleepiness": 19.5,
+            "cleanliness": 78.8,
+        },
+    }
+    status = {
+        "character": character["state"],
+        "autonomy_enabled": True,
+        "mode": "normal",
+        "paused": False,
+        "speed": 1.0,
+        "cognition_stats": {"decision_calls": 30},
+        "pending_target_name": "Field Manual",
+        "pending_action": {
+            "action": "read",
+            "target": "obj_field_manual",
+            "duration_minutes": 10,
+            "speed_at_plan": 1.0,
+            "planned_sim_time": "2025-05-01T16:20:00+00:00",
+            "due_wall_time": 1300.0,
+        },
+    }
+
+    text = _fmt_character(character, status, now_wall=1000.0)
+    assert "Action     Read → Field Manual" in text
+    assert "Duration   10 sim min • ~10 min real @ 1x" in text
+    assert "Expected   01-05-2025 (Thursday) 04:30 PM" in text
+    assert "Remaining  ~5 min real" in text
+
+    runtime_text = _fmt_status(status, now_wall=1000.0)
+    assert "Pending    Read → Field Manual" in runtime_text
+    assert "Duration   10 sim min • ~10 min real @ 1x" in runtime_text
+    assert "Expected   01-05-2025 (Thursday) 04:30 PM" in runtime_text
+    assert "Remaining  ~5 min real" in runtime_text
