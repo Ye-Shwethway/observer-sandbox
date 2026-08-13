@@ -1,0 +1,18 @@
+{
+  "revision": "training-method-semantics-v1",
+  "profiles": {
+    "obj_thorne_estate_gym_high_speed_treadmill": {"method_id": "steady_state_cardio", "method_name": "Steady-State Cardio", "family": "conditioning", "workload": ["aerobic", "continuous"], "primary_domains": ["stamina", "endurance"]},
+    "obj_thorne_estate_gym_rowing_ergometer": {"method_id": "rowing_conditioning", "method_name": "Rowing Conditioning", "family": "conditioning", "workload": ["aerobic", "full_body"], "primary_domains": ["stamina", "endurance"]},
+    "obj_thorne_estate_gym_speed_agility_station": {"method_id": "speed_agility_drills", "method_name": "Speed & Agility Drills", "family": "athleticism", "workload": ["interval", "coordination"], "primary_domains": ["speed", "agility"]},
+    "obj_thorne_estate_gym_heavy_bag": {"method_id": "heavy_bag_rounds", "method_name": "Heavy-Bag Rounds", "family": "combat_conditioning", "workload": ["interval", "striking"], "primary_domains": ["stamina", "endurance", "combat_skill"]},
+    "obj_thorne_estate_training_combat_mat": {"method_id": "combat_mat_drills", "method_name": "Combat Mat Drills", "family": "combat", "workload": ["technical", "movement"], "primary_domains": ["agility", "combat_skill"]},
+    "obj_thorne_estate_training_practice_dummy": {"method_id": "technical_dummy_drills", "method_name": "Technical Dummy Drills", "family": "combat", "workload": ["technical", "repetition"], "primary_domains": ["combat_skill", "focus_precision"]},
+    "obj_thorne_estate_training_obstacle_course": {"method_id": "obstacle_conditioning", "method_name": "Obstacle Conditioning", "family": "conditioning", "workload": ["mixed", "movement"], "primary_domains": ["stamina", "agility", "endurance"]},
+    "obj_thorne_estate_training_ai_combat_sim": {"method_id": "ai_combat_simulation", "method_name": "AI Combat Simulation", "family": "combat", "workload": ["scenario", "reactive"], "primary_domains": ["combat_skill", "reflexes", "tactical_thinking"]},
+    "obj_thorne_estate_training_vr_tactical_sim": {"method_id": "vr_tactical_drills", "method_name": "VR Tactical Drills", "family": "tactical", "workload": ["scenario", "decision"], "primary_domains": ["tactical_thinking", "focus_precision"]},
+    "obj_thorne_estate_gym_olympic_platform": {"method_id": "olympic_lifting", "method_name": "Olympic Lifting", "family": "strength_power", "workload": ["explosive", "barbell"], "primary_domains": ["strength", "speed"]},
+    "obj_thorne_estate_gym_power_rack": {"method_id": "barbell_strength_work", "method_name": "Barbell Strength Work", "family": "strength", "workload": ["heavy", "barbell"], "primary_domains": ["strength"]},
+    "obj_thorne_estate_gym_adjustable_bench": {"method_id": "bench_strength_hypertrophy", "method_name": "Bench Strength & Hypertrophy", "family": "strength_hypertrophy", "workload": ["resistance", "upper_body"], "primary_domains": ["strength", "body_progression"]},
+    "obj_thorne_estate_gym_strength_machines": {"method_id": "machine_hypertrophy", "method_name": "Machine Hypertrophy", "family": "hypertrophy", "workload": ["resistance", "controlled"], "primary_domains": ["body_progression"]}
+  }
+}
