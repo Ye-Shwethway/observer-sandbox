@@ -47,12 +47,26 @@ Examples:
 - height -> canonical / `profile_core`
 - age -> derived / `time_engine`
 - hunger -> simulated / `needs_engine`
+- systemic fatigue -> simulated / `physiology_engine`
 - body fat -> future simulated / `physiology_engine`
 - measurements -> future simulated / `body_progression_engine`
 - intimate physiology -> future simulated / `sexual_physiology_engine`
 - injury state -> future simulated / `injury_engine`.
 
 Domain engines may mutate only fields they own. LLMs never receive arbitrary profile-write authority.
+
+### Activated P3 recovery field
+
+The first richer post-v4 simulation slice activates the already-defined `physiology.fatigue` field as live simulated state.
+
+Its source-of-truth placement is deliberate:
+- the field definition and human-readable label remain in `profile_field_definitions`;
+- the changing current value lives in generic `fields` with `mode=simulated` and `authority=physiology_engine`;
+- it is **not** copied into `character_profile_values` merely so the profile browser can display it;
+- Telegram exposes it through a read-only `Recovery` section that resolves the live value through the observer/query layer;
+- before the first persisted fatigue transition, the observer may present the runtime default `0.0` without seeding a deploy-time value that would reset production state.
+
+This is the intended progressive-activation pattern for future profile-domain fields: reuse the ontology definition, activate only the concrete state a runnable feature needs, and keep runtime ownership explicit.
 
 ## Composable-runtime relationship
 
@@ -72,7 +86,7 @@ Default rule:
 - changing grade thresholds must not silently rewrite the raw profile value;
 - Telegram/profile presentation may display grade badges later, but presentation must not own grading logic.
 
-Do not add speculative grade columns to profile tables during P2.2.4. The first grading implementation must be a separate minimum-runnable slice driven by a concrete use case and follow `docs/FUTURE_GRADING_SYSTEM.md`.
+Do not add speculative grade columns to profile tables. The first grading implementation must be a separate minimum-runnable slice driven by a concrete use case and follow `docs/FUTURE_GRADING_SYSTEM.md`.
 
 ## Conflict policy
 
