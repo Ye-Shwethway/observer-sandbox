@@ -24,6 +24,7 @@ This does not modify existing pending actions, action targets, reasons, simulati
 - train: 30–90 min
 - read: 20–60 min
 - research: 20–90 min
+- monitor: 15–45 min
 - idle: 5–20 min
 
 Sleep is intentionally not clamped because nap and overnight sleep semantics are not yet separated. Existing need/routine duration guidance remains authoritative there.
@@ -44,19 +45,22 @@ Sleep is intentionally not clamped because nap and overnight sleep semantics are
 
 This is a cognition/planning constraint, not a new action-legality system. `validate_action()` and persisted `action_definitions` retain their broad duration bounds. Fixed deterministic providers and old pending actions are not rewritten by these profiles.
 
-Activity-semantic slices should add concrete duration semantics only for concrete verbs/targets rather than growing a giant generic exception map.
+Activity-semantic expansion follows exemplar-first/batch-by-pattern. Once a duration/validation pattern is proven, equivalent affordances may share one generic profile and one pre-merge production-copy acceptance batch rather than accumulating target-specific exceptions.
 
 ## Evidence
 
 Initial duration-profile slice:
 - PR #9 merge `4d7d949002a4444f6ae6424e502fa872f6d90a33`.
-- PR CI #357 / run `31680626619` SUCCESS.
-- Main CI #358 / run `31680683357` SUCCESS.
 - Duration Planning Profiles Acceptance #1 / run `31680683416` SUCCESS.
-- Release commit `1130b2ec09c456293cdb7e6a5451cef15deffa56`.
 - Deploy #135 / run `31680728818` SUCCESS.
 
-Research extension:
+Research exemplar:
 - PR #10 merge `c50f4cf9a87b15589be3b3ea4878990da7e69d02`.
 - Research Action Semantics Acceptance #1 / run `31681716339` SUCCESS.
 - Deploy #136 / run `31681760620` SUCCESS.
+
+Monitor batch:
+- PR #11 pre-merge CI #374 / run `31682656794` SUCCESS.
+- Activity Semantics Batch 1 Acceptance #1 / run `31682656839` SUCCESS on one disposable production DB copy before merge.
+- PR #11 merge `8a8f14b7da13ac0ab0ecbb461fefcdfc3639d7f8`.
+- Deploy #137 / run `31682743508` SUCCESS.
