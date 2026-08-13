@@ -1,0 +1,113 @@
+name: Minimum Training Stimulus Acceptance
+
+on:
+  workflow_dispatch:
+  pull_request:
+    branches: [main]
+    paths:
+      - 'src/observer_sandbox/simulation.py'
+      - 'src/observer_sandbox/training_stimulus.py'
+      - 'tests/test_minimum_training_stimulus_v1.py'
+      - 'tests/test_minimum_training_stimulus_no_progression.py'
+      - '.github/workflows/minimum-training-stimulus-acceptance.yml'
+
+jobs:
+  acceptance:
+    if: ${{ vars.VPS_DEPLOY_ENABLED == 'true' }}
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Configure SSH
+        env:
+          VPS_SSH_KEY: ${{ secrets.VPS_SSH_KEY }}
+          VPS_HOST: ${{ secrets.VPS_HOST }}
+          VPS_PORT: ${{ secrets.VPS_PORT || '22' }}
+        run: |
+          test -n "$VPS_HOST"
+          test -n "$VPS_SSH_KEY"
+          install -m 700 -d ~/.ssh
+          printf '%s\n' "$VPS_SSH_KEY" > ~/.ssh/id_ed25519
+          chmod 600 ~/.ssh/id_ed25519
+          ssh-keyscan -p "$VPS_PORT" -H "$VPS_HOST" >> ~/.ssh/known_hosts
+      - name: Stage candidate
+        env:
+          VPS_HOST: ${{ secrets.VPS_HOST }}
+          VPS_USER: ${{ secrets.VPS_USER }}
+          VPS_PORT: ${{ secrets.VPS_PORT || '22' }}
+        run: |
+          ssh -p "$VPS_PORT" "$VPS_USER@$VPS_HOST" 'rm -rf /tmp/observer-training-stimulus-v1 && mkdir -p /tmp/observer-training-stimulus-v1'
+          rsync -az -e "ssh -p $VPS_PORT" src/ "$VPS_USER@$VPS_HOST:/tmp/observer-training-stimulus-v1/src/"
+      - name: Dry-run Free Weights strength stimulus on production copy
+        env:
+          VPS_HOST: ${{ secrets.VPS_HOST }}
+          VPS_USER: ${{ secrets.VPS_USER }}
+          VPS_PORT: ${{ secrets.VPS_PORT || '22' }}
+        run: |
+          ssh -p "$VPS_PORT" "$VPS_USER@$VPS_HOST" '
+            set -euo pipefail
+            cd /opt/observer-sandbox
+            TMP_DB=$(mktemp /tmp/observer-training-stimulus-v1.XXXXXX.sqlite3)
+            trap "rm -f $TMP_DB $TMP_DB-wal $TMP_DB-shm; rm -rf /tmp/observer-training-stimulus-v1" EXIT
+            cp /var/lib/observer-sandbox/observer.sqlite3 "$TMP_DB"
+            export OBSERVER_SANDBOX_DB="$TMP_DB"
+            export PYTHONPATH=/tmp/observer-training-stimulus-v1/src
+            .venv/bin/python - <<"PY"
+          import json, os
+          from observer_sandbox.db import connect
+          from observer_sandbox.simulation import Action, apply_action
+          from observer_sandbox.training_stimulus import FREE_WEIGHTS_TARGET
+          from observer_sandbox.world import set_field
+
+          db = os.environ["OBSERVER_SANDBOX_DB"]
+          with connect(db) as conn:
+              set_field(conn, "char_darian", "runtime.location", "loc_thorne_estate_home_gym")
+              before_strength = conn.execute(
+                  "SELECT value_json FROM character_profile_values WHERE entity_id=? AND field_key=?",
+                  ("char_darian", "raps_pa.strength"),
+              ).fetchone()[0]
+
+              apply_action(conn, Action("train", 60, FREE_WEIGHTS_TARGET, "acceptance strength stimulus"), action_id="acceptance-free-weights")
+              free_outcome = json.loads(conn.execute(
+                  "SELECT outcome_json FROM action_instances WHERE id=?", ("acceptance-free-weights",)
+              ).fetchone()[0])
+              assert free_outcome["training_load"]["effective_minutes"] >= 0
+              stimulus = free_outcome["training_stimulus"]
+              assert stimulus["domain"] == "strength"
+              assert stimulus["target"] == FREE_WEIGHTS_TARGET
+              assert stimulus["stimulus_units"] == round(stimulus["effective_minutes"] / 60.0, 3)
+
+              event_payload = json.loads(conn.execute(
+                  "SELECT payload_json FROM events WHERE action_id=? AND event_type=? ORDER BY id DESC LIMIT 1",
+                  ("acceptance-free-weights", "action_completed"),
+              ).fetchone()[0])
+              assert event_payload["training_stimulus"] == stimulus
+
+              set_field(conn, "char_darian", "physiology.fatigue", 0.0, authority="physiology_engine", source="acceptance-reset")
+              apply_action(conn, Action("train", 30, "obj_thorne_estate_gym_heavy_bag", "acceptance negative case"), action_id="acceptance-heavy-bag")
+              heavy_outcome = json.loads(conn.execute(
+                  "SELECT outcome_json FROM action_instances WHERE id=?", ("acceptance-heavy-bag",)
+              ).fetchone()[0])
+              assert "training_load" in heavy_outcome
+              assert "training_stimulus" not in heavy_outcome
+
+              after_strength = conn.execute(
+                  "SELECT value_json FROM character_profile_values WHERE entity_id=? AND field_key=?",
+                  ("char_darian", "raps_pa.strength"),
+              ).fetchone()[0]
+              assert before_strength == after_strength
+              print(json.dumps({
+                  "ok": True,
+                  "disposable": True,
+                  "candidate_source": True,
+                  "model_calls": 0,
+                  "free_weights_strength_stimulus": True,
+                  "heavy_bag_strength_stimulus": False,
+                  "raw_strength_unchanged": True,
+                  "schema_change": False
+              }, indent=2, sort_keys=True))
+          PY
+            unset PYTHONPATH
+            export OBSERVER_SANDBOX_DB=/var/lib/observer-sandbox/observer.sqlite3
+            echo "--- PRODUCTION READBACK (UNCHANGED) ---"
+            .venv/bin/sandboxctl status
+          '
