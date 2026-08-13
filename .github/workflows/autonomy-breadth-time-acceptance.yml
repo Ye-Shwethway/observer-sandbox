@@ -71,13 +71,15 @@ jobs:
           policy = load_autonomy_policy("/tmp/observer-breadth-time-candidate/config/characters/darian.autonomy-policy.json")
 
           with connect(db) as conn:
-              object_count = int(conn.execute("SELECT COUNT(*) FROM entities WHERE entity_type='object'").fetchone()[0])
+              object_count = int(conn.execute(
+                  "SELECT COUNT(*) FROM entities WHERE entity_type=?", ("object",)
+              ).fetchone()[0])
               assert object_count == 27, object_count
               inspect_bounds = tuple(conn.execute(
-                  "SELECT min_duration_minutes,max_duration_minutes FROM action_definitions WHERE action_type='inspect'"
+                  "SELECT min_duration_minutes,max_duration_minutes FROM action_definitions WHERE action_type=?", ("inspect",)
               ).fetchone())
               use_bounds = tuple(conn.execute(
-                  "SELECT min_duration_minutes,max_duration_minutes FROM action_definitions WHERE action_type='use'"
+                  "SELECT min_duration_minutes,max_duration_minutes FROM action_definitions WHERE action_type=?", ("use",)
               ).fetchone())
               assert inspect_bounds == (1, 60), inspect_bounds
               assert use_bounds == (1, 120), use_bounds
