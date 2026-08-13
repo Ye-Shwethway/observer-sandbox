@@ -1,6 +1,6 @@
 # Fatigue Causal Recovery + Inspect Loop Guard v1
 
-Status: IMPLEMENTED / CI VERIFIED / PRE-MERGE DISPOSABLE PRODUCTION-COPY ACCEPTANCE VERIFIED
+Status: COMPLETE / CI VERIFIED / DISPOSABLE PRODUCTION-COPY ACCEPTANCE VERIFIED / DEPLOYED / LIVE HEALTH VERIFIED
 
 ## Problem observed
 
@@ -49,13 +49,13 @@ Validation follows the production-safety rule: production SQLite is used only as
 
 Acceptance workflow: `Fatigue Causal Recovery v1 Acceptance`.
 
-Final pre-merge evidence:
+Final pre-merge evidence on head `cb500d9319aa6247c7db2132dbc52f70fa917aec`:
 
-- acceptance run `31703254895` — SUCCESS;
-- CI run `31703255025` — SUCCESS;
-- compatibility acceptance `Causal Need Resolution v2 Acceptance` run `31703255122` — SUCCESS.
+- Fatigue Causal Recovery v1 Acceptance #5 run `31703588566` — SUCCESS;
+- CI #471 run `31703588016` — SUCCESS;
+- Causal Need Resolution v2 compatibility Acceptance #17 run `31703587998` — SUCCESS.
 
-The copied live baseline captured by run `31703254895` was:
+The earlier evidence-bearing acceptance run `31703254895` captured this copied live baseline:
 
 - sim time: `2025-05-02T14:59:00+00:00`;
 - location: Training Hall;
@@ -86,10 +86,29 @@ No Strength progression formula, Strength stimulus mapping, recovery-realization
 
 Schema remains v4.
 
+## Merge, release, and production readback
+
+- PR #27 merged as `31484c561948d84e97d5c677f15cd1ced7f8ad89`;
+- release marker commit `9121904f3db9009af32e30dbb925c5c60cd837cb`;
+- post-release CI #473 run `31703753642` — SUCCESS;
+- Deploy Observer Sandbox #153 run `31703753498` — SUCCESS.
+
+Deploy readback confirmed:
+
+- service `active` and runtime `healthy=true`;
+- schema version `4`;
+- autonomy enabled, normal mode, not paused;
+- configured Gemini cognition binding preserved;
+- Telegram API connected.
+
+The same readback observed live sim time `2025-05-02T15:14:00+00:00`, fatigue `70.91`, and a currently pending `inspect` action. That pending action existed at deploy/readback time and is not evidence that the new selection guard failed, because deployment preserves an already-planned action; the new causal selection applies at the next cognition decision boundary.
+
+The readback also showed runtime speed `2.0`. This was not changed by the deploy or by this slice's validation. Because production control mutation is outside dry-run validation policy, the implementation did not silently alter it. The live speed value remains a separate Creator/runtime-control state to reconcile before any future production observation that assumes `1x`.
+
 ## Production policy
 
 Dry-run, acceptance, tuning, and accelerated simulation must run on a disposable copy of production DB. Production is reserved for all-green merge/deploy and read-only post-deploy verification. Production runtime acceleration is not a validation mechanism.
 
 ## Follow-on
 
-After this bounded autonomy defect is deployed and read back healthy, resume Strength Progression Live Cycle Validation & Tuning v1 under the corrected production-copy validation policy. Live production may provide read-only baseline/evidence; simulated boundary acceleration and mutation testing belong on the disposable copy.
+Resume Strength Progression Live Cycle Validation & Tuning v1 under the corrected production-copy validation policy. Live production may provide read-only baseline/evidence; simulated boundary acceleration and mutation testing belong on the disposable copy.
