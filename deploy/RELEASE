@@ -1,7 +1,11 @@
 Observer Sandbox production release marker
 
-release: telegram-fatigue-change-row
-accepted_main: 501d465a5e8ead3be0987f59e2695c99495b32c6
-acceptance_workflow: CI #477
-acceptance_run: 31704622366
+release: thorne-estate-training-environment-v1
+accepted_main: 58c5ea4621c1cc920c09c998eb0fa351bc9a3279
+acceptance_workflow: Thorne Estate Training Environment v1 Acceptance #1
+acceptance_run: 31713866507
+compatibility_workflow: Activity Semantics Batch 1 Acceptance #14
+compatibility_run: 31713866127
+ci_workflow: CI #512
+ci_run: 31713866160
 status: accepted-for-production
