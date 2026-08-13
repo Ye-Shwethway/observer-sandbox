@@ -85,6 +85,32 @@ def test_observer_home_uses_stable_inline_navigation(tmp_path, monkeypatch):
         assert chars_keyboard[0][0]["callback_data"] == "char:char_darian"
 
 
+def test_recursive_estate_browser_uses_graph_parent_and_room_details(tmp_path, monkeypatch):
+    db = tmp_path / "observer.sqlite3"
+    initialize(db)
+    monkeypatch.setenv("OBSERVER_TELEGRAM_OWNER_ID", "111")
+
+    with connect(db) as conn:
+        estate_text, estate_keyboard = _callback_view(conn, 111, "loc:loc_thorne_estate")
+        assert "Thorne Estate" in estate_text
+        assert "Areas" in estate_text
+        assert any(row[0]["callback_data"] == "loc:loc_thorne_estate_ground_floor" for row in estate_keyboard)
+        assert any("🔒" in row[0]["text"] and row[0]["callback_data"] == "loc:loc_thorne_estate_exterior_boundary" for row in estate_keyboard)
+        assert estate_keyboard[-2][0]["callback_data"] == "nav:universe"
+
+        floor_text, floor_keyboard = _callback_view(conn, 111, "loc:loc_thorne_estate_ground_floor")
+        assert "Ground Floor" in floor_text
+        assert any(row[0]["callback_data"] == "loc:loc_thorne_estate_kitchen" for row in floor_keyboard)
+        assert floor_keyboard[-2][0]["callback_data"] == "loc:loc_thorne_estate"
+
+        kitchen_text, kitchen_keyboard = _callback_view(conn, 111, "loc:loc_thorne_estate_kitchen")
+        assert "Kitchen" in kitchen_text
+        assert "Objects" in kitchen_text
+        assert "Exits" in kitchen_text
+        assert kitchen_keyboard[-2][0]["callback_data"] == "loc:loc_thorne_estate_ground_floor"
+        assert kitchen_keyboard[-1][0]["callback_data"] == "nav:home"
+
+
 def test_action_completion_notification_is_human_friendly():
     before = {
         "sim_time": "2025-05-01T12:40:00+00:00",
