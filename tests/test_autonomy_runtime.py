@@ -111,12 +111,16 @@ def test_canary_decision_failure_disables_immediately(tmp_path):
         assert conn.execute("SELECT COUNT(*) FROM events WHERE event_type='autonomy_canary_failed'").fetchone()[0] == 1
 
 
-def test_control_guards_global_speed_when_any_actor_pending(tmp_path):
+def test_control_guards_speed_bounds_and_preserves_pending_action(tmp_path):
     db = tmp_path / "observer.sqlite3"; initialize(db); provider = FixedProvider(Action("rest", 30, BED, "recover"))
     with connect(db) as conn:
         set_autonomy_paused(conn, False)
         with pytest.raises(ValueError): set_autonomy_speed(conn, 0)
         with pytest.raises(ValueError): set_autonomy_speed(conn, 3601)
-        set_autonomy_speed(conn, 60); set_autonomy_enabled(conn, True); autonomy_tick(conn, provider=provider, now_wall=1000)
+        set_autonomy_speed(conn, 60); set_autonomy_enabled(conn, True)
+        planned = autonomy_tick(conn, provider=provider, now_wall=1000)
+        action_id = planned["pending"]["action_id"]
         with pytest.raises(ValueError): set_autonomy_enabled(conn, False)
-        with pytest.raises(ValueError): set_autonomy_speed(conn, 5)
+        changed = set_autonomy_speed(conn, 5, now_wall=1010)
+        assert changed["speed"] == 5.0
+        assert changed["pending_action"]["action_id"] == action_id
