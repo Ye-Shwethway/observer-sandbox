@@ -111,7 +111,7 @@ Status: COMPLETE / DEPLOYED
 Status: COMPLETE / LIVE VERIFIED
 
 **P2.2.2B — Minimum Telegram Estate Browser**
-Status: IMPLEMENTED / CI-VALIDATED / DEPLOYED — CREATOR UI ACCEPTANCE PENDING
+Status: COMPLETE / LIVE UX VERIFIED
 
 Implemented minimum scope:
 - Universe -> Thorne Estate -> floor/zone -> room through stable `loc:*` callbacks;
@@ -119,33 +119,39 @@ Implemented minimum scope:
 - Back follows the canonical `contains` parent and Home remains globally available;
 - locked exterior is shown with a lock/unavailable presentation but is not a movement affordance;
 - observer queries use the generic `located_at` resolver for current occupants and query schema-v4 event `location_id` for recent location activity;
-- Telegram remains a formatting/navigation adapter; no world logic or item-detail mechanics moved into handlers.
+- Telegram remains a formatting/navigation adapter; no world logic moved into handlers.
 
 Acceptance evidence:
-- CI #260 / run `31666982672` SUCCESS, including recursive Universe -> Estate -> floor -> Kitchen navigation and parent/back/locked-boundary assertions;
-- Deploy #114 / run `31666950518` SUCCESS; systemd active, Telegram API connected, schema v4 healthy and Darian autonomy remained ON/normal/unpaused at 1x;
-- Creator has not yet personally exercised the deployed recursive browser in Telegram, so UX/live-interaction acceptance remains pending.
-
-Do not add item-detail mechanics, character session selection, inventory or regional expansion merely to close this slice.
+- CI #260 / run `31666982672` SUCCESS;
+- Deploy #114 / run `31666950518` SUCCESS;
+- Creator exercised the deployed Telegram navigation and confirmed it worked, including observing Darian in the Kitchen through the Estate browser.
 
 #### P2.2.3 — Minimum Item/Object Browser
 
-Status: NEXT AFTER CREATOR ESTATE-BROWSER CHECK
+Status: IMPLEMENTED / CI-VALIDATED / DEPLOYED — CREATOR UI ACCEPTANCE PENDING
 
-Minimum runnable scope:
-- room contents -> one object/item detail view;
-- show name, type/definition where present, capabilities, current location and authored effects where relevant;
-- definition/instance-aware presentation;
-- reusable Back/Home navigation.
+Implemented minimum scope:
+- room object rows are actionable `obj:*` callbacks;
+- object detail shows human-readable name, concrete-instance/definition status, current location, effective capabilities and authored effects;
+- definition-backed entities use `entities.definition_id -> entity_definitions` when present, while current instance-only fixtures remain valid;
+- current location resolves through the generic dynamic/static location contract;
+- authored effect values are rendered by action and stat, including schema-v4 add/multiply/set/clamp forms;
+- Back returns to the actual containing/current room and Home remains globally available;
+- no quantity, stacks, depletion, durability, inventory mutation or ownership mutation was added.
 
-Acceptance for **P2.2.3 only**:
-- Creator can open an object from a room and return to the room;
-- current static fixtures/resources are enough to prove the browser;
-- quantity, stacks, depletion, ownership mutation and durability remain deferred until an inventory feature actually needs them.
+Acceptance evidence:
+- object query contract commit `715a575642012c7aaef92cc26d27e8d8ba69ce8a`;
+- Telegram object browser commit `b26423aa1bc67ad239eb9059042e3efe5479d41c`;
+- focused browser tests commit `835f90a3bfbe13e165fa90187712ddc4da564dd7`;
+- CI #265 / run `31667412478` SUCCESS, including Pantry capabilities/effects/back navigation and Drinking Water thirst-effect assertions;
+- Deploy #116 / run `31667377479` SUCCESS; readback verified service active, Telegram API connected, schema v4 healthy and Darian autonomy still ON/normal/unpaused at 1x.
+
+Acceptance remaining for **P2.2.3 only**:
+- Creator opens at least one deployed room object in Telegram, sees a readable detail view, and returns to the room successfully.
 
 #### P2.2.4 — Character Profile Browser (single-character minimum)
 
-Status: AFTER ITEM BROWSER
+Status: NEXT AFTER CREATOR ITEM-BROWSER CHECK
 
 Minimum runnable scope:
 - Characters -> Darian -> profile section menu;
@@ -229,6 +235,6 @@ Expand destination-by-destination afterward.
 
 ## Current resume point
 
-**First, let the Creator exercise P2.2.2B in Telegram. If the recursive estate browser behaves as deployed/tested, continue with P2.2.3 Minimum Item/Object Browser.**
+**Creator should exercise P2.2.3 Minimum Item/Object Browser in Telegram. If the deployed object detail/back flow is good, close that slice and proceed to P2.2.4 single-character Darian Profile Browser.**
 
 No additional core/schema work is required for the current browser path. Preserve 1x wake-on-demand production autonomy, globally scoped ids, locked unfinished boundaries, actor-scoped scheduler state, first-class actions/events, Telegram presentation rules and per-user notification preferences.
