@@ -115,7 +115,7 @@ def character_summary(conn: sqlite3.Connection, character_id: str = "char_darian
     return {"character": entity, "state": state}
 
 
-def location_summary(conn: sqlite3.Connection, location_id: str = "home") -> dict[str, Any]:
+def location_summary(conn: sqlite3.Connection, location_id: str = "loc_thorne_estate") -> dict[str, Any]:
     entity = _entity(conn, location_id)
     if entity is None:
         raise KeyError(f"Unknown location: {location_id}")
