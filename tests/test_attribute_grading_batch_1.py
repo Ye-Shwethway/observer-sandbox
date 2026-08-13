@@ -25,7 +25,7 @@ def test_all_explicit_attribute_batch_fields_receive_derived_grades(tmp_path, mo
         text, _ = _callback_view(conn, 111, "psec:char_darian:attributes")
         assert "Strength   90 · Grade S" in text
         assert "Stamina   85 · Grade A" in text
-        assert "Medical Knowledge   75 · Grade A" in text
+        assert "Medical knowledge   75 · Grade A" in text
         assert "IQ   140 · Grade" not in text
 
 
