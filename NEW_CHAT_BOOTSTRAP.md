@@ -77,23 +77,29 @@ Evidence:
 
 Future eligible Free Weights Strength evidence may now cause tiny decimal raw Strength gains after recovery; prolonged inactivity may cause bounded decay after the grace curve.
 
-## Food Resolution Guard v1
+## Causal Need Resolution
 
-Status: **COMPLETE / PRE-MERGE PRODUCTION-COPY ACCEPTANCE VERIFIED / DEPLOYED; CREATOR LIVE BEHAVIOR VERIFICATION PENDING**.
+### Food Resolution Guard v1
 
-Production incident: at strong hunger Darian repeatedly selected `Inspect -> Supply Shelves` in Food Supply Storage even though the shelf had no hunger-reducing effect, then resumed training without resolving hunger.
+Status: **COMPLETE / PRE-MERGE PRODUCTION-COPY ACCEPTANCE VERIFIED / DEPLOYED / CREATOR LIVE BEHAVIOR VERIFIED**.
 
-Fix:
-- world revision `thorne-estate-v3.1-food-resolution`;
-- Food Supply Storage now contains distinct `Stored Food Provisions` with authored `eat` effects (hunger -50, energy +8, thirst +2);
-- `Supply Shelves` remain inspect-only;
-- under strong/critical hunger, unless another physiological need is critical, cognition options are deterministically shaped to local authored hunger-resolving `eat` options, or shortest-path movement toward the nearest authored food resolver;
-- persistent need no longer justifies inspect/use repetition unless the action causally improves the need or moves toward a resolver;
-- model action vocabulary is constrained to current authoritative `action_options` when options exist.
+The original production incident (`Inspect -> Supply Shelves` repeated under strong hunger) is fixed. Food Supply Storage contains distinct `Stored Food Provisions` with authored `eat` effects (hunger -50, energy +8, thirst +2), while `Supply Shelves` remain inspect-only. Creator subsequently confirmed live hunger resolution worked.
 
-Evidence: PR #22 merge `6117b4b8f08ae3afc8d0db6849a7aa061a34b51f`; Food Resolution Guard Acceptance #4 `31691041378` SUCCESS; Activity Semantics regression Acceptance #6 SUCCESS; CI #435 `31691041444` SUCCESS; release `0906d3c06961482fa6c327caf9cfd8e172e51d12`; Deploy #148 `31691179483` SUCCESS.
+Evidence: PR #22 merge `6117b4b8f08ae3afc8d0db6849a7aa061a34b51f`; Food Resolution Guard Acceptance #4 `31691041378` SUCCESS; CI #435 `31691041444` SUCCESS; release `0906d3c06961482fa6c327caf9cfd8e172e51d12`; Deploy #148 `31691179483` SUCCESS.
 
-At deploy readback Darian still had a pre-existing `inspect` action planned before the guard was live. Deployment intentionally preserved that pending action. The guard applies from the next cognition/planning boundary after it completes.
+### Causal Need Resolution v2 — thirst + hunger
+
+Status: **COMPLETE / PRE-MERGE PRODUCTION-COPY ACCEPTANCE VERIFIED / DEPLOYED; CREATOR LIVE THIRST VERIFICATION PENDING**.
+
+A second live incident showed hunger resolving while thirst remained strong (~55), followed by `Train -> Combat Mat`. v2 generalizes deterministic causal shaping to the two proven domains:
+- thirst -> authored `drink` actions reducing `needs.thirst`;
+- hunger -> authored `eat` actions reducing `needs.hunger`.
+
+`needs_attention` remains the priority authority. The guard acts only when the highest-priority active need is supported; it never skips an unsupported higher-priority need. A supported need exposes only a local authored resolver or shortest-path movement toward the nearest resolver. Thus Training Hall may be a transit hop toward water, but training is not exposed while strong thirst is the active supported priority.
+
+Reason grounding is also tightened: cognition must not claim an action resolves a physiological need when authored effects leave that need unchanged or worsen it. Stored Food Provisions therefore cannot truthfully be described as hydration because their authored thirst effect is positive.
+
+Evidence: PR #23 merge `4a0c5d67f0ed9460fc319702fa846a676090c606`; Causal Need Resolution v2 Acceptance #11 `31692492180` SUCCESS; CI #446 `31692492232` SUCCESS; release `5763818a20277b684a688df0d15bf488dbfc49e9`; Deploy #149 `31692592830` SUCCESS.
 
 ## Other proven state
 
@@ -107,7 +113,7 @@ At deploy readback Darian still had a pre-existing `inspect` action planned befo
 
 ## Exact resume point
 
-First observe the deployed Food Resolution Guard at the next relevant hunger decision boundary. Once live behavior is confirmed, return to Strength progression follow-up. Recommended progression decision remains:
+First observe the deployed Causal Need Resolution v2 at the next relevant strong-thirst decision boundary. Once live thirst behavior is confirmed, return to Strength progression follow-up. Recommended progression decision remains:
 1. **Strength Progression Observability v1** — Creator-facing read-only view of recent stimulus, recovery/eligibility, saturation, latest settlement/delta and next progression boundary, then observe/tune live behavior; or
 2. select the next physical progression domain and first prove its stimulus mapping/domain semantics before batching anything.
 
