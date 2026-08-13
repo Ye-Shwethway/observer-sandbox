@@ -13,6 +13,53 @@ HOME_SEED_PATH = REPO_ROOT / "config" / "worlds" / "home.v1.json"
 DARIAN_SEED_PATH = REPO_ROOT / "config" / "characters" / "darian.canonical.json"
 DARIAN_RUNTIME_DEFAULTS_PATH = REPO_ROOT / "config" / "characters" / "darian.runtime-defaults.json"
 
+LEGACY_LOCATION_ID_MAP = {
+    "home": "loc_thorne_estate",
+    "zone_ground": "loc_thorne_estate_ground_floor",
+    "zone_second": "loc_thorne_estate_second_floor",
+    "zone_third": "loc_thorne_estate_third_floor",
+    "zone_underground": "loc_thorne_estate_underground",
+    "room_foyer": "loc_thorne_estate_foyer",
+    "room_living": "loc_thorne_estate_living_room",
+    "room_kitchen": "loc_thorne_estate_kitchen",
+    "room_dining": "loc_thorne_estate_dining_area",
+    "room_library": "loc_thorne_estate_library",
+    "room_garage": "loc_thorne_estate_garage",
+    "room_bedroom": "loc_thorne_estate_master_suite",
+    "room_bathroom": "loc_thorne_estate_master_bathroom",
+    "room_quasi": "loc_thorne_estate_quasi_room",
+    "room_guest": "loc_thorne_estate_guest_rooms",
+    "room_intel": "loc_thorne_estate_intelligence_hub",
+    "room_comms": "loc_thorne_estate_comms",
+    "room_training": "loc_thorne_estate_training_hall",
+    "room_gym": "loc_thorne_estate_home_gym",
+    "room_medical": "loc_thorne_estate_medical_bay",
+    "room_armory": "loc_thorne_estate_armory",
+    "room_food_storage": "loc_thorne_estate_food_storage",
+    "room_bunker": "loc_thorne_estate_bunker",
+    "boundary_exterior": "loc_thorne_estate_exterior_boundary",
+}
+
+LEGACY_OBJECT_IDS = {
+    "obj_bed",
+    "obj_nightstand",
+    "obj_shower",
+    "obj_sink",
+    "obj_toilet",
+    "obj_fridge",
+    "obj_pantry",
+    "obj_stove",
+    "obj_table",
+    "obj_sofa",
+    "obj_bookshelf",
+    "obj_water",
+    "obj_meal_stock",
+    "obj_weights",
+    "obj_heavy_bag",
+}
+
+LEGACY_SPATIAL_IDS = set(LEGACY_LOCATION_ID_MAP) | LEGACY_OBJECT_IDS | {"observer_universe"}
+
 
 def load_world_seed(path: str | Path = HOME_SEED_PATH) -> dict[str, Any]:
     return json.loads(Path(path).read_text(encoding="utf-8"))
@@ -88,10 +135,24 @@ def get_field(conn: sqlite3.Connection, entity_id: str, field_key: str, default:
     return default if row is None else json.loads(row[0])
 
 
+def _runtime_value(conn: sqlite3.Connection, key: str, default: Any = None) -> Any:
+    row = conn.execute("SELECT value_json FROM runtime_state WHERE key=?", (key,)).fetchone()
+    return default if row is None else json.loads(row[0])
+
+
+def _set_runtime_value(conn: sqlite3.Connection, key: str, value: Any) -> None:
+    conn.execute(
+        """
+        INSERT INTO runtime_state(key, value_json) VALUES (?, ?)
+        ON CONFLICT(key) DO UPDATE SET value_json=excluded.value_json, updated_at=CURRENT_TIMESTAMP
+        """,
+        (key, json.dumps(value, ensure_ascii=False)),
+    )
+
+
 def _normalized_locations(world: dict[str, Any]) -> list[dict[str, Any]]:
     if world.get("locations"):
         return list(world["locations"])
-    # Backward-compatible support for the original flat Home v1 format.
     return [
         {
             "id": room["id"],
@@ -105,19 +166,68 @@ def _normalized_locations(world: dict[str, Any]) -> list[dict[str, Any]]:
     ]
 
 
+def _legacy_spatial_graph_exists(conn: sqlite3.Connection) -> bool:
+    placeholders = ",".join("?" for _ in LEGACY_SPATIAL_IDS)
+    row = conn.execute(
+        f"SELECT 1 FROM entities WHERE id IN ({placeholders}) LIMIT 1",
+        tuple(sorted(LEGACY_SPATIAL_IDS)),
+    ).fetchone()
+    return row is not None
+
+
+def _prepare_scoped_identity_migration(conn: sqlite3.Connection, world: dict[str, Any]) -> bool:
+    revision = world.get("revision", "world")
+    if _runtime_value(conn, "world_identity_revision") == revision:
+        return False
+    if not _legacy_spatial_graph_exists(conn):
+        return False
+
+    previous_paused = bool(_runtime_value(conn, "paused", False))
+    _set_runtime_value(conn, "world_identity_resume_paused", previous_paused)
+    _set_runtime_value(conn, "paused", True)
+    _set_runtime_value(conn, "autonomy_pending_action", None)
+    _set_runtime_value(conn, "autonomy_lease", None)
+    _set_runtime_value(conn, "autonomy_retry", None)
+    _set_runtime_value(conn, "cognition_wake_reason", "world_identity_migrated")
+
+    current_location = get_field(conn, "char_darian", "runtime.location", None)
+    mapped_location = LEGACY_LOCATION_ID_MAP.get(current_location, world["start_location"])
+    set_field(conn, "char_darian", "runtime.location", mapped_location)
+    set_field(conn, "char_darian", "runtime.current_action", "idle")
+
+    # Commit the pause before destructive graph work so the still-running old
+    # service cannot complete a stale legacy-id action during deployment.
+    conn.commit()
+
+    placeholders = ",".join("?" for _ in LEGACY_SPATIAL_IDS)
+    conn.execute(
+        f"DELETE FROM entities WHERE id IN ({placeholders})",
+        tuple(sorted(LEGACY_SPATIAL_IDS)),
+    )
+    _set_runtime_value(conn, "world_id", world["world_id"])
+    conn.commit()
+    return True
+
+
+def _restore_pause_after_migration(conn: sqlite3.Connection, revision: str, migrated_now: bool) -> None:
+    if migrated_now:
+        return
+    if _runtime_value(conn, "world_identity_revision") != revision:
+        return
+    resume_value = _runtime_value(conn, "world_identity_resume_paused", None)
+    if resume_value is None:
+        return
+    _set_runtime_value(conn, "paused", bool(resume_value))
+    conn.execute("DELETE FROM runtime_state WHERE key='world_identity_resume_paused'")
+
+
 def _rebuild_seed_topology(conn: sqlite3.Connection, world: dict[str, Any], locations: list[dict[str, Any]]) -> None:
     location_ids = [loc["id"] for loc in locations]
     object_ids = [obj["id"] for obj in world.get("objects", [])]
 
-    # Each authored location/object has one seed-owned containment parent. Remove
-    # the old seed relationship first so a flat Home -> Room graph can migrate to
-    # Universe -> Estate -> Floor -> Room without duplicate parents.
     for target_id in location_ids + object_ids:
         conn.execute("DELETE FROM relations WHERE relation_type='contains' AND target_id=?", (target_id,))
 
-    # Adjacency among authored locations is seed-owned. This preserves entity ids,
-    # runtime.location values, event history, and pending action targets while
-    # allowing the mansion's internal route graph to evolve safely.
     if location_ids:
         placeholders = ",".join("?" for _ in location_ids)
         conn.execute(
@@ -134,6 +244,7 @@ def seed_home_and_darian(conn: sqlite3.Connection) -> None:
     world = load_world_seed()
     locations = _normalized_locations(world)
     revision = world.get("revision", "home-v1")
+    migrated_now = _prepare_scoped_identity_migration(conn, world)
 
     _upsert_entity(conn, world["world_id"], "world", world["name"], ["contains"])
     _rebuild_seed_topology(conn, world, locations)
@@ -199,9 +310,9 @@ def seed_home_and_darian(conn: sqlite3.Connection) -> None:
         ).fetchone() is None:
             set_field(conn, "char_darian", key, value)
 
-    # `home` is now the estate location node rather than the world root. Keeping
-    # the stable id preserves existing observer links/history while allowing a
-    # future South Lake Tahoe node to become its parent without another id migration.
     conn.execute("DELETE FROM relations WHERE relation_type='resident' AND target_id='char_darian'")
-    _upsert_relation(conn, "home", "resident", "char_darian")
+    _upsert_relation(conn, "loc_thorne_estate", "resident", "char_darian")
+    _set_runtime_value(conn, "world_id", world["world_id"])
+    _set_runtime_value(conn, "world_identity_revision", revision)
+    _restore_pause_after_migration(conn, revision, migrated_now)
     conn.commit()
