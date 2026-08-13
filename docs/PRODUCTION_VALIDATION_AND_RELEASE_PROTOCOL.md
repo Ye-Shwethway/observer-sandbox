@@ -4,157 +4,163 @@ Status: ACTIVE SYSTEM CONTRACT
 
 ## Purpose
 
-This document is the single canonical repository contract for pre-merge production-copy validation and production release. Feature work must reuse this protocol instead of inventing a new SSH / SQLite-copy / deploy sequence in each PR.
+This is the single canonical contract for production-copy acceptance and production release. Feature work must reuse it instead of inventing new SSH, staging, SQLite-copy, or deploy mechanics per PR.
 
-The safety invariant is:
+Canonical lifecycle:
 
-`candidate change -> CI -> disposable production-copy validation -> all green -> merge -> deploy only when runtime-affecting -> read-only production verification`
+`candidate -> CI -> disposable production-copy acceptance -> all green -> merge -> deploy only if runtime-affecting -> read-only production verification`
 
-Validation never accelerates or mutates the live production runtime.
+Validation never accelerates or intentionally mutates live production.
 
-## Authority and reusable implementation
+## Canonical implementation
 
-The protocol is implemented by:
+- `.github/workflows/reusable-production-copy-validation.yml` — shared Actions transport/staging wrapper.
+- `scripts/validation/production_copy.py` — canonical SQLite read-only + backup library.
+- `scripts/validation/create_disposable_db_copy.py` — thin CLI adapter used by Actions.
+- `scripts/validation/*.py` — feature-specific validators containing domain assertions only.
+- `.github/workflows/validation-release-standardization-acceptance.yml` — acceptance exemplar for this protocol.
+- `.github/workflows/deploy.yml` — only canonical production deploy implementation.
+- `deploy/RELEASE` — explicit release marker when marker-driven deployment is used.
 
-- `.github/workflows/reusable-production-copy-validation.yml` — shared GitHub Actions transport/staging/SSH wrapper;
-- `scripts/validation/create_disposable_db_copy.py` — shared SQLite read-only backup primitive;
-- feature-specific validator scripts under `scripts/validation/` — domain assertions and copied-DB simulation logic only.
+`AGENTS.md` makes reuse mandatory. If the protocol needs to change, update the shared contract/helper/workflow first and let callers inherit the change. Do not fork infrastructure logic unless a concrete invariant cannot be represented by the shared path.
 
-`AGENTS.md` makes reuse mandatory. If this protocol needs to change, update the shared contract/helper/workflow first and then let feature wrappers inherit the change. Do not copy/paste and fork infrastructure logic unless a concrete invariant cannot be represented by the shared path.
+## Safety model
 
-## Validation lifecycle
+Production is autonomous and may legitimately advance while acceptance runs. **Before/after live DB equality is therefore not a valid generic safety invariant.**
 
-### 1. Candidate branch
+Safety is structural:
+
+1. live SQLite is opened with URI `mode=ro`;
+2. `PRAGMA query_only=ON` is also enabled;
+3. SQLite backup creates a consistent writable snapshot;
+4. the feature validator receives only the disposable path through `OBSERVER_SANDBOX_DB`;
+5. candidate source/config is staged under a unique `/tmp` directory rather than installed over production;
+6. model/API/Telegram credentials are removed from the validator environment;
+7. validators perform no systemd/service or Creator-control operations;
+8. the staged candidate and disposable DB are removed after the run.
+
+Feature validators must never independently open `/var/lib/observer-sandbox/observer.sqlite3` or another live mutation surface.
+
+`production_mutated_by_validation=false` means validation had no writable live-DB capability. It does not claim normal autonomous production state remained byte-for-byte unchanged while validation ran.
+
+## Candidate and CI
 
 Implement the bounded feature on a branch from current canonical `main`.
 
-### 2. CI
+Before production-copy acceptance:
 
-Run normal repository CI and focused regression tests. Unit/regression tests must not contact production or external model/Telegram services.
+- normal CI must run;
+- focused unit/regression tests must cover the changed invariant;
+- unit/regression tests must not contact production, models, Telegram, or other external side-effect services.
 
-### 3. Disposable production-copy acceptance
+## Disposable production-copy acceptance
 
-When production-state compatibility or simulation behavior matters, create a thin feature workflow that calls `.github/workflows/reusable-production-copy-validation.yml`.
+When production-state compatibility or simulation behavior matters, create a thin caller workflow that invokes `.github/workflows/reusable-production-copy-validation.yml`.
 
-The reusable workflow:
+The reusable workflow owns:
 
-1. checks out the candidate PR head;
-2. configures SSH from existing repository secrets;
-3. validates that the requested validator lives under `scripts/validation/`;
-4. stages candidate `src/`, `config/`, and validation scripts under a unique `/tmp` directory on the VPS;
-5. runs `scripts/validation/create_disposable_db_copy.py` with the production SQLite path as source;
-6. the helper opens that source using SQLite URI `mode=ro` and uses SQLite's backup API to create a disposable database;
-7. the feature validator receives only the disposable path through `OBSERVER_SANDBOX_DB`, together with staged candidate source/config paths;
-8. model/API/Telegram credentials are not passed to the feature validator;
-9. feature-specific simulation/mutation assertions execute only against the copy;
-10. temporary validation files are removed automatically.
+1. candidate checkout;
+2. validator-path validation (`scripts/validation/*.py` only);
+3. SSH configuration;
+4. staging the complete candidate tree to a unique VPS `/tmp` directory, excluding `.git`, `.venv`, runtime-data and caches;
+5. disposable DB creation through the shared helper;
+6. binding `OBSERVER_SANDBOX_DB` to the copy only;
+7. staged candidate `PYTHONPATH` / config binding;
+8. model/API/Telegram credential stripping;
+9. feature-validator execution;
+10. cleanup.
 
-This is a capability-isolation contract: the shared copy primitive has read-only access to production; the feature validator is given the disposable DB, not the live DB path.
+This removes per-feature quoting, partial staging, ad-hoc `cp`, and repeated SSH boilerplate.
 
-Do **not** require the entire live SQLite file to have an identical before/after checksum. Production autonomy may legitimately advance while acceptance runs. Safety comes from the read-only source connection and isolating the validator onto a disposable DB, not from freezing normal production activity.
-
-### 4. Feature validator contract
-
-A feature validator must:
-
-- read its DB path from `OBSERVER_SANDBOX_DB`;
-- require `OBSERVER_VALIDATION_DISPOSABLE=1` when appropriate;
-- treat that DB as disposable;
-- use candidate source through `PYTHONPATH` and staged config through `OBSERVER_CONFIG_DIR` rather than modifying `/opt/observer-sandbox`;
-- avoid model, Telegram, HTTP, email, or other network side effects;
-- avoid systemd/service operations;
-- never read/write the live production SQLite path directly;
-- never change live speed, pause, autonomy, pending actions, leases, cognition binding, or Creator controls;
-- never fabricate production evidence when the acceptance claim requires real copied production evidence;
-- print concise machine-readable evidence for the assertions it proves;
-- exit non-zero on any failed invariant.
-
-Feature validators may freely accelerate simulated time or mutate copied state when the test requires it.
-
-## Failure handling
-
-A failed acceptance run is a development signal, not permission to alter production.
-
-Classify failures before changing feature behavior:
-
-1. **shared infrastructure defect** — staging, backup, cleanup, SSH, reusable workflow/helper contract;
-2. **validator defect** — wrong evidence surface, fixture assumption, assertion bug;
-3. **candidate implementation defect** — actual runtime behavior mismatch;
-4. **production-data precondition absent** — required real evidence does not currently exist.
-
-Fix categories 1–2 without changing domain constants. Tune feature/runtime behavior only for category 3 with concrete evidence. For category 4, report the missing precondition or use an already-authorized deterministic copied-state setup only when the acceptance claim does not require naturally occurring production evidence.
-
-Do not weaken assertions merely to make a run green.
-
-## Merge and release
-
-### Validation/docs/tooling-only change
-
-If the merged change cannot affect installed runtime behavior or production config/schema, merge after green CI/acceptance and do **not** trigger a production deploy merely for ceremony.
-
-Examples:
-- documentation;
-- validation scripts/workflows;
-- test-only tooling.
-
-### Runtime-affecting change
-
-After all required CI and production-copy acceptance checks are green:
-
-1. merge the accepted feature PR to `main`;
-2. deploy the accepted `main` only through the canonical `.github/workflows/deploy.yml` path — workflow dispatch or an explicit `deploy/RELEASE` marker;
-3. do not create a feature-specific deploy implementation;
-4. perform post-deploy verification as observation/readback, not validation mutation.
-
-The standard deploy workflow owns application sync/install, cognition bootstrap preservation, service restart, health/status readback and Telegram connectivity check.
-
-## Post-deploy verification
-
-Post-deploy checks are read-only unless the Creator explicitly authorized a control mutation.
-
-Verify only what is material to the release, commonly:
-
-- service active/healthy;
-- schema/world revision when relevant;
-- configured cognition/provider binding preserved;
-- Telegram connection healthy when relevant;
-- exact current production speed read from live state rather than assumed;
-- feature-specific read-only evidence.
-
-Do not accelerate production, fabricate actions, directly edit progression/profile state, or generate validation Telegram traffic.
-
-## Thin caller pattern
-
-A feature acceptance workflow should normally contain only its trigger plus one reusable-workflow call, for example:
+### Thin caller pattern
 
 ```yaml
 jobs:
   acceptance:
     uses: ./.github/workflows/reusable-production-copy-validation.yml
     with:
-      validator_path: scripts/validation/validate_example.py
+      validator_path: scripts/validation/validate_example_v1.py
     secrets: inherit
 ```
 
 Do not repeat SSH setup, `/tmp` staging, SQLite-copy creation, credential stripping, or cleanup in feature workflows.
 
+### Feature validator contract
+
+A feature validator must:
+
+- live under `scripts/validation/`;
+- read only `OBSERVER_SANDBOX_DB` as its mutable database;
+- require `OBSERVER_VALIDATION_DISPOSABLE=1` when mutation/acceleration is used;
+- treat that DB as disposable;
+- use staged candidate source/config;
+- avoid model, Telegram, HTTP, email, or other network side effects;
+- avoid systemd/service and Creator-control operations;
+- never read/write live production SQLite directly;
+- never change live speed, pause, autonomy, pending actions, leases, cognition binding, profile/progression state, or world state;
+- never fabricate production evidence when the claim requires naturally occurring copied production evidence;
+- print concise machine-readable evidence;
+- exit non-zero on failed invariants.
+
+Copied state may be deterministically prepared only when explicitly part of the authorized test claim and not presented as naturally occurring production evidence.
+
+## Failure classification
+
+Classify failures before changing feature behavior:
+
+1. **shared infrastructure defect** — staging, backup, cleanup, SSH, shared workflow/helper contract;
+2. **validator defect** — wrong evidence surface, fixture assumption, assertion bug;
+3. **candidate implementation defect** — actual runtime behavior mismatch;
+4. **production-data precondition absent** — required real copied evidence does not currently exist.
+
+Fix 1–2 without tuning domain behavior. Tune runtime behavior only for 3 with concrete evidence. For 4, report the missing precondition or use an explicitly authorized copied-state setup when appropriate.
+
+Never weaken assertions merely to obtain green status.
+
+## Merge and evidence status
+
+Merge only after all required CI and production-copy acceptance checks are green. Always distinguish authored/committed, CI-validated, production-copy accepted, merged, deployed, and live-verified states.
+
+## Deploy decision
+
+### No deploy
+
+Documentation, validation scripts/workflows, and test-only tooling do not require ceremonial production deployment.
+
+### Runtime-affecting deploy
+
+For source/config/schema/runtime changes:
+
+1. merge accepted feature work to `main`;
+2. deploy accepted `main` only through `.github/workflows/deploy.yml`;
+3. use workflow dispatch or update `deploy/RELEASE` with explicit accepted evidence;
+4. never create a feature-specific deploy implementation;
+5. perform post-deploy readback only after standard deploy succeeds.
+
+The standard deploy workflow owns application sync/install, DB init/migration, cognition bootstrap preservation, service restart, health/status checks, and Telegram connectivity verification.
+
+## Release marker contract
+
+When `deploy/RELEASE` is used, record at minimum:
+
+- release identifier;
+- exact accepted `main` SHA;
+- required acceptance workflow/run identifiers;
+- status `accepted-for-production`.
+
+Never point the release marker at an unaccepted branch head. Updating it is a release action, not a validation mechanism.
+
+## Post-deploy verification
+
+Post-deploy checks are read-only unless the Creator explicitly authorizes a control mutation. Verify only material release evidence such as service health, schema/world revision, cognition/provider binding, Telegram connectivity, exact current speed, and feature-specific read-only state.
+
+Never accelerate production, fabricate validation actions, directly edit progression/profile state, or generate validation-induced Telegram traffic.
+
 ## Exemplar/batch integration
 
-The repository's exemplar-first / batch-by-pattern rule composes with this protocol:
-
-- first genuinely new invariant: one exemplar, focused validator, one production-copy acceptance;
-- equivalent follow-ons: one bounded batch, one focused regression suite, one feature validator covering every batched item, one production-copy acceptance, one merge and one deploy when runtime-affecting.
+- first genuinely new invariant: one exemplar + focused validator + one production-copy acceptance;
+- equivalent follow-ons: one bounded batch + one regression suite + one validator covering the batch + one production-copy acceptance + one merge + one deploy if runtime-affecting.
 
 ## Updating the protocol
 
-Change this protocol only when repeated evidence shows the shared mechanism is insufficient or unsafe.
-
-When changing it:
-
-1. update this document;
-2. update the shared helper/workflow in the same PR;
-3. add/adjust focused tests for the shared contract;
-4. validate the shared path without modifying production;
-5. update `AGENTS.md`/bootstrap references only if the calling contract changed.
-
-Feature branches should then consume the updated shared mechanism rather than carrying local compatibility workarounds.
+When repeated evidence shows this mechanism is insufficient, update this document, shared helper/workflow, focused tests, and protocol acceptance probe in the same PR. Prove the revised shared path before feature branches consume it. Do not carry feature-local infrastructure forks forward.
