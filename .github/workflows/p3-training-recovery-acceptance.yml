@@ -54,8 +54,8 @@ jobs:
               runtime = actor_runtime(conn, actor_id)
               if runtime["pending_action_id"]:
                   conn.execute(
-                      "UPDATE action_instances SET status='cancelled',updated_at=CURRENT_TIMESTAMP WHERE id=? AND status IN ('planned','in_progress')",
-                      (runtime["pending_action_id"],),
+                      "UPDATE action_instances SET status=?,updated_at=CURRENT_TIMESTAMP WHERE id=? AND status IN (?,?)",
+                      ("cancelled", runtime["pending_action_id"], "planned", "in_progress"),
                   )
               set_actor_runtime(conn, actor_id, pending_action_id=None)
               conn.execute(
