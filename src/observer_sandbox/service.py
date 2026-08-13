@@ -6,11 +6,12 @@ import threading
 import time
 from pathlib import Path
 
+from .actor_runtime import pending_action
 from .autonomy import autonomy_tick
 from .db import connect
 from .runtime import initialize
 from .secrets import load_runtime_secrets
-from .simulation import runtime_value, snapshot
+from .simulation import snapshot
 from .telegram_bot import run_polling
 from .telegram_notifications import dispatch_action_completion
 
@@ -21,6 +22,10 @@ RUNNING = True
 def _stop(_signum, _frame) -> None:
     global RUNNING
     RUNNING = False
+
+
+def _active_actor_ids(conn) -> list[str]:
+    return [row[0] for row in conn.execute("SELECT actor_id FROM actor_runtime WHERE autonomy_enabled=1 ORDER BY actor_id").fetchall()]
 
 
 def main() -> None:
@@ -37,21 +42,21 @@ def main() -> None:
     while RUNNING:
         try:
             with connect(DB_PATH) as conn:
-                pending_before = runtime_value(conn, "autonomy_pending_action", None)
-                before = snapshot(conn) if pending_before else None
-                result = autonomy_tick(conn)
-                if result.get("state") == "completed" and pending_before and before:
-                    dispatch_action_completion(
-                        conn,
-                        action_id=str(result["action_id"]),
-                        action=pending_before,
-                        before=before,
-                        after=result["after"],
-                    )
+                for actor_id in _active_actor_ids(conn):
+                    pending_before = pending_action(conn, actor_id)
+                    before = snapshot(conn, actor_id) if pending_before else None
+                    result = autonomy_tick(conn, actor_id=actor_id)
+                    if result.get("state") == "completed" and pending_before and before:
+                        dispatch_action_completion(
+                            conn,
+                            action_id=str(result["action_id"]),
+                            action=pending_before,
+                            before=before,
+                            after=result["after"],
+                        )
         except Exception:
-            # The scheduler records expected decision/completion failures itself.
-            # Notification delivery is best-effort and must never kill or roll back
-            # the long-running universe runtime.
+            # Scheduler failures are recorded per actor; observer delivery remains
+            # downstream/best-effort and must never kill or roll back the universe.
             pass
         time.sleep(2)
 
