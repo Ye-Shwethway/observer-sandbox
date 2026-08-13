@@ -1,129 +1,116 @@
 # Physiology and Item Effects
 
 Status: ACTIVE P1 ENGINE CONTRACT
-Scope: Basic living needs, recovery actions, and target/item-driven stat effects.
+Scope: Basic living needs, recovery actions, target/item effects, and schema-v4 modifier sockets.
 
 ## Purpose
 
-The living runtime must remain recoverable. A character may become tired, hungry, thirsty, dirty, or low on energy, but the authored world must provide legitimate actions/resources that can move every basic physiological stat back toward a healthy range.
-
-The LLM chooses a structured action. The deterministic engine owns all resulting stat changes.
+The living runtime must remain recoverable. A character may become tired, hungry, thirsty, dirty or low on energy, but the authored world must provide legitimate actions/resources that move every basic physiological stat toward a healthy range. The LLM chooses a structured action; deterministic runtime owns stat changes.
 
 ## Basic physiological state
 
-All current values are clamped to `0..100`.
-
-- `needs.energy`: higher is better.
-- `needs.hunger`: higher is worse.
-- `needs.thirst`: higher is worse.
-- `needs.sleepiness`: higher is worse.
-- `physiology.cleanliness`: higher is better.
+Values clamp to `0..100`:
+- `needs.energy`: higher is better
+- `needs.hunger`: higher is worse
+- `needs.thirst`: higher is worse
+- `needs.sleepiness`: higher is worse
+- `physiology.cleanliness`: higher is better
 
 ## Recovery invariant
 
-For every basic stat there must be at least one reachable recovery path in the authored world:
+Reachable recovery paths must exist:
+- energy -> rest/sleep; food may add a secondary boost
+- hunger -> authored food/eat targets
+- thirst -> authored drink targets
+- sleepiness -> sleep; rest mild relief
+- cleanliness -> authored shower/wash targets
 
-- energy -> rest and sleep; food may provide a smaller boost.
-- hunger -> authored food/eat targets.
-- thirst -> authored drink targets.
-- sleepiness -> sleep; rest provides mild relief.
-- cleanliness -> authored shower/wash targets.
+A recovery-labelled action must improve its primary need after passive drift. Cognition must never be offered a fake recovery whose deterministic result contradicts its reason.
 
-A recovery-labelled action must still improve its primary need after passive time drift is included. The cognition layer must not be offered a fake recovery action whose deterministic result contradicts its reason.
+## Baseline drift and intrinsic effects
 
-## Baseline time drift
+Passive per simulated hour:
+- energy `-2.0`
+- hunger `+2.5`
+- thirst `+3.0`
+- sleepiness `+3.0`
+- cleanliness `-0.8`
 
-Per simulated hour before action-specific effects:
+Intrinsic per-hour action effects are currently:
+- sleep: energy `+11`, sleepiness `-15`, hunger `+0.5`, thirst `+0.75`
+- rest: energy `+10`, sleepiness `-4`
+- idle: energy `+3`
+- train: energy `-10`, hunger `+4`, thirst `+6`, cleanliness `-6`
+- read: energy `-0.5`
 
-- energy: `-2.0`
-- hunger: `+2.5`
-- thirst: `+3.0`
-- sleepiness: `+3.0`
-- cleanliness: `-0.8`
+These are simulation tuning values, not medical claims.
 
-These are gameplay/simulation baseline values, not medical claims. They should be tuned through bounded simulation tests rather than changed ad hoc in prompts.
+## Shared effect operation contract
 
-## Intrinsic action effects
+Schema v4 generalizes effect specs so future systems do not invent incompatible formats. A physiological field may use:
 
-Intrinsic effects belong to the action itself rather than a particular object.
+```json
+{"needs.energy": {"add": 10}}
+```
 
-Per simulated hour:
+Supported immediate operations:
+- `add`
+- `multiply`
+- `set`
+- `clamp_min`
+- `clamp_max`
 
-- sleep: energy `+11`, sleepiness `-15`, hunger `+0.5`, thirst `+0.75`, in addition to baseline drift.
-- rest: energy `+10`, sleepiness `-4`, in addition to baseline drift.
-- idle: energy `+3`, in addition to baseline drift; this is only light recovery.
-- train: energy `-10`, hunger `+4`, thirst `+6`, cleanliness `-6`, in addition to baseline drift.
-- read: energy `-0.5`, in addition to baseline drift.
+Legacy flat numeric values remain additive for current authored resources.
 
-Therefore one hour of targetless rest is currently net about `+8 energy` and `-1 sleepiness`, while one hour of idle is net about `+1 energy`.
-
-## Target / item effect profiles
-
-World objects may define action-specific effects in `config/worlds/home.v1.json` using an `effects` object.
-
-Example shape:
+Example:
 
 ```json
 {
-  "id": "obj_example_drink",
-  "name": "Example Drink",
-  "capabilities": ["drink"],
-  "effects": {
-    "drink": {
-      "needs.energy": 10.0,
-      "needs.thirst": -12.0,
-      "needs.sleepiness": -8.0
-    }
+  "drink": {
+    "needs.energy": {"add": 10},
+    "needs.thirst": {"add": -12},
+    "needs.sleepiness": {"add": -8}
   }
 }
 ```
 
-Numeric values are flat deltas applied after passive and intrinsic action effects. A field may also use a set operation:
+## Target/resource effects
 
-```json
-{"physiology.cleanliness": {"set": 100.0}}
-```
+Current Thorne Estate recovery abstractions include drinking water, sink water, meal ingredients, pantry ready food, shower and bed/rest resources. Food/drink/shower capabilities must have matching deterministic effects. Facilities must not expose fake recovery capabilities merely because they are near a resource.
 
-Current Home v1 authored recovery resources:
+`action_options()` exposes relevant authored effects to cognition; validation/application remain deterministic.
 
-- Drinking Water / drink: thirst `-55`.
-- Sink / drink: thirst `-35`.
-- Meal Ingredients / eat: hunger `-50`, energy `+8`, thirst `+2`.
-- Pantry / eat: hunger `-40`, energy `+5`, thirst `+1`; Pantry currently represents a renewable ready-food source abstraction.
-- Shower / shower: cleanliness set to `100`.
+## Definitions versus instances
 
-Food/drink/shower capabilities must have an authored matching physiological effect. Refrigerator and Dining Table are facilities and do not expose fake eat/drink actions just because they are near food.
+Schema v4 establishes `entity_definitions` plus `entities.definition_id`.
 
-## Cognition visibility
+A future Energy Drink should therefore be modeled conceptually as:
+- reusable definition: name, capabilities, base effects, metadata
+- concrete instance/stack: identity, current location/container, quantity/state when inventory exists.
 
-`action_options()` exposes the authored target effect profile with each legal action option. This allows the model mind to compare legal recovery resources while the runtime validator and state-transition engine remain authoritative.
+Do not duplicate immutable product semantics into every physical instance. Quantity, stack depletion and durability remain deferred inventory features.
 
-Do not rely on prompt prose alone to teach the model that an item restores a need. The effect must exist in the world definition and be surfaced through the legal action option.
+## Temporary/sourced modifiers
 
-## Persistent-autonomy migration safety
+`active_modifiers` is the persistence contract for future temporary effects such as stimulant, injury, illness, environmental exposure or training fatigue. It records:
+- subject
+- source entity/action
+- field
+- operation/value
+- start/end sim time
+- stack key/policy
+- conditions/metadata.
 
-The scheduler persists pending actions across process restarts. World/capability/effect changes must therefore consider a plan that was legal under the previous deployed definition but has not completed yet.
+The existence of this table is a schema socket, not a claim that all active modifiers are currently evaluated by every engine. Feature modules should progressively attach through this common contract.
 
-Do not casually remove a capability or target that may be referenced by a live pending action. Either preserve backward-compatible behavior until the pending action completes, or add an explicit safe migration/revalidation path.
+## Migration safety
 
-The first effect-system deployment encountered a live `eat -> Pantry` pending action from the preceding definition. Pantry's authored eat capability/effect was preserved so the pending action could complete under the new deterministic effect system instead of entering retry solely because of a deployment-time definition change.
+Pending actions are now first-class `action_instances` referenced by actor-scoped runtime. World/effect migrations must still preserve, revalidate, cancel or explicitly migrate outstanding action instances; never silently invalidate them.
 
 ## Future consumables
 
-Future items such as an energy drink, medication, supplement, or finite food item should use the same effect contract, but quantity/consumption, temporary modifiers, cooldowns, tolerance, and inventory depletion belong to later richer item/physiology work.
-
-Do not model a finite consumable as infinitely reusable merely because it has an effect profile. Until inventory quantities exist, Home v1 recovery resources should be treated as renewable household resource abstractions.
+Finite consumables should not be modeled as infinitely reusable. Energy drinks, medication, finite food, supplements and similar resources require inventory quantity/depletion before becoming finite production items. Temporary effects should use `active_modifiers`, not ad-hoc prompt memory.
 
 ## Testing contract
 
-Regression tests must prove:
-
-- rest and sleep increase energy from depleted states;
-- rest/sleep reduce sleep pressure in the intended direction;
-- authored water reduces thirst;
-- authored food reduces hunger and can provide its authored secondary effects;
-- shower restores cleanliness;
-- effect metadata appears in legal action options;
-- restorative item actions without authored effects are rejected;
-- a bounded simulated day stays within `0..100` and does not enter an unrecoverable needs loop;
-- world/effect migrations do not invalidate persisted pending actions without an explicit recovery path.
+Regression tests must prove recovery direction, authored effects, option visibility, invalid restorative targets, bounded living behavior and safe pending-action migration. Schema-v4 tests additionally prove definition/instance and active-modifier sockets without pretending the later inventory/modifier engines are complete.
