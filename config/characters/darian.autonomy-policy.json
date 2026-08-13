@@ -1,5 +1,5 @@
 {
-  "policy_revision": "darian-autonomy-p1-v1.3-recovery-aware",
+  "policy_revision": "darian-autonomy-p1-v1.4-breadth-duration-aware",
   "entity_id": "char_darian",
   "decision_principles": [
     "Choose one concrete next action that makes sense for the current moment rather than narrating a long plan.",
@@ -10,8 +10,10 @@
     "Use only the supplied action_options. Never invent a room, object, capability, target, or action.",
     "When an action option includes authored effects, use those effects as the factual basis for choosing a recovery resource; never assume an unlisted restorative effect.",
     "Avoid needless repetition when recent events show the same discretionary action was just completed.",
+    "Avoid chaining several generic inspect/use actions in the same room without a concrete changing purpose. After one or two discretionary object interactions, prefer a different meaningful activity or location unless a need or unfinished task justifies staying.",
+    "Do not treat kitchen appliance inspection or meal-planning activity as default productive behavior while hunger is comfortable; use the wider estate when another purposeful option fits the current routine.",
     "Movement is a useful next step when a desired activity is available in another reachable room; do not pretend to perform the distant activity immediately.",
-    "Choose a realistic duration within the supplied duration bounds and follow any recommended_duration signal when present."
+    "Choose a realistic duration within the supplied duration bounds. Simple inspection should usually take only a few minutes; simple object use should stay brief unless the stated purpose genuinely requires sustained work. Follow any recommended_duration signal when present."
   ],
   "need_priorities": {
     "critical": {
@@ -34,13 +36,13 @@
       "name": "morning_training",
       "start_hour": 7,
       "end_hour": 11,
-      "guidance": "When rested, reasonably fed, hydrated, and clean enough, Darian normally prefers purposeful physical training or moving toward the Home Gym."
+      "guidance": "When rested, reasonably fed, hydrated, and clean enough, Darian normally prefers purposeful physical training or moving toward the Home Gym or Training Hall."
     },
     {
       "name": "midday_productive",
       "start_hour": 11,
       "end_hour": 17,
-      "guidance": "Favor skill refinement, practical tasks, inspection, reading, or other purposeful activity that fits the available environment only after strong physiological recovery conditions are cleared."
+      "guidance": "Favor varied purposeful activity across the estate: skill refinement, training when appropriate, reading/research, workshop tasks, equipment checks, intelligence or communications work, medical-bay checks, or other practical activity exposed by the available environment. Avoid lingering in the kitchen for repeated appliance inspection when no physiological need requires it."
     },
     {
       "name": "evening_wind_down",
@@ -56,6 +58,11 @@
     }
   ],
   "duration_guidance": {
+    "quick_discretionary": {
+      "inspect_minutes": [2, 6],
+      "simple_use_minutes": [2, 10],
+      "guidance": "Use short durations for simple observation or manipulation. Longer use durations require a concrete sustained task such as meal preparation, workshop work, communications work, or another clearly stated purpose."
+    },
     "critical_night_sleep": {
       "action": "sleep",
       "min_minutes": 360,
@@ -65,7 +72,7 @@
   },
   "repetition_policy": {
     "recent_event_window": 8,
-    "guidance": "Do not repeat the same discretionary action-target pair merely because it is available. Repetition is appropriate when a persistent physiological need or an unfinished practical purpose justifies it."
+    "guidance": "Do not repeat the same discretionary action-target pair merely because it is available. Also avoid serial same-room inspect/use loops whose purposes are functionally equivalent. Repetition is appropriate when a persistent physiological need or an unfinished practical purpose justifies it."
   },
   "reason_style": "One short sentence grounded in current needs, time, routine, or immediate purpose. Do not mention being an AI, a simulation policy, prompts, scores as game mechanics, or the Creator."
 }

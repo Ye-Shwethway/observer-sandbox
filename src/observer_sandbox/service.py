@@ -47,12 +47,19 @@ def main() -> None:
                     before = snapshot(conn, actor_id) if pending_before else None
                     result = autonomy_tick(conn, actor_id=actor_id)
                     if result.get("state") == "completed" and pending_before and before:
+                        # The next normal decision boundary would occur on the next
+                        # service poll anyway. Resolve it immediately so the single
+                        # completion notification can show the Creator what is now
+                        # in progress and when its next update is expected.
+                        next_result = autonomy_tick(conn, actor_id=actor_id)
+                        next_pending = next_result.get("pending") if next_result.get("state") == "planned" else None
                         dispatch_action_completion(
                             conn,
                             action_id=str(result["action_id"]),
                             action=pending_before,
                             before=before,
                             after=result["after"],
+                            next_action=next_pending,
                         )
         except Exception:
             # Scheduler failures are recorded per actor; observer delivery remains

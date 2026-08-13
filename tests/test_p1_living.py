@@ -37,7 +37,7 @@ def test_p1_home_seed_and_darian_instantiation(tmp_path):
     initialize(db)
     with connect(db) as conn:
         assert conn.execute("SELECT COUNT(*) FROM entities WHERE entity_type='location'").fetchone()[0] >= 20
-        assert conn.execute("SELECT COUNT(*) FROM entities WHERE entity_type='object'").fetchone()[0] == 15
+        assert conn.execute("SELECT COUNT(*) FROM entities WHERE entity_type='object'").fetchone()[0] == 27
         assert conn.execute("SELECT name FROM entities WHERE id='loc_thorne_estate'").fetchone()[0] == "Thorne Estate"
         assert conn.execute("SELECT name FROM entities WHERE id=?", (MASTER_SUITE,)).fetchone()[0] == "Darian's Master Suite"
         assert conn.execute("SELECT name FROM entities WHERE id=?", (HOME_GYM,)).fetchone()[0] == "Top-Class Home Gym"

@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import os
 import urllib.error
+from datetime import datetime, timedelta
 from typing import Any
 
 from .simulation import runtime_value, set_runtime_value
@@ -34,26 +35,67 @@ def _entity_name(conn, entity_id: str | None) -> str | None:
     return str(row["name"]) if row else None
 
 
+def _action_title(action: dict[str, Any]) -> str:
+    title = _title_action(action.get("action"))
+    target = action.get("target_name") or action.get("target")
+    if target:
+        title += f" → {target}"
+    return title
+
+
+def _wall_wait_text(duration_minutes: int | float, speed: float) -> str:
+    wall_seconds = max(0.0, float(duration_minutes) * 60.0 / max(float(speed), 0.000001))
+    if wall_seconds < 60:
+        return f"~{max(1, round(wall_seconds))} sec real"
+    wall_minutes = wall_seconds / 60.0
+    if wall_minutes < 90:
+        value = round(wall_minutes, 1) if abs(wall_minutes - round(wall_minutes)) >= 0.05 else int(round(wall_minutes))
+        return f"~{value} min real"
+    wall_hours = wall_minutes / 60.0
+    value = round(wall_hours, 1) if abs(wall_hours - round(wall_hours)) >= 0.05 else int(round(wall_hours))
+    return f"~{value} hr real"
+
+
+def _duration_line(action: dict[str, Any], *, completed: bool) -> str | None:
+    duration = action.get("duration_minutes")
+    if duration is None:
+        return None
+    speed = float(action.get("speed_at_plan") or 1.0)
+    prefix = "Took" if completed else "Duration"
+    return f"⏱ {prefix} {int(duration)} sim min • {_wall_wait_text(int(duration), speed)} @ {speed:g}x"
+
+
+def _expected_end_sim_time(action: dict[str, Any]) -> str | None:
+    planned = action.get("planned_sim_time")
+    duration = action.get("duration_minutes")
+    if not planned or duration is None:
+        return None
+    try:
+        return (datetime.fromisoformat(str(planned)) + timedelta(minutes=int(duration))).isoformat()
+    except (TypeError, ValueError):
+        return None
+
+
 def format_action_completion(
     action: dict[str, Any],
     before: dict[str, Any],
     after: dict[str, Any],
     *,
     actor_name: str | None = None,
+    next_action: dict[str, Any] | None = None,
 ) -> str:
-    title = _title_action(action.get("action"))
-    target = action.get("target_name") or action.get("target")
-    if target:
-        title += f" → {target}"
-
     display_actor = actor_name or after.get("actor_name") or after.get("actor_id") or "Character"
     lines = [
         "✨ CHARACTER UPDATE",
         "━━━━━━━━━━━━━━━━━━",
         f"👤 {display_actor}",
-        f"🎬 {title}",
+        f"🎬 {_action_title(action)}",
         f"🕒 {_fmt_time(after.get('sim_time'))}",
     ]
+    duration_line = _duration_line(action, completed=True)
+    if duration_line:
+        lines.append(duration_line)
+
     if action.get("reason"):
         lines.extend(["", f"💭 {action['reason']}"])
 
@@ -72,6 +114,16 @@ def format_action_completion(
     visible_changes = [row for row in changes if row]
     if visible_changes:
         lines.extend(["", "📊 Changes", *visible_changes])
+
+    if next_action:
+        lines.extend(["", f"⏭ Next: {_action_title(next_action)}"])
+        next_duration = _duration_line(next_action, completed=False)
+        expected_sim = _expected_end_sim_time(next_action)
+        if next_duration:
+            lines.append(next_duration)
+        if expected_sim:
+            lines.append(f"⏳ Expected update: {_fmt_time(expected_sim)}")
+
     return "\n".join(lines)
 
 
@@ -82,6 +134,7 @@ def dispatch_action_completion(
     action: dict[str, Any],
     before: dict[str, Any],
     after: dict[str, Any],
+    next_action: dict[str, Any] | None = None,
 ) -> int:
     """Best-effort proactive push after a committed action completion."""
     token = os.environ.get("OBSERVER_TELEGRAM_BOT_TOKEN", "").strip()
@@ -97,9 +150,23 @@ def dispatch_action_completion(
     target_name = _entity_name(conn, action.get("target"))
     if target_name:
         display_action["target_name"] = target_name
+
+    display_next = None
+    if next_action:
+        display_next = dict(next_action)
+        next_target_name = _entity_name(conn, next_action.get("target"))
+        if next_target_name:
+            display_next["target_name"] = next_target_name
+
     actor_id = str(after.get("actor_id") or before.get("actor_id") or "") or None
     actor_name = _entity_name(conn, actor_id)
-    message = format_action_completion(display_action, before, after, actor_name=actor_name)
+    message = format_action_completion(
+        display_action,
+        before,
+        after,
+        actor_name=actor_name,
+        next_action=display_next,
+    )
 
     sent = 0
     for user_id in sorted(recipients):
