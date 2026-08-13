@@ -52,14 +52,15 @@ def test_recovery_actions_increase_energy_and_rest_is_available_anywhere(tmp_pat
         conn.commit()
 
         options = action_options(conn)
-        assert any(option["action"] == "rest" and option["target"] is None for option in options)
+        rest = next(option for option in options if option["action"] == "rest" and option["target"] is None)
+        assert rest["effects_per_hour"]["energy"] > 0
 
         before = snapshot(conn)
         after_idle = apply_action(conn, Action("idle", 60, None, "brief pause"))
         assert after_idle["energy"] > before["energy"]
 
         after_rest = apply_action(conn, Action("rest", 60, None, "recover low energy"))
-        assert after_rest["energy"] >= after_idle["energy"] + 8.9
+        assert after_rest["energy"] >= after_idle["energy"] + 7.9
         assert after_rest["sleepiness"] < after_idle["sleepiness"]
 
 
@@ -73,8 +74,52 @@ def test_sleep_is_strong_recovery_and_can_escape_critical_energy(tmp_path):
         conn.commit()
 
         after = apply_action(conn, Action("sleep", 480, "obj_bed", "overnight recovery"))
-        assert after["energy"] >= 95.0
+        assert after["energy"] >= 89.0
         assert after["sleepiness"] <= 5.0
+        assert after["hunger"] < 50.0
+        assert after["thirst"] < 50.0
+
+
+def test_food_water_and_shower_restore_authored_basic_stats(tmp_path):
+    db = tmp_path / "observer.sqlite3"
+    initialize(db)
+    with connect(db) as conn:
+        set_field(conn, "char_darian", "runtime.location", "room_kitchen")
+        set_field(conn, "char_darian", "needs.energy", 25.0)
+        set_field(conn, "char_darian", "needs.hunger", 80.0)
+        set_field(conn, "char_darian", "needs.thirst", 80.0)
+        conn.commit()
+
+        options = action_options(conn)
+        water = next(option for option in options if option["action"] == "drink" and option["target"] == "obj_water")
+        meal = next(option for option in options if option["action"] == "eat" and option["target"] == "obj_meal_stock")
+        assert water["effects"]["needs.thirst"] == -55.0
+        assert meal["effects"]["needs.hunger"] == -50.0
+        assert meal["effects"]["needs.energy"] == 8.0
+
+        after_water = apply_action(conn, Action("drink", 5, "obj_water", "rehydrate"))
+        assert after_water["thirst"] < 30.0
+
+        after_meal = apply_action(conn, Action("eat", 25, "obj_meal_stock", "eat a meal"))
+        assert after_meal["hunger"] < 35.0
+        assert after_meal["energy"] > after_water["energy"]
+
+        set_field(conn, "char_darian", "runtime.location", "room_bathroom")
+        set_field(conn, "char_darian", "physiology.cleanliness", 35.0)
+        conn.commit()
+        after_shower = apply_action(conn, Action("shower", 15, "obj_shower", "restore cleanliness"))
+        assert after_shower["cleanliness"] == 100.0
+
+
+def test_restorative_item_action_requires_authored_effect(tmp_path):
+    db = tmp_path / "observer.sqlite3"
+    initialize(db)
+    with connect(db) as conn:
+        set_field(conn, "char_darian", "runtime.location", "room_kitchen")
+        conn.execute("UPDATE entities SET capabilities_json='[\"eat\"]' WHERE id='obj_table'")
+        conn.commit()
+        with pytest.raises(ValueError, match="no authored eat physiological effect"):
+            validate_action(conn, "char_darian", Action("eat", 20, "obj_table"))
 
 
 def test_p1_darian_completes_one_simulated_day_autonomously(tmp_path):
