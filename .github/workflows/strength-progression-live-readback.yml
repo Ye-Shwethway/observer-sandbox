@@ -1,0 +1,90 @@
+name: Strength Progression Live Readback
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - '.github/workflows/strength-progression-live-readback.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  readback:
+    if: ${{ vars.VPS_DEPLOY_ENABLED == 'true' }}
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Configure SSH
+        env:
+          VPS_SSH_KEY: ${{ secrets.VPS_SSH_KEY }}
+          VPS_HOST: ${{ secrets.VPS_HOST }}
+          VPS_PORT: ${{ secrets.VPS_PORT || '22' }}
+        run: |
+          test -n "$VPS_HOST"
+          test -n "$VPS_SSH_KEY"
+          install -m 700 -d ~/.ssh
+          printf '%s\n' "$VPS_SSH_KEY" > ~/.ssh/id_ed25519
+          chmod 600 ~/.ssh/id_ed25519
+          ssh-keyscan -p "$VPS_PORT" -H "$VPS_HOST" >> ~/.ssh/known_hosts
+      - name: Read live Strength progression state
+        env:
+          VPS_HOST: ${{ secrets.VPS_HOST }}
+          VPS_USER: ${{ secrets.VPS_USER }}
+          VPS_PORT: ${{ secrets.VPS_PORT || '22' }}
+        run: |
+          ssh -p "$VPS_PORT" "$VPS_USER@$VPS_HOST" '
+            set -euo pipefail
+            cd /opt/observer-sandbox
+            export OBSERVER_SANDBOX_DB=/var/lib/observer-sandbox/observer.sqlite3
+            .venv/bin/python - <<"PY"
+          import json, os
+          from observer_sandbox.db import connect
+          from observer_sandbox.simulation import ensure_sim_clock
+
+          db = os.environ["OBSERVER_SANDBOX_DB"]
+          with connect(db) as conn:
+              strength = conn.execute(
+                  "SELECT value_json,mode,authority,source,observed_at FROM character_profile_values WHERE entity_id=? AND field_key=?",
+                  ("char_darian", "raps_pa.strength"),
+              ).fetchone()
+              rows = conn.execute(
+                  "SELECT id,sim_time,payload_json FROM events WHERE actor_id=? AND event_type=? ORDER BY id DESC LIMIT 5",
+                  ("char_darian", "strength_progression_settled"),
+              ).fetchall()
+              latest = None
+              if rows:
+                  payload = json.loads(rows[0]["payload_json"] or "{}")
+                  latest = {
+                      "event_id": int(rows[0]["id"]),
+                      "sim_time": rows[0]["sim_time"],
+                      "bootstrap": bool(payload.get("bootstrap")),
+                      "settled_through_sim_time": payload.get("settled_through_sim_time"),
+                      "old_strength": payload.get("old_strength"),
+                      "new_strength": payload.get("new_strength"),
+                      "positive_delta": payload.get("positive_delta"),
+                      "negative_delta": payload.get("negative_delta"),
+                      "net_delta": payload.get("net_delta"),
+                      "stat_mutated": payload.get("stat_mutated", False),
+                      "consumed_stimulus_count": len(payload.get("consumed_stimulus_event_ids") or []),
+                  }
+              print(json.dumps({
+                  "ok": True,
+                  "live_db": True,
+                  "sim_time": ensure_sim_clock(conn).isoformat(),
+                  "strength": {
+                      "value": json.loads(strength["value_json"]),
+                      "mode": strength["mode"],
+                      "authority": strength["authority"],
+                      "source": strength["source"],
+                      "observed_at": strength["observed_at"],
+                  },
+                  "settlement_count": len(rows),
+                  "latest_settlement": latest,
+              }, indent=2, sort_keys=True))
+          PY
+            echo "--- SERVICE STATUS ---"
+            systemctl is-active observer-sandbox
+            .venv/bin/sandboxctl status
+          '
