@@ -1,6 +1,6 @@
 {
   "world_id": "world_observer_universe",
-  "revision": "thorne-estate-v3.1-food-resolution",
+  "revision": "thorne-estate-v3.2-training-environment",
   "name": "Observer Universe",
   "start_location": "loc_thorne_estate_master_suite",
   "locations": [
@@ -49,15 +49,27 @@
     {"id": "obj_thorne_estate_comms_secure_terminal", "name": "Secure Communications Terminal", "room": "loc_thorne_estate_comms", "capabilities": ["inspect", "use", "monitor"]},
     {"id": "obj_thorne_estate_training_combat_mat", "name": "Combat Mat", "room": "loc_thorne_estate_training_hall", "capabilities": ["train", "inspect"]},
     {"id": "obj_thorne_estate_training_practice_dummy", "name": "Practice Dummy", "room": "loc_thorne_estate_training_hall", "capabilities": ["train", "inspect"]},
+    {"id": "obj_thorne_estate_training_ai_combat_sim", "name": "AI Combat Simulation System", "room": "loc_thorne_estate_training_hall", "capabilities": ["train", "inspect"]},
+    {"id": "obj_thorne_estate_training_obstacle_course", "name": "Indoor Obstacle Course", "room": "loc_thorne_estate_training_hall", "capabilities": ["train", "inspect"]},
+    {"id": "obj_thorne_estate_training_combat_pit", "name": "Combat Pit", "room": "loc_thorne_estate_training_hall", "capabilities": ["train", "inspect"]},
+    {"id": "obj_thorne_estate_training_vr_tactical_sim", "name": "VR Tactical Simulator", "room": "loc_thorne_estate_training_hall", "capabilities": ["train", "inspect"]},
     {"id": "obj_thorne_estate_medical_diagnostic_station", "name": "Diagnostic Station", "room": "loc_thorne_estate_medical_bay", "capabilities": ["inspect", "use"]},
     {"id": "obj_thorne_estate_armory_equipment_bench", "name": "Equipment Bench", "room": "loc_thorne_estate_armory", "capabilities": ["inspect", "use"]},
     {"id": "obj_thorne_estate_food_storage_supply_shelves", "name": "Supply Shelves", "room": "loc_thorne_estate_food_storage", "capabilities": ["inspect"]},
     {"id": "obj_thorne_estate_food_storage_provisions", "name": "Stored Food Provisions", "room": "loc_thorne_estate_food_storage", "capabilities": ["inspect", "eat"], "effects": {"eat": {"needs.hunger": -50.0, "needs.energy": 8.0, "needs.thirst": 2.0}}},
     {"id": "obj_thorne_estate_bunker_emergency_console", "name": "Emergency Console", "room": "loc_thorne_estate_bunker", "capabilities": ["inspect", "use", "monitor"]},
-    {"id": "obj_thorne_estate_kitchen_drinking_water", "name": "Drinking Water", "room": "loc_thorne_estate_kitchen", "capabilities": ["drink"], "effects": {"drink": {"needs.thirst": -55.0}}},
+    {"id": "obj_thorne_estate_kitchen_drinking_water", "name": "Drinking Water", "room": "loc_thorne_estate_kitchen", "capabilities": ["drink"]},
     {"id": "obj_thorne_estate_kitchen_meal_ingredients", "name": "Meal Ingredients", "room": "loc_thorne_estate_kitchen", "capabilities": ["cook", "eat"], "effects": {"eat": {"needs.hunger": -50.0, "needs.energy": 8.0, "needs.thirst": 2.0}}},
     {"id": "obj_thorne_estate_gym_free_weights", "name": "Free Weights", "room": "loc_thorne_estate_home_gym", "capabilities": ["train", "inspect"]},
-    {"id": "obj_thorne_estate_gym_heavy_bag", "name": "Heavy Bag", "room": "loc_thorne_estate_home_gym", "capabilities": ["train", "inspect"]}
+    {"id": "obj_thorne_estate_gym_heavy_bag", "name": "Heavy Bag", "room": "loc_thorne_estate_home_gym", "capabilities": ["train", "inspect"]},
+    {"id": "obj_thorne_estate_gym_olympic_platform", "name": "Olympic Weightlifting Platform", "room": "loc_thorne_estate_home_gym", "capabilities": ["train", "inspect"]},
+    {"id": "obj_thorne_estate_gym_power_rack", "name": "Power Rack", "room": "loc_thorne_estate_home_gym", "capabilities": ["train", "inspect"]},
+    {"id": "obj_thorne_estate_gym_adjustable_bench", "name": "Adjustable Bench", "room": "loc_thorne_estate_home_gym", "capabilities": ["train", "inspect"]},
+    {"id": "obj_thorne_estate_gym_strength_machines", "name": "Strength Machine Circuit", "room": "loc_thorne_estate_home_gym", "capabilities": ["train", "inspect"]},
+    {"id": "obj_thorne_estate_gym_high_speed_treadmill", "name": "High-Speed Treadmill", "room": "loc_thorne_estate_home_gym", "capabilities": ["train", "inspect"]},
+    {"id": "obj_thorne_estate_gym_rowing_ergometer", "name": "Rowing Ergometer", "room": "loc_thorne_estate_home_gym", "capabilities": ["train", "inspect"]},
+    {"id": "obj_thorne_estate_gym_speed_agility_station", "name": "Speed & Agility Station", "room": "loc_thorne_estate_home_gym", "capabilities": ["train", "inspect"]},
+    {"id": "obj_thorne_estate_gym_altitude_chamber", "name": "Altitude Training Chamber", "room": "loc_thorne_estate_home_gym", "capabilities": ["train", "inspect"]}
   ],
   "connections": [
     ["loc_thorne_estate_master_suite", "loc_thorne_estate_master_bathroom"],
