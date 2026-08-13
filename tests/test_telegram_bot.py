@@ -1,6 +1,7 @@
 from observer_sandbox.db import connect
 from observer_sandbox.runtime import initialize
 from observer_sandbox.telegram_bot import _callback_view, _home_keyboard, _notifications_enabled, handle_command
+from observer_sandbox.telegram_notifications import dispatch_action_completion, format_action_completion
 
 
 def test_unauthorized_user_gets_only_identity_bootstrap(tmp_path, monkeypatch):
@@ -82,3 +83,66 @@ def test_observer_home_uses_stable_inline_navigation(tmp_path, monkeypatch):
         chars_text, chars_keyboard = _callback_view(conn, 111, "nav:characters")
         assert "Darian Thorne" in chars_text
         assert chars_keyboard[0][0]["callback_data"] == "char:char_darian"
+
+
+def test_action_completion_notification_is_human_friendly():
+    before = {
+        "sim_time": "2025-05-01T12:40:00+00:00",
+        "location_name": "Kitchen",
+        "energy": 23.8,
+        "hunger": 63.7,
+        "thirst": 28.3,
+        "sleepiness": 34.8,
+        "cleanliness": 43.2,
+    }
+    after = {
+        "sim_time": "2025-05-01T13:00:00+00:00",
+        "location_name": "Kitchen",
+        "energy": 31.2,
+        "hunger": 14.5,
+        "thirst": 31.3,
+        "sleepiness": 35.8,
+        "cleanliness": 42.9,
+    }
+    action = {"action": "eat", "target_name": "Meal Ingredients", "reason": "Eating to recover from hunger."}
+    text = format_action_completion(action, before, after)
+    assert "✨ CHARACTER UPDATE" in text
+    assert "Eat → Meal Ingredients" in text
+    assert "01-05-2025 (Thursday) 01:00 PM" in text
+    assert "Hunger" in text and "63.7 → 14.5" in text
+    assert "Energy" in text and "23.8 → 31.2" in text
+
+
+def test_action_completion_push_obeys_preferences_and_deduplicates(tmp_path, monkeypatch):
+    db = tmp_path / "observer.sqlite3"
+    initialize(db)
+    monkeypatch.setenv("OBSERVER_TELEGRAM_BOT_TOKEN", "test-token")
+    monkeypatch.setenv("OBSERVER_TELEGRAM_OWNER_ID", "111")
+    monkeypatch.setenv("OBSERVER_TELEGRAM_ALLOWED_USER_IDS", "111,222")
+    sent = []
+    monkeypatch.setattr("observer_sandbox.telegram_notifications._send", lambda token, user_id, text: sent.append((user_id, text)))
+    handle_command(db, user_id=222, text="/notify off")
+
+    before = {
+        "sim_time": "2025-05-01T12:40:00+00:00",
+        "location_name": "Kitchen",
+        "energy": 23.8,
+        "hunger": 63.7,
+        "thirst": 28.3,
+        "sleepiness": 34.8,
+        "cleanliness": 43.2,
+    }
+    after = {
+        "sim_time": "2025-05-01T13:00:00+00:00",
+        "location_name": "Kitchen",
+        "energy": 31.2,
+        "hunger": 14.5,
+        "thirst": 31.3,
+        "sleepiness": 35.8,
+        "cleanliness": 42.9,
+    }
+    action = {"action": "eat", "target": "obj_meal_stock", "reason": "Eating to recover from hunger."}
+    with connect(db) as conn:
+        assert dispatch_action_completion(conn, action_id="a-1", action=action, before=before, after=after) == 1
+        assert dispatch_action_completion(conn, action_id="a-1", action=action, before=before, after=after) == 0
+    assert [user_id for user_id, _ in sent] == [111]
