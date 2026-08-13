@@ -1,48 +1,51 @@
 # Causal Need Resolution v3
 
-Status: CANDIDATE — exemplar + batch expansion
+Status: COMPLETE / PRE-MERGE PRODUCTION-COPY ACCEPTANCE VERIFIED / DEPLOYED
 
-## Proven predecessor
+## Scope
 
-v1 fixed repeated hunger inspection by adding real edible provisions and causal hunger routing. v2 extended the same deterministic pattern to thirst and was subsequently Creator live-verified.
-
-## v3 goal
-
-Close the current physiological recovery family before expanding more simulation systems. The authored priority order remains authoritative:
+This closes the current five-need physiological recovery family while preserving the authored priority order:
 
 `sleepiness -> energy -> thirst -> hunger -> cleanliness`
 
-Critical needs still outrank strong needs.
+Critical needs outrank strong needs.
 
 ## Exemplar-first development pattern
 
 ### Exemplar — Energy
 
-Energy proves the missing directionality invariant. Hunger/thirst/sleepiness are high-is-bad and require a reducing effect; energy is low-is-bad and requires an increasing effect.
+Energy proved the missing directionality invariant. Hunger/thirst/sleepiness are high-is-bad and require a reducing effect; energy is low-is-bad and requires an increasing effect.
 
-A recovery option is causal only when its direct authored effect or intrinsic per-hour action effect moves the active need toward health. For strong low energy, `rest` is therefore a valid local resolver because its intrinsic effect raises energy. Discretionary training is hidden until the active need clears.
+A recovery option is causal only when its direct authored effect or intrinsic per-hour action effect moves the active need toward health. For strong low energy, `rest` is a valid local resolver because its intrinsic effect raises energy. Discretionary training is hidden until the active need clears.
 
 ### Batch expansion — Sleepiness + Cleanliness
 
-Once direction-aware evaluation is established by Energy, equivalent remaining needs use the same resolver engine in the same branch/PR:
+After the Energy directionality pattern was established, equivalent remaining needs were added in the same branch/PR:
 
 - strong sleepiness -> local `rest` or `sleep` when causally available;
 - critical sleepiness -> `sleep` only, routing toward a sleep-capable object when needed;
 - poor cleanliness -> `shower`, routing toward the Master Bathroom when needed;
-- thirst/hunger keep their accepted `drink`/`eat` behavior unchanged.
+- thirst/hunger retain their deployed `drink`/`eat` behavior.
 
-Both direct object effects and intrinsic per-hour action effects are valid causal evidence. Resolver selection never invents a second priority score: `decision_signals.needs_attention` remains authoritative.
+Both direct object effects and intrinsic per-hour action effects are valid causal evidence. Resolver selection does not invent a second priority score; `decision_signals.needs_attention` remains authoritative.
 
-## Acceptance contract
+## Validation
 
-One development batch must prove:
+The batch proved:
 
-1. Energy exemplar: low energy exposes only causal recovery and materially increases energy.
-2. Strong sleepiness suppresses discretionary training; critical sleepiness routes toward Bed rather than accepting generic rest.
-3. Poor cleanliness routes toward Shower and local showering clears the strong condition.
-4. Existing hunger/thirst deterministic behavior remains green.
-5. Mixed strong needs preserve the authored same-level ordering.
-6. Full CI is green.
-7. Candidate code passes the existing disposable production-copy causal-resolution gate before merge/deploy.
+1. low Energy exposes only causal recovery and materially increases Energy;
+2. strong Sleepiness suppresses discretionary training;
+3. critical Sleepiness routes toward Bed rather than accepting generic rest;
+4. poor Cleanliness routes toward Shower and local showering clears the strong condition;
+5. Hunger/Thirst deterministic behavior remains green;
+6. mixed strong needs preserve the authored same-level ordering;
+7. full CI and the disposable production-copy causal-resolution gate are green.
 
-No schema change, inventory system, new scoring system, or unrelated world expansion is part of v3.
+Evidence:
+- PR #24 merge `e1e6d79479fa4d2ae837c395ec3b2fdb7391dc8f`;
+- CI #451 `31698384623` SUCCESS;
+- Causal Need Resolution v2 Acceptance #12 `31698384587` SUCCESS (existing production-copy harness reused as the compatibility gate);
+- release `ab60e3d1f95100324bcaa638299eef1ba32e5036`;
+- Deploy #150 `31698521410` SUCCESS.
+
+No schema change, inventory system, new scoring system, or unrelated world expansion was introduced.
