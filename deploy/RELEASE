@@ -1,7 +1,7 @@
 Observer Sandbox production release marker
 
-release: runtime-speed-control-v1
-accepted_main: 1799dd7c7723866ec15dc29a05c682de8e1d5e4a
-acceptance_workflow: Runtime Speed Control Acceptance #1
-acceptance_run: 31679969684
+release: duration-planning-profiles-v1
+accepted_main: 4d7d949002a4444f6ae6424e502fa872f6d90a33
+acceptance_workflow: Duration Planning Profiles Acceptance #1
+acceptance_run: 31680683416
 status: accepted-for-production
