@@ -45,6 +45,7 @@ LLMs propose structured actions only. Deterministic runtime owns legality and mu
 - P3.3 Training Readiness Modifier — COMPLETE / DEPLOYED / LIVE UX VERIFIED.
 - P3.4 Training Effectiveness Outcome — COMPLETE / ACCEPTANCE VERIFIED / DEPLOYED.
 - P3.5 Effective Training Load — COMPLETE / ACCEPTANCE VERIFIED / DEPLOYED.
+- Minimum Training Stimulus v1 — COMPLETE / PRE-MERGE PRODUCTION-COPY ACCEPTANCE VERIFIED / DEPLOYED.
 - Autonomy Breadth + Time Observability v1 — DEPLOYED / ACCEPTANCE VERIFIED.
 - Current Action ETA Observability v1 — COMPLETE / ACCEPTANCE VERIFIED / DEPLOYED / LIVE UX VERIFIED.
 - Runtime Speed Control v1 — COMPLETE / ACCEPTANCE VERIFIED / DEPLOYED / LIVE UX VERIFIED.
@@ -54,18 +55,30 @@ LLMs propose structured actions only. Deterministic runtime owns legality and mu
 - Read-Only Grading Strength Exemplar — COMPLETE / PRE-MERGE ACCEPTANCE VERIFIED / DEPLOYED.
 - Attribute Grading Batch 1 — COMPLETE / PRE-MERGE ACCEPTANCE VERIFIED / DEPLOYED.
 
+## Training progression state
+
+Current short-term chain:
+`target -> readiness -> fatigue inefficiency -> effectiveness -> effective workload -> immediate physiology -> session stimulus evidence`.
+
+Minimum Training Stimulus v1 is intentionally narrow:
+- Free Weights train session only;
+- Strength domain only;
+- `stimulus_units = effective_minutes / 60`;
+- persisted as `training_stimulus` in completed action outcome and matching event payload;
+- Heavy Bag and all other targets emit no Strength stimulus in v1;
+- raw `raps_pa.strength` and its derived grade remain unchanged;
+- no accumulated stimulus, adaptation, hypertrophy/body mutation, or schema v5.
+
+Evidence: PR #14 merge `3578de12ebc750aca397b16f01f8bd368e1af11a`; CI #393 SUCCESS; Minimum Training Stimulus Acceptance #2 `31685799302` SUCCESS against a disposable production DB copy; release `22f8a3d7776137cb72d2926caac37d1002e6d8ed`; Deploy #140 `31685928444` SUCCESS.
+
 ## Grading state
 
-`raps-100-proof-v1` is a named derived-only proof family for explicitly opted-in compatible 0..100 Attributes fields. Raw profile values remain authoritative; grade metadata is derived at query time and displayed by Telegram without profile mutation or schema v5.
+`raps-100-proof-v1` is derived-only for 36 explicitly opted-in compatible 0..100 Attributes fields. Raw values remain authoritative.
 
-Attribute Grading Batch 1 covers 36 explicit fields across Physical, Mental, Intellectual (except IQ), Social and Verbal Charisma sections. Explicit membership prevents future numeric fields from silently inheriting this scheme.
-
-Separate grading families are mandatory where semantics differ:
-- `raps_ia.iq` is excluded because its scale differs;
-- Skills are excluded because score/progression/experience semantics may differ;
-- Body measurements/composition are excluded and require a **separate exemplar + batch**. Do not reuse flat attribute thresholds by default; body grading may depend on units, stature/proportion context, composition and/or genetic ceilings.
-
-Evidence: Strength exemplar PR #12 merge `d0bdabc1faaede8adb6c3e8dd29a9b5ff9ba3cb3`, acceptance `31683547092`, Deploy #138 `31683632205`; Attribute Batch PR #13 merge `76bcf7fe7225a9504909f9d939bbcdd673bac7c6`, CI #386 SUCCESS, batch acceptance `31683936844`, release `d14cae7ef88fc9e157caa5fa0b930f36aba3cf77`, Deploy #139 `31684009154` SUCCESS.
+Separate grading families remain mandatory:
+- IQ excluded because its scale differs;
+- Skills excluded because score/progression/experience semantics may differ;
+- Body measurements/composition require a **separate exemplar + batch** and must not inherit flat attribute thresholds by default.
 
 ## Time and planning state
 
@@ -73,8 +86,6 @@ Action duration remains integer simulated minutes with minimum 1 minute. `1 sim 
 
 ## Exact resume point
 
-Attribute grading is live and the body-family separation is locked. Next choose one of two bounded paths:
-1. **Body grading exemplar** with its own calculation semantics, then batch compatible body fields only after that exemplar is proven; or
-2. **Minimum Training Stimulus** on one target/domain, leaving body grading deferred.
+**Minimum Training Stimulus v1 is live.** The next bounded candidate is **Minimum Adaptation/Progression v1 — Free Weights + Strength only**.
 
-Do not mix Body, IQ or Skills into the existing attribute grading family merely because their values are numeric.
+Before any Strength mutation, explicitly define how session stimulus plus recovery/time produce adaptation, including diminishing returns and tiny deterministic raw-value changes. Do not jump directly from one session to a large attribute gain. Body grading remains a separate deferred family unless Creator explicitly redirects.
