@@ -1,0 +1,19 @@
+name: Thorne Estate Training Environment v1 Acceptance
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - 'config/worlds/home.v1.json'
+      - 'scripts/validation/validate_thorne_estate_training_environment_v1.py'
+      - '.github/workflows/thorne-estate-training-environment-v1-acceptance.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  acceptance:
+    uses: ./.github/workflows/reusable-production-copy-validation.yml
+    with:
+      validator_path: scripts/validation/validate_thorne_estate_training_environment_v1.py
+    secrets: inherit
