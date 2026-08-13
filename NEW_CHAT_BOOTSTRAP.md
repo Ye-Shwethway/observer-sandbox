@@ -9,15 +9,13 @@ Read `AGENTS.md`, then this file, then `ROADMAP.md`, then task-relevant contract
 
 ## Development workflow
 
-Default flow is now intentionally minimal:
+Default flow is intentionally minimal:
 
-`branch -> focused tests + CI -> merge -> automatic deploy when runtime-affecting -> read-only production check`
+`test -> focused tests + CI -> merge to main -> automatic deploy when runtime-affecting -> read-only production check`
 
-`docs/PRODUCTION_VALIDATION_AND_RELEASE_PROTOCOL.md` is the canonical minimal contract.
+Keep only persistent `main` and reusable `test` branches unless a concrete exceptional need requires otherwise. After merge/deploy, fast-forward `test` back to current `main` before the next slice.
 
-Production-copy validation is **optional**, not mandatory. Use it only for genuinely state-sensitive, migration-heavy, or otherwise high-risk changes that local tests/CI cannot cover well enough. Reuse the existing shared copy tooling when needed; do not invent new SSH/copy frameworks.
-
-The old release-marker ceremony, deploy-trigger policy, and protocol-standardization acceptance gate are no longer part of normal development. Prefer small reversible changes and Git revert/rollback over layered release ceremony.
+Production-copy validation is optional, not mandatory. Use it only for genuinely state-sensitive, migration-heavy, or otherwise high-risk changes that local tests/CI cannot cover well enough. Prefer small reversible changes and Git rollback over layered release ceremony.
 
 ## Production baseline
 
@@ -28,38 +26,40 @@ The old release-marker ceremony, deploy-trigger policy, and protocol-standardiza
 - schema: v4
 - world revision: `thorne-estate-v3.2-training-environment`
 - autonomy: enabled / normal
-- latest verified speed: `5.0x` (read-only observation; re-read when exact cadence matters)
+- latest verified speed: `2.0x` at Deploy #161 readback; re-read whenever exact cadence matters
 - cognition: Gemini `gemini-3.5-flash-lite`
 - Telegram: connected
 
-Latest simplified-flow deployment: **Deploy #160 `31730326878` SUCCESS** from main merge `89482e609995d8af84f33096cbc40fdd69c3ecc9`.
+Latest deployment: **Deploy #161 `31734036894` SUCCESS** from main merge `7516f6c09a371803508f67a1575d6ce83a170de2`.
 
 ## Environment and training methods
 
 Thorne Estate interior training environment v3.2 is deployed. Training Hall and Top-Class Home Gym expose the richer bounded equipment surface; exterior/Tahoe traversal remains deferred.
 
-Training Method Semantics v1 is deployed. `config/training_methods.v1.json` provides authored method/family/workload-channel metadata. Equipment/method metadata describes workload evidence; it does not own attribute progression formulas.
+Training Method Semantics v1 is deployed. `config/training_methods.v1.json` provides authored method/family/workload-channel metadata plus descriptive planning metadata. The canonical evidence revision remains `training-method-semantics-v1`, preserving Strength/Stamina/Agility evidence contracts.
+
+## Dynamic Resource Awareness & Choice Breadth v1
+
+Status: **COMPLETE / CI VERIFIED / DEPLOYED**.
+
+PR #50 merged as `7516f6c09a371803508f67a1575d6ce83a170de2`; CI #557 succeeded; Deploy #161 succeeded.
+
+Cognition now receives:
+- the full legal current-room action/resource option set produced by generic capability matching;
+- one-hop reachable-location resource/action/training-method previews for movement planning;
+- strict move-first semantics for distant resources;
+- recent action-target usage metadata as context (`recent_uses`, last simulated use, repeated flag), never as a hard repetition ban;
+- resource-aware guidance to consider sensible variety when equivalent choices exist.
+
+Focused tests prove all 10 Home Gym training resources are exposed to cognition, connected-room resources are visible for planning without becoming directly actionable, and repeated Free Weights use remains legal while being marked as recently repeated.
+
+No Mind Engine, resource scoring system, forced rotation, schema change, or progression formula change was added.
 
 ## Progression state
 
-### Strength
-
-Strength progression is active and deployed. Free Weights remains the deliberate Strength stimulus source. Settlement is idempotent and action-boundary activated.
-
-### Stamina
-
-Stamina progression core + automatic activation are deployed. Pure-conditioning sources currently include:
-- High-Speed Treadmill / `steady_state_cardio`
-- Rowing Ergometer / `rowing_conditioning`
-- Altitude Training Chamber / `altitude_conditioning`
-
-Mixed movement/combat methods are not silently credited to Stamina.
-
-### Agility
-
-Agility Progression Core v1 and Automatic Activation v1 are now **merged and deployed**.
-
-Agility uses the authored `speed_agility_drills` evidence surface with its own progression semantics. It is not a clone of Strength or Stamina. Production-copy acceptance before activation proved 20h eligibility behavior, idempotent settlement, and Strength/Stamina isolation. Deploy #160 carried the accepted Agility activation code to production.
+- Strength: active/deployed/live-cycle validated; Free Weights remains the deliberate Strength source.
+- Stamina: active/deployed; pure-conditioning sources are treadmill, rowing ergometer, and altitude chamber.
+- Agility: active/deployed; `speed_agility_drills` from the Speed & Agility Station is the authored evidence surface.
 
 ## Core safety boundaries that remain
 
@@ -69,12 +69,10 @@ Agility uses the authored `speed_agility_drills` evidence surface with its own p
 - Creator controls remain typed/audited and follow `docs/CREATOR_CONTROL_POLICY.md`.
 - Post-deploy verification is read-only unless a concrete live control change is explicitly requested.
 
-## Expansion policy
-
-Use exemplar-first only for genuinely new invariants. Once a pattern is proven, batch structurally equivalent follow-ons. Do not force separate acceptance/deploy ceremony for every equivalent item.
-
 ## Exact resume point
 
-Resume physical progression expansion from the now-deployed **Agility** exemplar.
+Pause for Creator discussion and observe autonomous choice breadth after the resource-awareness deployment.
 
-Next decide whether **Speed** is structurally equivalent enough to batch from the same `speed_agility_drills` evidence family, or whether it needs one small separate exemplar because its adaptation semantics differ materially. Keep the decision evidence-driven and minimal; do not recreate the removed release/validation process layers.
+First determine from actual post-deploy behavior whether Darian begins using more of the resources/methods he can now perceive. If the legal option breadth is visible but choices still collapse onto Free Weights/Heavy Bag, inspect real decision history before proposing a choice-policy or future Mind Engine layer.
+
+Do not start Speed progression or forced equipment rotation without fresh Creator authorization.
