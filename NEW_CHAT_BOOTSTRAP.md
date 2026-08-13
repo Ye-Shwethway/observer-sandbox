@@ -5,7 +5,7 @@ Last synchronized: 2026-08-13
 
 ## Startup / authority
 
-Read `AGENTS.md`, then this file, then task-relevant contracts.
+Read `AGENTS.md`, then this file, then `ROADMAP.md`, then task-relevant contracts.
 
 Core/runtime/schema/action: `docs/ARCHITECTURE.md` + `docs/COMPOSABLE_RUNTIME_ARCHITECTURE_AUDIT.md`.
 Spatial: `docs/WORLD_LOCATION_NODE_MODEL.md`.
@@ -16,6 +16,18 @@ Needs/effects/training recovery: `docs/PHYSIOLOGY_AND_ITEM_EFFECTS.md`.
 Future grading: `docs/FUTURE_GRADING_SYSTEM.md`.
 
 Authority: current Creator instruction > canonical repo > verified live VPS/runtime/DB > deployed workflow evidence > CI/tests > this bootstrap > old chat/memory. Never conflate committed, CI-validated, deployed, DB-applied and Creator-live-UX-verified states.
+
+## New-chat execution gate
+
+This handoff is intentionally **proposal-gated**.
+
+On a fresh chat:
+1. reconcile the canonical files above;
+2. summarize current completed/live-verified state and the proposed next slice;
+3. do **not** modify code/config/schema/workflows/production merely because the proposal exists;
+4. wait for explicit Creator approval before implementing P3.2 or any alternate next slice.
+
+If the Creator changes the proposed direction, current instruction wins and the roadmap should be revised before implementation.
 
 ## Development policy — minimum runnable expansion
 
@@ -40,7 +52,7 @@ Do not pre-build large inventory, grading, memory, relationship, environment, co
 
 Production continues autonomously. Re-read live state whenever exact current Darian action/stats matter.
 
-Latest Creator-authorized production restore was applied successfully by Creator Control workflow #1 at `2026-08-13T05:33:26Z`. Immediate post-restore snapshot:
+Latest verified Creator-authorized production restore was applied successfully by Creator Control workflow #1 at `2026-08-13T05:33:26Z`. Immediate post-restore snapshot:
 - location: Master Bathroom
 - sim time: `2025-05-01T14:50:00+00:00`
 - current action: idle immediately after restore
@@ -54,7 +66,7 @@ Latest Creator-authorized production restore was applied successfully by Creator
 - autonomy remained enabled / normal / unpaused / `1.0x`
 - actor wake reason set to `creator_basic_stats_restored`.
 
-Treat this as a historical readback; the live actor may have moved or acted afterward.
+Treat this as historical readback; the live actor may have moved or acted afterward.
 
 ## LEGO runtime foundation
 
@@ -88,7 +100,7 @@ Current hierarchy:
 
 IDs are globally scoped and path-independent. `contains` = structural hierarchy, `connected_to` = traversal, `located_at` = dynamic presence. Estate exterior remains locked/non-traversable. Later `loc_south_lake_tahoe` can be inserted above the estate without renaming existing nodes.
 
-## P2 Telegram Observer — proven browsing path
+## Proven Telegram observer path
 
 ### Estate Browser
 Status: COMPLETE / LIVE UX VERIFIED.
@@ -133,13 +145,13 @@ Evidence:
 - Telegram integration `0fd68b22a7d5a8b7d360dc8a617124753b5b3847`
 - CI #272 / run `31668499392` SUCCESS
 - Deploy #119 / run `31668483842` SUCCESS
-- Creator confirmed the deployed profile navigation and values were good.
+- Creator confirmed deployed profile navigation and values were good.
 
 P2.2 browsing is COMPLETE / LIVE UX VERIFIED.
 
 ## P2.3.1 — Minimum Creator Restore Control
 
-Status: IMPLEMENTED / CI-VALIDATED / DEPLOYED / PRODUCTION MUTATION VERIFIED — TELEGRAM UI ACCEPTANCE PENDING.
+Status: COMPLETE / LIVE UX VERIFIED.
 
 Purpose: give the Creator a narrow, audited way to restore a character's basic living state when slow 1x production recovery would otherwise make development observation impractical.
 
@@ -159,20 +171,17 @@ Operator surfaces:
 - `.github/workflows/creator-control.yml` exposes the same backend and used a persistent marker for the one-time initial production restore.
 
 Evidence:
-- backend commit `89cb9f4b37726a7a6bdda9770ec252fbaa3e12ca`
-- CLI commit `e35fb37fd45f9bc81af6943c59da5c64153a256c`
-- Telegram commit `583141d9f20849dac69671de5972960eed27e9c3`
+- backend `89cb9f4b37726a7a6bdda9770ec252fbaa3e12ca`
+- CLI `e35fb37fd45f9bc81af6943c59da5c64153a256c`
+- Telegram `583141d9f20849dac69671de5972960eed27e9c3`
 - focused tests `a4f825838ce93ed28ac5b95794d630dccc29854b`
 - field-authority/lease refinement `ceae7247abcbe0a40fe65602e1bb3f970028a73c`
 - CI #292 / run `31670662395` SUCCESS
 - Deploy #126 / run `31670662394` SUCCESS
-- Creator Control workflow commit `d6ce3328f2a3b5b8314dd9e74054ab9681a6ff0f`
+- Creator Control workflow `d6ce3328f2a3b5b8314dd9e74054ab9681a6ff0f`
 - Creator Control #1 / run `31670700838` SUCCESS and live production reset/readback verified
-- canonical policy commit `ec8854173e523b50f14d35001a1ba33aece7b58f`
-- roadmap sync `50a9c2efea0afd3e46a0ae2cb6c032452162591b`
-- repository-agent invariant lock `c17a2b15a38fb423c4e31f003cc343c0b0dac118`.
-
-Canonical policy: `docs/CREATOR_CONTROL_POLICY.md`.
+- canonical policy `docs/CREATOR_CONTROL_POLICY.md`
+- Creator inspected the deployed Telegram confirmation flow and confirmed the UI was good.
 
 Do not expand this into arbitrary field editing or a generic admin console. Add future typed controls only for concrete operational needs.
 
@@ -180,60 +189,70 @@ Do not expand this into arbitrary field editing or a generic admin console. Add 
 
 Status: COMPLETE / LIVE UX VERIFIED.
 
-Purpose: first post-v4 proof that a richer behavior can activate one dormant ontology field and become runnable/observable without building a giant subsystem.
-
 Live state:
 - `physiology.fatigue`, `0..100`, higher = worse;
-- already existed in profile ontology; now activated as simulated generic field owned by `physiology_engine`;
-- default observer/runtime value is `0.0` before first persisted change;
-- do not seed this value in deploy-time runtime defaults because doing so would reset accumulated production fatigue.
-
-Deterministic tuning:
+- existing profile ontology field activated as simulated generic state owned by `physiology_engine`;
 - passive fatigue recovery `-1.5/hour`;
 - train `+20/hour` before passive drift -> one-hour net `+18.5`;
 - rest `-7/hour` before passive drift -> one-hour net `-8.5`;
 - sleep `-10/hour`, idle `-2/hour`, read `-1/hour` before passive drift;
-- train options and direct validation are blocked at fatigue `>=70`;
-- baseline normal morning training is not selected at fatigue `>=55`;
-- high fatigue prioritizes recovery;
+- train options and direct validation blocked at fatigue `>=70`;
+- baseline normal morning training not selected at fatigue `>=55`;
 - action/event state changes include fatigue.
 
 Telegram:
-- Profile has a read-only `Recovery` section;
-- it displays `Systemic fatigue` from live generic fields while using the profile definition for label/metadata;
-- it does not copy live fatigue into `character_profile_values`;
+- Profile has read-only `Recovery` section;
+- displays `Systemic fatigue` from live generic fields while using profile definition for label/metadata;
+- does not copy live fatigue into `character_profile_values`;
 - Creator tested the deployed Recovery section and confirmed it was good.
 
-Explicit non-goals for P3.1:
-- no strength gain;
-- no hypertrophy/body progression;
-- no per-muscle soreness;
-- no workout programming/exercise taxonomy;
-- no injury-probability system;
-- no grading/tier progression;
-- no general training-adaptation framework.
-
-Implementation evidence:
+Evidence:
 - core `cd126b42833802c0f9dba9b8169d389b98464172`
 - Recovery observer `5a424fe23ccb83552dcde2cca02d23050736b51f`
 - default-zero refinement `a114a396112feeed6c5da37c03dfec13ba493df4`
 - Profile/Recovery regression `1fb5e4a270a753a1940dc1cc2fa75c030948125e`
-- docs contract `abe910280b50ea2e7ce2df87a93d42c4b52bb209`
-- P3 acceptance workflow final `c1c70bfda444003cde39c4fb5b227a95e21d3674`
 - CI #282 / run `31669206182` SUCCESS
 - CI #284 / run `31669332087` SUCCESS
-- Deploy #120 delivered the fatigue engine
-- Deploy #122 / run `31669140421` delivered the Recovery observer source and succeeded
-- P3 Training Recovery Acceptance #2 / run `31669332118` SUCCESS.
+- Deploy #120 fatigue engine
+- Deploy #122 / run `31669140421` Recovery observer SUCCESS
+- P3 Training Recovery Acceptance #2 / run `31669332118` SUCCESS with zero model calls.
 
-Bounded acceptance #2 used a disposable production DB copy and **zero model calls**:
-- before fatigue `0.0`
-- after 60m train fatigue `18.5`
-- after 60m rest fatigue `10.0`
-- fatigue `75` blocked train both in options and deterministic validation.
+Do not automatically expand this into a full training system.
 
-## Exact resume point
+## Proposed next slice — P3.2 Minimum Targeted Training Session
 
-**P3.1 is LIVE UX VERIFIED. P2.3.1 Creator Restore Control is implemented, deployed and already used successfully to restore production Darian. Creator should test the deployed Telegram character control flow: `Characters -> Darian -> 🩺 Restore Basic Stats -> confirmation` (the actual restore has already been applied once, so another confirmation would intentionally reset the stats again). If the UI is good, mark P2.3.1 LIVE UX VERIFIED and select the next independent minimum-runnable slice.**
+Status: **PROPOSAL ONLY / NOT AUTHORIZED / CREATOR APPROVAL REQUIRED**.
+
+Intent: exercise the already-built LEGO composition foundation in ordinary autonomous behavior by making the existing `train` action use a real nearby training object.
+
+Proposed minimum scope:
+- keep existing `train` action and fatigue mechanics;
+- expose existing Home Gym targets such as Heavy Bag and Free Weights when co-located;
+- deterministic validation checks target capability and co-location;
+- persist target/resource on first-class action instance and event;
+- cognition sees only legal targeted-training options through current wake-on-demand path;
+- Telegram current/history/notification surfaces show the friendly selected training target through existing generic target resolution;
+- focused tests + bounded disposable acceptance prove targeted training completes and fatigue behavior remains correct.
+
+Explicit non-goals:
+- no reps/sets/weights programming;
+- no exercise taxonomy/framework;
+- no strength/skill gain;
+- no hypertrophy/body progression;
+- no per-muscle soreness/injury system;
+- no grading/tier progression;
+- no schema v5 unless a concrete missing invariant is proven.
+
+Why proposed:
+- small and independently observable;
+- directly proves `Actor + Action + Place + Target/Resource` in production logic;
+- improves world specificity without subsystem sprawl;
+- gives future skill progression/grading a clean attachment point without implementing either now.
+
+**Do not implement this proposal until the Creator explicitly approves it in the new chat.**
+
+## Exact new-chat resume point
+
+**The repository is prepared for instant reconciliation. P2.2 browsing, P2.3.1 Creator Restore Control and P3.1 systemic fatigue/recovery are COMPLETE / LIVE UX VERIFIED. Latest handoff CI #298 / run `31671034749` succeeded. The proposed next slice is P3.2 Minimum Targeted Training Session, but it is NOT authorized. A fresh chat must reconcile the canonical repo first, summarize the current checkpoint and proposal, then wait for explicit Creator approval before code/config/schema/workflow changes or production mutation.**
 
 Preserve 1x wake-on-demand production autonomy, scoped ids, locked unfinished boundaries, actor-scoped scheduler state, first-class actions/events, Telegram presentation rules, notification preferences, profile/runtime separation, grading-as-future-derived capability, typed/audited Creator-control authority and the minimum-runnable expansion policy.
