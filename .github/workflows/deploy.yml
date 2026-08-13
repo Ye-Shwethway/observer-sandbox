@@ -1,17 +1,13 @@
 name: Deploy Observer Sandbox
 # Control-plane deploy. Secrets are provisioned privately; deploy does not enable autonomy.
-# Release marker: P3.2 accepted production sync.
+# Production release policy: accepted main is deployed only by workflow dispatch or deploy/RELEASE marker.
 
 on:
   workflow_dispatch:
   push:
     branches: [main]
     paths:
-      - 'src/**'
-      - 'config/**'
-      - 'deploy/**'
-      - 'pyproject.toml'
-      - 'migrations/**'
+      - 'deploy/RELEASE'
       - '.github/workflows/deploy.yml'
 
 concurrency:
