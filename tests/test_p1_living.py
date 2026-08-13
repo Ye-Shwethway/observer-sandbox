@@ -22,8 +22,11 @@ def test_p1_home_seed_and_darian_instantiation(tmp_path):
     db = tmp_path / "observer.sqlite3"
     initialize(db)
     with connect(db) as conn:
-        assert conn.execute("SELECT COUNT(*) FROM entities WHERE entity_type='location'").fetchone()[0] == 5
+        assert conn.execute("SELECT COUNT(*) FROM entities WHERE entity_type='location'").fetchone()[0] >= 20
         assert conn.execute("SELECT COUNT(*) FROM entities WHERE entity_type='object'").fetchone()[0] == 15
+        assert conn.execute("SELECT name FROM entities WHERE id='home'").fetchone()[0] == "Thorne Estate"
+        assert conn.execute("SELECT name FROM entities WHERE id='room_bedroom'").fetchone()[0] == "Darian's Master Suite"
+        assert conn.execute("SELECT name FROM entities WHERE id='room_gym'").fetchone()[0] == "Top-Class Home Gym"
         assert conn.execute("SELECT name FROM entities WHERE id='char_darian'").fetchone()[0] == "Darian Thorne"
         state = snapshot(conn)
         assert state["location"] == "room_bedroom"
@@ -34,12 +37,31 @@ def test_p1_home_seed_and_darian_instantiation(tmp_path):
         assert 0 <= state["sleepiness"] <= 100
 
 
+def test_estate_is_hierarchical_and_exterior_is_not_traversable(tmp_path):
+    db = tmp_path / "observer.sqlite3"
+    initialize(db)
+    with connect(db) as conn:
+        assert conn.execute(
+            "SELECT 1 FROM relations WHERE source_id='home' AND relation_type='contains' AND target_id='zone_underground'"
+        ).fetchone() is not None
+        assert conn.execute(
+            "SELECT 1 FROM relations WHERE source_id='zone_underground' AND relation_type='contains' AND target_id='room_gym'"
+        ).fetchone() is not None
+        assert conn.execute(
+            "SELECT 1 FROM relations WHERE relation_type='connected_to' AND (source_id='boundary_exterior' OR target_id='boundary_exterior')"
+        ).fetchone() is None
+        set_field(conn, "char_darian", "runtime.location", "room_foyer")
+        conn.commit()
+        with pytest.raises(ValueError):
+            validate_action(conn, "char_darian", Action("move", 5, "boundary_exterior"))
+
+
 def test_p1_runtime_rejects_non_adjacent_move(tmp_path):
     db = tmp_path / "observer.sqlite3"
     initialize(db)
     with connect(db) as conn:
         with pytest.raises(ValueError):
-            validate_action(conn, "char_darian", Action("move", 5, "room_gym"))
+            validate_action(conn, "char_darian", Action("move", 5, "room_armory"))
 
 
 def test_recovery_actions_increase_energy_and_rest_is_available_anywhere(tmp_path):
@@ -117,6 +139,8 @@ def test_restorative_item_action_requires_authored_effect(tmp_path):
     with connect(db) as conn:
         set_field(conn, "char_darian", "runtime.location", "room_kitchen")
         conn.execute("UPDATE entities SET capabilities_json='[\"eat\"]' WHERE id='obj_table'")
+        conn.execute("DELETE FROM relations WHERE target_id='obj_table' AND relation_type='contains'")
+        conn.execute("INSERT OR IGNORE INTO relations(source_id, relation_type, target_id) VALUES('room_kitchen','contains','obj_table')")
         conn.commit()
         with pytest.raises(ValueError, match="no authored eat physiological effect"):
             validate_action(conn, "char_darian", Action("eat", 20, "obj_table"))
@@ -137,9 +161,7 @@ def test_p1_darian_completes_one_simulated_day_autonomously(tmp_path):
         ).fetchall()
         assert len(events) == len(trace)
 
-        action_names = {
-            __import__("json").loads(row[0])["action"] for row in events
-        }
+        action_names = {__import__("json").loads(row[0])["action"] for row in events}
         assert "move" in action_names
         assert action_names & {"train", "eat", "drink", "sleep", "read", "rest"}
 
