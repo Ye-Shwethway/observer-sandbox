@@ -11,6 +11,7 @@ from pathlib import Path
 from typing import Any
 
 from .autonomy import set_autonomy_paused, set_autonomy_speed
+from .creator_control import BASIC_STAT_BASELINE, restore_basic_stats
 from .db import connect, migrate
 from .observer_query import (
     character_summary,
@@ -219,6 +220,16 @@ def _back_home_keyboard() -> list[list[dict[str, str]]]:
     return [[{"text": "⌂ Observer Home", "callback_data": "nav:home"}]]
 
 
+def _character_keyboard_for_user(character_id: str, user_id: int) -> list[list[dict[str, str]]]:
+    keyboard = character_keyboard(character_id)
+    if _user_role(user_id) == "owner":
+        keyboard.insert(
+            1,
+            [{"text": "🩺 Restore Basic Stats", "callback_data": f"ctl:restore_prompt:{character_id}"}],
+        )
+    return keyboard
+
+
 def _fmt_character(data: dict[str, Any]) -> str:
     c = data["character"]
     s = data["state"]
@@ -233,6 +244,42 @@ def _fmt_character(data: dict[str, Any]) -> str:
         f"💧 Thirst       {s['thirst']:.1f}\n"
         f"🌙 Sleepiness   {s['sleepiness']:.1f}\n"
         f"🫧 Cleanliness  {s['cleanliness']:.1f}"
+    )
+
+
+def _fmt_restore_prompt(character_name: str) -> str:
+    return (
+        f"🩺 RESTORE {character_name.upper()} BASIC STATS\n"
+        "━━━━━━━━━━━━━━━━━━\n"
+        "Creator authority required.\n\n"
+        f"⚡ Energy       {BASIC_STAT_BASELINE['needs.energy']:.0f}\n"
+        f"🍽 Hunger       {BASIC_STAT_BASELINE['needs.hunger']:.0f}\n"
+        f"💧 Thirst       {BASIC_STAT_BASELINE['needs.thirst']:.0f}\n"
+        f"🌙 Sleepiness   {BASIC_STAT_BASELINE['needs.sleepiness']:.0f}\n"
+        f"🫧 Cleanliness  {BASIC_STAT_BASELINE['physiology.cleanliness']:.0f}\n"
+        f"🛌 Fatigue      {BASIC_STAT_BASELINE['physiology.fatigue']:.0f}\n\n"
+        "The current pending autonomous action will be cancelled so cognition can re-evaluate from the restored state. "
+        "Location, simulation time, profile canon and autonomy mode are preserved."
+    )
+
+
+def _fmt_restore_result(result: dict[str, Any]) -> str:
+    after = result["after"]
+    cancelled = "Yes" if result.get("cancelled_action_id") else "No"
+    return (
+        "✅ CREATOR RESTORE APPLIED\n"
+        "━━━━━━━━━━━━━━━━━━\n"
+        f"👤 {result['character_name']}\n"
+        f"📍 {after['location_name']}\n"
+        f"🕒 {_fmt_time(after['sim_time'])}\n\n"
+        f"⚡ Energy       {after['energy']:.1f}\n"
+        f"🍽 Hunger       {after['hunger']:.1f}\n"
+        f"💧 Thirst       {after['thirst']:.1f}\n"
+        f"🌙 Sleepiness   {after['sleepiness']:.1f}\n"
+        f"🫧 Cleanliness  {after['cleanliness']:.1f}\n"
+        f"🛌 Fatigue      {after['fatigue']:.1f}\n\n"
+        f"🧹 Pending action cancelled: {cancelled}\n"
+        "🧠 Cognition will re-evaluate on the next wake."
     )
 
 
@@ -447,6 +494,28 @@ def _callback_view(conn, user_id: int, callback_data: str) -> tuple[str, list[li
     if callback_data == "nav:history":
         return _fmt_history(recent_history(conn, limit=16)), _back_home_keyboard()
 
+    if callback_data.startswith("ctl:restore_prompt:"):
+        character_id = callback_data.split(":", 2)[2]
+        if _user_role(user_id) != "owner":
+            return "🔒 Creator authority required for this control.", character_keyboard(character_id)
+        data = character_summary(conn, character_id)
+        return _fmt_restore_prompt(data["character"]["name"]), [
+            [{"text": "✅ Confirm Restore", "callback_data": f"ctl:restore_apply:{character_id}"}],
+            [{"text": "← Character", "callback_data": f"char:{character_id}"}],
+            [{"text": "⌂ Observer Home", "callback_data": "nav:home"}],
+        ]
+    if callback_data.startswith("ctl:restore_apply:"):
+        character_id = callback_data.split(":", 2)[2]
+        if _user_role(user_id) != "owner":
+            return "🔒 Creator authority required for this control.", character_keyboard(character_id)
+        result = restore_basic_stats(
+            conn,
+            character_id,
+            authority="creator",
+            requested_by=f"telegram:{user_id}",
+        )
+        return _fmt_restore_result(result), _character_keyboard_for_user(character_id, user_id)
+
     profile_view = profile_callback_view(conn, callback_data)
     if profile_view is not None:
         return profile_view
@@ -461,27 +530,30 @@ def _callback_view(conn, user_id: int, callback_data: str) -> tuple[str, list[li
         return _fmt_object(data), _object_keyboard(data)
     if callback_data.startswith("char:"):
         character_id = callback_data.split(":", 1)[1]
-        return _fmt_character(character_summary(conn, character_id)), character_keyboard(character_id)
+        return _fmt_character(character_summary(conn, character_id)), _character_keyboard_for_user(character_id, user_id)
     return "Unknown observer destination.", _back_home_keyboard()
 
 
 def _help(role: str) -> str:
     role_label = "Owner" if role == "owner" else "Authorized User"
-    return (
-        f"🌌 Observer Sandbox · {role_label}\n"
-        "━━━━━━━━━━━━━━━━━━\n"
-        "/start — Observer Home\n"
-        "/status — Runtime overview\n"
-        "/watch — Darian now + recent activity\n"
-        "/history [n] — Recent activity\n"
-        "/darian — Character summary\n"
-        "/home — Thorne Estate summary\n"
-        "/notify on|off — Proactive notifications\n"
-        "/pause — Pause autonomy\n"
-        "/resume — Resume autonomy\n"
-        "/speed <value> — Set runtime speed\n"
-        "/whoami — Show your Telegram identity"
-    )
+    lines = [
+        f"🌌 Observer Sandbox · {role_label}",
+        "━━━━━━━━━━━━━━━━━━",
+        "/start — Observer Home",
+        "/status — Runtime overview",
+        "/watch — Darian now + recent activity",
+        "/history [n] — Recent activity",
+        "/darian — Character summary",
+        "/home — Thorne Estate summary",
+        "/notify on|off — Proactive notifications",
+        "/pause — Pause autonomy",
+        "/resume — Resume autonomy",
+        "/speed <value> — Set runtime speed",
+    ]
+    if role == "owner":
+        lines.append("/restorestats [character_id] — Restore basic living stats")
+    lines.append("/whoami — Show your Telegram identity")
+    return "\n".join(lines)
 
 
 def handle_command(db_path: str | Path, *, user_id: int, text: str) -> str:
@@ -527,6 +599,20 @@ def handle_command(db_path: str | Path, *, user_id: int, text: str) -> str:
         if command in {"/notion/on", "/notion/off"}:
             enabled = _set_notifications(conn, user_id, command.endswith("/on"))
             return f"🔔 Notifications {'ON' if enabled else 'OFF'}\n━━━━━━━━━━━━━━━━━━\nPreference saved."
+        if command == "/restorestats":
+            if role != "owner":
+                return "🔒 Creator authority required for /restorestats."
+            character_id = rest[0] if rest else "char_darian"
+            try:
+                result = restore_basic_stats(
+                    conn,
+                    character_id,
+                    authority="creator",
+                    requested_by=f"telegram:{user_id}",
+                )
+            except KeyError:
+                return f"Unknown character: {character_id}"
+            return _fmt_restore_result(result)
         if command == "/pause":
             return _fmt_status(set_autonomy_paused(conn, True))
         if command == "/resume":
