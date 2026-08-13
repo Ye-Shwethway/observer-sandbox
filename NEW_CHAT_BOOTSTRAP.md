@@ -167,7 +167,10 @@ Evidence:
 - CI #292 / run `31670662395` SUCCESS
 - Deploy #126 / run `31670662394` SUCCESS
 - Creator Control workflow commit `d6ce3328f2a3b5b8314dd9e74054ab9681a6ff0f`
-- Creator Control #1 / run `31670700838` SUCCESS and live production reset/readback verified.
+- Creator Control #1 / run `31670700838` SUCCESS and live production reset/readback verified
+- canonical policy commit `ec8854173e523b50f14d35001a1ba33aece7b58f`
+- roadmap sync `50a9c2efea0afd3e46a0ae2cb6c032452162591b`
+- repository-agent invariant lock `c17a2b15a38fb423c4e31f003cc343c0b0dac118`.
 
 Canonical policy: `docs/CREATOR_CONTROL_POLICY.md`.
 
