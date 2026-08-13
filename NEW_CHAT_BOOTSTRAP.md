@@ -5,111 +5,160 @@ Last synchronized: 2026-08-13
 
 ## Startup / authority
 
-Read `AGENTS.md`, then this file, then task-relevant repo files. Read `ROADMAP.md` for roadmap work, `docs/ARCHITECTURE.md` for core runtime work, `docs/COMPOSABLE_RUNTIME_ARCHITECTURE_AUDIT.md` for the current pre-expansion architecture audit, `docs/WORLD_LOCATION_NODE_MODEL.md` for spatial/world topology, `docs/TELEGRAM_OBSERVER_ARCHITECTURE.md` for Telegram work, `docs/TELEGRAM_NOTIFICATION_POLICY.md` for proactive notifications, and `docs/PHYSIOLOGY_AND_ITEM_EFFECTS.md` for needs/world-resource/item-effect work.
+Read `AGENTS.md`, then this file, then task-relevant contracts. Core/runtime/schema/action work: `docs/ARCHITECTURE.md` + `docs/COMPOSABLE_RUNTIME_ARCHITECTURE_AUDIT.md`. Spatial work: `docs/WORLD_LOCATION_NODE_MODEL.md`. Telegram: `docs/TELEGRAM_OBSERVER_ARCHITECTURE.md` + `docs/TELEGRAM_NOTIFICATION_POLICY.md`. Needs/effects: `docs/PHYSIOLOGY_AND_ITEM_EFFECTS.md`.
 
-Authority: current Creator instruction > canonical repo > verified live VPS/runtime/DB > deployed workflow evidence > CI/tests > this bootstrap > old chat/memory. Never conflate committed, CI-validated, deployed, DB-applied, and live-behavior-verified states. Update this file after material changes.
+Authority: current Creator instruction > canonical repo > verified live VPS/runtime/DB > deployed workflow evidence > CI/tests > this bootstrap > old chat/memory. Never conflate committed, CI-validated, deployed, DB-applied and live-behavior-verified states.
 
 ## Production baseline
 
 - Repo: `Ye-Shwethway/observer-sandbox` private
-- VPS: `107.175.30.238`, Ubuntu 24.04
-- App: `/opt/observer-sandbox`
+- VPS app: `/opt/observer-sandbox`
 - DB: `/var/lib/observer-sandbox/observer.sqlite3`
 - systemd: `observer-sandbox`
-- physical SQLite schema: version 3
-- continuous autonomy: enabled, normal, 1x
-- cognition: Gemini dynamically resolved Flash-Lite binding for `character:char_darian / cognition`
-- cognition mode: wake-on-demand only
-- Telegram: live, Owner/Allowed split configured
-- notifications: persistent per user, default ON
+- **physical SQLite schema: version 4**
+- world root: `world_observer_universe`
+- world identity revision: `thorne-estate-v3.0-scoped-ids`
+- continuous Darian autonomy: enabled, normal, 1x
+- cognition: configured Gemini character/cognition binding, wake-on-demand only
+- Telegram: live, Owner/Allowed split; per-user notifications default ON
 
-Production continues autonomously. Re-read live state whenever exact current Darian state matters.
+Production continues autonomously. Re-read live state whenever exact current Darian activity/stat values matter.
 
-## Core composable-universe target
+## Composable LEGO runtime — PRE-EXPANSION HARDENING COMPLETE
 
-The Creator's intended LEGO-like runtime expression is:
+Canonical runtime expression:
 
-`Actor(s) + Action + Place + Simulation Time + Conditions/Modifiers + Resources/Targets -> validated transition -> State Changes + Events`
+`Actor(s) + Action + Place + Simulation Time + Conditions/Modifiers + Resources/Targets -> Validation -> State Changes + Events`
 
-`docs/COMPOSABLE_RUNTIME_ARCHITECTURE_AUDIT.md` is the current one-time pre-expansion audit. It is **PROPOSED architecture**, not yet implementation authorization.
+The prior audit is no longer merely proposed. Schema-v4 foundation is implemented.
 
-Audit conclusion: the entity/relation graph, field-authority model, deterministic validation/application boundary, global sim clock and scoped world identities are good foundations, but several Darian-only prototype seams should be removed before broad South Lake Tahoe expansion or a second autonomous character.
+### State ownership
 
-Recommended hardening gate:
-1. actor-scoped runtime/autonomy state instead of singleton pending/lease/retry/cognition keys;
-2. first-class action-instance envelope with action id, actor/participants, target/resources, place, planned start/end time, conditions/modifiers and status;
-3. data-driven action-definition registry before the verb vocabulary grows;
-4. generic conditions/modifiers/effects contract including future temporary/source/stack semantics;
-5. queryable event envelope with location, participants, action/causal references and state-change summary;
-6. definition/template vs concrete instance vs runtime-state distinction;
-7. explicit ownership/possession/dynamic-location semantics before inventory/movable objects grow;
-8. fresh-DB + legacy-development migration + accelerated acceptance after the cutover.
+Universe-global `runtime_state` owns shared state such as:
+- `sim_time`
+- speed
+- pause
+- world id
+- global/UI settings where appropriate.
 
-Deferred until their slices: full inventory quantities/stacks/durability, rich relationship simulation, memory engine, environment/weather, complex synchronized group actions.
+Per-actor `actor_runtime` owns:
+- autonomy enabled/mode
+- pending action id
+- lease
+- retry/backoff
+- cognition wake reason/stats.
+
+Retired Darian-only singleton scheduler JSON keys are migrated into `actor_runtime` and are no longer authoritative.
+
+### First-class actions
+
+`action_definitions` contains data-driven core action metadata. Current verbs include move/sleep/eat/drink/shower/rest/inspect/use/train/read/idle.
+
+`action_instances` persists:
+- action id/type
+- actor
+- place
+- target
+- participants/resources
+- condition/modifier snapshots
+- duration and planned sim/wall timing
+- status
+- outcome/state-change data.
+
+Actor runtime references a pending action by id. Domain-specific validation may layer on top of generic action-definition metadata.
+
+### Multi-actor scheduling/time
+
+The service enumerates all active actor runtimes; it no longer structurally assumes only Darian can be scheduled.
+
+One universe has one sim clock, while each action has its own interval. Same-start concurrent actor actions do **not** serially double-count duration; the universe clock advances to the maximum committed action end. Tests include Darian + a Quasi stub with independent pending actions and concurrent completion.
+
+Quasi is **not yet a production autonomous character**; the stub is test-only proof of architecture.
+
+### Events
+
+Events now support queryable:
+- event UUID
+- action id
+- location id
+- caused-by event id
+- structured state changes
+- normalized `event_participants`.
+
+Action-completion events link back to the action instance.
+
+### Definitions / instances / modifiers
+
+`entity_definitions` + `entities.definition_id` provide reusable-definition -> concrete-instance separation for future items/equipment.
+
+Immediate effect operations support add/multiply/set/clamp. `active_modifiers` provides the persistence socket for sourced/time-bounded/conditional modifiers and stack policy. Full modifier evaluation across every future domain remains deferred.
+
+### Dynamic location / possession semantics
+
+`contains` = structural/static hierarchy.
+`connected_to` = traversable topology.
+`located_at` = dynamic physical presence.
+Future ownership/possession relations remain distinct: `owned_by`, `carried_by`, `equipped_by`, container/storage semantics.
+
+`src/observer_sandbox/location_runtime.py` exposes the generic dynamic-location boundary. Character `runtime.location` remains a mirrored compatibility/cache path during transition; static fixtures may resolve through structural containment.
+
+## Schema v4 migration/evidence
+
+Key implementation commits include:
+- composition schema foundation `c617ffe13c2cc081d3ef34d9f7357a808fe5c285`
+- DB schema v4 `9f3accd77e1f0cff399a136981c2e887b9362f1a`
+- actor runtime `88998c35ab1ef7507cbbfffe2cf8c9e086cb85ae`
+- runtime initialization/migration `3916e4a124c5d0667ac82cecb5b0b8aec7e58e33`
+- event linkage `e8c1da4745799089c697dedfe65ea36749e0b9a8`
+- actor-scoped autonomy scheduler `00cfa11fe60d3ab4708b7dbb09fe98610da2acd7`
+- concurrency-safe action time `f2b372c577514e97b23c4b330bfc37dbfa9c1fa6`
+- multi-actor service loop `9b210e3c9b332659a3303c4cd1a74c59c02de1cc`
+- generic dynamic location `57c62df9f542e36c29007a4fae8bf6defb5bcc4f`
+- actor-generic Telegram action notification `dffd5869ff7431ce2a21f05d3b92b9f8086d33a8`
+
+CI #248 / run `31665917748`: SUCCESS after schema-v4 composition tests, including independent multi-actor pending actions, concurrent-clock invariant, action/event participants, definition-instance/modifier sockets and dynamic-location contract.
+
+Deploy #112 / run `31665737560`: SUCCESS. Live readback verified systemd active, Telegram API connected, **schema_version=4**, `world_id=world_observer_universe`, autonomy enabled/normal, paused false, speed 1.0, and a valid actor-scoped pending action id. Cognition telemetry survived migration; old legacy pending was cleared at migration boundary rather than invented as a partial v4 action.
+
+Bounded Autonomy Acceptance #5 / run `31665851475`: SUCCESS on a disposable production DB copy at 3600x. Production was read back unchanged afterward. Starting copied state included Energy 32.165 / Cleanliness 42.533. Trajectory: rest 60m -> move to Master Bathroom 5m -> rest 30m -> shower 15m. Final copied state: Energy 43.498, Hunger 30.331, Thirst 37.335, Sleepiness 34.835, Cleanliness 100.0, `needs_acceptable=true`.
+
+Evidence level: **schema-v4 composable runtime hardening is implemented, CI-validated, deployed, DB-applied and live-runtime verified; bounded disposable behavior acceptance also passes.**
+
+## World / location architecture
+
+Globally scoped/path-independent ids remain mandatory. Current hierarchy:
+`world_observer_universe -> loc_thorne_estate -> floor/zone -> room -> object`
+
+Prototype `home`/`room_*`/generic estate object ids remain retired. Estate exterior is locked/non-traversable. Do not broaden outside yet. Future insertion remains:
+`world_observer_universe -> loc_south_lake_tahoe -> loc_thorne_estate`, with later sibling locations such as `loc_quasi_home`.
+
+## Physiology / effects
+
+Five current stats retain recovery paths. Passive drift remains energy -2/h, hunger +2.5/h, thirst +3/h, sleepiness +3/h, cleanliness -0.8/h. Recovery-aware Darian policy remains v1.3. Generic `game.effects` are authoritative for current resources, and schema-v4 effect/modifier operations are the future common contract.
 
 ## Wake-on-demand / cost policy
 
-The scheduler may tick about every 2 seconds, but the LLM wakes only at a real decision boundary. In-progress action time is deterministic and creates zero additional model calls. Preserve this policy; do not add periodic LLM heartbeats/background reflection without explicit Creator approval.
+Frequent scheduler ticks do not mean frequent LLM calls. Each active actor wakes a model only at a real decision boundary: autonomy enabled, unpaused, no pending action, no retry block. Preserve this as characters scale.
 
-## World / location node architecture — scoped identity reset COMPLETE
+## Telegram
 
-Canonical contract: `docs/WORLD_LOCATION_NODE_MODEL.md`.
+P2.1 LIVE; P2.2.1 inline Observer Home COMPLETE; P2.2.2A scoped Thorne Estate foundation COMPLETE/LIVE VERIFIED.
 
-Identity rules:
-- world ids: `world_*`
-- location ids: `loc_*`
-- object/resource ids: `obj_*`
-- character ids such as `char_darian` remain globally person-specific
-- repeated display names are allowed; technical ids must remain globally unique
-- ids are place-scoped but path-independent; mutable floor/parent topology belongs in relations
+Action-completion notifications are downstream of deterministic commit, per-user gated/deduplicated, and now resolve the actual actor name rather than hard-coding Darian. Telegram presentation rules remain mandatory.
 
-Current hierarchy:
-`world_observer_universe -> loc_thorne_estate -> floor/zone -> room -> object`
+## Roadmap / exact resume point
 
-Examples: `loc_thorne_estate_kitchen`, `loc_thorne_estate_master_suite`, `loc_thorne_estate_home_gym`, `obj_thorne_estate_kitchen_refrigerator`. Future examples: `loc_south_lake_tahoe`, `loc_quasi_home`, `loc_quasi_home_kitchen`.
-
-Prototype ids `observer_universe`, `home`, `zone_*`, `room_*`, and generic estate `obj_*` ids are retired.
-
-World seed revision: `thorne-estate-v3.0-scoped-ids`. The estate exterior boundary is locked/non-traversable. Do not expand outside yet.
-
-The legacy spatial reset migration preserves character/profile data, physiology values, AI bindings, Telegram preferences and historical events; maps Darian to the corresponding scoped location; clears stale pending/lease/retry state; pauses transactionally during cutover; then restores prior pause state after new service initialization.
-
-Physical SQLite schema remains v3 because the existing graph tables support the scoped identities. Deterministic baseline routing now derives shortest paths from `connected_to`; production cognition receives only legal adjacent actions.
-
-Evidence: CI #221 / run `31664180403` SUCCESS. Deploy #101 / run `31663995353` SUCCESS and live migration verified with `world_id=world_observer_universe`, `world_identity_revision=thorne-estate-v3.0-scoped-ids`, Darian at `loc_thorne_estate_kitchen`, autonomy enabled normal/unpaused at 1x, systemd active and Telegram API connected.
-
-## P1 physiology + item effects
-
-Five basic stats clamp `0..100`: energy high-good; hunger/thirst/sleepiness high-bad; cleanliness high-good.
-
-Passive hourly drift: energy `-2.0`, hunger `+2.5`, thirst `+3.0`, sleepiness `+3.0`, cleanliness `-0.8`.
-
-Recovery paths: energy -> rest/sleep; hunger -> authored food; thirst -> authored drink; sleepiness -> sleep/rest; cleanliness -> shower/wash. Generic `game.effects` remain authoritative for item/resource physiological effects.
-
-Policy revision: `darian-autonomy-p1-v1.3-recovery-aware`. `.github/workflows/autonomy-acceptance.yml` provides bounded 3600x disposable-copy recovery acceptance instead of waiting real hours.
-
-## Telegram Observer
-
-P2.1 LIVE. P2.2.1 Observer Home + inline navigation implemented/deployed. P2.2.2A scoped Thorne Estate world foundation COMPLETE / LIVE VERIFIED.
-
-P2.2.2B Telegram Estate Browser is technically ready, but roadmap now records a **Creator decision point**: approve the bounded composable-runtime hardening gate before P2.2.2B, or explicitly defer it and continue the Estate Browser first.
-
-Presentation contract remains: friendly names, `dd-mm-yyyy (Day) hh:mm AM/PM`, restrained mobile UI, no raw ids/log dumps, section/paginate large data, Telegram remains a thin adapter.
-
-## Proactive notification contract
-
-Per-user persistent notifications default ON. `/notify off` suppresses proactive pushes but not interactive replies. Current proactive pushes are startup and successful action-completion summaries. Action pushes happen downstream of deterministic commit and deduplicate by action id.
-
-## Roadmap / resume
-
-- P0 Foundation & Remote Control: COMPLETE / LIVE VERIFIED
+- P0 Foundation/Remote Control: COMPLETE
 - P0.5 Provider Layer: FOUNDATION COMPLETE
-- P1 Living Darian: continuous autonomy LIVE; recovery/item-effect hardening accepted
+- P1 Living Darian: LIVE; engine/recovery/composition hardening PASSED
 - P2 Telegram Observer: ACTIVE
   - P2.1 LIVE
   - P2.2.1 COMPLETE
-  - P2.2.2A Thorne Estate interior + scoped identity reset COMPLETE / LIVE VERIFIED
-  - P2.2.2B Estate Browser READY AFTER ARCHITECTURE-GATE DECISION
-- pre-expansion composable runtime audit: COMPLETE / PROPOSED, not yet implemented
+  - P2.2.2A Thorne Estate interior/scoped IDs COMPLETE
+  - pre-expansion schema-v4 composable runtime gate COMPLETE
+  - **P2.2.2B Telegram Estate Browser NEXT**
+  - P2.2.3 Item Browser after Estate Browser
+  - generic character selection/profile browsing after that
+- P3+ later
 
-Do not broaden into South Lake Tahoe or add a second autonomous character while singleton runtime assumptions remain unless the Creator explicitly chooses to defer the hardening gate. Preserve wake-on-demand cognition, globally scoped/path-independent ids, locked unfinished boundaries, notification preferences, Telegram presentation rules, and evidence-level distinctions.
+Do not expand South Lake Tahoe yet. Resume the recursive Telegram Estate Browser on schema v4. Preserve actor-scoped runtime, first-class actions/events, scoped ids, one concurrency-safe universe clock, wake-on-demand cognition, locked unfinished boundaries, notification preferences and evidence-level distinctions.
