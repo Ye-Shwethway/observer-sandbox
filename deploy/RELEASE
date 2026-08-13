@@ -1,11 +1,11 @@
 Observer Sandbox production release marker
 
-release: thorne-estate-training-environment-v1
-accepted_main: 58c5ea4621c1cc920c09c998eb0fa351bc9a3279
-acceptance_workflow: Thorne Estate Training Environment v1 Acceptance #1
-acceptance_run: 31713866507
-compatibility_workflow: Activity Semantics Batch 1 Acceptance #14
-compatibility_run: 31713866127
-ci_workflow: CI #512
-ci_run: 31713866160
+release: training-method-semantics-v1
+accepted_main: 5551296b031da15587d68cb15ca8ea543c0bbbaa
+acceptance_workflow: Training Method Semantics v1 Acceptance #2
+acceptance_run: 31717340834
+compatibility_workflow: Causal Need Resolution v2 Acceptance #19 + Fatigue Causal Recovery v1 Acceptance #8
+compatibility_runs: 31717340427, 31717340432
+ci_workflow: CI #518
+ci_run: 31717340539
 status: accepted-for-production
