@@ -11,18 +11,20 @@ def test_initialize_and_status(tmp_path):
     assert result.schema_version == 3
     assert result.runtime_state["paused"] is False
     assert result.runtime_state["speed"] == 1.0
-    assert result.runtime_state["world_id"] == "observer_universe"
+    assert result.runtime_state["world_id"] == "world_observer_universe"
 
     with connect(db) as conn:
         tables = {
             row[0]
             for row in conn.execute("SELECT name FROM sqlite_master WHERE type='table'")
         }
-        assert conn.execute("SELECT entity_type FROM entities WHERE id='observer_universe'").fetchone()[0] == "world"
-        assert conn.execute("SELECT entity_type FROM entities WHERE id='home'").fetchone()[0] == "location"
+        assert conn.execute("SELECT entity_type FROM entities WHERE id='world_observer_universe'").fetchone()[0] == "world"
+        assert conn.execute("SELECT entity_type FROM entities WHERE id='loc_thorne_estate'").fetchone()[0] == "location"
         assert conn.execute(
-            "SELECT 1 FROM relations WHERE source_id='observer_universe' AND relation_type='contains' AND target_id='home'"
+            "SELECT 1 FROM relations WHERE source_id='world_observer_universe' AND relation_type='contains' AND target_id='loc_thorne_estate'"
         ).fetchone() is not None
+        assert conn.execute("SELECT 1 FROM entities WHERE id='home'").fetchone() is None
+        assert conn.execute("SELECT 1 FROM entities WHERE id='room_kitchen'").fetchone() is None
     assert {
         "entities",
         "relations",
