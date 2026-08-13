@@ -6,7 +6,7 @@ import time
 import urllib.error
 import urllib.parse
 import urllib.request
-from datetime import datetime
+from datetime import datetime, timedelta
 from pathlib import Path
 from typing import Any
 
@@ -109,6 +109,50 @@ def _fmt_time(value: str | None) -> str:
         return dt.strftime("%d-%m-%Y (%A) %I:%M %p")
     except (ValueError, TypeError):
         return str(value)
+
+
+def _fmt_real_seconds(seconds: float) -> str:
+    seconds = max(0.0, float(seconds))
+    if seconds < 60:
+        return f"~{max(1, round(seconds))} sec real"
+    minutes = seconds / 60.0
+    if minutes < 90:
+        value = round(minutes, 1) if abs(minutes - round(minutes)) >= 0.05 else int(round(minutes))
+        return f"~{value} min real"
+    hours = minutes / 60.0
+    value = round(hours, 1) if abs(hours - round(hours)) >= 0.05 else int(round(hours))
+    return f"~{value} hr real"
+
+
+def _pending_expected_sim_time(pending: dict[str, Any]) -> str | None:
+    planned = pending.get("planned_sim_time")
+    duration = pending.get("duration_minutes")
+    if not planned or duration is None:
+        return None
+    try:
+        return (datetime.fromisoformat(str(planned)) + timedelta(minutes=int(duration))).isoformat()
+    except (TypeError, ValueError):
+        return None
+
+
+def _pending_timing_lines(status: dict[str, Any] | None, *, now_wall: float | None = None) -> list[str]:
+    pending = (status or {}).get("pending_action")
+    if not pending:
+        return []
+    duration = pending.get("duration_minutes")
+    if duration is None:
+        return []
+    speed = float(pending.get("speed_at_plan") or (status or {}).get("speed") or 1.0)
+    wall_seconds = float(duration) * 60.0 / max(speed, 0.000001)
+    lines = [f"⏱ Duration   {int(duration)} sim min • {_fmt_real_seconds(wall_seconds)} @ {speed:g}x"]
+    expected = _pending_expected_sim_time(pending)
+    if expected:
+        lines.append(f"⏳ Expected   {_fmt_time(expected)}")
+    due = pending.get("due_wall_time")
+    if due is not None:
+        now = time.time() if now_wall is None else float(now_wall)
+        lines.append(f"⌛ Remaining  {_fmt_real_seconds(max(0.0, float(due) - now))}")
+    return lines
 
 
 def _yes_no(value: bool) -> str:
@@ -230,20 +274,38 @@ def _character_keyboard_for_user(character_id: str, user_id: int) -> list[list[d
     return keyboard
 
 
-def _fmt_character(data: dict[str, Any]) -> str:
+def _fmt_character(data: dict[str, Any], status: dict[str, Any] | None = None, *, now_wall: float | None = None) -> str:
     c = data["character"]
     s = data["state"]
-    return (
-        f"👤 {c['name']}\n"
-        "━━━━━━━━━━━━━━━━━━\n"
-        f"📍 Location   {s['location_name']}\n"
-        f"🎬 Action     {_title_action(s['current_action'])}\n"
-        f"🕒 Sim Time   {_fmt_time(s['sim_time'])}\n\n"
-        f"⚡ Energy       {s['energy']:.1f}\n"
-        f"🍽 Hunger       {s['hunger']:.1f}\n"
-        f"💧 Thirst       {s['thirst']:.1f}\n"
-        f"🌙 Sleepiness   {s['sleepiness']:.1f}\n"
-        f"🫧 Cleanliness  {s['cleanliness']:.1f}"
+    pending = (status or {}).get("pending_action")
+    action_text = _title_action(s["current_action"])
+    target = (status or {}).get("pending_target_name") if pending else None
+    if target:
+        action_text += f" → {target}"
+    lines = [
+        f"👤 {c['name']}",
+        "━━━━━━━━━━━━━━━━━━",
+        f"📍 Location   {s['location_name']}",
+        f"🎬 Action     {action_text}",
+        f"🕒 Sim Time   {_fmt_time(s['sim_time'])}",
+    ]
+    lines.extend(_pending_timing_lines(status, now_wall=now_wall))
+    lines.extend([
+        "",
+        f"⚡ Energy       {s['energy']:.1f}",
+        f"🍽 Hunger       {s['hunger']:.1f}",
+        f"💧 Thirst       {s['thirst']:.1f}",
+        f"🌙 Sleepiness   {s['sleepiness']:.1f}",
+        f"🫧 Cleanliness  {s['cleanliness']:.1f}",
+    ])
+    return "\n".join(lines)
+
+
+def _character_view(conn, character_id: str, *, now_wall: float | None = None) -> str:
+    return _fmt_character(
+        character_summary(conn, character_id),
+        observer_status(conn, character_id),
+        now_wall=now_wall,
     )
 
 
@@ -432,7 +494,7 @@ def _fmt_history(rows: list[dict[str, Any]]) -> str:
     return "\n".join(lines)
 
 
-def _fmt_status(data: dict[str, Any]) -> str:
+def _fmt_status(data: dict[str, Any], *, now_wall: float | None = None) -> str:
     c = data["character"]
     pending = data.get("pending_action")
     calls = int((data.get("cognition_stats") or {}).get("decision_calls", 0))
@@ -443,19 +505,24 @@ def _fmt_status(data: dict[str, Any]) -> str:
         target = data.get("pending_target_name")
         if target:
             pending_text += f" → {target}"
-    return (
-        "🌌 OBSERVER SANDBOX\n"
-        "━━━━━━━━━━━━━━━━━━\n"
-        f"{autonomy_icon} Autonomy   {'ON' if data['autonomy_enabled'] else 'OFF'} · {str(data['mode']).replace('_', ' ').title()}\n"
-        f"⏸ Paused     {_yes_no(data['paused'])}\n"
-        f"⏩ Speed      {data['speed']}x\n"
-        f"🧠 Mind Calls {calls}\n"
-        f"⏳ Pending    {pending_text}\n\n"
-        "👤 Darian Thorne\n"
-        f"📍 {c['location_name']}\n"
-        f"🎬 {_title_action(c['current_action'])}\n"
-        f"🕒 {_fmt_time(c['sim_time'])}"
-    )
+    lines = [
+        "🌌 OBSERVER SANDBOX",
+        "━━━━━━━━━━━━━━━━━━",
+        f"{autonomy_icon} Autonomy   {'ON' if data['autonomy_enabled'] else 'OFF'} · {str(data['mode']).replace('_', ' ').title()}",
+        f"⏸ Paused     {_yes_no(data['paused'])}",
+        f"⏩ Speed      {data['speed']}x",
+        f"🧠 Mind Calls {calls}",
+        f"⏳ Pending    {pending_text}",
+    ]
+    lines.extend(_pending_timing_lines(data, now_wall=now_wall))
+    lines.extend([
+        "",
+        "👤 Darian Thorne",
+        f"📍 {c['location_name']}",
+        f"🎬 {_title_action(c['current_action'])}",
+        f"🕒 {_fmt_time(c['sim_time'])}",
+    ])
+    return "\n".join(lines)
 
 
 def _universe_view(conn) -> tuple[str, list[list[dict[str, str]]]]:
@@ -530,7 +597,7 @@ def _callback_view(conn, user_id: int, callback_data: str) -> tuple[str, list[li
         return _fmt_object(data), _object_keyboard(data)
     if callback_data.startswith("char:"):
         character_id = callback_data.split(":", 1)[1]
-        return _fmt_character(character_summary(conn, character_id)), _character_keyboard_for_user(character_id, user_id)
+        return _character_view(conn, character_id), _character_keyboard_for_user(character_id, user_id)
     return "Unknown observer destination.", _back_home_keyboard()
 
 
@@ -578,11 +645,11 @@ def handle_command(db_path: str | Path, *, user_id: int, text: str) -> str:
         if command == "/status":
             return _fmt_status(observer_status(conn))
         if command == "/darian":
-            return _fmt_character(character_summary(conn, "char_darian"))
+            return _character_view(conn, "char_darian")
         if command == "/home":
             return _fmt_location(location_summary(conn, "loc_thorne_estate"))
         if command == "/watch":
-            return _fmt_character(character_summary(conn, "char_darian")) + "\n\n" + _fmt_history(recent_history(conn, limit=12))
+            return _character_view(conn, "char_darian") + "\n\n" + _fmt_history(recent_history(conn, limit=12))
         if command == "/history":
             limit = 8
             if rest:
