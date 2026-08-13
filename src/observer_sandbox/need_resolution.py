@@ -5,189 +5,108 @@ import sqlite3
 from collections import deque
 from typing import Any
 
+from .simulation import ACTION_EFFECTS_PER_HOUR
 
-NEED_RESOLVERS: dict[str, dict[str, str]] = {
-    "hunger": {"field_key": "needs.hunger", "action": "eat"},
-    "thirst": {"field_key": "needs.thirst", "action": "drink"},
+
+NEEDS: dict[str, dict[str, Any]] = {
+    "sleepiness": {"field": "needs.sleepiness", "state": "sleepiness", "direction": -1, "strong": ("rest", "sleep"), "critical": ("sleep",)},
+    "energy": {"field": "needs.energy", "state": "energy", "direction": 1, "strong": ("rest", "sleep"), "critical": ("rest", "sleep")},
+    "thirst": {"field": "needs.thirst", "state": "thirst", "direction": -1, "strong": ("drink",), "critical": ("drink",)},
+    "hunger": {"field": "needs.hunger", "state": "hunger", "direction": -1, "strong": ("eat",), "critical": ("eat",)},
+    "cleanliness": {"field": "physiology.cleanliness", "state": "cleanliness", "direction": 1, "strong": ("shower",), "critical": ("shower",)},
 }
 
 
-def _effect_reduces_field(spec: Any, *, current_value: float) -> bool:
+def _better(spec: Any, current: float, direction: int) -> bool:
     if isinstance(spec, (int, float)):
-        return float(spec) < 0.0
+        return float(spec) * direction > 0
     if not isinstance(spec, dict):
         return False
-    if isinstance(spec.get("add"), (int, float)) and float(spec["add"]) < 0.0:
+    add = spec.get("add")
+    if isinstance(add, (int, float)) and float(add) * direction > 0:
         return True
-    if isinstance(spec.get("multiply"), (int, float)) and 0.0 <= float(spec["multiply"]) < 1.0:
+    mul = spec.get("multiply")
+    if isinstance(mul, (int, float)) and current > 0:
+        return (float(mul) - 1.0) * direction > 0
+    target = spec.get("set")
+    if isinstance(target, (int, float)) and (float(target) - current) * direction > 0:
         return True
-    if isinstance(spec.get("set"), (int, float)) and float(spec["set"]) < current_value:
-        return True
-    if isinstance(spec.get("clamp_max"), (int, float)) and float(spec["clamp_max"]) < current_value:
-        return True
-    return False
+    low, high = spec.get("clamp_min"), spec.get("clamp_max")
+    return bool((direction > 0 and isinstance(low, (int, float)) and float(low) > current) or (direction < 0 and isinstance(high, (int, float)) and float(high) < current))
 
 
-def _option_reduces_need(
-    option: dict[str, Any],
-    *,
-    action: str,
-    field_key: str,
-    current_value: float,
-) -> bool:
-    if option.get("action") != action:
+def _option_better(option: dict[str, Any], cfg: dict[str, Any], actions: tuple[str, ...], current: float) -> bool:
+    if option.get("action") not in actions:
         return False
-    effects = option.get("effects")
-    if not isinstance(effects, dict):
-        return False
-    return _effect_reduces_field(effects.get(field_key), current_value=current_value)
+    direct = option.get("effects") or {}
+    intrinsic = option.get("effects_per_hour") or {}
+    return _better(direct.get(cfg["field"]), current, cfg["direction"]) or _better(intrinsic.get(cfg["state"]), current, cfg["direction"])
 
 
-def _resolver_rooms(
-    conn: sqlite3.Connection,
-    *,
-    action: str,
-    field_key: str,
-    current_value: float,
-) -> set[str]:
-    rows = conn.execute(
-        """
-        SELECT r.source_id AS room_id,e.capabilities_json,f.value_json
-        FROM relations r
-        JOIN entities e ON e.id=r.target_id
-        JOIN fields f ON f.entity_id=e.id AND f.field_key='game.effects'
+def _resolver_rooms(conn: sqlite3.Connection, cfg: dict[str, Any], actions: tuple[str, ...], current: float, intrinsic: dict[str, dict[str, float]]) -> set[str]:
+    rows = conn.execute("""
+        SELECT r.source_id room_id,e.capabilities_json,COALESCE(f.value_json,'{}') value_json
+        FROM relations r JOIN entities e ON e.id=r.target_id
+        LEFT JOIN fields f ON f.entity_id=e.id AND f.field_key='game.effects'
         WHERE r.relation_type='contains' AND e.entity_type='object'
-        """
-    ).fetchall()
+    """).fetchall()
     rooms: set[str] = set()
     for row in rows:
-        capabilities = json.loads(row["capabilities_json"] or "[]")
-        if action not in capabilities:
-            continue
-        effects = json.loads(row["value_json"] or "{}")
-        action_effects = effects.get(action) if isinstance(effects, dict) else None
-        if not isinstance(action_effects, dict):
-            continue
-        if _effect_reduces_field(action_effects.get(field_key), current_value=current_value):
-            rooms.add(str(row["room_id"]))
+        caps = json.loads(row["capabilities_json"] or "[]")
+        direct = json.loads(row["value_json"] or "{}")
+        for action in actions:
+            if action not in caps:
+                continue
+            action_effects = direct.get(action, {}) if isinstance(direct, dict) else {}
+            if _better(action_effects.get(cfg["field"]), current, cfg["direction"]) or _better(intrinsic.get(action, {}).get(cfg["state"]), current, cfg["direction"]):
+                rooms.add(str(row["room_id"]))
+                break
     return rooms
 
 
-def _nearest_first_hops(
-    conn: sqlite3.Connection,
-    *,
-    start_room: str,
-    destination_rooms: set[str],
-) -> set[str]:
-    if not destination_rooms or start_room in destination_rooms:
+def _first_hops(conn: sqlite3.Connection, start: str, goals: set[str]) -> set[str]:
+    if not goals or start in goals:
         return set()
-
-    rows = conn.execute(
-        "SELECT source_id,target_id FROM relations WHERE relation_type='connected_to'"
-    ).fetchall()
-    adjacency: dict[str, set[str]] = {}
-    for row in rows:
-        adjacency.setdefault(str(row["source_id"]), set()).add(str(row["target_id"]))
-
-    queue: deque[tuple[str, str | None, int]] = deque([(start_room, None, 0)])
-    best_seen: dict[str, int] = {start_room: 0}
-    best_distance: int | None = None
-    first_hops: set[str] = set()
-
-    while queue:
-        node, first_hop, distance = queue.popleft()
-        if best_distance is not None and distance >= best_distance:
+    graph: dict[str, set[str]] = {}
+    for row in conn.execute("SELECT source_id,target_id FROM relations WHERE relation_type='connected_to'"):
+        graph.setdefault(str(row["source_id"]), set()).add(str(row["target_id"]))
+    q = deque([(start, None, 0)])
+    seen = {start: 0}
+    best = None
+    hops: set[str] = set()
+    while q:
+        node, first, dist = q.popleft()
+        if best is not None and dist >= best:
             continue
-        for neighbor in sorted(adjacency.get(node, set())):
-            next_distance = distance + 1
-            hop = neighbor if first_hop is None else first_hop
-            if neighbor in destination_rooms:
-                if best_distance is None or next_distance < best_distance:
-                    best_distance = next_distance
-                    first_hops = {hop}
-                elif next_distance == best_distance:
-                    first_hops.add(hop)
+        for nxt in sorted(graph.get(node, set())):
+            nd = dist + 1
+            hop = nxt if first is None else first
+            if nxt in goals:
+                if best is None or nd < best:
+                    best, hops = nd, {hop}
+                elif nd == best:
+                    hops.add(hop)
                 continue
-            previous_distance = best_seen.get(neighbor)
-            if previous_distance is not None and previous_distance < next_distance:
+            if seen.get(nxt, nd) < nd:
                 continue
-            best_seen[neighbor] = next_distance
-            queue.append((neighbor, hop, next_distance))
-    return first_hops
+            seen[nxt] = nd
+            q.append((nxt, hop, nd))
+    return hops
 
 
-def _active_supported_need(decision_signals: dict[str, Any]) -> dict[str, Any] | None:
-    """Resolve only the authored highest-priority need when this guard supports it.
-
-    `needs_attention` is already ordered by the cognition policy: critical before
-    strong, then the authored same-level need order. Never skip an unsupported
-    higher-priority need to force a lower hunger/thirst action.
-    """
+def shape_action_options_for_needs(conn: sqlite3.Connection, *, state: dict[str, Any], action_options: list[dict[str, Any]], decision_signals: dict[str, Any], intrinsic_effects_per_hour: dict[str, dict[str, float]] | None = None) -> list[dict[str, Any]]:
     attention = decision_signals.get("needs_attention") or []
-    first = next((item for item in attention if isinstance(item, dict)), None)
-    if not isinstance(first, dict):
-        return None
-    return first if first.get("need") in NEED_RESOLVERS else None
-
-
-def shape_action_options_for_needs(
-    conn: sqlite3.Connection,
-    *,
-    state: dict[str, Any],
-    action_options: list[dict[str, Any]],
-    decision_signals: dict[str, Any],
-) -> list[dict[str, Any]]:
-    """Expose only causal recovery choices for supported strong physiological needs.
-
-    v2 covers hunger and thirst using the same authored-affordance pattern. When the
-    highest-priority strong/critical need is supported, expose only a local action
-    whose authored effect reduces that need, or otherwise shortest-path movement
-    toward the nearest room containing such a resolver.
-
-    If the highest-priority need is not yet supported, or no authored resolver/route
-    exists, preserve the original options rather than silently reordering needs or
-    deadlocking autonomy.
-    """
-    active = _active_supported_need(decision_signals)
-    if active is None:
+    active = next((x for x in attention if isinstance(x, dict)), None)
+    if not active or active.get("need") not in NEEDS:
         return action_options
-
-    need = str(active["need"])
-    resolver = NEED_RESOLVERS[need]
-    field_key = resolver["field_key"]
-    action = resolver["action"]
-    current_value = float(state[need])
-
-    local_resolvers = [
-        option
-        for option in action_options
-        if _option_reduces_need(
-            option,
-            action=action,
-            field_key=field_key,
-            current_value=current_value,
-        )
-    ]
-    if local_resolvers:
-        return local_resolvers
-
-    destination_rooms = _resolver_rooms(
-        conn,
-        action=action,
-        field_key=field_key,
-        current_value=current_value,
-    )
-    first_hops = _nearest_first_hops(
-        conn,
-        start_room=str(state["location"]),
-        destination_rooms=destination_rooms,
-    )
-    if not first_hops:
-        return action_options
-
-    movement = [
-        option
-        for option in action_options
-        if option.get("action") == "move" and option.get("target") in first_hops
-    ]
+    cfg = NEEDS[str(active["need"])]
+    actions = tuple(cfg["critical"] if active.get("level") == "critical" else cfg["strong"])
+    current = float(state[cfg["state"]])
+    intrinsic = ACTION_EFFECTS_PER_HOUR if intrinsic_effects_per_hour is None else intrinsic_effects_per_hour
+    local = [o for o in action_options if _option_better(o, cfg, actions, current)]
+    if local:
+        return local
+    goals = _resolver_rooms(conn, cfg, actions, current, intrinsic)
+    hops = _first_hops(conn, str(state["location"]), goals)
+    movement = [o for o in action_options if o.get("action") == "move" and o.get("target") in hops]
     return movement or action_options
