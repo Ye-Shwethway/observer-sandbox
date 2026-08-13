@@ -12,6 +12,7 @@ from .db import connect
 from .runtime import initialize
 from .secrets import load_runtime_secrets
 from .simulation import snapshot
+from .strength_progression_activation import maybe_settle_strength_progression
 from .telegram_bot import run_polling
 from .telegram_notifications import dispatch_action_completion
 
@@ -47,6 +48,28 @@ def main() -> None:
                     before = snapshot(conn, actor_id) if pending_before else None
                     result = autonomy_tick(conn, actor_id=actor_id)
                     if result.get("state") == "completed" and pending_before and before:
+                        # Progression activation is checked only at completed-action
+                        # simulation boundaries, never on the tight 2-second service
+                        # poll. The activation policy bootstraps once, immediately
+                        # settles eligible recovered Strength stimulus, and otherwise
+                        # bounds pure detraining checkpoints to at most once per sim day.
+                        after = result["after"]
+                        try:
+                            maybe_settle_strength_progression(
+                                conn,
+                                actor_id,
+                                as_of_sim_time=str(after["sim_time"]),
+                                state=after,
+                            )
+                            # Refresh the state after a possible tiny raw Strength
+                            # settlement before cognition resolves the next action.
+                            after = snapshot(conn, actor_id)
+                        except Exception:
+                            # Progression remains downstream of a successfully
+                            # completed action. A progression failure must not roll
+                            # back the action or kill continuous autonomy.
+                            after = result["after"]
+
                         # The next normal decision boundary would occur on the next
                         # service poll anyway. Resolve it immediately so the single
                         # completion notification can show the Creator what is now
@@ -58,7 +81,7 @@ def main() -> None:
                             action_id=str(result["action_id"]),
                             action=pending_before,
                             before=before,
-                            after=result["after"],
+                            after=after,
                             next_action=next_pending,
                         )
         except Exception:
