@@ -12,17 +12,28 @@ This roadmap tracks the smallest useful vertical slices for the Observer Sandbox
 - Continuous cognition remains wake-on-demand: no periodic LLM heartbeat or background reflection loop by default.
 - New features should prefer generic ids/query services over Darian/Home-specific backend contracts.
 - Telegram presentation quality is part of acceptance, not optional polish. All Telegram work must follow `docs/TELEGRAM_OBSERVER_ARCHITECTURE.md`.
+- Basic living physiology and item effects follow `docs/PHYSIOLOGY_AND_ITEM_EFFECTS.md`.
 
 ## Simulation recovery correctness
 
 Needs/recovery behavior is an engine contract, not prompt flavor text.
 
 - An action described as recovery must move its primary recovery state in the correct direction after all passive time drift is included.
+- Every basic physiological stat must have at least one valid reachable restoration path.
 - `rest` must increase energy and reduce sleep pressure; `sleep` must provide stronger energy/sleep-pressure recovery than ordinary rest; `idle` may provide only light recovery but must not paradoxically drain energy when cognition is using it as a pause.
-- Every critical living need must have at least one valid reachable action path that can actually correct it.
-- The action options given to the LLM must not force a semantic contradiction where the reason says “recover/rest” but the deterministic action effect worsens the need.
+- Hunger must be recoverable through authored food targets; thirst through authored drink targets; cleanliness through authored wash/shower targets.
+- Target/item effects are authored in the world definition, persisted as `game.effects`, surfaced through legal `action_options()`, and deterministically applied by the engine.
+- Food/drink/shower actions without matching authored physiological effects must be rejected rather than silently pretending to restore a need.
+- The action options given to the LLM must not force a semantic contradiction where the reason says “recover/rest/eat/drink/clean up” but the deterministic action effect worsens or fails to restore the relevant need.
 - Recovery math is regression-tested as before/after state, not only by checking that an action validates.
-- Future physiology expansion must preserve these directional invariants before adding more detailed rates or modifiers.
+- Persistent pending actions must be considered during world/effect migrations; do not invalidate a live pending action without an explicit safe migration/revalidation path.
+- Future physiology expansion must preserve these directional invariants before adding more detailed rates, temporary modifiers, consumable quantities, tolerance, or inventory depletion.
+
+Current P1 physiology baseline:
+- passive per hour: energy `-2.0`, hunger `+2.5`, thirst `+3.0`, sleepiness `+3.0`, cleanliness `-0.8`;
+- one hour targetless rest is net about `+8 energy` and `-1 sleepiness`;
+- one hour idle is net about `+1 energy`;
+- authored Home recovery resources currently include Drinking Water, Sink water, Meal Ingredients, Pantry food source, Shower, Bed and Rest.
 
 ## Telegram presentation acceptance rule
 
@@ -84,8 +95,12 @@ Status: CONTINUOUS AUTONOMY LIVE / ENGINE HARDENING ACTIVE
 - wake-on-demand LLM cognition
 - cognition call telemetry
 - 1x continuous production autonomy
-- recovery-direction invariants for energy/sleep pressure
+- all five current basic physiology stats have authored restoration paths
 - targetless `rest` recovery available in every room, while object-backed rest remains supported
+- generic world-object `game.effects` contract for food/drink/shower and future item effects
+- legal action options expose item effects to cognition
+- restorative target actions require matching authored effects
+- migration-safety rule for persisted pending actions
 
 ## P2 — Telegram Observer
 
@@ -125,10 +140,11 @@ Goal: move from command-driven status checks to hierarchical Creator observation
 
 3. **Item browsing**
    - room contents -> item list -> item detail;
-   - show capabilities and relevant state using human-readable labels.
+   - show capabilities plus authored effects using human-readable labels;
+   - later expose quantity/temporary modifiers only after those systems exist.
 
 4. **Character selection**
-   - generic character list is already exposed by the new callback framework;
+   - generic character list is already exposed by the callback framework;
    - next add selected-character session state so future views follow the selected character;
    - no Telegram handler may assume `char_darian` forever.
 
@@ -170,4 +186,4 @@ Add Quasi after generic character selection/profile/navigation is already proven
 
 ## Current resume point
 
-Finish the current **P1 needs/recovery engine hardening** and verify it in CI/live production, then resume **P2.2.2: Location hierarchy and room detail browsing**. Preserve continuous 1x wake-on-demand cognition, Telegram presentation rules, and the shared per-user notification preference gate.
+Verify the new **P1 full basic-physiology + item-effect recovery system** against live production recovery from the currently depleted state, then resume **P2.2.2: Location hierarchy and room detail browsing**. Preserve continuous 1x wake-on-demand cognition, Telegram presentation rules, and the shared per-user notification preference gate.
