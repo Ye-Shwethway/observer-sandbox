@@ -1,4 +1,5 @@
 name: Bounded Autonomy Acceptance
+# Recovery-aware acceptance: current production copy, max six cognition boundaries.
 
 on:
   workflow_dispatch:
@@ -48,7 +49,6 @@ jobs:
 
           db = os.environ["OBSERVER_SANDBOX_DB"]
           with connect(db) as conn:
-              # Preserve the copied character/world state but detach it from any live in-flight scheduler bookkeeping.
               set_runtime_value(conn, "autonomy_enabled", True)
               set_runtime_value(conn, "paused", False)
               set_runtime_value(conn, "speed", 3600.0)
@@ -65,11 +65,11 @@ jobs:
 
               def needs_acceptable(state):
                   return (
-                      state["energy"] >= 35.0
+                      state["energy"] > 40.0
                       and state["hunger"] < 55.0
-                      and state["thirst"] < 55.0
+                      and state["thirst"] < 50.0
                       and state["sleepiness"] < 65.0
-                      and state["cleanliness"] > 45.0
+                      and state["cleanliness"] > 50.0
                   )
 
               for index in range(max_actions):
