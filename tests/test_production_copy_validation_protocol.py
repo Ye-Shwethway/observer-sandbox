@@ -34,8 +34,9 @@ def test_disposable_copy_helper_preserves_source_and_detaches_copy(tmp_path: Pat
     )
     evidence = json.loads(completed.stdout.strip())
     assert evidence["ok"] is True
-    assert evidence["source_open_mode"] == "ro"
-    assert evidence["schema_user_version"] == 4
+    assert evidence["source_access"] == "sqlite-mode-ro-query-only"
+    assert evidence["copy_backend"] == "sqlite-backup-api"
+    assert evidence["production_mutated_by_validation"] is False
 
     copy_conn = sqlite3.connect(destination)
     copy_conn.execute("UPDATE sample SET value='copy' WHERE id=1")
@@ -44,5 +45,6 @@ def test_disposable_copy_helper_preserves_source_and_detaches_copy(tmp_path: Pat
     copy_conn.close()
 
     source_conn = sqlite3.connect(source)
+    assert source_conn.execute("PRAGMA user_version").fetchone()[0] == 4
     assert source_conn.execute("SELECT value FROM sample WHERE id=1").fetchone()[0] == "source"
     source_conn.close()
