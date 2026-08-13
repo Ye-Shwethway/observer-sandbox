@@ -1,7 +1,7 @@
 Observer Sandbox production release marker
 
-release: strength-progression-auto-activation-v1
-accepted_main: 71f00e2850c9c47f0875f012fd68bb131e4b6247
-acceptance_workflow: Strength Progression Auto Activation v1 Acceptance #1
-acceptance_run: 31689247542
+release: food-resolution-guard-v1
+accepted_main: 6117b4b8f08ae3afc8d0db6849a7aa061a34b51f
+acceptance_workflow: Food Resolution Guard v1 Acceptance #4
+acceptance_run: 31691041378
 status: accepted-for-production
