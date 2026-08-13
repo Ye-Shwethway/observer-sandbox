@@ -1,0 +1,96 @@
+name: Adaptation Curve v1 Acceptance
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - 'src/observer_sandbox/adaptation_curve.py'
+      - 'tests/test_adaptation_curve_v1.py'
+      - 'docs/ADAPTATION_CURVE_V1.md'
+      - '.github/workflows/adaptation-curve-v1-acceptance.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  acceptance:
+    if: ${{ vars.VPS_DEPLOY_ENABLED == 'true' }}
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Configure SSH
+        env:
+          VPS_SSH_KEY: ${{ secrets.VPS_SSH_KEY }}
+          VPS_HOST: ${{ secrets.VPS_HOST }}
+          VPS_PORT: ${{ secrets.VPS_PORT || '22' }}
+        run: |
+          test -n "$VPS_HOST"
+          test -n "$VPS_SSH_KEY"
+          install -m 700 -d ~/.ssh
+          printf '%s\n' "$VPS_SSH_KEY" > ~/.ssh/id_ed25519
+          chmod 600 ~/.ssh/id_ed25519
+          ssh-keyscan -p "$VPS_PORT" -H "$VPS_HOST" >> ~/.ssh/known_hosts
+      - name: Stage candidate
+        env:
+          VPS_HOST: ${{ secrets.VPS_HOST }}
+          VPS_USER: ${{ secrets.VPS_USER }}
+          VPS_PORT: ${{ secrets.VPS_PORT || '22' }}
+        run: |
+          ssh -p "$VPS_PORT" "$VPS_USER@$VPS_HOST" 'rm -rf /tmp/observer-adaptation-curve-v1 && mkdir -p /tmp/observer-adaptation-curve-v1'
+          rsync -az -e "ssh -p $VPS_PORT" src/ "$VPS_USER@$VPS_HOST:/tmp/observer-adaptation-curve-v1/src/"
+      - name: Dry-run read-only curve on production copy
+        env:
+          VPS_HOST: ${{ secrets.VPS_HOST }}
+          VPS_USER: ${{ secrets.VPS_USER }}
+          VPS_PORT: ${{ secrets.VPS_PORT || '22' }}
+        run: |
+          ssh -p "$VPS_PORT" "$VPS_USER@$VPS_HOST" '
+            set -euo pipefail
+            cd /opt/observer-sandbox
+            TMP_DB=$(mktemp /tmp/observer-adaptation-curve-v1.XXXXXX.sqlite3)
+            trap "rm -f $TMP_DB $TMP_DB-wal $TMP_DB-shm; rm -rf /tmp/observer-adaptation-curve-v1" EXIT
+            cp /var/lib/observer-sandbox/observer.sqlite3 "$TMP_DB"
+            export OBSERVER_SANDBOX_DB="$TMP_DB"
+            export PYTHONPATH=/tmp/observer-adaptation-curve-v1/src
+            .venv/bin/python - <<"PY"
+          import json, os
+          from observer_sandbox.adaptation_curve import strength_level_factor
+          from observer_sandbox.db import connect
+
+          db = os.environ["OBSERVER_SANDBOX_DB"]
+          with connect(db) as conn:
+              before = conn.execute(
+                  "SELECT value_json,mode FROM character_profile_values WHERE entity_id=? AND field_key=?",
+                  ("char_darian", "raps_pa.strength"),
+              ).fetchone()
+              raw = float(before["value_json"])
+              evidence = strength_level_factor(raw)
+              assert raw == 90.0
+              assert evidence.level_factor == 0.01
+              assert strength_level_factor(95).level_factor == 0.0025
+              assert strength_level_factor(99).level_factor == 0.0001
+              raised = strength_level_factor(raw, ceiling_multiplier=1.05)
+              assert raised.effective_ceiling == 105.0
+              assert raised.level_factor > evidence.level_factor
+              after = conn.execute(
+                  "SELECT value_json,mode FROM character_profile_values WHERE entity_id=? AND field_key=?",
+                  ("char_darian", "raps_pa.strength"),
+              ).fetchone()
+              assert dict(after) == dict(before)
+              print(json.dumps({
+                  "ok": True,
+                  "disposable": True,
+                  "candidate_source": True,
+                  "model_calls": 0,
+                  "raw_strength": raw,
+                  "level_factor": evidence.level_factor,
+                  "raised_ceiling_factor": raised.level_factor,
+                  "raw_strength_unchanged": True,
+                  "stat_mutation": False
+              }, indent=2, sort_keys=True))
+          PY
+            unset PYTHONPATH
+            export OBSERVER_SANDBOX_DB=/var/lib/observer-sandbox/observer.sqlite3
+            echo "--- PRODUCTION READBACK (UNCHANGED) ---"
+            .venv/bin/sandboxctl status
+          '
