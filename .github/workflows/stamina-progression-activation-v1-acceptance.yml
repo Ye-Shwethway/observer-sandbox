@@ -1,0 +1,21 @@
+name: Stamina Progression Activation v1 Acceptance
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - 'src/observer_sandbox/stamina_progression_activation.py'
+      - 'src/observer_sandbox/service.py'
+      - 'scripts/validation/validate_stamina_progression_activation_v1.py'
+      - 'tests/test_stamina_progression_activation_v1.py'
+      - '.github/workflows/stamina-progression-activation-v1-acceptance.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  acceptance:
+    uses: ./.github/workflows/reusable-production-copy-validation.yml
+    with:
+      validator_path: scripts/validation/validate_stamina_progression_activation_v1.py
+    secrets: inherit
