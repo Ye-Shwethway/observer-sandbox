@@ -20,11 +20,17 @@ def _lower_is_better(value: float, *, good: float, bad: float) -> float:
 
 
 def training_readiness_modifier(state: dict[str, Any]) -> dict[str, Any]:
-    """Derive the first bounded training modifier from existing live state.
+    """Derive bounded training readiness, cost, and effectiveness signals.
 
-    This is intentionally not a universal modifier engine. It converts four
-    existing authoritative physiology/needs signals into one action-scoped
-    readiness value and one fatigue-cost multiplier.
+    This remains intentionally smaller than a universal modifier engine. Four
+    existing authoritative physiology/needs signals produce one readiness
+    value. Readiness then drives two distinct action-scoped outputs:
+
+    * fatigue_cost_multiplier: how physiologically costly the session is;
+    * effectiveness: how much useful training stimulus the session can deliver.
+
+    P3.4 records effectiveness as outcome evidence only. Strength, skill,
+    hypertrophy, or other adaptation state is intentionally not mutated yet.
     """
 
     components = {
@@ -35,9 +41,11 @@ def training_readiness_modifier(state: dict[str, Any]) -> dict[str, Any]:
     }
     readiness = sum(components.values()) / len(components)
     fatigue_cost_multiplier = 1.0 + (1.0 - readiness) * 0.5
+    effectiveness = readiness
     return {
-        "source": "p3.3-training-readiness-v1",
+        "source": "p3.4-training-readiness-effectiveness-v1",
         "readiness": round(readiness, 3),
+        "effectiveness": round(effectiveness, 3),
         "fatigue_cost_multiplier": round(fatigue_cost_multiplier, 3),
         "components": {key: round(value, 3) for key, value in components.items()},
         "inputs": {
