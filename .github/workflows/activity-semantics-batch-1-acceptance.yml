@@ -1,0 +1,108 @@
+name: Activity Semantics Batch 1 Acceptance
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths:
+      - '.github/workflows/activity-semantics-batch-1-acceptance.yml'
+      - 'config/worlds/home.v1.json'
+      - 'src/observer_sandbox/composition_schema.py'
+      - 'src/observer_sandbox/duration_planning.py'
+      - 'tests/test_monitor_action_semantics_batch.py'
+      - 'tests/test_duration_planning_scope.py'
+
+jobs:
+  acceptance:
+    if: ${{ vars.VPS_DEPLOY_ENABLED == 'true' }}
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Configure SSH
+        env:
+          VPS_SSH_KEY: ${{ secrets.VPS_SSH_KEY }}
+          VPS_HOST: ${{ secrets.VPS_HOST }}
+          VPS_PORT: ${{ secrets.VPS_PORT || '22' }}
+        run: |
+          test -n "$VPS_HOST"
+          test -n "$VPS_SSH_KEY"
+          install -m 700 -d ~/.ssh
+          printf '%s\n' "$VPS_SSH_KEY" > ~/.ssh/id_ed25519
+          chmod 600 ~/.ssh/id_ed25519
+          ssh-keyscan -p "$VPS_PORT" -H "$VPS_HOST" >> ~/.ssh/known_hosts
+      - name: Stage candidate
+        env:
+          VPS_HOST: ${{ secrets.VPS_HOST }}
+          VPS_USER: ${{ secrets.VPS_USER }}
+          VPS_PORT: ${{ secrets.VPS_PORT || '22' }}
+        run: |
+          ssh -p "$VPS_PORT" "$VPS_USER@$VPS_HOST" 'rm -rf /tmp/observer-activity-batch1 && mkdir -p /tmp/observer-activity-batch1'
+          rsync -az -e "ssh -p $VPS_PORT" src/ "$VPS_USER@$VPS_HOST:/tmp/observer-activity-batch1/src/"
+          rsync -az -e "ssh -p $VPS_PORT" config/ "$VPS_USER@$VPS_HOST:/tmp/observer-activity-batch1/config/"
+      - name: Dry-run entire batch on disposable production copy
+        env:
+          VPS_HOST: ${{ secrets.VPS_HOST }}
+          VPS_USER: ${{ secrets.VPS_USER }}
+          VPS_PORT: ${{ secrets.VPS_PORT || '22' }}
+        run: |
+          ssh -p "$VPS_PORT" "$VPS_USER@$VPS_HOST" '
+            set -euo pipefail
+            cd /opt/observer-sandbox
+            TMP_DB=$(mktemp /tmp/observer-activity-batch1.XXXXXX.sqlite3)
+            trap "rm -f $TMP_DB $TMP_DB-wal $TMP_DB-shm; rm -rf /tmp/observer-activity-batch1" EXIT
+            cp /var/lib/observer-sandbox/observer.sqlite3 "$TMP_DB"
+            export OBSERVER_SANDBOX_DB="$TMP_DB"
+            export PYTHONPATH=/tmp/observer-activity-batch1/src
+            .venv/bin/python - <<"PY"
+          import json, os
+          from observer_sandbox.db import connect
+          from observer_sandbox.duration_planning import normalize_duration
+          from observer_sandbox.runtime import initialize
+          from observer_sandbox.simulation import Action, action_options, apply_action, validate_action
+          from observer_sandbox.world import set_field
+
+          db = os.environ["OBSERVER_SANDBOX_DB"]
+          initialize(db)
+          cases = (
+              ("loc_thorne_estate_intelligence_hub", "obj_thorne_estate_intel_surveillance_console", "Surveillance Console"),
+              ("loc_thorne_estate_comms", "obj_thorne_estate_comms_secure_terminal", "Secure Communications Terminal"),
+              ("loc_thorne_estate_bunker", "obj_thorne_estate_bunker_emergency_console", "Emergency Console"),
+          )
+          completed = []
+          with connect(db) as conn:
+              for room, target, name in cases:
+                  set_field(conn, "char_darian", "runtime.location", room)
+                  conn.commit()
+                  opts = [o for o in action_options(conn) if o["action"] == "monitor"]
+                  assert [(o["target"], o["target_name"]) for o in opts] == [(target, name)]
+                  validate_action(conn, "char_darian", Action("monitor", 30, target, "check current systems"))
+                  apply_action(conn, Action("monitor", 30, target, "check current systems"))
+                  row = conn.execute("SELECT action_type,target_id,status,duration_minutes FROM action_instances ORDER BY rowid DESC LIMIT 1").fetchone()
+                  completed.append(tuple(row))
+              set_field(conn, "char_darian", "runtime.location", "loc_thorne_estate_living_room")
+              conn.commit()
+              try:
+                  validate_action(conn, "char_darian", Action("monitor", 30, "obj_thorne_estate_living_media_console", "invalid"))
+              except ValueError:
+                  pass
+              else:
+                  raise AssertionError("unsupported Media Console unexpectedly supports monitor")
+              assert normalize_duration("monitor", cases[0][1], 5) == 15
+              assert normalize_duration("monitor", cases[0][1], 90) == 45
+          print(json.dumps({
+              "ok": True,
+              "disposable": True,
+              "candidate_source": True,
+              "model_calls": 0,
+              "batch_size": len(cases),
+              "completed": completed,
+              "preferred_duration": [15, 45],
+              "unsupported_target_rejected": True
+          }, indent=2, sort_keys=True))
+          PY
+            export OBSERVER_SANDBOX_DB=/var/lib/observer-sandbox/observer.sqlite3
+            unset PYTHONPATH
+            echo "--- PRODUCTION READBACK (UNCHANGED BY ACCEPTANCE COPY) ---"
+            .venv/bin/sandboxctl status
+            .venv/bin/sandboxctl living-status
+          '
