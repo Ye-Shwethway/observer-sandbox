@@ -11,7 +11,7 @@ class FixedProvider:
 
     def choose(self, state, available_actions):
         self.calls += 1
-        return Action("rest", 30, "obj_bed", "bounded recovery")
+        return Action("rest", 30, "obj_thorne_estate_master_bed", "bounded recovery")
 
 
 def test_mind_wakes_only_at_decision_boundaries(tmp_path):
