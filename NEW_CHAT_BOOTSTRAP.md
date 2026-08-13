@@ -16,7 +16,7 @@ Authority: current Creator instruction > canonical repo > verified live VPS/runt
 - App: `/opt/observer-sandbox`
 - DB: `/var/lib/observer-sandbox/observer.sqlite3`
 - systemd: `observer-sandbox`
-- schema: 3
+- physical SQLite schema: version 3
 - continuous autonomy: enabled, normal, 1x
 - cognition: Gemini dynamically resolved Flash-Lite binding for `character:char_darian / cognition`
 - cognition mode: wake-on-demand only
@@ -29,74 +29,113 @@ Production continues autonomously. Re-read live state whenever exact current Dar
 
 The scheduler may tick about every 2 seconds, but the LLM wakes only at a real decision boundary: autonomy enabled, unpaused, not in retry/backoff, and no physical action pending. In-progress action time is deterministic and creates zero additional model calls. Preserve this policy; do not add periodic LLM heartbeats/background reflection without explicit Creator approval.
 
-## World / location node architecture
+## World / location node architecture — scoped identity reset COMPLETE
 
 Canonical contract: `docs/WORLD_LOCATION_NODE_MODEL.md`.
 
-Locations are recursive graph nodes rather than hard-coded screen concepts. Current hierarchy:
+The Creator explicitly chose clean early-development architecture over preserving prototype spatial ids. Spatial/resource identity is now globally scoped.
 
-`observer_universe -> home (Thorne Estate) -> floor/zone -> room -> object`
+### Identity rules
 
-Important identity rules:
-- `observer_universe` is the generic world root;
-- stable id `home` is now the **Thorne Estate location node**, not the world root;
-- a future South Lake Tahoe regional node may be inserted above `home` without changing the estate id;
-- future locations such as Quasi's home can become sibling nodes under the regional node;
-- containment (`contains`) and traversal (`connected_to`) are separate.
+- world ids: `world_*`
+- location ids: `loc_*`
+- object/resource ids: `obj_*`
+- character ids such as `char_darian` remain globally person-specific
+- ids are technical identities, not display labels
+- repeated display names are allowed; ids must remain globally unique
+- ids should be place-scoped but path-independent; mutable floor/parent topology belongs in `contains` relations rather than the full id path
 
-### Thorne Estate interior foundation
+Examples:
+- `world_observer_universe`
+- `loc_thorne_estate`
+- `loc_thorne_estate_kitchen`
+- `loc_thorne_estate_master_suite`
+- `loc_thorne_estate_home_gym`
+- `obj_thorne_estate_kitchen_refrigerator`
+- `obj_thorne_estate_gym_heavy_bag`
+- future `loc_south_lake_tahoe`
+- future `loc_quasi_home` and `loc_quasi_home_kitchen`
 
-World seed revision: `thorne-estate-v2.0-interior-nodes`.
+Prototype ids `observer_universe`, `home`, `zone_*`, `room_*`, and generic estate `obj_*` ids are retired and must not be reintroduced.
 
-Canonical mansion source establishes South Lake Tahoe location, modern fortress/high-tech security, three stories plus reinforced underground level, living quarters, training hall, top-class gym, surveillance/intelligence hub, armory/storage, garage/workshop, library/study, medical room, food-supply storage, underground bunker and security/escape infrastructure.
+### Current hierarchy
 
-Current node foundation:
-- Thorne Estate (`home`)
-  - Ground Floor (`zone_ground`)
-  - Second Floor (`zone_second`)
-  - Third Floor (`zone_third`)
-  - Underground Level (`zone_underground`)
-  - Estate Exterior (`boundary_exterior`, locked/non-traversable)
+World seed revision: `thorne-estate-v3.0-scoped-ids`.
 
-Current room nodes include Grand Foyer, Living Room, Kitchen, Dining Area, Library & Study, Garage & Workshop, Darian's Master Suite, Master Bathroom, Quasi's Room, Guest Rooms, Surveillance & Intelligence Hub, Secure Communications Room, Training Hall, Top-Class Home Gym, Medical Bay, Armory & Storage, Food Supply Storage, Underground Bunker.
+`world_observer_universe -> loc_thorne_estate -> floor/zone -> room -> object`
 
-The source does not assign every area to an exact floor. Non-source placements are explicitly marked `provisional_layout`; do not promote them to canon silently.
+Current estate child zones:
+- `loc_thorne_estate_ground_floor`
+- `loc_thorne_estate_second_floor`
+- `loc_thorne_estate_third_floor`
+- `loc_thorne_estate_underground`
+- `loc_thorne_estate_exterior_boundary` (locked/non-traversable)
 
-Stable P1 ids retained:
-- `room_bedroom` -> Darian's Master Suite
-- `room_bathroom` -> Master Bathroom
-- `room_living` -> Living Room
-- `room_kitchen` -> Kitchen
-- `room_gym` -> Top-Class Home Gym
+Current room set includes Grand Foyer, Living Room, Kitchen, Dining Area, Library & Study, Garage & Workshop, Darian's Master Suite, Master Bathroom, Quasi's Room, Guest Rooms, Surveillance & Intelligence Hub, Secure Communications Room, Training Hall, Top-Class Home Gym, Medical Bay, Armory & Storage, Food Supply Storage, and Underground Bunker.
 
-This preserves runtime locations, pending actions, history, notifications and existing observer links.
+Canonical mansion source establishes the South Lake Tahoe estate, modern fortress/security character, three stories plus reinforced underground level and the major mansion areas. The source does not place every area on an exact floor; non-source placements remain `provisional_layout` rather than silently becoming canon.
 
-The exterior boundary has access `locked`, `traversable=false`, and no `connected_to` edge. The character cannot leave the mansion until outer environment nodes are explicitly implemented/unlocked.
+### Future regional expansion
 
-### Node seeding / query behavior
+Do not expand outside yet. When ready, insert the regional node without renaming estate identities:
 
-`src/observer_sandbox/world.py` supports recursive `locations + parent` seeds while retaining backward compatibility with the original flat `rooms` form. Seed-owned containment and adjacency are rebuilt safely without resetting character state/entity ids.
+`world_observer_universe -> loc_south_lake_tahoe -> loc_thorne_estate`
 
-`src/observer_sandbox/observer_query.py` now exposes generic location details:
-- parent node;
-- child location nodes;
-- contained objects/effects;
-- occupants/residents;
-- physical exits;
-- kind/access/canon/metadata.
+Other residences/locations then become siblings, e.g. `loc_quasi_home`. Their own Kitchen/Bedroom/etc. may share display names safely because their ids are place-scoped.
 
-Telegram must use this generic contract rather than hard-code mansion topology.
+### Exterior lock
 
-Evidence:
-- world graph seed commit `e4290bfe1b2f0932ef9d9ef303e5d69d1ae6686a`, compatibility topology commit `7e5b90b4a09b257c7153966ff15a51b1b36bc50d`;
-- recursive seeder commit `b599131d67b88acdf2d9b738b2a19d701eb993da`;
-- runtime world-root migration commit `66b1107a84db8da53ce66c4305cda2ff0245391f`;
-- generic recursive query commit `374d94b69335798fdbfec70fca4ec3514058d796`;
-- CI #207 / run `31663313620`: SUCCESS on latest documented foundation;
-- Deploy #95 / run `31663114003`: SUCCESS, systemd active and Telegram API connected;
-- Deploy #95 live readback showed `world_id=observer_universe`, proving runtime migration applied while Darian's persistent state/pending autonomy remained intact.
+`loc_thorne_estate_exterior_boundary` has access `locked`, `traversable=false`, and no `connected_to` edge. Darian cannot leave the mansion until outer-environment nodes are explicitly authored and traversal is unlocked by graph migration.
 
-Evidence level: **P2.2.2A Thorne Estate interior node foundation is implemented, CI-validated, deployed, and runtime world-root migration is live-verified.** Telegram deep estate navigation is not yet implemented; that is P2.2.2B.
+### Clean migration behavior
+
+`src/observer_sandbox/world.py` has an explicit legacy-id reset migration.
+
+On detecting old spatial ids it:
+1. remembers previous pause state;
+2. transactionally pauses runtime;
+3. clears pending/lease/retry scheduler records that may contain obsolete ids;
+4. maps Darian's current old location to the equivalent scoped node;
+5. sets current action idle;
+6. commits the pause before deleting old spatial entities so the old running service cannot race a stale action;
+7. deletes legacy spatial/object entities;
+8. seeds the new scoped graph and records `world_identity_revision`;
+9. after the new service initializes, restores the previous pause state.
+
+Character/profile data, physiology values, AI bindings, Telegram preferences and historical events are preserved. Historical event payloads may still contain old development-era ids; new runtime/world state does not.
+
+The physical SQLite schema remains v3 because the existing entity/relation/field tables already support globally scoped ids and recursive containment. This was a world identity/data migration, not a table-shape migration.
+
+### Routing
+
+The old hard-coded five-room `NEXT_HOP` routing table is removed. Deterministic baseline/dry-run routing now computes shortest paths over authored `connected_to` relations. Production LLM cognition still sees only legal adjacent actions from `action_options()`.
+
+### Query layer
+
+`src/observer_sandbox/observer_query.py` exposes generic location details: parent, child locations, objects/effects, occupants/residents, physical exits, kind/access/canon/metadata. Telegram must consume this contract rather than hard-code mansion topology.
+
+### Evidence
+
+Core scoped-id commits include:
+- config revision: `e9c2dd09cbd38f5bf1e366df0f24f324309e3aeb`
+- migration: `e8b201af6442a37df52d446b7f0d4b6f4037fadd`
+- runtime root: `800c6fadd13729348ae77d764941fe80e1afc11e`
+- graph-derived routing: `d69002157bd156c1b09258a485f555801b8f459d`
+- query default: `8cb948277d665d268ca093acc8295aee5b0e2d37`
+- Telegram estate id: `827862604aea88a3f93c834047b41d564e682595`
+
+CI #221 / run `31664180403`: SUCCESS. Full suite passed after all old fixture ids were retired; fresh initialization, autonomy/wake behavior, Telegram contracts, 24h living behavior and scoped-id paths are covered. A dedicated legacy reset regression simulates old runtime/pending ids and verifies remap/pending-clear/pause handoff.
+
+Deploy #101 / run `31663995353`: SUCCESS and live migration verified. Readback after service restart showed:
+- `world_id = world_observer_universe`
+- `world_identity_revision = thorne-estate-v3.0-scoped-ids`
+- `paused = false`, speed `1.0`, autonomy enabled normal
+- Darian location `loc_thorne_estate_kitchen` / display `Kitchen`
+- old pending state had been cleared during migration and a new scoped-era decision was planned afterward (`rest`, targetless)
+- cognition last wake reason included `world_identity_migrated`
+- systemd active and Telegram API connected
+
+Evidence level: **clean scoped world identity reset is implemented, CI-validated, deployed, DB-applied and live-runtime verified.**
 
 ## P1 physiology + item effects
 
@@ -113,7 +152,7 @@ Recovery paths:
 
 Targetless `rest` is legal everywhere. Recovery-labelled actions must improve their primary need after passive drift.
 
-Generic `game.effects` remain authoritative for item/resource physiological effects. Current recovery resources include Drinking Water, Sink water, Meal Ingredients, Pantry ready-food abstraction, Shower and Bed/Rest.
+Generic `game.effects` remain authoritative for item/resource physiological effects. Current scoped recovery resources include estate drinking water, master-bathroom sink/shower, kitchen meal ingredients/pantry, and master bed/rest.
 
 Future Energy Drink or similar consumables must use the generic effect contract. Finite quantity, depletion, temporary modifiers, cooldown/tolerance remain later work.
 
@@ -124,13 +163,11 @@ Policy revision: `darian-autonomy-p1-v1.3-recovery-aware`.
 Critical: sleepiness >=80, energy <=20, thirst >=75, hunger >=80.
 Strong recovery: sleepiness >=65, energy <=40, thirst >=50, hunger >=55, cleanliness <=50.
 
-`.github/workflows/autonomy-acceptance.yml` runs bounded accelerated recovery against a disposable copy of production DB at 3600x and never mutates production.
-
-Acceptance run `31661169671` reached the acceptable recovery band in six decisions from the depleted production snapshot. Use this lane instead of waiting real hours during development.
+`.github/workflows/autonomy-acceptance.yml` runs bounded accelerated recovery against a disposable copy of production DB at 3600x and never mutates production. Use this lane instead of waiting real hours during development.
 
 ## Telegram Observer
 
-P2.1 LIVE. P2.2.1 Observer Home + inline navigation implemented/deployed. P2.2.2A world/backend location foundation is now complete. **Next: P2.2.2B Telegram Estate Browser.**
+P2.1 LIVE. P2.2.1 Observer Home + inline navigation implemented/deployed. **P2.2.2A scoped Thorne Estate world foundation is COMPLETE / LIVE VERIFIED. Next: P2.2.2B Telegram Estate Browser.**
 
 Presentation contract:
 - visible sim time `dd-mm-yyyy (Day) hh:mm AM/PM`
@@ -156,10 +193,7 @@ Current proactive notifications:
 
 Action-completion push is downstream/best-effort after deterministic state commit, includes human-readable action/target/time/reason/location and changed physiological stats, and deduplicates by action id per user.
 
-Evidence:
-- Deploy #90 / run `31661514961`: SUCCESS;
-- CI #194 / run `31661582673`: SUCCESS;
-- later Deploy #95 live runtime contained `telegram_last_action_notification:<user>` with a completed production action id. The dispatcher writes this marker only after Telegram `_send` succeeds, so Telegram API acceptance of at least one production action push is live-verified. Creator-visible receipt confirmation remains a separate UX observation.
+Production runtime has contained `telegram_last_action_notification:<user>` written only after Telegram `_send` succeeds, so Telegram API acceptance of at least one production action push is live-verified. Creator-visible receipt remains a separate UX observation until the Creator explicitly confirms it.
 
 ## Roadmap / resume
 
@@ -169,9 +203,9 @@ Evidence:
 - P2 Telegram Observer: ACTIVE
   - P2.1 LIVE
   - P2.2.1 COMPLETE
-  - P2.2.2A Thorne Estate interior node foundation COMPLETE / LIVE MIGRATION VERIFIED
+  - P2.2.2A Thorne Estate interior + clean spatial identity reset COMPLETE / LIVE VERIFIED
   - **P2.2.2B Telegram Estate Browser NEXT**
 - P2.2.3 Item browsing after estate browser
 - P3+ later
 
-Do not reset production state casually. Preserve wake-on-demand cognition, stable location ids, locked unfinished boundaries, notification preferences, Telegram presentation rules, and evidence-level distinctions.
+Do not broaden into South Lake Tahoe yet. First prove recursive Estate browsing on the scoped node graph. Preserve wake-on-demand cognition, globally scoped/path-independent ids, locked unfinished boundaries, notification preferences, Telegram presentation rules, and evidence-level distinctions.
