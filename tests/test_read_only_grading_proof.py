@@ -35,7 +35,7 @@ def test_strength_grade_is_derived_without_mutating_raw_value(tmp_path, monkeypa
 
         text, _ = _callback_view(conn, 111, "psec:char_darian:attributes")
         assert "Strength   90 · Grade S" in text
-        assert "Stamina   85 · Grade" not in text
+        assert "Stamina   85 · Grade A" in text
 
 
 def test_proof_scheme_boundaries_are_deterministic():
