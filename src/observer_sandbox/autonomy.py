@@ -22,6 +22,7 @@ MIND_STATS_KEY = "cognition_wake_stats"
 MIND_WAKE_REASON_KEY = "cognition_wake_reason"
 NORMAL_MODE = "normal"
 CANARY_MODE = "canary_once"
+PAUSE_STARTED_WALL_KEY = "pause_started_wall_time"
 
 
 def _wall_now() -> float:
@@ -131,6 +132,47 @@ def _finish_canary(conn: sqlite3.Connection, actor_id: str, *, success: bool, ac
     _event(conn, actor_id, "autonomy_canary_completed" if success else "autonomy_canary_failed", {"success": success, "action_id": action_id, "detail": detail}, action_id=action_id)
 
 
+def _pending_schedule_rows(conn: sqlite3.Connection) -> list[sqlite3.Row]:
+    return conn.execute(
+        """
+        SELECT ar.actor_id, ai.id AS action_id, ai.due_wall_time, ai.speed_at_plan
+        FROM actor_runtime ar
+        JOIN action_instances ai ON ai.id=ar.pending_action_id
+        WHERE ar.pending_action_id IS NOT NULL AND ai.status IN ('planned','in_progress')
+        ORDER BY ar.actor_id
+        """
+    ).fetchall()
+
+
+def _shift_pending_due_times(conn: sqlite3.Connection, delta_seconds: float) -> int:
+    delta = max(0.0, float(delta_seconds))
+    if delta <= 0:
+        return 0
+    rows = _pending_schedule_rows(conn)
+    for row in rows:
+        if row["due_wall_time"] is None:
+            continue
+        conn.execute(
+            "UPDATE action_instances SET due_wall_time=?,updated_at=CURRENT_TIMESTAMP WHERE id=?",
+            (float(row["due_wall_time"]) + delta, row["action_id"]),
+        )
+    return len(rows)
+
+
+def _reschedule_pending_for_speed(conn: sqlite3.Connection, *, new_speed: float, effective_now: float, fallback_old_speed: float) -> int:
+    rows = _pending_schedule_rows(conn)
+    for row in rows:
+        due = float(row["due_wall_time"] if row["due_wall_time"] is not None else effective_now)
+        old_speed = float(row["speed_at_plan"] or fallback_old_speed or 1.0)
+        remaining_sim_minutes = max(0.0, (due - effective_now) * old_speed / 60.0)
+        new_due = effective_now + (remaining_sim_minutes * 60.0 / new_speed)
+        conn.execute(
+            "UPDATE action_instances SET due_wall_time=?,speed_at_plan=?,updated_at=CURRENT_TIMESTAMP WHERE id=?",
+            (new_due, new_speed, row["action_id"]),
+        )
+    return len(rows)
+
+
 def set_autonomy_enabled(conn: sqlite3.Connection, enabled: bool, *, actor_id: str = "char_darian") -> dict[str, Any]:
     current = actor_runtime(conn, actor_id)
     if not enabled:
@@ -146,25 +188,71 @@ def set_autonomy_enabled(conn: sqlite3.Connection, enabled: bool, *, actor_id: s
     return autonomy_status(conn, actor_id)
 
 
-def set_autonomy_paused(conn: sqlite3.Connection, paused: bool, *, actor_id: str = "char_darian") -> dict[str, Any]:
-    set_runtime_value(conn, "paused", bool(paused))
-    current = actor_runtime(conn, actor_id)
-    if not paused and current["autonomy_enabled"] and current["pending_action_id"] is None:
-        set_actor_runtime(conn, actor_id, wake_reason="resume")
+def set_autonomy_paused(conn: sqlite3.Connection, paused: bool, *, actor_id: str = "char_darian", now_wall: float | None = None) -> dict[str, Any]:
+    now = _wall_now() if now_wall is None else float(now_wall)
+    was_paused = bool(runtime_value(conn, "paused", False))
+    shifted_actions = 0
+    paused_seconds = 0.0
+
+    if paused:
+        if not was_paused:
+            set_runtime_value(conn, PAUSE_STARTED_WALL_KEY, now)
+        set_runtime_value(conn, "paused", True)
+    else:
+        if was_paused:
+            started = runtime_value(conn, PAUSE_STARTED_WALL_KEY, None)
+            if started is not None:
+                paused_seconds = max(0.0, now - float(started))
+                shifted_actions = _shift_pending_due_times(conn, paused_seconds)
+        set_runtime_value(conn, PAUSE_STARTED_WALL_KEY, None)
+        set_runtime_value(conn, "paused", False)
+        current = actor_runtime(conn, actor_id)
+        if current["autonomy_enabled"] and current["pending_action_id"] is None:
+            set_actor_runtime(conn, actor_id, wake_reason="resume")
+
     conn.commit()
-    _event(conn, actor_id, "autonomy_control", {"paused": bool(paused)})
+    _event(
+        conn,
+        actor_id,
+        "autonomy_control",
+        {
+            "paused": bool(paused),
+            "paused_seconds": paused_seconds,
+            "pending_actions_shifted": shifted_actions,
+        },
+    )
     return autonomy_status(conn, actor_id)
 
 
-def set_autonomy_speed(conn: sqlite3.Connection, speed: float, *, actor_id: str = "char_darian") -> dict[str, Any]:
+def set_autonomy_speed(conn: sqlite3.Connection, speed: float, *, actor_id: str = "char_darian", now_wall: float | None = None) -> dict[str, Any]:
     value = float(speed)
     if value <= 0 or value > 3600:
         raise ValueError("Autonomy speed must be greater than 0 and at most 3600")
-    if conn.execute("SELECT 1 FROM actor_runtime WHERE pending_action_id IS NOT NULL LIMIT 1").fetchone() is not None:
-        raise ValueError("Cannot change global speed while any actor action is pending")
+
+    now = _wall_now() if now_wall is None else float(now_wall)
+    previous = float(runtime_value(conn, "speed", 1.0))
+    paused = bool(runtime_value(conn, "paused", False))
+    pause_started = runtime_value(conn, PAUSE_STARTED_WALL_KEY, None) if paused else None
+    effective_now = float(pause_started) if pause_started is not None else now
+    rescheduled = _reschedule_pending_for_speed(
+        conn,
+        new_speed=value,
+        effective_now=effective_now,
+        fallback_old_speed=previous,
+    )
     set_runtime_value(conn, "speed", value)
     conn.commit()
-    _event(conn, actor_id, "autonomy_control", {"speed": value})
+    _event(
+        conn,
+        actor_id,
+        "autonomy_control",
+        {
+            "speed": value,
+            "previous_speed": previous,
+            "pending_actions_rescheduled": rescheduled,
+            "paused": paused,
+        },
+    )
     return autonomy_status(conn, actor_id)
 
 
