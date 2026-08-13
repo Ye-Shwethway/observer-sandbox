@@ -89,15 +89,24 @@ Current Home v1 authored recovery resources:
 - Drinking Water / drink: thirst `-55`.
 - Sink / drink: thirst `-35`.
 - Meal Ingredients / eat: hunger `-50`, energy `+8`, thirst `+2`.
+- Pantry / eat: hunger `-40`, energy `+5`, thirst `+1`; Pantry currently represents a renewable ready-food source abstraction.
 - Shower / shower: cleanliness set to `100`.
 
-Food/drink/shower capabilities must have an authored matching physiological effect. Objects such as Refrigerator, Pantry and Dining Table are containers/facilities and must not pretend to be food merely because they are near food.
+Food/drink/shower capabilities must have an authored matching physiological effect. Refrigerator and Dining Table are facilities and do not expose fake eat/drink actions just because they are near food.
 
 ## Cognition visibility
 
 `action_options()` exposes the authored target effect profile with each legal action option. This allows the model mind to compare legal recovery resources while the runtime validator and state-transition engine remain authoritative.
 
 Do not rely on prompt prose alone to teach the model that an item restores a need. The effect must exist in the world definition and be surfaced through the legal action option.
+
+## Persistent-autonomy migration safety
+
+The scheduler persists pending actions across process restarts. World/capability/effect changes must therefore consider a plan that was legal under the previous deployed definition but has not completed yet.
+
+Do not casually remove a capability or target that may be referenced by a live pending action. Either preserve backward-compatible behavior until the pending action completes, or add an explicit safe migration/revalidation path.
+
+The first effect-system deployment encountered a live `eat -> Pantry` pending action from the preceding definition. Pantry's authored eat capability/effect was preserved so the pending action could complete under the new deterministic effect system instead of entering retry solely because of a deployment-time definition change.
 
 ## Future consumables
 
@@ -116,4 +125,5 @@ Regression tests must prove:
 - shower restores cleanliness;
 - effect metadata appears in legal action options;
 - restorative item actions without authored effects are rejected;
-- a bounded simulated day stays within `0..100` and does not enter an unrecoverable needs loop.
+- a bounded simulated day stays within `0..100` and does not enter an unrecoverable needs loop;
+- world/effect migrations do not invalidate persisted pending actions without an explicit recovery path.
