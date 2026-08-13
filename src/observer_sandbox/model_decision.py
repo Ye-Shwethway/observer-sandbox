@@ -10,6 +10,7 @@ from .ai_runtime import generate_character_decision
 from .need_resolution import shape_action_options_for_needs
 from .secrets import load_runtime_secrets
 from .simulation import ACTION_NAMES, Action, action_options, snapshot, validate_action
+from .training_methods import enrich_training_action_options
 
 
 REPO_ROOT = Path(__file__).resolve().parents[2]
@@ -217,7 +218,7 @@ class ModelDecisionProvider:
         enriched = dict(state)
         decision_signals = self._decision_signals(state)
         recent_events = self._recent_events()
-        options = action_options(self.conn, self.character_id)
+        options = enrich_training_action_options(action_options(self.conn, self.character_id))
         options = shape_action_options_for_needs(
             self.conn,
             state=state,
