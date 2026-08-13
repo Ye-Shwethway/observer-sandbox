@@ -5,6 +5,8 @@ import sqlite3
 from collections import deque
 from typing import Any
 
+from .simulation import ACTION_EFFECTS_PER_HOUR
+
 
 NEEDS: dict[str, dict[str, Any]] = {
     "sleepiness": {"field": "needs.sleepiness", "state": "sleepiness", "direction": -1, "strong": ("rest", "sleep"), "critical": ("sleep",)},
@@ -100,7 +102,7 @@ def shape_action_options_for_needs(conn: sqlite3.Connection, *, state: dict[str,
     cfg = NEEDS[str(active["need"])]
     actions = tuple(cfg["critical"] if active.get("level") == "critical" else cfg["strong"])
     current = float(state[cfg["state"]])
-    intrinsic = intrinsic_effects_per_hour or {}
+    intrinsic = ACTION_EFFECTS_PER_HOUR if intrinsic_effects_per_hour is None else intrinsic_effects_per_hour
     local = [o for o in action_options if _option_better(o, cfg, actions, current)]
     if local:
         return local
