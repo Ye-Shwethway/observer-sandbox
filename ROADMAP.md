@@ -12,7 +12,7 @@ Roadmap synchronized: 2026-08-13
 - Canonical runtime composition:
   `Actor(s) + Action + Place + Simulation Time + Conditions/Modifiers + Resources/Targets -> Validation -> State Changes + Events`.
 - Schema v4 remains the current composable foundation. Do not introduce schema v5 without a concrete missing invariant.
-- Repeated expansion follows **exemplar-first, then batch-by-pattern**: prove one structural pattern, then batch equivalent follow-ons into one PR, one pre-merge disposable production-copy dry-run, and one deploy/readback.
+- Repeated expansion follows **exemplar-first, then batch-by-pattern**: prove one genuinely new structural pattern, then batch equivalent follow-ons into one PR, one focused regression suite, one pre-merge disposable production-copy dry-run covering every batched item, and one deploy/readback.
 
 ## Foundation / P0 / P1
 
@@ -36,8 +36,8 @@ Roadmap synchronized: 2026-08-13
 - P3.5 Effective Training Load — COMPLETE / ACCEPTANCE VERIFIED / DEPLOYED.
 - Minimum Training Stimulus v1 — COMPLETE / PRE-MERGE PRODUCTION-COPY ACCEPTANCE VERIFIED / DEPLOYED.
 
-Current training chain:
-`Free Weights -> readiness -> fatigue inefficiency -> effectiveness -> effective workload -> immediate physiology -> Strength stimulus -> level/ceiling difficulty -> saturation -> recovery -> detraining -> preview -> idempotent settlement`.
+Current training/progression chain:
+`Free Weights -> readiness -> fatigue inefficiency -> effectiveness -> effective workload -> immediate physiology -> Strength stimulus -> level/ceiling difficulty -> saturation -> recovery -> detraining -> preview -> idempotent settlement -> automatic action-boundary activation`.
 
 ## Strength progression math gates
 
@@ -90,26 +90,56 @@ Safety invariants:
 Evidence: PR #20 merge `d6c94c90aec354faedd42656c42d078cb5bd42a3`; CI #420 SUCCESS; acceptance #2 `31688789743` SUCCESS; Deploy #146 `31688891757` SUCCESS.
 
 ### Strength Progression Automatic Activation v1
-Status: COMPLETE / PRE-MERGE PRODUCTION-COPY ACCEPTANCE VERIFIED / DEPLOYED / **LIVE BOOTSTRAP VERIFIED**.
+Status: COMPLETE / PRE-MERGE PRODUCTION-COPY ACCEPTANCE VERIFIED / DEPLOYED / LIVE BOOTSTRAP VERIFIED.
 
 Activation policy:
-- progression is checked only at completed-action simulation boundaries, never on the tight 2-second service poll;
+- progression is checked only at completed-action simulation boundaries, never on the tight service poll;
 - bootstrap once if no settlement cursor exists;
 - eligible unconsumed Strength stimulus (>=48 sim hours and recovery allowed) settles at the next action-completion boundary;
 - otherwise pure detraining checkpoints occur at most once per 24 simulated hours and only when Strength-training history exists;
 - short/same boundaries skip without writing progression events;
 - progression failure remains downstream of action completion and must not roll back the action or stop autonomy.
 
-Evidence: PR #21 merge `71f00e2850c9c47f0875f012fd68bb131e4b6247`; CI #425 SUCCESS; Strength Progression Auto Activation v1 Acceptance #1 `31689247542` SUCCESS; release `8d8eeee737cd901dd229090ec26eba099d9350fa`; Deploy #147 `31689319524` SUCCESS.
+Evidence: PR #21 merge `71f00e2850c9c47f0875f012fd68bb131e4b6247`; CI #425 SUCCESS; acceptance #1 `31689247542` SUCCESS; release `8d8eeee737cd901dd229090ec26eba099d9350fa`; Deploy #147 `31689319524` SUCCESS.
 
-Live verification:
-- automatic production service established the first `strength_progression_settled` event before the explicit verifier could do so;
-- first settlement event id `161`, bootstrap `true`, sim time `2025-05-02T09:23:00+00:00`;
-- Strength remained exactly `90.0 -> 90.0` and retained pre-mutation static/attribute-engine authority;
-- explicit bootstrap verifier then returned `same_or_older_boundary`, proving duplicate bootstrap suppression;
-- live service remained active/healthy, schema v4, autonomy enabled/normal.
+The Strength progression mutation flow is ACTIVE.
 
-The Strength progression mutation flow is therefore **ACTIVE**. Future eligible Free Weights Strength stimulus may create tiny decimal raw Strength changes automatically after recovery; prolonged untrained periods may create bounded negative changes after the detraining grace/curve.
+## Strength Progression Observability v1
+
+Status: COMPLETE / DEPLOYED / CREATOR LIVE UX VERIFIED.
+
+`Profile -> Recovery` now exposes read-only Strength progression diagnostics:
+- six-decimal raw Strength;
+- recent qualifying Strength stimulus / 72h;
+- level adaptation factor;
+- saturation yield;
+- recovery realization and adaptation status;
+- latest settlement delta/time;
+- detraining/grace status;
+- next progression boundary.
+
+Creator live-verified the initial no-stimulus/bootstrap state. Wording polish subsequently clarified bootstrap/no-history semantics without changing math or state.
+
+Evidence:
+- PR #25 merge `d291e77f4c290bc4b0487888e52a4c6063349f36`, CI #457 `31699319018` SUCCESS, Deploy #151 `31699394074` SUCCESS;
+- wording polish PR #26 merge `ebf18df5cc728ea600490f4b23da6e8bc35096ef`, CI #462 `31700255690` SUCCESS, release `fb45466d61494dbe066c47a39f17a48ef240ddd3`, Deploy #152 `31700418122` SUCCESS.
+
+## Causal physiological need resolution
+
+- Hunger resolver v1 — DEPLOYED / CREATOR LIVE VERIFIED.
+- Thirst/hunger causal resolver v2 — DEPLOYED / CREATOR LIVE VERIFIED.
+- Complete five-need causal resolver v3 — COMPLETE / CI VERIFIED / PRODUCTION-COPY COMPATIBILITY VERIFIED / DEPLOYED.
+
+v3 used the accelerated development rule correctly:
+- Energy was the directionality exemplar;
+- Sleepiness + Cleanliness were expanded in the same PR;
+- Hunger/Thirst remained green;
+- one PR / one deploy.
+
+Current authored priority remains:
+`sleepiness -> energy -> thirst -> hunger -> cleanliness`, with critical needs ahead of strong needs.
+
+Evidence for v3: PR #24 merge `e1e6d79479fa4d2ae837c395ec3b2fdb7391dc8f`; CI #451 `31698384623` SUCCESS; production-copy compatibility acceptance #12 `31698384587` SUCCESS; Deploy #150 `31698521410` SUCCESS.
 
 ## Post-P3.5 stabilization
 
@@ -145,10 +175,25 @@ Not implemented:
 - exterior/Tahoe traversal;
 - schema v5.
 
+## Next proposed slice — Strength Progression Live Cycle Validation & Tuning v1
+
+Before adding another progression domain, validate one complete real Strength cycle in production.
+
+Required validation:
+1. re-read live Strength, fatigue/readiness, recent stimulus, speed and pending action;
+2. observe or safely arrange one normal Free Weights session without direct Strength edits;
+3. capture emitted Strength stimulus and post-session Recovery diagnostics;
+4. let simulated recovery proceed naturally, using Creator-approved speed controls if useful;
+5. inspect around the 6h/48h recovery boundaries when practical;
+6. verify eligible automatic settlement at an action-completion boundary;
+7. compare actual stimulus, level factor, saturation, recovery factor and settlement delta with the v1 formulas;
+8. verify raw Strength history/event evidence and replay/idempotency;
+9. tune constants only if concrete live evidence shows a mismatch; otherwise preserve formulas and mark the cycle validated.
+
+This slice is validation/tuning, not a new progression-domain implementation. Do not fabricate stimulus or directly set Strength simply to force a result.
+
 ## Current resume point
 
-**Strength progression v1 is live as the first complete mutation exemplar.** Do not immediately batch other attributes merely because the settlement pattern exists: each new progression domain first needs an explicit stimulus mapping and any domain-specific recovery/decay semantics. Recommended next decision is either:
-1. add Creator-facing Strength progression observability (last stimulus, recovery state, next eligibility, latest settlement/delta), then observe/tune the live exemplar; or
-2. choose the next compatible physical progression domain and prove its stimulus mapping before any batch expansion.
+Start **Strength Progression Live Cycle Validation & Tuning v1** from current live production state. After that cycle is validated, propose the next physical progression domain and first prove its domain-specific stimulus/recovery/decay semantics before any batch expansion.
 
 Body measurements/composition remain a separate architecture line.
