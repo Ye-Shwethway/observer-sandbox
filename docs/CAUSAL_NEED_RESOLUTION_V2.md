@@ -1,6 +1,6 @@
 # Causal Need Resolution v2
 
-Status: BUG-FIX CANDIDATE
+Status: COMPLETE / PRE-MERGE PRODUCTION-COPY ACCEPTANCE VERIFIED / DEPLOYED
 
 ## Incident
 
@@ -50,13 +50,22 @@ Autonomy policy now explicitly forbids claiming that an action improves a physio
 - no new schema;
 - no arbitrary need scoring system beyond the existing authored priority order.
 
-## Acceptance
+## Acceptance and deployment
 
-Disposable production-copy acceptance must prove, without model calls:
+Disposable production-copy acceptance proved, without model calls:
 
 - when thirst and hunger are both strong at the observed levels, authored same-level ordering selects thirst first;
 - from Food Supply Storage the only exposed action is causal movement toward a drinking-water resolver;
 - at Training Hall with thirst around 55, no training option is exposed;
 - at Kitchen the only local causal resolver is `Drink -> Drinking Water`;
 - drinking reduces thirst below the strong threshold;
-- live production DB remains unchanged during pre-merge acceptance.
+- live production DB is not mutated by the acceptance harness.
+
+Evidence:
+- PR #23 merge `4a0c5d67f0ed9460fc319702fa846a676090c606`;
+- CI #446 `31692492232` SUCCESS;
+- Causal Need Resolution v2 Acceptance #11 `31692492180` SUCCESS;
+- release `5763818a20277b684a688df0d15bf488dbfc49e9`;
+- Deploy #149 `31692592830` SUCCESS.
+
+Production deploy readback remained healthy: schema v4, autonomy enabled/normal/unpaused, Gemini cognition binding preserved, Telegram connected. A pre-existing `Train -> Combat Mat` action planned before deployment was intentionally not cancelled; the v2 guard applies from the next cognition boundary onward.
