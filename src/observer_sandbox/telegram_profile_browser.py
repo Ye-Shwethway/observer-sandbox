@@ -73,7 +73,7 @@ def _profile_menu_keyboard(data: dict[str, Any]) -> list[list[dict[str, str]]]:
 def _profile_section_keyboard(character_id: str) -> list[list[dict[str, str]]]:
     return [
         [{"text": "← Profile", "callback_data": f"prof:{character_id}"}],
-        [{"text": f"← Character", "callback_data": f"char:{character_id}"}],
+        [{"text": "← Character", "callback_data": f"char:{character_id}"}],
         [{"text": "⌂ Observer Home", "callback_data": "nav:home"}],
     ]
 
@@ -105,8 +105,7 @@ def _fmt_profile_section(data: dict[str, Any]) -> str:
 
     for item in content:
         label = item.get("label") or str(item.get("field_key", "Field"))
-        value = _fmt_profile_value(item)
-        lines.append(f"• {label}: {value}")
+        lines.append(f"• {label}: {_fmt_profile_value(item)}")
     return "\n".join(lines)
 
 
@@ -119,7 +118,11 @@ def _fmt_attributes(lines: list[str], content: list[dict[str, Any]]) -> str:
                 lines.append("")
             lines.append(f"{_DOMAIN_LABELS.get(domain, domain.replace('_', ' ').title())}")
             last_domain = domain
-        lines.append(f"• {item['label']}   {_fmt_profile_value(item)}")
+        value = _fmt_profile_value(item)
+        grade = item.get("grade") or {}
+        if grade.get("grade"):
+            value = f"{value} · Grade {grade['grade']}"
+        lines.append(f"• {item['label']}   {value}")
     return "\n".join(lines)
 
 
