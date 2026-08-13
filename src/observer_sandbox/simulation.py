@@ -121,6 +121,7 @@ def action_options(conn: sqlite3.Connection, actor_id: str = "char_darian") -> l
         for action, capability in ACTION_CAPABILITY.items():
             if capability in obj["capabilities"]:
                 options.append({"action": action, "target": obj["id"], "target_name": obj["name"], "duration": ACTION_DURATION_BOUNDS[action]})
+    options.append({"action": "rest", "target": None, "target_name": None, "duration": ACTION_DURATION_BOUNDS["rest"]})
     options.append({"action": "idle", "target": None, "target_name": None, "duration": ACTION_DURATION_BOUNDS["idle"]})
     return options
 
@@ -141,6 +142,8 @@ def validate_action(conn: sqlite3.Connection, actor_id: str, action: Action) -> 
     if action.name == "idle":
         if action.target:
             raise ValueError("idle must not specify a target")
+        return
+    if action.name == "rest" and action.target is None:
         return
     capability = ACTION_CAPABILITY[action.name]
     if not action.target:
@@ -163,18 +166,42 @@ def _advance_needs(conn: sqlite3.Connection, actor_id: str, action: Action) -> N
     thirst = float(get_field(conn, actor_id, "needs.thirst", 15.0))
     sleepiness = float(get_field(conn, actor_id, "needs.sleepiness", 15.0))
     cleanliness = float(get_field(conn, actor_id, "physiology.cleanliness", 80.0))
-    energy -= 3.0 * hours; hunger += 4.0 * hours; thirst += 5.0 * hours; sleepiness += 3.5 * hours; cleanliness -= 1.2 * hours
+
+    energy -= 3.0 * hours
+    hunger += 4.0 * hours
+    thirst += 5.0 * hours
+    sleepiness += 3.5 * hours
+    cleanliness -= 1.2 * hours
+
     if action.name == "sleep":
-        energy += 10.0 * hours; sleepiness -= 15.0 * hours; hunger += 1.0 * hours; thirst += 1.5 * hours
-    elif action.name == "eat": hunger -= 40.0; energy += 4.0
-    elif action.name == "drink": thirst -= 45.0
-    elif action.name == "shower": cleanliness = 100.0
-    elif action.name == "rest": energy += 6.0 * hours; sleepiness -= 2.0 * hours
-    elif action.name == "train": energy -= 12.0 * hours; hunger += 7.0 * hours; thirst += 10.0 * hours; cleanliness -= 10.0 * hours
-    elif action.name == "read": energy -= 1.0 * hours
-    elif action.name == "idle": energy += 1.0 * hours
-    set_field(conn, actor_id, "needs.energy", _clamp(energy)); set_field(conn, actor_id, "needs.hunger", _clamp(hunger))
-    set_field(conn, actor_id, "needs.thirst", _clamp(thirst)); set_field(conn, actor_id, "needs.sleepiness", _clamp(sleepiness))
+        energy += 15.0 * hours
+        sleepiness -= 16.0 * hours
+        hunger += 1.0 * hours
+        thirst += 1.5 * hours
+    elif action.name == "eat":
+        hunger -= 40.0
+        energy += 4.0
+    elif action.name == "drink":
+        thirst -= 45.0
+    elif action.name == "shower":
+        cleanliness = 100.0
+    elif action.name == "rest":
+        energy += 12.0 * hours
+        sleepiness -= 3.0 * hours
+    elif action.name == "train":
+        energy -= 12.0 * hours
+        hunger += 7.0 * hours
+        thirst += 10.0 * hours
+        cleanliness -= 10.0 * hours
+    elif action.name == "read":
+        energy -= 1.0 * hours
+    elif action.name == "idle":
+        energy += 4.0 * hours
+
+    set_field(conn, actor_id, "needs.energy", _clamp(energy))
+    set_field(conn, actor_id, "needs.hunger", _clamp(hunger))
+    set_field(conn, actor_id, "needs.thirst", _clamp(thirst))
+    set_field(conn, actor_id, "needs.sleepiness", _clamp(sleepiness))
     set_field(conn, actor_id, "physiology.cleanliness", _clamp(cleanliness))
 
 
@@ -203,17 +230,21 @@ def apply_action(conn: sqlite3.Connection, action: Action, actor_id: str = "char
 
 
 def _move_toward(location: str, destination: str, reason: str) -> Action:
-    if location == destination: raise ValueError("move_toward called while already at destination")
+    if location == destination:
+        raise ValueError("move_toward called while already at destination")
     target = NEXT_HOP.get((location, destination))
-    if target is None: raise ValueError(f"No authored Home v1 route from {location} to {destination}")
+    if target is None:
+        raise ValueError(f"No authored Home v1 route from {location} to {destination}")
     return Action("move", 5, target, reason)
 
 
 class BaselineLivingPolicy:
     def choose(self, state: dict[str, Any], available_actions: list[str]) -> Action:
         location = state["location"]
-        if state["sleepiness"] >= 72 or state["energy"] <= 28:
+        if state["sleepiness"] >= 72:
             return Action("sleep", 480, "obj_bed", "recover from high sleep pressure") if location == "room_bedroom" else _move_toward(location, "room_bedroom", "go to bed")
+        if state["energy"] <= 28:
+            return Action("rest", 60, None, "recover low energy")
         if state["thirst"] >= 55:
             return Action("drink", 5, "obj_water", "respond to thirst") if location == "room_kitchen" else _move_toward(location, "room_kitchen", "get water")
         if state["hunger"] >= 60:
@@ -225,22 +256,27 @@ class BaselineLivingPolicy:
             return Action("train", 60, "obj_weights", "morning training block") if location == "room_gym" else _move_toward(location, "room_gym", "start morning training")
         if 19 <= hour < 22:
             return Action("read", 45, "obj_bookshelf", "evening wind-down") if location == "room_living" else _move_toward(location, "room_living", "wind down in living room")
-        if location == "room_living": return Action("rest", 30, "obj_sofa", "unstructured recovery time")
+        if location == "room_living":
+            return Action("rest", 30, "obj_sofa", "unstructured recovery time")
         return _move_toward(location, "room_living", "return to common area")
 
 
 def run_until(conn: sqlite3.Connection, end_time: datetime, *, decision_provider: DecisionProvider | None = None, actor_id: str = "char_darian", max_actions: int = 200) -> list[dict[str, Any]]:
-    provider = decision_provider or BaselineLivingPolicy(); trace: list[dict[str, Any]] = []
+    provider = decision_provider or BaselineLivingPolicy()
+    trace: list[dict[str, Any]] = []
     for _ in range(max_actions):
-        state = snapshot(conn, actor_id); now = datetime.fromisoformat(state["sim_time"])
-        if now >= end_time: break
+        state = snapshot(conn, actor_id)
+        now = datetime.fromisoformat(state["sim_time"])
+        if now >= end_time:
+            break
         action = provider.choose(state, ACTION_NAMES)
         remaining = max(1, int((end_time - now).total_seconds() // 60))
         if action.duration_minutes > remaining:
             low, _ = ACTION_DURATION_BOUNDS[action.name]
             action = Action("idle", min(remaining, ACTION_DURATION_BOUNDS["idle"][1]), None, "finish bounded simulation window") if remaining < low else Action(action.name, remaining, action.target, action.reason)
         trace.append(apply_action(conn, action, actor_id))
-    else: raise RuntimeError("P1 autonomous loop exceeded max_actions before reaching target time")
+    else:
+        raise RuntimeError("P1 autonomous loop exceeded max_actions before reaching target time")
     return trace
 
 
