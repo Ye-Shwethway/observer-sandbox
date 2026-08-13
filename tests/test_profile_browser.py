@@ -17,6 +17,7 @@ def test_profile_query_exposes_seeded_public_sections_and_filters_sensitive_fiel
             "Appearance",
             "Body",
             "Attributes",
+            "Recovery",
             "Personality",
             "Skills",
             "Preferences & Habits",
@@ -35,6 +36,10 @@ def test_profile_query_exposes_seeded_public_sections_and_filters_sensitive_fiel
         assert "raps_ia.iq" in attribute_keys
         assert all(not key.startswith("raps_sa.") for key in attribute_keys)
 
+        recovery = profile_section(conn, "char_darian", "recovery")
+        assert recovery["content"][0]["field_key"] == "physiology.fatigue"
+        assert recovery["content"][0]["value"] == 0.0
+
 
 def test_telegram_profile_browser_is_readable_and_navigable(tmp_path, monkeypatch):
     db = tmp_path / "observer.sqlite3"
@@ -50,8 +55,14 @@ def test_telegram_profile_browser_is_readable_and_navigable(tmp_path, monkeypatc
         assert "Darian Thorne · PROFILE" in profile_text
         assert "Identity" in profile_text
         assert "Body" in profile_text
+        assert "Recovery" in profile_text
         assert any(
             button["callback_data"] == "psec:char_darian:body"
+            for row in profile_keyboard
+            for button in row
+        )
+        assert any(
+            button["callback_data"] == "psec:char_darian:recovery"
             for row in profile_keyboard
             for button in row
         )
@@ -67,6 +78,11 @@ def test_telegram_profile_browser_is_readable_and_navigable(tmp_path, monkeypatc
         assert "Strength   90" in attributes_text
         assert "Intellectual" in attributes_text
         assert "IQ   140" in attributes_text
+
+        recovery_text, _ = _callback_view(conn, 111, "psec:char_darian:recovery")
+        assert "RECOVERY" in recovery_text.upper()
+        assert "Systemic fatigue" in recovery_text
+        assert "0" in recovery_text
 
         preferences_text, _ = _callback_view(conn, 111, "psec:char_darian:preferences")
         assert "Likes" in preferences_text
