@@ -341,7 +341,7 @@ def handle_command(db_path: str | Path, *, user_id: int, text: str) -> str:
         if command == "/darian":
             return _fmt_character(character_summary(conn, "char_darian"))
         if command == "/home":
-            return _fmt_location(location_summary(conn, "home"))
+            return _fmt_location(location_summary(conn, "loc_thorne_estate"))
         if command == "/watch":
             return _fmt_character(character_summary(conn, "char_darian")) + "\n\n" + _fmt_history(recent_history(conn, limit=12))
         if command == "/history":
