@@ -42,18 +42,30 @@ If the global preference is OFF, proactive notifications are suppressed for that
 
 When an autonomous character action completes successfully and its deterministic state transition has committed, every authorized user whose global notification preference is ON should receive one concise summary message.
 
-The notification should include, when relevant:
+The notification should include:
 
 - character name;
-- completed action and human-readable target name;
+- completed action and human-readable target name when one exists;
 - canonical human-facing simulated timestamp;
 - completed simulated duration and approximate real wait at the action's recorded speed;
-- short cognition reason;
+- short cognition reason when available;
 - location or location transition;
-- changed basic physiological stats as before -> after values and deltas;
-- the newly planned next action/target, its duration, and expected simulated completion timestamp when the normal next decision boundary resolves successfully.
+- changed basic physiological stats as before -> after values and deltas when present.
 
-The service may resolve the next normal decision boundary immediately after completion so the **same completion notification** can expose what is now in progress and when its next update is expected. This does not authorize a second proactive planning notification.
+### Mandatory next-update block
+
+When the normal next decision boundary resolves successfully and a new action has been planned, the **same Character Update notification must also include**:
+
+- the newly planned next action and human-readable target;
+- its planned simulated duration;
+- approximate real wait at the recorded speed;
+- its expected simulated completion / next-update timestamp.
+
+A successfully planned next action must not be silently omitted from the proactive Character Update message. This ETA is intentionally visible in the notification itself so the Creator can know the expected next update without opening a detailed/status surface.
+
+The service may resolve the next normal decision boundary immediately after completion so the same completion notification can expose what is now in progress and when its next update is expected. This does not authorize a second proactive planning notification.
+
+If the next decision does not resolve successfully because of failure/backoff/control state, the message must not invent an ETA.
 
 Do not push on scheduler polling ticks, action planning alone, `in_progress`, bookkeeping events, or recovered duplicate completion records. **One committed action still produces at most one proactive push per recipient.**
 
