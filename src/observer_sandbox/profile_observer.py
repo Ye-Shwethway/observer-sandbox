@@ -4,7 +4,7 @@ import json
 import sqlite3
 from typing import Any
 
-from .grading import evaluate_raps_100
+from .grading import evaluate_attribute_field
 from .simulation import snapshot
 from .training_modifiers import training_readiness_modifier
 
@@ -203,8 +203,8 @@ def _profile_values(conn: sqlite3.Connection, character_id: str, domains: tuple[
             "unit": row["unit"],
             "mode": row["mode"],
         }
-        if row["field_key"] == "raps_pa.strength" and isinstance(value, (int, float)):
-            result = evaluate_raps_100(value)
+        result = evaluate_attribute_field(str(row["field_key"]), value)
+        if result is not None:
             item["grade"] = {
                 "scheme_id": result.scheme_id,
                 "grade": result.grade,
