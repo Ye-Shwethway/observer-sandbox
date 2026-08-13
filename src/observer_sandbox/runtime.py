@@ -40,23 +40,13 @@ def initialize(db_path: str | Path) -> None:
         defaults = {
             "paused": False,
             "speed": 1.0,
-            "world_id": "observer_universe",
+            "world_id": "world_observer_universe",
             "autonomy_enabled": False,
         }
         for key, value in defaults.items():
             conn.execute(
                 "INSERT OR IGNORE INTO runtime_state(key, value_json) VALUES(?, ?)",
                 (key, json.dumps(value)),
-            )
-
-        # One-time semantic migration from the original P1 world root. `home`
-        # remains a stable entity id, but now represents the Thorne Estate
-        # location node beneath the generic Observer Universe root.
-        row = conn.execute("SELECT value_json FROM runtime_state WHERE key='world_id'").fetchone()
-        if row is not None and json.loads(row[0]) == "home":
-            conn.execute(
-                "UPDATE runtime_state SET value_json=?, updated_at=CURRENT_TIMESTAMP WHERE key='world_id'",
-                (json.dumps("observer_universe"),),
             )
         conn.commit()
 
