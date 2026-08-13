@@ -36,9 +36,10 @@ Roadmap synchronized: 2026-08-13
 - P3.5 Effective Training Load — COMPLETE / ACCEPTANCE VERIFIED / DEPLOYED.
 - Minimum Training Stimulus v1 — COMPLETE / PRE-MERGE PRODUCTION-COPY ACCEPTANCE VERIFIED / DEPLOYED.
 - Adaptation Curve v1 — COMPLETE / PRE-MERGE PRODUCTION-COPY ACCEPTANCE VERIFIED / DEPLOYED / READ-ONLY.
+- Stimulus Saturation / Diminishing Returns v1 — COMPLETE / PRE-MERGE PRODUCTION-COPY ACCEPTANCE VERIFIED / DEPLOYED / READ-ONLY.
 
 Current progression evidence chain:
-`target -> readiness -> fatigue inefficiency -> effectiveness -> effective workload -> immediate physiology -> session stimulus evidence -> read-only level/ceiling adaptation factor`.
+`target -> readiness -> fatigue inefficiency -> effectiveness -> effective workload -> immediate physiology -> session stimulus evidence -> read-only level/ceiling adaptation factor -> read-only recent-stimulus saturation factor`.
 
 Minimum Training Stimulus v1 remains deliberately narrow:
 - action: `train`;
@@ -49,17 +50,26 @@ Minimum Training Stimulus v1 remains deliberately narrow:
 - Heavy Bag and other targets emit no Strength stimulus in v1;
 - raw Strength and derived grade do not change.
 
-Adaptation Curve v1 is also read-only:
+Adaptation Curve v1 is read-only:
 - curve id `strength-level-curve-v1`;
 - `effective_ceiling = natural_ceiling * ceiling_multiplier`;
 - `remaining_fraction = clamp((effective_ceiling - current) / effective_ceiling, 0, 1)`;
 - `level_factor = remaining_fraction ^ 2` by default;
 - default natural ceiling `100`, default ceiling multiplier `1.0`;
 - Strength 90 -> factor `0.01`; 95 -> `0.0025`; 99 -> `0.0001`;
-- an abstract ceiling modifier changes effective headroom without mutating raw Strength;
-- no accumulated stimulus, recovery realization, detraining, adaptation mutation, hypertrophy/body change, or schema v5.
+- an abstract ceiling modifier changes effective headroom without mutating raw Strength.
 
-Evidence: Minimum Training Stimulus PR #14 merge `3578de12ebc750aca397b16f01f8bd368e1af11a`, acceptance `31685799302`, Deploy #140 `31685928444`; Adaptation Curve PR #15 merge `52644bfcbb8b7b9cb4196d8b5f253a32e053aaf2`, acceptance `31686888383`, release `abfe82d279fb1c85a027109185b1d28ae859fbd1`, Deploy #141 `31686957768` SUCCESS.
+Stimulus Saturation v1 is read-only:
+- curve id `strength-stimulus-saturation-v1`;
+- source: existing `action_completed` training stimulus evidence, not a new mutable progression counter;
+- rolling window: 72 simulated hours;
+- only `training_stimulus.domain == strength` counts;
+- `saturation_factor = 1 / (1 + 0.3 * recent_strength_stimulus_units)`;
+- reference: 0 units -> 1.0, 1 -> ~0.7692, 2 -> 0.625, 4 -> ~0.4545;
+- querying does not consume stimulus, alter events, or mutate Strength;
+- event insertion ID ordering is explicitly not assumed to equal simulated-time ordering.
+
+Evidence: Minimum Training Stimulus PR #14 merge `3578de12ebc750aca397b16f01f8bd368e1af11a`, acceptance `31685799302`, Deploy #140 `31685928444`; Adaptation Curve PR #15 merge `52644bfcbb8b7b9cb4196d8b5f253a32e053aaf2`, acceptance `31686888383`, release `abfe82d279fb1c85a027109185b1d28ae859fbd1`, Deploy #141 `31686957768`; Stimulus Saturation PR #16 merge `f02f2407957872dad192701b3726c3f2d8ff096d`, CI #405 SUCCESS, acceptance #2 `31687327606`, release `052931125b23f1f50166bea8142f8da358b694ec`, Deploy #142 `31687401802` SUCCESS.
 
 ## Progression mutation gates
 
@@ -67,7 +77,7 @@ Raw Strength/stat mutation is **not authorized** yet.
 
 Required order before Stat Mutation Gate v1:
 1. Adaptation Curve v1 — COMPLETE / read-only.
-2. Stimulus Saturation / Diminishing Returns v1 — pending.
+2. Stimulus Saturation / Diminishing Returns v1 — COMPLETE / read-only.
 3. Recovery Realization v1 — pending.
 4. Detraining / Prolonged-Untrained Decay v1 — pending and mandatory before mutation.
 5. Adaptation Preview v1 — pending; compose positive and negative projected deltas without mutation.
@@ -129,10 +139,9 @@ Do not use one numeric evaluator merely because multiple domains contain numbers
 ## Deferred boundaries
 
 Not implemented:
-- accumulated/recent stimulus state beyond current action/event evidence;
-- stimulus saturation/diminishing-return state;
-- recovery realization state;
+- recovery realization;
 - detraining/prolonged-untrained decay;
+- composed adaptation preview;
 - raw attribute/skill/body-measurement progression mutation;
 - hypertrophy/body composition progression;
 - body-measurement grading evaluator;
@@ -144,4 +153,4 @@ Not implemented:
 
 ## Current resume point
 
-**Adaptation Curve v1 is live and read-only.** The next bounded implementation slice is **Stimulus Saturation / Diminishing Returns v1 — Free Weights + Strength only**. Do not mutate Strength. After saturation, implement Recovery Realization, then mandatory Detraining/Prolonged-Untrained Decay, then a composed Adaptation Preview. Only after all are accepted may Stat Mutation Gate v1 be considered.
+**Adaptation Curve v1 and Stimulus Saturation v1 are live/read-only.** The next bounded implementation slice is **Recovery Realization v1 — Free Weights + Strength only**. Do not mutate Strength. After recovery, implement mandatory Detraining/Prolonged-Untrained Decay, then a composed Adaptation Preview. Only after all are accepted may Stat Mutation Gate v1 be considered.
