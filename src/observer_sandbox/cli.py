@@ -22,6 +22,7 @@ from .autonomy import (
     set_autonomy_paused,
     set_autonomy_speed,
 )
+from .creator_control import restore_basic_stats
 from .db import connect, migrate
 from .model_decision import dry_run_model_decision
 from .runtime import initialize, status
@@ -50,6 +51,12 @@ def build_parser() -> argparse.ArgumentParser:
     autonomy_sub.add_parser("canary-once")
     speed = autonomy_sub.add_parser("speed")
     speed.add_argument("value", type=float)
+
+    creator = sub.add_parser("creator")
+    creator_sub = creator.add_subparsers(dest="creator_command", required=True)
+    restore = creator_sub.add_parser("restore-basic-stats")
+    restore.add_argument("--character", default="char_darian")
+    restore.add_argument("--requested-by", default="sandboxctl")
 
     ai = sub.add_parser("ai")
     ai_sub = ai.add_subparsers(dest="ai_command", required=True)
@@ -140,6 +147,20 @@ def main() -> None:
             print(json.dumps(result, indent=2, sort_keys=True))
             if args.autonomy_command == "canary-once" and not result.get("ok", False):
                 raise SystemExit(1)
+        return
+    if args.command == "creator":
+        initialize(args.db)
+        with _with_db(args.db) as conn:
+            if args.creator_command == "restore-basic-stats":
+                result = restore_basic_stats(
+                    conn,
+                    args.character,
+                    authority="creator",
+                    requested_by=args.requested_by,
+                )
+            else:
+                raise SystemExit("Unknown Creator command")
+            print(json.dumps(result, indent=2, sort_keys=True))
         return
     if args.command == "simulate-day":
         initialize(args.db)
