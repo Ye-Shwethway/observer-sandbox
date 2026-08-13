@@ -1,13 +1,15 @@
 Observer Sandbox production release marker
 
-release: stamina-conditioning-source-batch-v1
-accepted_main: 479df1e78e84b102b0861eb4de724234267b55b1
-source_batch_acceptance_workflow: Stamina Conditioning Source Batch v1 Acceptance #4
-source_batch_acceptance_run: 31724133490
-core_compatibility_workflow: Stamina Progression Exemplar v1 Acceptance #6
-core_compatibility_run: 31724133540
-activation_compatibility_workflow: Stamina Progression Activation v1 Acceptance #5
-activation_compatibility_run: 31724133597
-ci_workflow: CI #536
-ci_run: 31724133328
+release: agility-activation-v1-protocol-v2-migration
+accepted_main: b4826fecda7483a946f32b8f5cb659fc27ec2c85
+feature_merge: 0b1df33a9343f47170acb68b6e2f29c1feb51bfa
+agility_activation_ci_workflow: CI #545
+agility_activation_ci_run: 31728370435
+agility_production_copy_acceptance: Stamina Conditioning Source Batch v1 Acceptance #8
+agility_production_copy_run: 31728370706
+strength_compatibility_run: 31728370668
+stamina_compatibility_run: 31728370664
+release_protocol_v2_ci_run: 31729468299
+release_protocol_v2_acceptance_run: 31729468420
+release_mode: protocol-v2-fallback-migration
 status: accepted-for-production
