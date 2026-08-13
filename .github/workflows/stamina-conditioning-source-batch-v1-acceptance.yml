@@ -1,0 +1,20 @@
+name: Stamina Conditioning Source Batch v1 Acceptance
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - 'src/observer_sandbox/stamina_progression.py'
+      - 'tests/test_stamina_conditioning_sources_v1.py'
+      - 'scripts/validation/validate_stamina_conditioning_source_batch_v1.py'
+      - '.github/workflows/stamina-conditioning-source-batch-v1-acceptance.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  acceptance:
+    uses: ./.github/workflows/reusable-production-copy-validation.yml
+    with:
+      validator_path: scripts/validation/validate_stamina_conditioning_source_batch_v1.py
+    secrets: inherit

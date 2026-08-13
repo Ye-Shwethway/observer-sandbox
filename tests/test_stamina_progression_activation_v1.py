@@ -11,7 +11,7 @@ def healthy():
 
 
 def cardio():
-    return {"action": "train", "training_method": {"method_id": "steady_state_cardio", "source": "training-method-semantics-v1", "effective_load": {"effective_minutes": 45.0}}}
+    return {"action": "train", "training_method": {"method_id": "steady_state_cardio", "source": "training-method-semantics-v1", "workload_channels": ["conditioning"], "effective_load": {"effective_minutes": 45.0}}}
 
 
 def test_activation_bootstrap_and_30h_eligibility(tmp_path):
