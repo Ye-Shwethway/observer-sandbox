@@ -6,7 +6,16 @@ import pytest
 
 from observer_sandbox.db import connect
 from observer_sandbox.runtime import initialize
-from observer_sandbox.simulation import Action, ensure_sim_clock, run_one_simulated_day, snapshot, validate_action
+from observer_sandbox.simulation import (
+    Action,
+    action_options,
+    apply_action,
+    ensure_sim_clock,
+    run_one_simulated_day,
+    snapshot,
+    validate_action,
+)
+from observer_sandbox.world import set_field
 
 
 def test_p1_home_seed_and_darian_instantiation(tmp_path):
@@ -31,6 +40,41 @@ def test_p1_runtime_rejects_non_adjacent_move(tmp_path):
     with connect(db) as conn:
         with pytest.raises(ValueError):
             validate_action(conn, "char_darian", Action("move", 5, "room_gym"))
+
+
+def test_recovery_actions_increase_energy_and_rest_is_available_anywhere(tmp_path):
+    db = tmp_path / "observer.sqlite3"
+    initialize(db)
+    with connect(db) as conn:
+        set_field(conn, "char_darian", "runtime.location", "room_gym")
+        set_field(conn, "char_darian", "needs.energy", 20.0)
+        set_field(conn, "char_darian", "needs.sleepiness", 65.0)
+        conn.commit()
+
+        options = action_options(conn)
+        assert any(option["action"] == "rest" and option["target"] is None for option in options)
+
+        before = snapshot(conn)
+        after_idle = apply_action(conn, Action("idle", 60, None, "brief pause"))
+        assert after_idle["energy"] > before["energy"]
+
+        after_rest = apply_action(conn, Action("rest", 60, None, "recover low energy"))
+        assert after_rest["energy"] >= after_idle["energy"] + 8.9
+        assert after_rest["sleepiness"] < after_idle["sleepiness"]
+
+
+def test_sleep_is_strong_recovery_and_can_escape_critical_energy(tmp_path):
+    db = tmp_path / "observer.sqlite3"
+    initialize(db)
+    with connect(db) as conn:
+        set_field(conn, "char_darian", "runtime.location", "room_bedroom")
+        set_field(conn, "char_darian", "needs.energy", 18.0)
+        set_field(conn, "char_darian", "needs.sleepiness", 88.0)
+        conn.commit()
+
+        after = apply_action(conn, Action("sleep", 480, "obj_bed", "overnight recovery"))
+        assert after["energy"] >= 95.0
+        assert after["sleepiness"] <= 5.0
 
 
 def test_p1_darian_completes_one_simulated_day_autonomously(tmp_path):
