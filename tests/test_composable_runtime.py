@@ -1,14 +1,15 @@
 from __future__ import annotations
 
 import json
-from datetime import datetime, timedelta
+from datetime import timedelta
 
 from observer_sandbox.actor_runtime import actor_runtime, pending_action
 from observer_sandbox.autonomy import autonomy_tick, set_autonomy_enabled, set_autonomy_speed
 from observer_sandbox.composition_schema import ensure_actor_runtime
 from observer_sandbox.db import connect
+from observer_sandbox.location_runtime import current_location, set_dynamic_location
 from observer_sandbox.runtime import initialize
-from observer_sandbox.simulation import Action, apply_action, ensure_sim_clock, set_runtime_value
+from observer_sandbox.simulation import Action, apply_action, ensure_sim_clock
 from observer_sandbox.world import set_field
 
 
@@ -84,3 +85,15 @@ def test_definition_instance_and_modifier_sockets_exist(tmp_path):
         modifier = conn.execute("SELECT operation,stack_policy FROM active_modifiers WHERE id='mod_test_stimulant'").fetchone()
         assert modifier["operation"] == "multiply" and modifier["stack_policy"] == "replace"
         assert conn.execute("SELECT target_mode FROM action_definitions WHERE action_type='drink'").fetchone()[0] == "object"
+
+
+def test_dynamic_location_is_entity_generic_and_separate_from_structural_contains(tmp_path):
+    db = tmp_path / "observer.sqlite3"; initialize(db)
+    with connect(db) as conn:
+        _add_quasi_stub(conn)
+        assert current_location(conn, "char_quasi") == "loc_thorne_estate_master_suite"
+        set_dynamic_location(conn, "char_quasi", "loc_thorne_estate_living_room")
+        conn.commit()
+        assert current_location(conn, "char_quasi") == "loc_thorne_estate_living_room"
+        assert conn.execute("SELECT 1 FROM relations WHERE source_id='char_quasi' AND relation_type='located_at' AND target_id='loc_thorne_estate_living_room'").fetchone() is not None
+        assert current_location(conn, "obj_thorne_estate_gym_heavy_bag") == "loc_thorne_estate_home_gym"
