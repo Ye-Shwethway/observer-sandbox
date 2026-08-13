@@ -11,7 +11,7 @@ Authority: current Creator instruction > canonical repo/contracts > verified liv
 
 ## Development policy
 
-Use minimum runnable expansion plus **exemplar-first, then batch-by-pattern**. Prove one structural pattern end-to-end; once green/deployed, equivalent follow-ons should normally use one branch/PR, one focused test suite, one pre-merge disposable production-copy dry-run covering the whole batch, iterative fixes if needed, then one merge and one deploy/readback.
+Use minimum runnable expansion plus **exemplar-first, then batch-by-pattern**. Prove one structural invariant, then batch equivalent follow-ons in the same branch/PR. Preferred closeout is one disposable production-copy batch dry-run, iterative fixes if needed, one merge, one deploy/readback. Avoid per-item PR/deploy cycles for structurally identical expansion.
 
 ## Production baseline
 
@@ -20,101 +20,77 @@ Use minimum runnable expansion plus **exemplar-first, then batch-by-pattern**. P
 - DB `/var/lib/observer-sandbox/observer.sqlite3`
 - systemd `observer-sandbox`
 - SQLite schema v4
-- world root `world_observer_universe`
-- estate `loc_thorne_estate`
 - world revision `thorne-estate-v3.1-food-resolution`
 - Darian autonomy enabled / normal / wake-on-demand
 - global speed is Creator-controlled and must be re-read live
-- Gemini cognition binding preserved
+- Gemini cognition preserved
 - Telegram connected private Creator observer
 
 Production continues autonomously. Re-read live state whenever exact current action/stats/speed matter.
 
-## Proven progression state
+## Strength progression v1
 
-Strength progression v1 is the first **complete active stat-mutation exemplar**.
+First complete active stat-mutation exemplar.
 
 Chain:
-`Free Weights -> effective workload -> Strength stimulus -> level/ceiling difficulty -> saturation -> recovery -> detraining -> preview -> idempotent settlement -> bounded automatic activation`.
+`Free Weights -> effective workload -> Strength stimulus -> level/ceiling difficulty -> saturation -> recovery -> detraining -> preview -> idempotent settlement -> automatic action-boundary activation`.
 
 Key semantics:
-- Strength stimulus = `effective_minutes / 60` from Free Weights only.
-- level factor = `clamp((effective_ceiling-current)/effective_ceiling,0,1)^2`.
-- recent-stimulus saturation = `1/(1+0.3*S)` over 72 simulated hours.
-- recovery = zero <=6h, ramp to full at 48h, state-quality gated, fatigue >=70 hard-block.
-- detraining = 14-day grace, then slow `1-exp(-overdue_days/60)` exposure scaled by `(current/effective_ceiling)^2`.
-- positive proof scale = `0.25 * stimulus * level * saturation * recovery * adaptation_rate_multiplier`.
-- negative proof rate = `0.02 * integrated detraining pressure-days * level exposure * detraining/decay modifiers`.
-- special modifiers remain abstract and factorized; no real-world drug dosing guidance.
+- Strength stimulus = `effective_minutes / 60` from Free Weights only;
+- level factor = `clamp((effective_ceiling-current)/effective_ceiling,0,1)^2`;
+- saturation = `1/(1+0.3*S)` over 72 simulated hours;
+- recovery: zero <=6h, ramp to full at 48h, fatigue >=70 hard-block;
+- detraining: 14-day grace then slow asymptotic decay pressure;
+- six-decimal raw mutation, audited settlement events, consumed-stimulus replay protection;
+- first live settlement was bootstrap-only and preserved Strength 90.
 
-## Settlement safety
+## Causal physiological need resolution
 
-- first settlement is non-mutating bootstrap and consumes pre-feature Strength stimulus evidence;
-- later eligible stimulus is consumed at most once;
-- positive stimulus requires >=48 simulated hours and fatigue <70;
-- detraining is integrated across exact unsettled simulated time and resets at Strength-training events;
-- same-boundary replay is a no-op;
-- every cursor advance is audited via `strength_progression_settled`;
-- actual mutation writes `character_profile_history` and six-decimal simulated Strength authority `strength-progression-settlement-v1`.
+Hunger v1 and Thirst v2 are **Creator live verified**.
 
-## Automatic activation
+### v3 — complete current five-need family
 
-Status: **DEPLOYED / LIVE BOOTSTRAP VERIFIED**.
+Status: **COMPLETE / CI VERIFIED / PRODUCTION-COPY COMPATIBILITY VERIFIED / DEPLOYED**.
 
-Activation is checked only after an action completes:
-- no cursor -> bootstrap once;
-- eligible recovered unconsumed Strength stimulus -> settle immediately at next action-completion boundary;
-- otherwise pure detraining checkpoint at most once per 24 simulated hours when Strength-training history exists;
-- short/same boundaries skip; the 2-second service poll never acts as a progression clock.
+Accelerated development pattern used:
+- exemplar: **Energy** proved low-is-bad directionality using intrinsic recovery effects;
+- same-PR batch: **Sleepiness + Cleanliness**;
+- Hunger/Thirst regressions stayed green;
+- one PR and one deploy.
+
+Priority authority remains:
+`sleepiness -> energy -> thirst -> hunger -> cleanliness`, with critical ahead of strong.
+
+Current behavior:
+- strong Sleepiness -> causal rest/sleep; critical Sleepiness -> sleep only, routing toward Bed when necessary;
+- low Energy -> causal recovery that raises Energy;
+- strong Thirst -> authored drink resolver;
+- strong Hunger -> authored eat resolver;
+- poor Cleanliness -> authored shower resolver, routing toward Shower;
+- both direct object effects and intrinsic per-hour action effects count as causal evidence;
+- no second need-scoring system is introduced.
 
 Evidence:
-- settlement core PR #20 merge `d6c94c90aec354faedd42656c42d078cb5bd42a3`, CI #420, acceptance #2 `31688789743`, Deploy #146 `31688891757`;
-- activation PR #21 merge `71f00e2850c9c47f0875f012fd68bb131e4b6247`, CI #425, acceptance #1 `31689247542`, release `8d8eeee737cd901dd229090ec26eba099d9350fa`, Deploy #147 `31689319524` SUCCESS;
-- live service automatically created first settlement event id `161` at sim time `2025-05-02T09:23:00+00:00`, bootstrap `true`;
-- Strength remained `90.0 -> 90.0`, mode/authority remained static/attribute-engine because bootstrap itself does not mutate;
-- explicit verifier call then skipped as `same_or_older_boundary`, proving duplicate-bootstrap suppression;
-- service remained active/healthy, schema v4, autonomy normal.
+- PR #24 merge `e1e6d79479fa4d2ae837c395ec3b2fdb7391dc8f`;
+- CI #451 `31698384623` SUCCESS;
+- existing disposable production-copy Causal Need Resolution compatibility acceptance #12 `31698384587` SUCCESS;
+- release `ab60e3d1f95100324bcaa638299eef1ba32e5036`;
+- Deploy #150 `31698521410` SUCCESS.
 
-Future eligible Free Weights Strength evidence may now cause tiny decimal raw Strength gains after recovery; prolonged inactivity may cause bounded decay after the grace curve.
-
-## Causal Need Resolution
-
-### Food Resolution Guard v1
-
-Status: **COMPLETE / PRE-MERGE PRODUCTION-COPY ACCEPTANCE VERIFIED / DEPLOYED / CREATOR LIVE BEHAVIOR VERIFIED**.
-
-The original production incident (`Inspect -> Supply Shelves` repeated under strong hunger) is fixed. Food Supply Storage contains distinct `Stored Food Provisions` with authored `eat` effects (hunger -50, energy +8, thirst +2), while `Supply Shelves` remain inspect-only. Creator subsequently confirmed live hunger resolution worked.
-
-Evidence: PR #22 merge `6117b4b8f08ae3afc8d0db6849a7aa061a34b51f`; Food Resolution Guard Acceptance #4 `31691041378` SUCCESS; CI #435 `31691041444` SUCCESS; release `0906d3c06961482fa6c327caf9cfd8e172e51d12`; Deploy #148 `31691179483` SUCCESS.
-
-### Causal Need Resolution v2 — thirst + hunger
-
-Status: **COMPLETE / PRE-MERGE PRODUCTION-COPY ACCEPTANCE VERIFIED / DEPLOYED; CREATOR LIVE THIRST VERIFICATION PENDING**.
-
-A second live incident showed hunger resolving while thirst remained strong (~55), followed by `Train -> Combat Mat`. v2 generalizes deterministic causal shaping to the two proven domains:
-- thirst -> authored `drink` actions reducing `needs.thirst`;
-- hunger -> authored `eat` actions reducing `needs.hunger`.
-
-`needs_attention` remains the priority authority. The guard acts only when the highest-priority active need is supported; it never skips an unsupported higher-priority need. A supported need exposes only a local authored resolver or shortest-path movement toward the nearest resolver. Thus Training Hall may be a transit hop toward water, but training is not exposed while strong thirst is the active supported priority.
-
-Reason grounding is also tightened: cognition must not claim an action resolves a physiological need when authored effects leave that need unchanged or worsen it. Stored Food Provisions therefore cannot truthfully be described as hydration because their authored thirst effect is positive.
-
-Evidence: PR #23 merge `4a0c5d67f0ed9460fc319702fa846a676090c606`; Causal Need Resolution v2 Acceptance #11 `31692492180` SUCCESS; CI #446 `31692492232` SUCCESS; release `5763818a20277b684a688df0d15bf488dbfc49e9`; Deploy #149 `31692592830` SUCCESS.
+Strict note: the existing production-copy acceptance harness exercised the deployed causal-resolution path on a live DB copy but did not enumerate every new v3 Energy/Sleepiness/Cleanliness matrix case. Those batch-specific cases are covered by full CI. Future equivalent batches should prefer a single production-copy matrix harness covering every batched case when the workflow write path is available.
 
 ## Other proven state
 
-- P2.2 Browse Sandbox + profile/browser UI — LIVE UX VERIFIED.
-- Runtime Speed Control + ETA observability — LIVE UX VERIFIED.
-- deterministic action-duration profiles — DEPLOYED.
-- Research exemplar + Monitor semantics batch — DEPLOYED.
-- read-only grading: Strength exemplar + 36 compatible 0..100 Attribute fields — DEPLOYED.
-- IQ, Skills and Body grading remain separate families.
-- Body measurements/composition remain a separate architecture line and must not inherit flat attribute or Strength-progression logic by default.
+- Browse Sandbox/Profile — LIVE UX VERIFIED.
+- Runtime Speed Control + ETA — LIVE UX VERIFIED.
+- deterministic duration planning — DEPLOYED.
+- Research exemplar + Monitor batch — DEPLOYED.
+- Attribute grading — Strength exemplar + 36 compatible 0..100 fields DEPLOYED.
+- IQ, Skills, and Body remain separate grading/progression families.
+- Body measurements/composition must not inherit flat attribute or Strength progression logic by default.
 
 ## Exact resume point
 
-First observe the deployed Causal Need Resolution v2 at the next relevant strong-thirst decision boundary. Once live thirst behavior is confirmed, return to Strength progression follow-up. Recommended progression decision remains:
-1. **Strength Progression Observability v1** — Creator-facing read-only view of recent stimulus, recovery/eligibility, saturation, latest settlement/delta and next progression boundary, then observe/tune live behavior; or
-2. select the next physical progression domain and first prove its stimulus mapping/domain semantics before batching anything.
+**Strength Progression Observability v1**.
 
-Do not batch other stats solely because Strength settlement infrastructure now exists.
+Before adding another progression domain, expose recent Strength stimulus, recovery/eligibility, saturation, level factor, latest settlement/delta, detraining/grace state, and next progression boundary in a Creator-facing read-only view. Observe/tune the live exemplar before reusing progression infrastructure elsewhere.
