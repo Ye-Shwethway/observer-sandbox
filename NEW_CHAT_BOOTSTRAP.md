@@ -2,11 +2,11 @@
 
 Status: ACTIVE
 Purpose: deterministic project recovery across ChatGPT sessions and protection against memory drift.
-Last synchronized: 2026-08-13 — P0 LIVE VERIFIED. P1 continuous autonomy remains LIVE at 1x with wake-on-demand cognition. P1 needs/recovery engine hardening is IMPLEMENTED / CI-VALIDATED / DEPLOYED after a production recovery-loop bug was identified from Telegram history. P2.1 Telegram Observer is live. P2.2.1 Observer Home + inline navigation is IMPLEMENTED / CI-VALIDATED / DEPLOYED. Per-user Telegram notifications are persistent, default ON.
+Last synchronized: 2026-08-13 — P0 LIVE VERIFIED. P1 continuous autonomy remains LIVE at 1x with wake-on-demand cognition. P1 full basic-physiology recovery + generic item-effect hardening is IMPLEMENTED / CI-VALIDATED / DEPLOYED. P2.1 Telegram Observer is live. P2.2.1 Observer Home + inline navigation is IMPLEMENTED / CI-VALIDATED / DEPLOYED. Per-user Telegram notifications are persistent, default ON.
 
 ## HARD RECOVERY RULES
 
-Read `AGENTS.md`, then this file, then directly relevant repo files before material changes. For roadmap decisions read `ROADMAP.md`. For Telegram work read `docs/TELEGRAM_OBSERVER_ARCHITECTURE.md`; for proactive notifications read `docs/TELEGRAM_NOTIFICATION_POLICY.md`.
+Read `AGENTS.md`, then this file, then directly relevant repo files before material changes. For roadmap decisions read `ROADMAP.md`. For Telegram work read `docs/TELEGRAM_OBSERVER_ARCHITECTURE.md`; for proactive notifications read `docs/TELEGRAM_NOTIFICATION_POLICY.md`; for living-needs, recovery, world-resource or item-effect work read `docs/PHYSIOLOGY_AND_ITEM_EFFECTS.md`.
 
 After every material repository/runtime change, update this file in the same work session.
 
@@ -14,7 +14,7 @@ Never conflate:
 - committed/authored;
 - CI-validated;
 - deployed to VPS;
-- DB/schema applied;
+- DB/schema/seed applied;
 - live-runtime/behavior verified.
 
 Authority order:
@@ -42,7 +42,6 @@ Previously verified autonomy baseline:
 - mode=normal;
 - paused=false;
 - speed=1.0;
-- retry=null;
 - Gemini cognition binding live;
 - Telegram Bot API live;
 - continuous autonomy started successfully after first production canary.
@@ -65,57 +64,114 @@ Persisted telemetry includes cumulative decision calls, last wall/sim call time 
 
 Do not add periodic LLM heartbeats/background reflection loops without explicit Creator approval.
 
-## P1 Living Darian / engine contract
+## P1 Living Darian / physiology and item-effect contract
 
 Canonical fixture: `config/characters/darian.canonical.json`
 Runtime defaults: `config/characters/darian.runtime-defaults.json`
 Autonomy policy: `config/characters/darian.autonomy-policy.json`
 World seed: `config/worlds/home.v1.json`
 Core simulation: `src/observer_sandbox/simulation.py`
+Canonical physiology/effect design: `docs/PHYSIOLOGY_AND_ITEM_EFFECTS.md`
 
 Home v1: Bedroom, Kitchen, Bathroom, Living Room, Home Gym; 15 useful objects.
 Action vocabulary: move, sleep, eat, drink, shower, rest, inspect, use, train, read, idle.
 
-### Recovery bug discovered 2026-08-13
+### Recovery-loop bug discovered 2026-08-13
 
-Creator observed repeated Telegram history entries where Darian chose `idle` with reasons such as “rest/recover low energy” but continued looping for hours.
+Creator observed repeated Telegram history where Darian selected `idle` with reasons such as rest/recover low energy but remained depleted.
 
-Root cause:
-- passive awake energy drift was `-3/hour`;
-- `idle` added only `+1/hour`, therefore net `-2 energy/hour`;
-- true `rest` was only offered when a local object had the `rest` capability, so Home Gym had no true rest option;
-- rest sleep-pressure math also initially had an imbalance after passive drift.
+Original root causes:
+- passive energy drain exceeded idle recovery, making idle net energy-negative;
+- true rest was only available through local rest-capable objects;
+- recovery rate interactions were not tested directionally.
 
-This was an engine/action-contract bug, not primarily an LLM-quality issue.
+The fix established targetless rest, corrected idle/rest/sleep directionality, and then expanded into a complete five-stat physiology + item-effect contract.
 
-### Recovery hardening now implemented
+### Current five-stat baseline
 
-- targetless `rest` is a valid action in every room;
-- object-backed rest (e.g. Sofa) remains valid;
-- `idle` is light recovery and is no longer energy-negative after passive drift;
-- `rest` provides meaningful energy recovery and lowers sleepiness after passive drift;
-- `sleep` provides stronger recovery and can restore severely depleted energy over a normal overnight duration;
-- deterministic baseline policy uses `rest` for low energy rather than forcing premature sleep solely because energy is low.
+All values clamp to `0..100`.
+- energy: high is good;
+- hunger: high is bad;
+- thirst: high is bad;
+- sleepiness: high is bad;
+- cleanliness: high is good.
 
-Current directional rates after passive drift:
-- idle: net about `+1 energy/hour`;
-- rest: net about `+9 energy/hour` and net lower sleep pressure;
-- sleep: net about `+12 energy/hour` with strong sleep-pressure reduction.
+Passive per simulated hour:
+- energy `-2.0`;
+- hunger `+2.5`;
+- thirst `+3.0`;
+- sleepiness `+3.0`;
+- cleanliness `-0.8`.
 
-Recovery invariants are now canonical in `ROADMAP.md`:
-- recovery-labeled actions must improve the relevant need after all passive drift;
-- every critical need needs at least one reachable corrective action path;
-- cognition must not be forced into an action whose deterministic effect contradicts its reason;
-- recovery behavior is tested with before/after state assertions.
+Intrinsic action effects per hour are defined separately from target/item effects:
+- sleep: energy `+11`, sleepiness `-15`, hunger `+0.5`, thirst `+0.75` before passive combination;
+- rest: energy `+10`, sleepiness `-4` before passive combination;
+- idle: energy `+3` before passive combination;
+- train: energy `-10`, hunger `+4`, thirst `+6`, cleanliness `-6` before passive combination;
+- read: energy `-0.5` before passive combination.
 
-Validation evidence:
-- engine implementation commit `843a637a26fae373e51ffa42329f6336214fa38c`;
-- follow-up sleep-pressure correction commit `ce29b8743c4606e446c9aca3a24fe8c238627c0e`;
-- CI #172 / run `31659870325`: SUCCESS;
-- latest-main CI #173 / run `31659901086`: SUCCESS;
-- Deploy #82 / run `31659870317`: SUCCESS.
+Directional net examples:
+- 1h idle: about `+1 energy`;
+- 1h targetless rest: about `+8 energy` and `-1 sleepiness`;
+- 8h sleep from severe depletion provides strong energy/sleep-pressure recovery while still increasing hunger/thirst by a bounded amount.
 
-Evidence level: recovery engine code is deployed and regression-tested. A post-fix production `rest`/`sleep` completion observed through Telegram will be the live behavioral proof; do not claim that specific behavior proof until observed.
+### Generic world/item effects
+
+Home world revision is `home-v1.1-effects`.
+
+World objects may author action-specific `effects`; runtime seeding persists them as `game.effects`. `action_options()` includes matching effect metadata so cognition can see deterministic consequences. `apply_action()` applies those effects after passive/intrinsic action effects.
+
+Current authored recovery resources:
+- Drinking Water / drink: thirst `-55`;
+- Sink / drink: thirst `-35`;
+- Meal Ingredients / eat: hunger `-50`, energy `+8`, thirst `+2`;
+- Pantry / eat: hunger `-40`, energy `+5`, thirst `+1`;
+- Shower / shower: cleanliness set to `100`;
+- Rest and Bed/Sleep provide intrinsic energy/sleep-pressure recovery.
+
+Food/drink/shower actions without matching authored effects are rejected. Refrigerator and Dining Table no longer expose fake eat/drink behavior solely because they are near food.
+
+Future items such as an energy drink use this same effect profile instead of requiring hard-coded simulation branches. Finite consumables, quantities, temporary stimulant modifiers, cooldowns/tolerance and inventory depletion remain later work; do not model a finite item as infinitely reusable until that layer exists.
+
+### Persistent-action migration rule
+
+Pending autonomy actions persist across service restarts. World/capability/effect changes must account for pending plans.
+
+During the first item-effect rollout, production had a persisted `eat -> Pantry` plan created under the prior world definition. Removing Pantry's eat capability would have made the pending action fail only because of deployment. Pantry was therefore preserved as a renewable ready-food abstraction with an authored eat effect, and Deploy #86 successfully applied that compatibility definition.
+
+### Validation and live evidence
+
+Regression suite now checks:
+- rest/idle/sleep recovery direction;
+- strong overnight recovery;
+- water thirst restoration;
+- food hunger + secondary effects;
+- shower cleanliness restoration;
+- effect metadata in legal action options;
+- rejection of restorative target actions without authored effects;
+- bounded-day state remains within `0..100`.
+
+Evidence:
+- full physiology/item-effect engine commit `8d44e04a236d89860326d22e5a8039159851df95`;
+- full recovery/effect test commit `9aa2246e187f9f809b717b081076dea1095e98b8`;
+- CI #178: SUCCESS;
+- Pantry compatibility CI #180: SUCCESS;
+- engine Deploy #85: SUCCESS;
+- Pantry compatibility Deploy #86: SUCCESS.
+
+Live readback from Deploy #85 after the Creator-reported depleted snapshot showed:
+- Kitchen;
+- sim time `2025-05-01T12:40:00+00:00`;
+- energy `23.832`;
+- hunger `63.665`;
+- thirst `28.335` (already recovered from the previously reported ~72.1);
+- sleepiness `34.835`;
+- cleanliness `43.2`;
+- pending `eat -> Pantry`, duration 20m, reason: hunger recovery;
+- decision_calls `15`;
+- autonomy enabled, normal, unpaused, 1x.
+
+The exact live state continues to advance. Do not treat the above as current forever. The next completed Pantry meal/rest/shower actions provide live behavioral proof for the newly generic item-effect/restoration path.
 
 ## AI provider layer
 
@@ -186,7 +242,7 @@ P2.2.1 Observer Home + inline navigation: IMPLEMENTED / CI-VALIDATED / DEPLOYED.
 
 Callbacks use stable IDs such as `nav:universe`, `loc:room_gym`, `char:char_darian`, re-check authorization and edit existing messages to reduce clutter.
 
-Next Telegram slice after engine hardening:
+Next Telegram slice after this P1 engine checkpoint:
 **P2.2.2 Location hierarchy / room detail browsing**
 - Home/world -> rooms;
 - room occupants;
@@ -195,13 +251,13 @@ Next Telegram slice after engine hardening:
 - current room activity;
 - Back -> Universe -> Observer Home.
 
-Then item detail browsing, selected-character session state, and profile section browsing/pagination.
+Item-detail views should eventually show authored capabilities/effects using the same human-friendly presentation contract.
 
 ## Roadmap snapshot
 
 - P0 Foundation & Remote Control: COMPLETE / LIVE VERIFIED.
 - P0.5 Provider Layer: FOUNDATION COMPLETE.
-- P1 Living Darian Minimum: CONTINUOUS AUTONOMY LIVE; needs/recovery engine hardening deployed and CI-validated.
+- P1 Living Darian Minimum: CONTINUOUS AUTONOMY LIVE; full five-stat physiology restoration + generic item-effect hardening deployed and CI-validated.
 - P2 Telegram Observer: ACTIVE; P2.1 live, P2.2.1 complete, P2.2.2 next.
 - P3 Rich State & Memory: later.
 - P4 First richer simulation module: later.
@@ -211,8 +267,9 @@ Then item detail browsing, selected-character session state, and profile section
 
 1. Do not reset/reseed production state casually; continuous autonomy is live at 1x.
 2. Preserve wake-on-demand cognition and cost-control policy.
-3. Recovery action semantics are now an explicit engine invariant; do not regress idle/rest/sleep directionality.
-4. Watch for the next post-fix live recovery completion in Telegram and verify energy/sleepiness move in the expected direction.
-5. Resume P2.2.2 location/room browsing after this engine hardening checkpoint.
-6. Preserve Telegram presentation and notification contracts.
-7. Synchronize this file after every material change/live proof.
+3. Preserve the five-stat recovery + generic `game.effects` contract in `docs/PHYSIOLOGY_AND_ITEM_EFFECTS.md`.
+4. Watch the next post-deploy live recovery completions (Pantry meal, rest, shower) and confirm stats move as authored; use exact live evidence before claiming behavioral proof.
+5. Future Energy Drink or other consumables should use effect profiles, but do not add infinite consumable semantics before quantity/inventory/temporary-modifier rules exist.
+6. Resume P2.2.2 location/room browsing after this engine hardening checkpoint.
+7. Preserve Telegram presentation and notification contracts.
+8. Synchronize this file after every material change/live proof.
