@@ -11,7 +11,7 @@ Core/runtime/schema/action: `docs/ARCHITECTURE.md` + `docs/COMPOSABLE_RUNTIME_AR
 Spatial: `docs/WORLD_LOCATION_NODE_MODEL.md`.
 Character/profile: `docs/CHARACTER_PROFILE_SCHEMA.md`.
 Telegram: `docs/TELEGRAM_OBSERVER_ARCHITECTURE.md` + `docs/TELEGRAM_NOTIFICATION_POLICY.md`.
-Needs/effects: `docs/PHYSIOLOGY_AND_ITEM_EFFECTS.md`.
+Needs/effects/training recovery: `docs/PHYSIOLOGY_AND_ITEM_EFFECTS.md`.
 Future grading: `docs/FUTURE_GRADING_SYSTEM.md`.
 
 Authority: current Creator instruction > canonical repo > verified live VPS/runtime/DB > deployed workflow evidence > CI/tests > this bootstrap > old chat/memory. Never conflate committed, CI-validated, deployed, DB-applied and Creator-live-UX-verified states.
@@ -22,7 +22,7 @@ Schema v4 was the deliberate one-time broad foundation refinement. Normal develo
 
 `minimum required state -> minimum behavior/query -> minimum Creator-facing surface -> focused tests -> deploy/readback -> Creator acceptance -> next slice`.
 
-Do not pre-build large inventory, grading, memory, relationship, environment, combat or regional systems merely because extension sockets exist. Avoid the Simiverse-style failure mode where extensive subsystem work accumulates before runnable checkpoints.
+Do not pre-build large inventory, grading, memory, relationship, environment, combat, training or regional systems merely because extension sockets exist. Avoid the Simiverse-style failure mode where extensive subsystem work accumulates before runnable checkpoints.
 
 ## Production baseline
 
@@ -36,6 +36,8 @@ Do not pre-build large inventory, grading, memory, relationship, environment, co
 - world identity revision: `thorne-estate-v3.0-scoped-ids`
 - Darian autonomy: enabled / normal / 1x / wake-on-demand
 - Telegram: live private Creator observer; notifications default ON per authorized user
+
+Production continues autonomously. Re-read live state whenever exact current Darian action/stats matter.
 
 ## LEGO runtime foundation
 
@@ -60,8 +62,6 @@ Current decision:
 - exact tiers/thresholds/caps/unlock rules are intentionally not frozen yet;
 - first grading work must be one minimum-runnable domain slice, then expand only after acceptance.
 
-P2.2.4 profile browsing intentionally shows raw authoritative profile values without grade badges.
-
 Canonical note: `docs/FUTURE_GRADING_SYSTEM.md`.
 
 ## World/location state
@@ -71,35 +71,29 @@ Current hierarchy:
 
 IDs are globally scoped and path-independent. `contains` = structural hierarchy, `connected_to` = traversal, `located_at` = dynamic presence. Estate exterior remains locked/non-traversable. Later `loc_south_lake_tahoe` can be inserted above the estate without renaming existing nodes.
 
-## P2 Telegram Observer
+## P2 Telegram Observer — proven browsing path
 
-### P2.2.2B Estate Browser
-
+### Estate Browser
 Status: COMPLETE / LIVE UX VERIFIED.
 
-Creator successfully navigated Universe -> Thorne Estate -> floor -> room and observed Darian in Kitchen.
+Creator successfully navigated Universe -> Thorne Estate -> floor -> room and observed Darian through the live Estate browser.
 
-### P2.2.3 Item/Object Browser
-
+### Item/Object Browser
 Status: COMPLETE / LIVE UX VERIFIED.
 
-Implemented room object buttons, readable object detail, definition/instance awareness, capabilities, authored effects and Back-to-room navigation. Creator tested the deployed flow and confirmed it worked.
+Room objects open readable detail views with definition/instance awareness, capabilities, authored effects and Back-to-room navigation. Creator confirmed the live flow.
 
 Evidence:
-- query `715a575642012c7aaef92cc26d27e8d8ba69ce8a`
-- Telegram `b26423aa1bc67ad239eb9059042e3efe5479d41c`
-- tests `835f90a3bfbe13e165fa90187712ddc4da564dd7`
 - CI #265 / run `31667412478` SUCCESS
 - Deploy #116 / run `31667377479` SUCCESS
 
-### P2.2.4 Character Profile Browser
+### Character Profile Browser
+Status: COMPLETE / LIVE UX VERIFIED.
 
-Status: IMPLEMENTED / CI-VALIDATED / DEPLOYED — CREATOR UI ACCEPTANCE PENDING.
-
-Current deployed flow:
+Base flow:
 `Characters -> Darian -> Profile -> section -> Back`.
 
-Implemented sections:
+Base sections proven by Creator:
 - Identity
 - Appearance
 - Body
@@ -110,28 +104,89 @@ Implemented sections:
 - Background
 
 Data ownership:
-- scalar profile values: `character_profile_values` + `profile_field_definitions`
-- skills/preferences/hobbies/habits: normalized profile tables
-- current runtime state remains separate from profile truth
-- normal browser filters out `private` and `intimate` sensitivity fields at query time
+- canonical/static scalar profile values: `character_profile_values` + `profile_field_definitions`
+- normalized skills/preferences/hobbies/habits: collection tables
+- live runtime/domain state remains separate from canonical profile values
+- ordinary profile filters out `private` and `intimate` fields
 - no grade badges yet
-- no second-character Telegram session state yet
+- no second-character Telegram session persistence yet.
 
-Implementation evidence:
-- grading-direction doc `f3cf9438aa84b68bfca230ca0392b5dd4ff3604f`
+Evidence:
 - profile query `2d9c43ad5d66cae0d9ff0e6d4f6c474599afa012`
-- profile presentation `db9f8702fc812a81f447f74d6e9e21d91b8419d5`
 - Telegram integration `0fd68b22a7d5a8b7d360dc8a617124753b5b3847`
-- focused tests `d926687d443bc6e5e841ef3c06d1a293d82ca71a`
 - CI #272 / run `31668499392` SUCCESS
 - Deploy #119 / run `31668483842` SUCCESS
+- Creator confirmed the deployed profile navigation and values were good.
 
-Deploy #119 readback verified systemd active, Telegram API connected, schema v4 healthy, Darian autonomy enabled/normal/unpaused at 1x, cognition binding preserved and Darian still in Kitchen/rest at that readback.
+P2.2 browsing is therefore COMPLETE / LIVE UX VERIFIED. P2.3 Creator-control expansion remains later and slice-by-slice only.
 
-Creator acceptance remaining: open Darian -> Profile, browse several sections, confirm readable values/layout/back navigation, and verify normal profile does not expose sensitive/private fields.
+## P3.1 — Minimum Systemic Training Fatigue / Recovery
+
+Status: IMPLEMENTED / CI-VALIDATED / DEPLOYED / BOUNDED ACCEPTANCE PASSED — CREATOR RECOVERY-VIEW CHECK PENDING.
+
+Purpose: first post-v4 proof that a richer behavior can activate one dormant ontology field and become runnable/observable without building a giant subsystem.
+
+Live state:
+- `physiology.fatigue`, `0..100`, higher = worse;
+- already existed in profile ontology; now activated as simulated generic field owned by `physiology_engine`;
+- default observer/runtime value is `0.0` before first persisted change;
+- do not seed this value in deploy-time runtime defaults because doing so would reset accumulated production fatigue.
+
+Deterministic tuning:
+- passive fatigue recovery `-1.5/hour`;
+- train `+20/hour` before passive drift -> one-hour net `+18.5`;
+- rest `-7/hour` before passive drift -> one-hour net `-8.5`;
+- sleep `-10/hour`, idle `-2/hour`, read `-1/hour` before passive drift;
+- train options and direct validation are blocked at fatigue `>=70`;
+- baseline normal morning training is not selected at fatigue `>=55`;
+- high fatigue prioritizes recovery;
+- action/event state changes include fatigue.
+
+Telegram:
+- Profile now has a read-only `Recovery` section;
+- it displays `Systemic fatigue` from live generic fields while using the profile definition for label/metadata;
+- it does not copy live fatigue into `character_profile_values`.
+
+Explicit non-goals for P3.1:
+- no strength gain;
+- no hypertrophy/body progression;
+- no per-muscle soreness;
+- no workout programming/exercise taxonomy;
+- no injury-probability system;
+- no grading/tier progression;
+- no general training-adaptation framework.
+
+Implementation evidence:
+- core `cd126b42833802c0f9dba9b8169d389b98464172`
+- Recovery observer `5a424fe23ccb83552dcde2cca02d23050736b51f`
+- default-zero refinement `a114a396112feeed6c5da37c03dfec13ba493df4`
+- Profile/Recovery regression `1fb5e4a270a753a1940dc1cc2fa75c030948125e`
+- docs contract `abe910280b50ea2e7ce2df87a93d42c4b52bb209`
+- P3 acceptance workflow final `c1c70bfda444003cde39c4fb5b227a95e21d3674`
+- CI #282 / run `31669206182` SUCCESS
+- CI #284 / run `31669332087` SUCCESS
+- Deploy #120 delivered the fatigue engine
+- Deploy #122 / run `31669140421` delivered the latest Recovery observer source and succeeded
+- P3 Training Recovery Acceptance #2 / run `31669332118` SUCCESS.
+
+Bounded acceptance #2 used a disposable production DB copy and **zero model calls**:
+- before fatigue `0.0`
+- after 60m train fatigue `18.5`
+- after 60m rest fatigue `10.0`
+- fatigue `75` blocked train both in options and deterministic validation.
+
+The disposable acceptance did not mutate production. Production readback at `2026-08-13T05:09:04Z` remained:
+- schema v4 healthy
+- autonomy enabled / normal
+- paused false
+- speed `1.0x`
+- cognition decision calls `21`
+- valid pending action id
+- Darian at Master Bathroom with current action `shower`
+- current production fatigue `0.0` at that readback.
 
 ## Exact resume point
 
-**Creator tests P2.2.4 Character Profile Browser in Telegram. If accepted, mark it LIVE UX VERIFIED and select the next independently runnable roadmap slice.**
+**Creator checks `Characters -> Darian -> Profile -> Recovery` in Telegram and confirms `Systemic fatigue` plus Back navigation are readable. If good, mark P3.1 LIVE UX VERIFIED. Do not automatically expand the training subsystem; select the next independent minimum-runnable slice separately.**
 
-Preserve 1x wake-on-demand production autonomy, scoped ids, locked unfinished boundaries, actor-scoped scheduler state, first-class actions/events, Telegram presentation rules, notification preferences, profile/runtime separation and the minimum-runnable expansion policy.
+Preserve 1x wake-on-demand production autonomy, scoped ids, locked unfinished boundaries, actor-scoped scheduler state, first-class actions/events, Telegram presentation rules, notification preferences, profile/runtime separation, grading-as-future-derived capability and the minimum-runnable expansion policy.
