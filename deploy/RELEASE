@@ -1,7 +1,7 @@
 Observer Sandbox production release marker
 
-release: read-only-grading-proof-v1
-accepted_main: d0bdabc1faaede8adb6c3e8dd29a9b5ff9ba3cb3
-acceptance_workflow: Read-Only Grading Proof Acceptance #1
-acceptance_run: 31683547092
+release: attribute-grading-batch-1
+accepted_main: 76bcf7fe7225a9504909f9d939bbcdd673bac7c6
+acceptance_workflow: Attribute Grading Batch 1 Acceptance #3
+acceptance_run: 31683936844
 status: accepted-for-production
