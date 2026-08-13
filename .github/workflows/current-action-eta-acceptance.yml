@@ -28,7 +28,7 @@ jobs:
           chmod 600 ~/.ssh/id_ed25519
           ssh-keyscan -p "$VPS_PORT" -H "$VPS_HOST" >> ~/.ssh/known_hosts
 
-      - name: Stage candidate source on VPS
+      - name: Stage candidate source and config on VPS
         env:
           VPS_HOST: ${{ secrets.VPS_HOST }}
           VPS_USER: ${{ secrets.VPS_USER }}
@@ -36,6 +36,7 @@ jobs:
         run: |
           ssh -p "$VPS_PORT" "$VPS_USER@$VPS_HOST" 'rm -rf /tmp/observer-current-eta-candidate && mkdir -p /tmp/observer-current-eta-candidate'
           rsync -az -e "ssh -p $VPS_PORT" src/ "$VPS_USER@$VPS_HOST:/tmp/observer-current-eta-candidate/src/"
+          rsync -az -e "ssh -p $VPS_PORT" config/ "$VPS_USER@$VPS_HOST:/tmp/observer-current-eta-candidate/config/"
 
       - name: Prove current-action ETA UI on disposable production copy
         env:
