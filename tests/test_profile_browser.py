@@ -68,9 +68,6 @@ def test_strength_progression_observability_is_read_only_and_reflects_event_evid
         ).fetchone()
         event_count_before = int(conn.execute("SELECT COUNT(*) FROM events").fetchone()[0])
 
-        # Snapshot establishes/reads the authoritative simulation clock. Test-only
-        # event evidence is then added at that exact boundary; reading Recovery
-        # must consume or mutate none of it.
         sim_time = snapshot(conn, "char_darian")["sim_time"]
         record_event(
             conn,
@@ -143,7 +140,7 @@ def test_telegram_profile_browser_is_readable_and_navigable(tmp_path, monkeypatc
         assert "Training readiness" in recovery_text
         assert "Strength raw" in recovery_text
         assert "Recent Strength stimulus" in recovery_text
-        assert "Level gain factor" in recovery_text
+        assert "Level adaptation factor" in recovery_text
         assert "Saturation yield" in recovery_text
         assert "Recovery realization" in recovery_text
         assert "Adaptation status" in recovery_text
