@@ -142,7 +142,6 @@ jobs:
           from observer_sandbox.adaptation_curve import strength_level_factor
           from observer_sandbox.db import connect
           from observer_sandbox.recovery_realization import recovery_time_factor, strength_recovery_realization_evidence
-          from observer_sandbox.runtime import initialize
           from observer_sandbox.simulation import Action, apply_action, snapshot
           from observer_sandbox.stimulus_saturation import recent_strength_stimulus_units, saturation_factor
           from observer_sandbox.strength_progression import BASE_POSITIVE_SCALE, SETTLEMENT_EVENT_TYPE
@@ -150,7 +149,6 @@ jobs:
 
           db = os.environ["OBSERVER_SANDBOX_DB"]
           actor = "char_darian"
-          initialize(db)
 
           def strength_value(conn):
               row = conn.execute(
