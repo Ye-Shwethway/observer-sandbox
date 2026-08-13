@@ -34,12 +34,7 @@ Current uses:
 - startup notification: `Universe is alive!`;
 - **character action completion summaries** after a committed autonomous action changes world/character state.
 
-Future uses may include:
-
-- important character/world events beyond ordinary action completion;
-- runtime failures or fail-closed autonomy events;
-- watched-character or watched-location activity;
-- later category-specific notification preferences layered under the global gate.
+Future uses may include important character/world events, runtime failures, watched-character/location activity, or later category-specific preferences layered under the global gate.
 
 If the global preference is OFF, proactive notifications are suppressed for that user. Direct replies to commands/callbacks are interactive responses and are not suppressed by this preference.
 
@@ -52,11 +47,19 @@ The notification should include, when relevant:
 - character name;
 - completed action and human-readable target name;
 - canonical human-facing simulated timestamp;
+- completed simulated duration and approximate real wait at the action's recorded speed;
 - short cognition reason;
 - location or location transition;
-- changed basic physiological stats as before -> after values and deltas.
+- changed basic physiological stats as before -> after values and deltas;
+- the newly planned next action/target, its duration, and expected simulated completion timestamp when the normal next decision boundary resolves successfully.
 
-Do not push on scheduler polling ticks, action planning alone, `in_progress`, bookkeeping events, or recovered duplicate completion records. One committed action should produce at most one push per recipient.
+The service may resolve the next normal decision boundary immediately after completion so the **same completion notification** can expose what is now in progress and when its next update is expected. This does not authorize a second proactive planning notification.
+
+Do not push on scheduler polling ticks, action planning alone, `in_progress`, bookkeeping events, or recovered duplicate completion records. **One committed action still produces at most one proactive push per recipient.**
+
+The displayed next-update time is an estimate for the currently planned action. Pause/control intervention, service interruption, runtime failure/backoff, or other later state changes can delay or invalidate it.
+
+Time semantics remain runtime-owned: wall wait is approximately `duration_minutes × 60 / speed` seconds. At normal production `1x`, one simulated minute is therefore approximately one real minute between action boundaries.
 
 Delivery is **best effort and downstream of simulation truth**. A Telegram network/API failure must never roll back or invalidate a successfully committed universe action. Successful deliveries persist the last delivered action id per recipient to prevent duplicate pushes from repeated service processing.
 
@@ -70,8 +73,10 @@ Future owner-managed user controls must not silently rewrite another user's pref
 
 Notification messages must follow `docs/TELEGRAM_OBSERVER_ARCHITECTURE.md` presentation rules: human-readable names, mobile-scannable structure, restrained icons, and canonical display timestamps where simulated time is shown.
 
-Normal action notifications must not expose internal ids such as `obj_meal_stock` or `room_gym` when a human-readable entity name exists.
+Normal action notifications must not expose internal ids when a human-readable entity name exists.
 
 ## Persistence boundary
 
 Notification preferences and delivery-deduplication markers are Telegram UI/configuration state, not world state. They may be stored in runtime configuration storage but must never alter simulation truth, character state, or scheduler semantics.
+
+See `docs/AUTONOMY_BREADTH_TIME_OBSERVABILITY.md` for the production rollout that introduced duration and next-action ETA presentation.
