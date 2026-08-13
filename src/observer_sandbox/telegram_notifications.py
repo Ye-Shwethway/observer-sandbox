@@ -27,23 +27,30 @@ def _fmt_delta(label: str, icon: str, before: float, after: float, *, high_is_go
     return f"{icon} {label:<11} {before:.1f} → {after:.1f}  {direction}{abs(delta):.1f} {marker}"
 
 
-def _target_name(conn, target_id: str | None) -> str | None:
-    if not target_id:
+def _entity_name(conn, entity_id: str | None) -> str | None:
+    if not entity_id:
         return None
-    row = conn.execute("SELECT name FROM entities WHERE id=?", (target_id,)).fetchone()
+    row = conn.execute("SELECT name FROM entities WHERE id=?", (entity_id,)).fetchone()
     return str(row["name"]) if row else None
 
 
-def format_action_completion(action: dict[str, Any], before: dict[str, Any], after: dict[str, Any]) -> str:
+def format_action_completion(
+    action: dict[str, Any],
+    before: dict[str, Any],
+    after: dict[str, Any],
+    *,
+    actor_name: str | None = None,
+) -> str:
     title = _title_action(action.get("action"))
     target = action.get("target_name") or action.get("target")
     if target:
         title += f" → {target}"
 
+    display_actor = actor_name or after.get("actor_name") or after.get("actor_id") or "Character"
     lines = [
         "✨ CHARACTER UPDATE",
         "━━━━━━━━━━━━━━━━━━",
-        "👤 Darian Thorne",
+        f"👤 {display_actor}",
         f"🎬 {title}",
         f"🕒 {_fmt_time(after.get('sim_time'))}",
     ]
@@ -76,12 +83,7 @@ def dispatch_action_completion(
     before: dict[str, Any],
     after: dict[str, Any],
 ) -> int:
-    """Best-effort proactive push after a committed action completion.
-
-    Telegram delivery never controls simulation success. Per-user action ids are
-    persisted only after successful delivery so duplicate service ticks do not
-    resend the same completion.
-    """
+    """Best-effort proactive push after a committed action completion."""
     token = os.environ.get("OBSERVER_TELEGRAM_BOT_TOKEN", "").strip()
     if not token:
         return 0
@@ -92,10 +94,12 @@ def dispatch_action_completion(
         recipients.add(owner_id)
 
     display_action = dict(action)
-    target_name = _target_name(conn, action.get("target"))
+    target_name = _entity_name(conn, action.get("target"))
     if target_name:
         display_action["target_name"] = target_name
-    message = format_action_completion(display_action, before, after)
+    actor_id = str(after.get("actor_id") or before.get("actor_id") or "") or None
+    actor_name = _entity_name(conn, actor_id)
+    message = format_action_completion(display_action, before, after, actor_name=actor_name)
 
     sent = 0
     for user_id in sorted(recipients):
