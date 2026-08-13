@@ -1,7 +1,7 @@
 Observer Sandbox production release marker
 
-release: duration-planning-profiles-v1
-accepted_main: 4d7d949002a4444f6ae6424e502fa872f6d90a33
-acceptance_workflow: Duration Planning Profiles Acceptance #1
-acceptance_run: 31680683416
+release: research-action-semantics-v1
+accepted_main: c50f4cf9a87b15589be3b3ea4878990da7e69d02
+acceptance_workflow: Research Action Semantics Acceptance #1
+acceptance_run: 31681716339
 status: accepted-for-production
