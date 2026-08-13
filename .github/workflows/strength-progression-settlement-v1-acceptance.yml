@@ -1,0 +1,142 @@
+name: Strength Progression Settlement v1 Acceptance
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - 'src/observer_sandbox/strength_progression.py'
+      - 'tests/test_strength_progression_settlement_v1.py'
+      - 'docs/STRENGTH_PROGRESSION_SETTLEMENT_V1.md'
+      - '.github/workflows/strength-progression-settlement-v1-acceptance.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  acceptance:
+    if: ${{ vars.VPS_DEPLOY_ENABLED == 'true' }}
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Configure SSH
+        env:
+          VPS_SSH_KEY: ${{ secrets.VPS_SSH_KEY }}
+          VPS_HOST: ${{ secrets.VPS_HOST }}
+          VPS_PORT: ${{ secrets.VPS_PORT || '22' }}
+        run: |
+          test -n "$VPS_HOST"
+          test -n "$VPS_SSH_KEY"
+          install -m 700 -d ~/.ssh
+          printf '%s\n' "$VPS_SSH_KEY" > ~/.ssh/id_ed25519
+          chmod 600 ~/.ssh/id_ed25519
+          ssh-keyscan -p "$VPS_PORT" -H "$VPS_HOST" >> ~/.ssh/known_hosts
+      - name: Stage candidate
+        env:
+          VPS_HOST: ${{ secrets.VPS_HOST }}
+          VPS_USER: ${{ secrets.VPS_USER }}
+          VPS_PORT: ${{ secrets.VPS_PORT || '22' }}
+        run: |
+          ssh -p "$VPS_PORT" "$VPS_USER@$VPS_HOST" 'rm -rf /tmp/observer-strength-settlement-v1 && mkdir -p /tmp/observer-strength-settlement-v1'
+          rsync -az -e "ssh -p $VPS_PORT" src/ "$VPS_USER@$VPS_HOST:/tmp/observer-strength-settlement-v1/src/"
+      - name: Dry-run idempotent Strength mutation core on production copy
+        env:
+          VPS_HOST: ${{ secrets.VPS_HOST }}
+          VPS_USER: ${{ secrets.VPS_USER }}
+          VPS_PORT: ${{ secrets.VPS_PORT || '22' }}
+        run: |
+          ssh -p "$VPS_PORT" "$VPS_USER@$VPS_HOST" '
+            set -euo pipefail
+            cd /opt/observer-sandbox
+            TMP_DB=$(mktemp /tmp/observer-strength-settlement-v1.XXXXXX.sqlite3)
+            trap "rm -f $TMP_DB $TMP_DB-wal $TMP_DB-shm; rm -rf /tmp/observer-strength-settlement-v1" EXIT
+            cp /var/lib/observer-sandbox/observer.sqlite3 "$TMP_DB"
+            export OBSERVER_SANDBOX_DB="$TMP_DB"
+            export PYTHONPATH=/tmp/observer-strength-settlement-v1/src
+            .venv/bin/python - <<"PY"
+          import json, os
+          from datetime import datetime, timedelta
+          from observer_sandbox.db import connect
+          from observer_sandbox.event_log import record_event
+          from observer_sandbox.simulation import ensure_sim_clock, snapshot
+          from observer_sandbox.strength_progression import settle_strength_progression
+
+          db = os.environ["OBSERVER_SANDBOX_DB"]
+          with connect(db) as conn:
+              live_copy_start = ensure_sim_clock(conn)
+              before = conn.execute(
+                  "SELECT value_json,mode,authority FROM character_profile_values WHERE entity_id=? AND field_key=?",
+                  ("char_darian", "raps_pa.strength"),
+              ).fetchone()
+              original_strength = float(json.loads(before["value_json"]))
+              state = snapshot(conn, "char_darian")
+
+              bootstrap = settle_strength_progression(
+                  conn, "char_darian", as_of_sim_time=live_copy_start.isoformat(), state=state
+              )
+              assert bootstrap["status"] == "bootstrapped"
+              assert bootstrap["new_strength"] == original_strength
+
+              stimulus_time = live_copy_start + timedelta(minutes=1)
+              stimulus_id = record_event(
+                  conn,
+                  sim_time=stimulus_time.isoformat(),
+                  actor_id="char_darian",
+                  event_type="action_completed",
+                  payload={"training_stimulus": {"domain": "strength", "stimulus_units": 1.0}},
+              )
+              conn.commit()
+              settle_time = stimulus_time + timedelta(hours=48)
+              positive = settle_strength_progression(
+                  conn, "char_darian", as_of_sim_time=settle_time.isoformat(), state={"energy":75,"sleepiness":25,"fatigue":20}
+              )
+              assert positive["status"] == "applied"
+              assert stimulus_id in positive["consumed_stimulus_event_ids"]
+              assert 0 < positive["positive_delta"] < 0.01
+              strength_after_positive = positive["new_strength"]
+
+              replay = settle_strength_progression(
+                  conn, "char_darian", as_of_sim_time=settle_time.isoformat(), state={"energy":75,"sleepiness":25,"fatigue":20}
+              )
+              assert replay["status"] == "no_change"
+              assert replay["new_strength"] == strength_after_positive
+
+              detraining_time = stimulus_time + timedelta(days=74)
+              negative = settle_strength_progression(
+                  conn, "char_darian", as_of_sim_time=detraining_time.isoformat(), state={"energy":75,"sleepiness":25,"fatigue":20}
+              )
+              assert negative["status"] == "applied"
+              assert 0 < negative["negative_delta"] < 1.0
+              assert negative["new_strength"] < strength_after_positive
+
+              negative_replay = settle_strength_progression(
+                  conn, "char_darian", as_of_sim_time=detraining_time.isoformat(), state={"energy":75,"sleepiness":25,"fatigue":20}
+              )
+              assert negative_replay["status"] == "no_change"
+              assert negative_replay["new_strength"] == negative["new_strength"]
+
+              settlement_count = conn.execute("SELECT COUNT(*) FROM events WHERE actor_id=? AND event_type='strength_progression_settled'", ("char_darian",)).fetchone()[0]
+              history_count = conn.execute("SELECT COUNT(*) FROM character_profile_history WHERE entity_id=? AND field_key=?", ("char_darian", "raps_pa.strength")).fetchone()[0]
+              assert settlement_count >= 3
+              assert history_count >= 2
+              print(json.dumps({
+                  "ok": True,
+                  "disposable": True,
+                  "candidate_source": True,
+                  "model_calls": 0,
+                  "bootstrap_no_retroactive_mutation": True,
+                  "positive_delta": positive["positive_delta"],
+                  "positive_strength": strength_after_positive,
+                  "positive_replay_noop": True,
+                  "negative_delta": negative["negative_delta"],
+                  "negative_strength": negative["new_strength"],
+                  "negative_replay_noop": True,
+                  "settlement_events": settlement_count,
+                  "profile_history_rows": history_count,
+                  "automatic_service_activation": False
+              }, indent=2, sort_keys=True))
+          PY
+            unset PYTHONPATH
+            export OBSERVER_SANDBOX_DB=/var/lib/observer-sandbox/observer.sqlite3
+            echo "--- LIVE PRODUCTION READBACK (UNTOUCHED) ---"
+            .venv/bin/sandboxctl status
+          '
