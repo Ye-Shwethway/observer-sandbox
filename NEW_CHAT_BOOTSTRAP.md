@@ -44,6 +44,29 @@ Key semantics:
 - six-decimal raw mutation, audited settlement events, consumed-stimulus replay protection;
 - first live settlement was bootstrap-only and preserved Strength 90.
 
+### Strength Progression Observability v1
+
+Status: **COMPLETE / DEPLOYED / CREATOR LIVE UX VERIFICATION PENDING**.
+
+Existing `Profile -> Recovery` now exposes read-only diagnostics without changing progression math or state:
+- Strength raw value at six-decimal precision;
+- recent Strength stimulus over 72h;
+- level gain factor;
+- saturation yield;
+- recovery realization and adaptation status;
+- latest settlement delta/time;
+- detraining/grace status;
+- next progression boundary.
+
+Read-only tests prove opening Recovery does not mutate raw Strength or consume/write event evidence.
+
+Evidence:
+- PR #25 merge `d291e77f4c290bc4b0487888e52a4c6063349f36`;
+- CI #457 `31699319018` SUCCESS after one test-setup-only correction;
+- read-only grading regression acceptances #5/#6 remained green;
+- release `e20c8f8704d459683f0646ac466aae9bf3c328cb`;
+- Deploy #151 `31699394074` SUCCESS.
+
 ## Causal physiological need resolution
 
 Hunger v1 and Thirst v2 are **Creator live verified**.
@@ -53,8 +76,8 @@ Hunger v1 and Thirst v2 are **Creator live verified**.
 Status: **COMPLETE / CI VERIFIED / PRODUCTION-COPY COMPATIBILITY VERIFIED / DEPLOYED**.
 
 Accelerated development pattern used:
-- exemplar: **Energy** proved low-is-bad directionality using intrinsic recovery effects;
-- same-PR batch: **Sleepiness + Cleanliness**;
+- exemplar: Energy proved low-is-bad directionality using intrinsic recovery effects;
+- same-PR batch: Sleepiness + Cleanliness;
 - Hunger/Thirst regressions stayed green;
 - one PR and one deploy.
 
@@ -64,20 +87,14 @@ Priority authority remains:
 Current behavior:
 - strong Sleepiness -> causal rest/sleep; critical Sleepiness -> sleep only, routing toward Bed when necessary;
 - low Energy -> causal recovery that raises Energy;
-- strong Thirst -> authored drink resolver;
-- strong Hunger -> authored eat resolver;
-- poor Cleanliness -> authored shower resolver, routing toward Shower;
-- both direct object effects and intrinsic per-hour action effects count as causal evidence;
-- no second need-scoring system is introduced.
+- strong Thirst -> drink resolver;
+- strong Hunger -> eat resolver;
+- poor Cleanliness -> shower resolver, routing toward Shower;
+- both direct object effects and intrinsic per-hour action effects count as causal evidence.
 
-Evidence:
-- PR #24 merge `e1e6d79479fa4d2ae837c395ec3b2fdb7391dc8f`;
-- CI #451 `31698384623` SUCCESS;
-- existing disposable production-copy Causal Need Resolution compatibility acceptance #12 `31698384587` SUCCESS;
-- release `ab60e3d1f95100324bcaa638299eef1ba32e5036`;
-- Deploy #150 `31698521410` SUCCESS.
+Evidence: PR #24 merge `e1e6d79479fa4d2ae837c395ec3b2fdb7391dc8f`; CI #451 `31698384623` SUCCESS; production-copy compatibility acceptance #12 `31698384587` SUCCESS; Deploy #150 `31698521410` SUCCESS.
 
-Strict note: the existing production-copy acceptance harness exercised the deployed causal-resolution path on a live DB copy but did not enumerate every new v3 Energy/Sleepiness/Cleanliness matrix case. Those batch-specific cases are covered by full CI. Future equivalent batches should prefer a single production-copy matrix harness covering every batched case when the workflow write path is available.
+Strict note: the v3 batch-specific Energy/Sleepiness/Cleanliness matrix was fully covered by CI, while the reused production-copy compatibility harness did not enumerate every new matrix case. Future equivalent batches should prefer one production-copy matrix covering every batched case when workflow writes are available.
 
 ## Other proven state
 
@@ -91,6 +108,4 @@ Strict note: the existing production-copy acceptance harness exercised the deplo
 
 ## Exact resume point
 
-**Strength Progression Observability v1**.
-
-Before adding another progression domain, expose recent Strength stimulus, recovery/eligibility, saturation, level factor, latest settlement/delta, detraining/grace state, and next progression boundary in a Creator-facing read-only view. Observe/tune the live exemplar before reusing progression infrastructure elsewhere.
+First obtain Creator live UX verification of **Profile -> Recovery -> Strength progression diagnostics**. Then use the live evidence to tune/observe the Strength curve before selecting the next physical progression domain. Do not batch other progression domains merely because the Strength settlement infrastructure exists.
