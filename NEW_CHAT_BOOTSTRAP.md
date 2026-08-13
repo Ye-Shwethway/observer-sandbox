@@ -11,6 +11,7 @@ Core/runtime/schema/action: `docs/ARCHITECTURE.md` + `docs/COMPOSABLE_RUNTIME_AR
 Spatial: `docs/WORLD_LOCATION_NODE_MODEL.md`.
 Character/profile: `docs/CHARACTER_PROFILE_SCHEMA.md`.
 Telegram: `docs/TELEGRAM_OBSERVER_ARCHITECTURE.md` + `docs/TELEGRAM_NOTIFICATION_POLICY.md`.
+Creator controls: `docs/CREATOR_CONTROL_POLICY.md`.
 Needs/effects/training recovery: `docs/PHYSIOLOGY_AND_ITEM_EFFECTS.md`.
 Future grading: `docs/FUTURE_GRADING_SYSTEM.md`.
 
@@ -22,7 +23,7 @@ Schema v4 was the deliberate one-time broad foundation refinement. Normal develo
 
 `minimum required state -> minimum behavior/query -> minimum Creator-facing surface -> focused tests -> deploy/readback -> Creator acceptance -> next slice`.
 
-Do not pre-build large inventory, grading, memory, relationship, environment, combat, training or regional systems merely because extension sockets exist. Avoid the Simiverse-style failure mode where extensive subsystem work accumulates before runnable checkpoints.
+Do not pre-build large inventory, grading, memory, relationship, environment, combat, training, Creator-control or regional systems merely because extension sockets exist. Avoid the Simiverse-style failure mode where extensive subsystem work accumulates before runnable checkpoints.
 
 ## Production baseline
 
@@ -38,6 +39,22 @@ Do not pre-build large inventory, grading, memory, relationship, environment, co
 - Telegram: live private Creator observer; notifications default ON per authorized user
 
 Production continues autonomously. Re-read live state whenever exact current Darian action/stats matter.
+
+Latest Creator-authorized production restore was applied successfully by Creator Control workflow #1 at `2026-08-13T05:33:26Z`. Immediate post-restore snapshot:
+- location: Master Bathroom
+- sim time: `2025-05-01T14:50:00+00:00`
+- current action: idle immediately after restore
+- energy `75.0`
+- hunger `20.0`
+- thirst `15.0`
+- sleepiness `15.0`
+- cleanliness `80.0`
+- fatigue `0.0`
+- old pending `rest` action `9d11373e-b3cd-4425-b3e2-3152687ca1bb` cancelled
+- autonomy remained enabled / normal / unpaused / `1.0x`
+- actor wake reason set to `creator_basic_stats_restored`.
+
+Treat this as a historical readback; the live actor may have moved or acted afterward.
 
 ## LEGO runtime foundation
 
@@ -118,11 +135,47 @@ Evidence:
 - Deploy #119 / run `31668483842` SUCCESS
 - Creator confirmed the deployed profile navigation and values were good.
 
-P2.2 browsing is therefore COMPLETE / LIVE UX VERIFIED. P2.3 Creator-control expansion remains later and slice-by-slice only.
+P2.2 browsing is COMPLETE / LIVE UX VERIFIED.
+
+## P2.3.1 — Minimum Creator Restore Control
+
+Status: IMPLEMENTED / CI-VALIDATED / DEPLOYED / PRODUCTION MUTATION VERIFIED — TELEGRAM UI ACCEPTANCE PENDING.
+
+Purpose: give the Creator a narrow, audited way to restore a character's basic living state when slow 1x production recovery would otherwise make development observation impractical.
+
+Backend:
+- reusable `restore_basic_stats()` in `src/observer_sandbox/creator_control.py`;
+- baseline: Energy 75, Hunger 20, Thirst 15, Sleepiness 15, Cleanliness 80, Fatigue 0;
+- preserves simulation time, location, canonical profile data, autonomy enabled state and autonomy mode;
+- cancels stale pending action, clears lease/retry, sets current action to idle and wake reason to `creator_basic_stats_restored`;
+- Creator authority authorizes the intervention but normal field ownership remains with `needs_engine`, `physiology_engine`, and `living_runtime`;
+- appends `creator_basic_stats_restored` audit event with before/after/state changes/request source.
+
+Operator surfaces:
+- CLI: `sandboxctl creator restore-basic-stats --character <id>`;
+- Telegram owner-only `/restorestats [character_id]`;
+- Telegram owner-only `🩺 Restore Basic Stats` character button with confirmation step;
+- allowed users do not see the button and server-side mutation rejects them;
+- `.github/workflows/creator-control.yml` exposes the same backend and used a persistent marker for the one-time initial production restore.
+
+Evidence:
+- backend commit `89cb9f4b37726a7a6bdda9770ec252fbaa3e12ca`
+- CLI commit `e35fb37fd45f9bc81af6943c59da5c64153a256c`
+- Telegram commit `583141d9f20849dac69671de5972960eed27e9c3`
+- focused tests `a4f825838ce93ed28ac5b95794d630dccc29854b`
+- field-authority/lease refinement `ceae7247abcbe0a40fe65602e1bb3f970028a73c`
+- CI #292 / run `31670662395` SUCCESS
+- Deploy #126 / run `31670662394` SUCCESS
+- Creator Control workflow commit `d6ce3328f2a3b5b8314dd9e74054ab9681a6ff0f`
+- Creator Control #1 / run `31670700838` SUCCESS and live production reset/readback verified.
+
+Canonical policy: `docs/CREATOR_CONTROL_POLICY.md`.
+
+Do not expand this into arbitrary field editing or a generic admin console. Add future typed controls only for concrete operational needs.
 
 ## P3.1 — Minimum Systemic Training Fatigue / Recovery
 
-Status: IMPLEMENTED / CI-VALIDATED / DEPLOYED / BOUNDED ACCEPTANCE PASSED — CREATOR RECOVERY-VIEW CHECK PENDING.
+Status: COMPLETE / LIVE UX VERIFIED.
 
 Purpose: first post-v4 proof that a richer behavior can activate one dormant ontology field and become runnable/observable without building a giant subsystem.
 
@@ -143,9 +196,10 @@ Deterministic tuning:
 - action/event state changes include fatigue.
 
 Telegram:
-- Profile now has a read-only `Recovery` section;
+- Profile has a read-only `Recovery` section;
 - it displays `Systemic fatigue` from live generic fields while using the profile definition for label/metadata;
-- it does not copy live fatigue into `character_profile_values`.
+- it does not copy live fatigue into `character_profile_values`;
+- Creator tested the deployed Recovery section and confirmed it was good.
 
 Explicit non-goals for P3.1:
 - no strength gain;
@@ -166,7 +220,7 @@ Implementation evidence:
 - CI #282 / run `31669206182` SUCCESS
 - CI #284 / run `31669332087` SUCCESS
 - Deploy #120 delivered the fatigue engine
-- Deploy #122 / run `31669140421` delivered the latest Recovery observer source and succeeded
+- Deploy #122 / run `31669140421` delivered the Recovery observer source and succeeded
 - P3 Training Recovery Acceptance #2 / run `31669332118` SUCCESS.
 
 Bounded acceptance #2 used a disposable production DB copy and **zero model calls**:
@@ -175,18 +229,8 @@ Bounded acceptance #2 used a disposable production DB copy and **zero model call
 - after 60m rest fatigue `10.0`
 - fatigue `75` blocked train both in options and deterministic validation.
 
-The disposable acceptance did not mutate production. Production readback at `2026-08-13T05:09:04Z` remained:
-- schema v4 healthy
-- autonomy enabled / normal
-- paused false
-- speed `1.0x`
-- cognition decision calls `21`
-- valid pending action id
-- Darian at Master Bathroom with current action `shower`
-- current production fatigue `0.0` at that readback.
-
 ## Exact resume point
 
-**Creator checks `Characters -> Darian -> Profile -> Recovery` in Telegram and confirms `Systemic fatigue` plus Back navigation are readable. If good, mark P3.1 LIVE UX VERIFIED. Do not automatically expand the training subsystem; select the next independent minimum-runnable slice separately.**
+**P3.1 is LIVE UX VERIFIED. P2.3.1 Creator Restore Control is implemented, deployed and already used successfully to restore production Darian. Creator should test the deployed Telegram character control flow: `Characters -> Darian -> 🩺 Restore Basic Stats -> confirmation` (the actual restore has already been applied once, so another confirmation would intentionally reset the stats again). If the UI is good, mark P2.3.1 LIVE UX VERIFIED and select the next independent minimum-runnable slice.**
 
-Preserve 1x wake-on-demand production autonomy, scoped ids, locked unfinished boundaries, actor-scoped scheduler state, first-class actions/events, Telegram presentation rules, notification preferences, profile/runtime separation, grading-as-future-derived capability and the minimum-runnable expansion policy.
+Preserve 1x wake-on-demand production autonomy, scoped ids, locked unfinished boundaries, actor-scoped scheduler state, first-class actions/events, Telegram presentation rules, notification preferences, profile/runtime separation, grading-as-future-derived capability, typed/audited Creator-control authority and the minimum-runnable expansion policy.
