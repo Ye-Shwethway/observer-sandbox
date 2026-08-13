@@ -22,6 +22,7 @@ Use minimum runnable expansion plus **exemplar-first, then batch-by-pattern**. P
 - SQLite schema v4
 - world root `world_observer_universe`
 - estate `loc_thorne_estate`
+- world revision `thorne-estate-v3.1-food-resolution`
 - Darian autonomy enabled / normal / wake-on-demand
 - global speed is Creator-controlled and must be re-read live
 - Gemini cognition binding preserved
@@ -76,6 +77,24 @@ Evidence:
 
 Future eligible Free Weights Strength evidence may now cause tiny decimal raw Strength gains after recovery; prolonged inactivity may cause bounded decay after the grace curve.
 
+## Food Resolution Guard v1
+
+Status: **COMPLETE / PRE-MERGE PRODUCTION-COPY ACCEPTANCE VERIFIED / DEPLOYED; CREATOR LIVE BEHAVIOR VERIFICATION PENDING**.
+
+Production incident: at strong hunger Darian repeatedly selected `Inspect -> Supply Shelves` in Food Supply Storage even though the shelf had no hunger-reducing effect, then resumed training without resolving hunger.
+
+Fix:
+- world revision `thorne-estate-v3.1-food-resolution`;
+- Food Supply Storage now contains distinct `Stored Food Provisions` with authored `eat` effects (hunger -50, energy +8, thirst +2);
+- `Supply Shelves` remain inspect-only;
+- under strong/critical hunger, unless another physiological need is critical, cognition options are deterministically shaped to local authored hunger-resolving `eat` options, or shortest-path movement toward the nearest authored food resolver;
+- persistent need no longer justifies inspect/use repetition unless the action causally improves the need or moves toward a resolver;
+- model action vocabulary is constrained to current authoritative `action_options` when options exist.
+
+Evidence: PR #22 merge `6117b4b8f08ae3afc8d0db6849a7aa061a34b51f`; Food Resolution Guard Acceptance #4 `31691041378` SUCCESS; Activity Semantics regression Acceptance #6 SUCCESS; CI #435 `31691041444` SUCCESS; release `0906d3c06961482fa6c327caf9cfd8e172e51d12`; Deploy #148 `31691179483` SUCCESS.
+
+At deploy readback Darian still had a pre-existing `inspect` action planned before the guard was live. Deployment intentionally preserved that pending action. The guard applies from the next cognition/planning boundary after it completes.
+
 ## Other proven state
 
 - P2.2 Browse Sandbox + profile/browser UI — LIVE UX VERIFIED.
@@ -88,7 +107,7 @@ Future eligible Free Weights Strength evidence may now cause tiny decimal raw St
 
 ## Exact resume point
 
-Strength progression v1 is live. Recommended next decision:
+First observe the deployed Food Resolution Guard at the next relevant hunger decision boundary. Once live behavior is confirmed, return to Strength progression follow-up. Recommended progression decision remains:
 1. **Strength Progression Observability v1** — Creator-facing read-only view of recent stimulus, recovery/eligibility, saturation, latest settlement/delta and next progression boundary, then observe/tune live behavior; or
 2. select the next physical progression domain and first prove its stimulus mapping/domain semantics before batching anything.
 
