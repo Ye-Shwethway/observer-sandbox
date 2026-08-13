@@ -1,0 +1,31 @@
+name: Duration Planning Profiles Acceptance
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'src/observer_sandbox/duration_planning.py'
+      - 'src/observer_sandbox/ai_runtime.py'
+      - 'tests/test_duration_planning_profiles.py'
+      - '.github/workflows/duration-planning-profiles-acceptance.yml'
+
+jobs:
+  acceptance:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - run: python -m pip install -e '.[dev]'
+      - name: Prove deterministic planning ranges
+        run: |
+          pytest -q tests/test_duration_planning_profiles.py
+          python - <<'PY'
+          from observer_sandbox.duration_planning import normalize_duration
+          assert normalize_duration('inspect', 'obj_thorne_estate_kitchen_refrigerator', 15) == 5
+          assert normalize_duration('train', 'obj_thorne_estate_gym_heavy_bag', 60) == 45
+          assert normalize_duration('train', 'obj_thorne_estate_gym_free_weights', 30) == 45
+          assert normalize_duration('sleep', 'obj_thorne_estate_master_bed', 480) == 480
+          print({'ok': True, 'refrigerator_inspect': 5, 'heavy_bag': 45, 'free_weights': 45, 'sleep_unclamped': 480})
+          PY

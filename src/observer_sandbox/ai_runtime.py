@@ -7,6 +7,7 @@ import urllib.request
 from typing import Any
 
 from .ai import AIConfigurationError, resolve_binding
+from .duration_planning import enrich_action_options, normalize_duration
 from .secrets import load_runtime_secrets
 
 
@@ -56,13 +57,18 @@ def _provider_and_key(conn: sqlite3.Connection, provider_id: str) -> tuple[sqlit
 
 
 def _decision_prompt(state: dict[str, Any], available_actions: list[str]) -> str:
+    prompt_state = dict(state)
+    if isinstance(prompt_state.get("action_options"), list):
+        prompt_state["action_options"] = enrich_action_options(prompt_state["action_options"])
     return (
         "You control one autonomous simulated human. Choose exactly one next action. "
         "Act consistently with the supplied character traits, preferences, habits, skills, routine guidance, recent events, current time, and physiological state. "
         "Physiological needs and safety override routine preferences. Do not invent rooms, objects, actions, or direct state changes.\n\n"
         f"Known action vocabulary: {json.dumps(available_actions)}\n"
-        f"Runtime context: {json.dumps(state, ensure_ascii=False, sort_keys=True)}\n\n"
-        "The action_options array is authoritative. Choose an action/target pair that appears there, and choose duration_minutes within that option's duration bounds. "
+        f"Runtime context: {json.dumps(prompt_state, ensure_ascii=False, sort_keys=True)}\n\n"
+        "The action_options array is authoritative. Choose an action/target pair that appears there. "
+        "The duration field is the broad legal compatibility range. When preferred_duration is present, choose duration_minutes inside that narrower planning range; duration_purpose explains the intended ordinary use. "
+        "The runtime will normalize a model duration outside preferred_duration back to the nearest preferred bound without changing the selected action or target. "
         "For idle only, target must be an empty string. For every other action, copy the exact target id from action_options. "
         "Return only the structured decision and keep reason short and character-grounded."
     )
@@ -142,4 +148,8 @@ def generate_character_decision(
         raise AIDecisionError("AI duration_minutes is out of bounds")
     if not isinstance(decision["target"], str) or not isinstance(decision["reason"], str):
         raise AIDecisionError("AI target/reason must be strings")
+    decision = dict(decision)
+    decision["duration_minutes"] = normalize_duration(
+        decision["action"], decision["target"] or None, decision["duration_minutes"]
+    )
     return decision
