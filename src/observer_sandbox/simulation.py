@@ -34,6 +34,34 @@ ACTION_CAPABILITY: dict[str, str] = {
     "inspect": "inspect", "use": "use", "train": "train", "read": "read",
 }
 
+PHYSIOLOGY_FIELDS = {
+    "needs.energy": "energy",
+    "needs.hunger": "hunger",
+    "needs.thirst": "thirst",
+    "needs.sleepiness": "sleepiness",
+    "physiology.cleanliness": "cleanliness",
+}
+
+# Passive time drift per simulated hour. Positive hunger/thirst/sleepiness are worse;
+# positive energy/cleanliness are better.
+PASSIVE_DRIFT_PER_HOUR = {
+    "energy": -2.0,
+    "hunger": 2.5,
+    "thirst": 3.0,
+    "sleepiness": 3.0,
+    "cleanliness": -0.8,
+}
+
+# Intrinsic action effects are independent of a particular target object. Target-specific
+# effects (food, water, shower, future consumables) are defined on world objects instead.
+ACTION_EFFECTS_PER_HOUR: dict[str, dict[str, float]] = {
+    "sleep": {"energy": 11.0, "sleepiness": -15.0, "hunger": 0.5, "thirst": 0.75},
+    "rest": {"energy": 10.0, "sleepiness": -4.0},
+    "train": {"energy": -10.0, "hunger": 4.0, "thirst": 6.0, "cleanliness": -6.0},
+    "read": {"energy": -0.5},
+    "idle": {"energy": 3.0},
+}
+
 NEXT_HOP = {
     ("room_bedroom", "room_bathroom"): "room_bathroom", ("room_bedroom", "room_living"): "room_living",
     ("room_bedroom", "room_kitchen"): "room_bathroom", ("room_bedroom", "room_gym"): "room_living",
@@ -94,13 +122,26 @@ def _connected(conn: sqlite3.Connection, left: str, right: str) -> bool:
     return conn.execute("SELECT 1 FROM relations WHERE source_id=? AND relation_type='connected_to' AND target_id=?", (left, right)).fetchone() is not None
 
 
+def _object_effects(conn: sqlite3.Connection, object_id: str) -> dict[str, Any]:
+    value = get_field(conn, object_id, "game.effects", {})
+    return value if isinstance(value, dict) else {}
+
+
 def local_objects(conn: sqlite3.Connection, room_id: str) -> list[dict[str, Any]]:
     rows = conn.execute(
         """SELECT e.id, e.name, e.capabilities_json FROM relations r JOIN entities e ON e.id=r.target_id
         WHERE r.source_id=? AND r.relation_type='contains' AND e.entity_type='object' ORDER BY e.id""",
         (room_id,),
     ).fetchall()
-    return [{"id": row["id"], "name": row["name"], "capabilities": json.loads(row["capabilities_json"])} for row in rows]
+    return [
+        {
+            "id": row["id"],
+            "name": row["name"],
+            "capabilities": json.loads(row["capabilities_json"]),
+            "effects": _object_effects(conn, row["id"]),
+        }
+        for row in rows
+    ]
 
 
 def reachable_rooms(conn: sqlite3.Connection, room_id: str) -> list[dict[str, str]]:
@@ -120,9 +161,25 @@ def action_options(conn: sqlite3.Connection, actor_id: str = "char_darian") -> l
     for obj in local_objects(conn, room_id):
         for action, capability in ACTION_CAPABILITY.items():
             if capability in obj["capabilities"]:
-                options.append({"action": action, "target": obj["id"], "target_name": obj["name"], "duration": ACTION_DURATION_BOUNDS[action]})
-    options.append({"action": "rest", "target": None, "target_name": None, "duration": ACTION_DURATION_BOUNDS["rest"]})
-    options.append({"action": "idle", "target": None, "target_name": None, "duration": ACTION_DURATION_BOUNDS["idle"]})
+                option = {"action": action, "target": obj["id"], "target_name": obj["name"], "duration": ACTION_DURATION_BOUNDS[action]}
+                effects = obj["effects"].get(action)
+                if effects:
+                    option["effects"] = effects
+                options.append(option)
+    options.append({
+        "action": "rest",
+        "target": None,
+        "target_name": None,
+        "duration": ACTION_DURATION_BOUNDS["rest"],
+        "effects_per_hour": ACTION_EFFECTS_PER_HOUR["rest"],
+    })
+    options.append({
+        "action": "idle",
+        "target": None,
+        "target_name": None,
+        "duration": ACTION_DURATION_BOUNDS["idle"],
+        "effects_per_hour": ACTION_EFFECTS_PER_HOUR["idle"],
+    })
     return options
 
 
@@ -157,52 +214,47 @@ def validate_action(conn: sqlite3.Connection, actor_id: str, action: Action) -> 
         raise ValueError(f"Target {action.target} is not a local object in {location}")
     if capability not in json.loads(row[0]):
         raise ValueError(f"Target {action.target} does not support {action.name}")
+    if action.name in {"eat", "drink", "shower"} and action.name not in _object_effects(conn, action.target):
+        raise ValueError(f"Target {action.target} has no authored {action.name} physiological effect")
+
+
+def _apply_effect_spec(values: dict[str, float], effects: dict[str, Any]) -> None:
+    for field_key, spec in effects.items():
+        stat = PHYSIOLOGY_FIELDS.get(field_key)
+        if stat is None:
+            continue
+        if isinstance(spec, (int, float)):
+            values[stat] += float(spec)
+        elif isinstance(spec, dict) and "set" in spec:
+            values[stat] = float(spec["set"])
 
 
 def _advance_needs(conn: sqlite3.Connection, actor_id: str, action: Action) -> None:
     hours = action.duration_minutes / 60.0
-    energy = float(get_field(conn, actor_id, "needs.energy", 75.0))
-    hunger = float(get_field(conn, actor_id, "needs.hunger", 20.0))
-    thirst = float(get_field(conn, actor_id, "needs.thirst", 15.0))
-    sleepiness = float(get_field(conn, actor_id, "needs.sleepiness", 15.0))
-    cleanliness = float(get_field(conn, actor_id, "physiology.cleanliness", 80.0))
+    values = {
+        "energy": float(get_field(conn, actor_id, "needs.energy", 75.0)),
+        "hunger": float(get_field(conn, actor_id, "needs.hunger", 20.0)),
+        "thirst": float(get_field(conn, actor_id, "needs.thirst", 15.0)),
+        "sleepiness": float(get_field(conn, actor_id, "needs.sleepiness", 15.0)),
+        "cleanliness": float(get_field(conn, actor_id, "physiology.cleanliness", 80.0)),
+    }
 
-    energy -= 3.0 * hours
-    hunger += 4.0 * hours
-    thirst += 5.0 * hours
-    sleepiness += 3.5 * hours
-    cleanliness -= 1.2 * hours
+    for stat, rate in PASSIVE_DRIFT_PER_HOUR.items():
+        values[stat] += rate * hours
 
-    if action.name == "sleep":
-        energy += 15.0 * hours
-        sleepiness -= 16.0 * hours
-        hunger += 1.0 * hours
-        thirst += 1.5 * hours
-    elif action.name == "eat":
-        hunger -= 40.0
-        energy += 4.0
-    elif action.name == "drink":
-        thirst -= 45.0
-    elif action.name == "shower":
-        cleanliness = 100.0
-    elif action.name == "rest":
-        energy += 12.0 * hours
-        sleepiness -= 6.0 * hours
-    elif action.name == "train":
-        energy -= 12.0 * hours
-        hunger += 7.0 * hours
-        thirst += 10.0 * hours
-        cleanliness -= 10.0 * hours
-    elif action.name == "read":
-        energy -= 1.0 * hours
-    elif action.name == "idle":
-        energy += 4.0 * hours
+    for stat, rate in ACTION_EFFECTS_PER_HOUR.get(action.name, {}).items():
+        values[stat] += rate * hours
 
-    set_field(conn, actor_id, "needs.energy", _clamp(energy))
-    set_field(conn, actor_id, "needs.hunger", _clamp(hunger))
-    set_field(conn, actor_id, "needs.thirst", _clamp(thirst))
-    set_field(conn, actor_id, "needs.sleepiness", _clamp(sleepiness))
-    set_field(conn, actor_id, "physiology.cleanliness", _clamp(cleanliness))
+    if action.target:
+        target_effects = _object_effects(conn, action.target).get(action.name, {})
+        if isinstance(target_effects, dict):
+            _apply_effect_spec(values, target_effects)
+
+    set_field(conn, actor_id, "needs.energy", _clamp(values["energy"]))
+    set_field(conn, actor_id, "needs.hunger", _clamp(values["hunger"]))
+    set_field(conn, actor_id, "needs.thirst", _clamp(values["thirst"]))
+    set_field(conn, actor_id, "needs.sleepiness", _clamp(values["sleepiness"]))
+    set_field(conn, actor_id, "physiology.cleanliness", _clamp(values["cleanliness"]))
 
 
 def apply_action(conn: sqlite3.Connection, action: Action, actor_id: str = "char_darian", *, action_id: str | None = None) -> dict[str, Any]:
