@@ -1,5 +1,6 @@
 name: Deploy Observer Sandbox
 # Control-plane deploy. Secrets are provisioned privately; deploy does not enable autonomy.
+# Release marker: P3.2 accepted production sync.
 
 on:
   workflow_dispatch:
