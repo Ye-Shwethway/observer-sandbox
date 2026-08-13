@@ -1,7 +1,7 @@
 Observer Sandbox production release marker
 
-release: attribute-grading-batch-1
-accepted_main: 76bcf7fe7225a9504909f9d939bbcdd673bac7c6
-acceptance_workflow: Attribute Grading Batch 1 Acceptance #3
-acceptance_run: 31683936844
+release: minimum-training-stimulus-v1
+accepted_main: 3578de12ebc750aca397b16f01f8bd368e1af11a
+acceptance_workflow: Minimum Training Stimulus Acceptance #2
+acceptance_run: 31685799302
 status: accepted-for-production
