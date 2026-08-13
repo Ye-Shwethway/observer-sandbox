@@ -24,6 +24,7 @@ GENERIC_PROFILES: dict[str, DurationProfile] = {
     "train": DurationProfile(30, 90, "ordinary training session"),
     "read": DurationProfile(20, 60, "focused reading"),
     "research": DurationProfile(20, 90, "focused research session"),
+    "monitor": DurationProfile(15, 45, "focused monitoring session"),
     "idle": DurationProfile(5, 20, "brief idle period"),
 }
 
