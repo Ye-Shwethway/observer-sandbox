@@ -7,9 +7,12 @@ on:
       - 'docs/PRODUCTION_VALIDATION_AND_RELEASE_PROTOCOL.md'
       - 'scripts/validation/production_copy.py'
       - 'scripts/validation/create_disposable_db_copy.py'
+      - 'scripts/validation/deploy_trigger_policy.py'
       - 'scripts/validation/validate_protocol_selftest.py'
       - '.github/workflows/reusable-production-copy-validation.yml'
       - '.github/workflows/validation-release-standardization-acceptance.yml'
+      - '.github/workflows/deploy.yml'
+      - 'deploy/RELEASE'
       - 'tests/test_production_copy_validation.py'
       - 'tests/test_production_copy_validation_protocol.py'
       - 'AGENTS.md'
@@ -19,7 +22,16 @@ permissions:
   contents: read
 
 jobs:
-  acceptance:
+  policy-selftest:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - run: python scripts/validation/deploy_trigger_policy.py --self-test
+
+  production-copy-acceptance:
     uses: ./.github/workflows/reusable-production-copy-validation.yml
     with:
       validator_path: scripts/validation/validate_protocol_selftest.py
