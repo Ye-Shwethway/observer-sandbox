@@ -277,12 +277,17 @@ def apply_action(conn: sqlite3.Connection, action: Action, actor_id: str = "char
         return snapshot(conn, actor_id)
     validate_action(conn, actor_id, action)
     action_id = ensure_action_instance(conn, action, actor_id, action_id=action_id)
-    before = snapshot(conn, actor_id); started = datetime.fromisoformat(before["sim_time"])
+    instance = conn.execute("SELECT planned_sim_time FROM action_instances WHERE id=?", (action_id,)).fetchone()
+    current_clock = ensure_sim_clock(conn)
+    started = datetime.fromisoformat(instance["planned_sim_time"]) if instance and instance["planned_sim_time"] else current_clock
+    ended = started + timedelta(minutes=action.duration_minutes)
+    before = snapshot(conn, actor_id)
+    before["sim_time"] = started.isoformat()
     set_field(conn, actor_id, "runtime.current_action", action.name)
     if action.name == "move" and action.target: set_field(conn, actor_id, "runtime.location", action.target)
     _advance_needs(conn, actor_id, action)
-    ended = started + timedelta(minutes=action.duration_minutes)
-    set_runtime_value(conn, "sim_time", ended.isoformat()); set_field(conn, actor_id, "runtime.current_action", "idle")
+    universe_clock = max(current_clock, ended)
+    set_runtime_value(conn, "sim_time", universe_clock.isoformat()); set_field(conn, actor_id, "runtime.current_action", "idle")
     after = snapshot(conn, actor_id); changes = _state_changes(before, after)
     conn.execute("UPDATE action_instances SET status='completed',started_sim_time=COALESCE(started_sim_time,?),ended_sim_time=?,outcome_json=?,updated_at=CURRENT_TIMESTAMP WHERE id=?",
                  (started.isoformat(), ended.isoformat(), json.dumps({"state_changes": changes}, ensure_ascii=False), action_id))
@@ -290,7 +295,8 @@ def apply_action(conn: sqlite3.Connection, action: Action, actor_id: str = "char
     record_event(conn, sim_time=ended.isoformat(), actor_id=actor_id, event_type="action_completed", action_id=action_id,
                  location_id=after["location"], participants=participants, state_changes=changes,
                  payload={"action_id": action_id, "action": action.name, "target": action.target, "duration_minutes": action.duration_minutes,
-                          "reason": action.reason, "before": before, "after": after})
+                          "reason": action.reason, "before": before, "after": after, "action_started_sim_time": started.isoformat(),
+                          "action_ended_sim_time": ended.isoformat()})
     conn.commit(); return after
 
 
