@@ -117,49 +117,17 @@ def _nearest_first_hops(
 
 
 def _active_supported_need(decision_signals: dict[str, Any]) -> dict[str, Any] | None:
-    """Choose one supported need without breaking the accepted hunger behavior.
+    """Resolve only the authored highest-priority need when this guard supports it.
 
-    Any supported critical need outranks every strong need. When hunger and thirst
-    are both merely strong, preserve the already accepted hunger-first behavior;
-    once hunger clears, strong thirst becomes the next causal recovery goal.
-    Unsupported critical needs are left to the broader cognition policy rather than
-    being skipped over by this guard.
+    `needs_attention` is already ordered by the cognition policy: critical before
+    strong, then the authored same-level need order. Never skip an unsupported
+    higher-priority need to force a lower hunger/thirst action.
     """
-    attention = [
-        item for item in (decision_signals.get("needs_attention") or [])
-        if isinstance(item, dict)
-    ]
-    unsupported_critical = next(
-        (
-            item for item in attention
-            if item.get("level") == "critical" and item.get("need") not in NEED_RESOLVERS
-        ),
-        None,
-    )
-    if unsupported_critical is not None:
+    attention = decision_signals.get("needs_attention") or []
+    first = next((item for item in attention if isinstance(item, dict)), None)
+    if not isinstance(first, dict):
         return None
-
-    for item in attention:
-        if item.get("level") == "critical" and item.get("need") in NEED_RESOLVERS:
-            return item
-
-    hunger = next(
-        (
-            item for item in attention
-            if item.get("level") == "strong" and item.get("need") == "hunger"
-        ),
-        None,
-    )
-    if hunger is not None:
-        return hunger
-
-    return next(
-        (
-            item for item in attention
-            if item.get("level") == "strong" and item.get("need") in NEED_RESOLVERS
-        ),
-        None,
-    )
+    return first if first.get("need") in NEED_RESOLVERS else None
 
 
 def shape_action_options_for_needs(
@@ -171,13 +139,14 @@ def shape_action_options_for_needs(
 ) -> list[dict[str, Any]]:
     """Expose only causal recovery choices for supported strong physiological needs.
 
-    v2 covers hunger and thirst using the same authored-affordance pattern. When a
-    supported need is selected, expose only a local action whose authored effect
-    reduces that need, or otherwise shortest-path movement toward the nearest room
-    containing such a resolver.
+    v2 covers hunger and thirst using the same authored-affordance pattern. When the
+    highest-priority strong/critical need is supported, expose only a local action
+    whose authored effect reduces that need, or otherwise shortest-path movement
+    toward the nearest room containing such a resolver.
 
-    If no authored resolver or route exists, preserve the original options rather
-    than deadlocking autonomy; the missing-world-data condition remains observable.
+    If the highest-priority need is not yet supported, or no authored resolver/route
+    exists, preserve the original options rather than silently reordering needs or
+    deadlocking autonomy.
     """
     active = _active_supported_need(decision_signals)
     if active is None:
