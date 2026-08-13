@@ -1,7 +1,7 @@
 Observer Sandbox production release marker
 
-release: recovery-realization-v1-read-only
-accepted_main: 9a2f2d5110a532d14886477a4700e12c6f2dc383
-acceptance_workflow: Recovery Realization v1 Acceptance #1
-acceptance_run: 31687895305
+release: detraining-decay-v1-read-only
+accepted_main: 80723e0684281b2223cc0e6d3d8cab4dd5f8bd62
+acceptance_workflow: Detraining Decay v1 Acceptance #1
+acceptance_run: 31688104486
 status: accepted-for-production
