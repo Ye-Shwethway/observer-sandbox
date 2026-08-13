@@ -79,7 +79,7 @@ def test_observer_home_uses_stable_inline_navigation(tmp_path, monkeypatch):
     with connect(db) as conn:
         text, universe_keyboard = _callback_view(conn, 111, "nav:universe")
         assert "UNIVERSE" in text
-        assert any(button[0]["callback_data"] == "loc:home" for button in universe_keyboard[:-1])
+        assert any(button[0]["callback_data"] == "loc:loc_thorne_estate" for button in universe_keyboard[:-1])
         chars_text, chars_keyboard = _callback_view(conn, 111, "nav:characters")
         assert "Darian Thorne" in chars_text
         assert chars_keyboard[0][0]["callback_data"] == "char:char_darian"
@@ -141,7 +141,7 @@ def test_action_completion_push_obeys_preferences_and_deduplicates(tmp_path, mon
         "sleepiness": 35.8,
         "cleanliness": 42.9,
     }
-    action = {"action": "eat", "target": "obj_meal_stock", "reason": "Eating to recover from hunger."}
+    action = {"action": "eat", "target": "obj_thorne_estate_kitchen_meal_ingredients", "reason": "Eating to recover from hunger."}
     with connect(db) as conn:
         assert dispatch_action_completion(conn, action_id="a-1", action=action, before=before, after=after) == 1
         assert dispatch_action_completion(conn, action_id="a-1", action=action, before=before, after=after) == 0
