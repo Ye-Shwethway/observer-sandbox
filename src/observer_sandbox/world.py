@@ -100,6 +100,15 @@ def seed_home_and_darian(conn: sqlite3.Connection) -> None:
     for obj in world["objects"]:
         _upsert_entity(conn, obj["id"], "object", obj["name"], obj.get("capabilities", []))
         _upsert_relation(conn, obj["room"], "contains", obj["id"])
+        set_field(
+            conn,
+            obj["id"],
+            "game.effects",
+            obj.get("effects", {}),
+            mode="static",
+            authority="world_definition",
+            source=world.get("revision", "home-v1"),
+        )
 
     for left, right in world["connections"]:
         _upsert_relation(conn, left, "connected_to", right)
