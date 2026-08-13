@@ -13,6 +13,7 @@ Roadmap synchronized: 2026-08-13
   `Actor(s) + Action + Place + Simulation Time + Conditions/Modifiers + Resources/Targets -> Validation -> State Changes + Events`.
 - Schema v4 remains the current composable foundation. Do not introduce schema v5 without a concrete missing invariant.
 - Repeated expansion follows **exemplar-first, then batch-by-pattern**: prove one genuinely new structural pattern, then batch equivalent follow-ons into one PR, one focused regression suite, one pre-merge disposable production-copy dry-run covering every batched item, and one deploy/readback.
+- Dry-run, acceptance, tuning, and accelerated simulation use a disposable copy of the production DB. Production is reserved for all-green merge/deploy and read-only post-deploy verification; validation must not accelerate or otherwise mutate the live runtime.
 
 ## Foundation / P0 / P1
 
@@ -129,6 +130,7 @@ Evidence:
 - Hunger resolver v1 — DEPLOYED / CREATOR LIVE VERIFIED.
 - Thirst/hunger causal resolver v2 — DEPLOYED / CREATOR LIVE VERIFIED.
 - Complete five-need causal resolver v3 — COMPLETE / CI VERIFIED / PRODUCTION-COPY COMPATIBILITY VERIFIED / DEPLOYED.
+- Fatigue Causal Recovery + Inspect Loop Guard v1 — IMPLEMENTED / CI VERIFIED / PRE-MERGE PRODUCTION-COPY ACCEPTANCE VERIFIED; PR #27 pending merge/deploy.
 
 v3 used the accelerated development rule correctly:
 - Energy was the directionality exemplar;
@@ -136,10 +138,26 @@ v3 used the accelerated development rule correctly:
 - Hunger/Thirst remained green;
 - one PR / one deploy.
 
-Current authored priority remains:
-`sleepiness -> energy -> thirst -> hunger -> cleanliness`, with critical needs ahead of strong needs.
+Fatigue follow-on reuses the existing physiological/training thresholds instead of inventing a parallel scale:
+- fatigue >=55 is a strong recovery need;
+- fatigue >=70 is a critical recovery need and matches the existing hard training gate;
+- `rest` / `sleep` are the causal resolvers;
+- high-fatigue cognition cannot substitute training-adjacent `inspect` / `use` for recovery;
+- immediate repeated inspect/use pairs and serial same-room inspect/use loops are deterministically suppressed using recent event evidence, without a new schema counter.
+
+Current authored priority is:
+`sleepiness -> energy -> fatigue -> thirst -> hunger -> cleanliness`, with critical needs ahead of strong needs.
 
 Evidence for v3: PR #24 merge `e1e6d79479fa4d2ae837c395ec3b2fdb7391dc8f`; CI #451 `31698384623` SUCCESS; production-copy compatibility acceptance #12 `31698384587` SUCCESS; Deploy #150 `31698521410` SUCCESS.
+
+Pre-merge evidence for Fatigue Causal Recovery + Inspect Loop Guard v1:
+- PR #27 head `547a71631b25096025a40aa6e42d13d785756bcd` all-green before documentation update;
+- CI #469 run `31703255025` SUCCESS;
+- Fatigue Causal Recovery v1 Acceptance #3 run `31703254895` SUCCESS;
+- Causal Need Resolution v2 compatibility Acceptance #15 run `31703255122` SUCCESS;
+- copied production baseline in acceptance: fatigue `71.285` at sim `2025-05-02T14:59:00+00:00` in Training Hall;
+- reproduced disposable-copy fatigue `72.4` yielded only `rest`; 180 sim-min natural rest reduced fatigue to `46.9`;
+- production mutation `false`, model calls `0`.
 
 ## Post-P3.5 stabilization
 
@@ -177,23 +195,25 @@ Not implemented:
 
 ## Next proposed slice — Strength Progression Live Cycle Validation & Tuning v1
 
-Before adding another progression domain, validate one complete real Strength cycle in production.
+Before adding another progression domain, validate one complete real Strength cycle while preserving production safety.
 
 Required validation:
-1. re-read live Strength, fatigue/readiness, recent stimulus, speed and pending action;
-2. observe or safely arrange one normal Free Weights session without direct Strength edits;
-3. capture emitted Strength stimulus and post-session Recovery diagnostics;
-4. let simulated recovery proceed naturally, using Creator-approved speed controls if useful;
-5. inspect around the 6h/48h recovery boundaries when practical;
-6. verify eligible automatic settlement at an action-completion boundary;
-7. compare actual stimulus, level factor, saturation, recovery factor and settlement delta with the v1 formulas;
-8. verify raw Strength history/event evidence and replay/idempotency;
-9. tune constants only if concrete live evidence shows a mismatch; otherwise preserve formulas and mark the cycle validated.
+1. read live production baseline evidence for Strength, fatigue/readiness, recent stimulus, speed and pending action without mutation;
+2. copy the current production DB to a disposable validation DB;
+3. use real copied Free Weights completion/stimulus evidence where available; do not fabricate Strength stimulus or directly set Strength;
+4. inspect copied Profile/Recovery diagnostics immediately after the qualifying stimulus;
+5. let recovery proceed through ordinary action semantics on the disposable copy; accelerated simulated observation is permitted only on the copy;
+6. inspect the <=6h, 6..48h and >=48h recovery boundaries on the copy when practical;
+7. verify the first eligible automatic settlement only at an action-completion boundary;
+8. compare actual stimulus, level factor, saturation, recovery factor and settlement delta with the v1 formulas;
+9. verify raw Strength history/event evidence, consumed IDs, duplicate-credit suppression and same-boundary idempotency;
+10. tune constants only if concrete evidence shows a mismatch; otherwise preserve formulas and mark the cycle validated;
+11. after all-green merge/deploy, perform read-only production health/runtime readback only.
 
-This slice is validation/tuning, not a new progression-domain implementation. Do not fabricate stimulus or directly set Strength simply to force a result.
+This slice is validation/tuning, not a new progression-domain implementation. Production runtime acceleration, direct progression edits, fabricated stimulus, and validation-induced Telegram activity are prohibited.
 
 ## Current resume point
 
-Start **Strength Progression Live Cycle Validation & Tuning v1** from current live production state. After that cycle is validated, propose the next physical progression domain and first prove its domain-specific stimulus/recovery/decay semantics before any batch expansion.
+Finish merge/deploy/readback for **Fatigue Causal Recovery + Inspect Loop Guard v1**. Then resume **Strength Progression Live Cycle Validation & Tuning v1** under the disposable production-copy validation policy. After that cycle is validated, propose the next physical progression domain and first prove its domain-specific stimulus/recovery/decay semantics before any batch expansion.
 
 Body measurements/composition remain a separate architecture line.
