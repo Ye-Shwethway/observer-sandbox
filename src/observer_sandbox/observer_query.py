@@ -12,7 +12,7 @@ from .world import get_field
 
 def _entity(conn: sqlite3.Connection, entity_id: str) -> dict[str, Any] | None:
     row = conn.execute(
-        "SELECT id, entity_type, name, capabilities_json FROM entities WHERE id=?",
+        "SELECT id, entity_type, name, capabilities_json, definition_id FROM entities WHERE id=?",
         (entity_id,),
     ).fetchone()
     if row is None:
@@ -22,6 +22,7 @@ def _entity(conn: sqlite3.Connection, entity_id: str) -> dict[str, Any] | None:
         "type": row["entity_type"],
         "name": row["name"],
         "capabilities": json.loads(row["capabilities_json"]),
+        "definition_id": row["definition_id"],
     }
 
 
@@ -42,9 +43,32 @@ def _location_record(conn: sqlite3.Connection, entity: dict[str, Any]) -> dict[s
     return result
 
 
+def _definition(conn: sqlite3.Connection, definition_id: str | None) -> dict[str, Any] | None:
+    if not definition_id:
+        return None
+    row = conn.execute(
+        """
+        SELECT id, entity_type, name, capabilities_json, properties_json, effects_json, metadata_json
+        FROM entity_definitions WHERE id=?
+        """,
+        (definition_id,),
+    ).fetchone()
+    if row is None:
+        return None
+    return {
+        "id": row["id"],
+        "type": row["entity_type"],
+        "name": row["name"],
+        "capabilities": json.loads(row["capabilities_json"]),
+        "properties": json.loads(row["properties_json"]),
+        "effects": json.loads(row["effects_json"]),
+        "metadata": json.loads(row["metadata_json"]),
+    }
+
+
 def list_worlds(conn: sqlite3.Connection) -> list[dict[str, Any]]:
     rows = conn.execute(
-        "SELECT id, entity_type, name, capabilities_json FROM entities WHERE entity_type='world' ORDER BY name"
+        "SELECT id, entity_type, name, capabilities_json, definition_id FROM entities WHERE entity_type='world' ORDER BY name"
     ).fetchall()
     return [
         {
@@ -52,6 +76,7 @@ def list_worlds(conn: sqlite3.Connection) -> list[dict[str, Any]]:
             "type": row["entity_type"],
             "name": row["name"],
             "capabilities": json.loads(row["capabilities_json"]),
+            "definition_id": row["definition_id"],
         }
         for row in rows
     ]
@@ -61,7 +86,7 @@ def list_locations(conn: sqlite3.Connection, parent_id: str | None = None) -> li
     if parent_id:
         rows = conn.execute(
             """
-            SELECT e.id, e.entity_type, e.name, e.capabilities_json
+            SELECT e.id, e.entity_type, e.name, e.capabilities_json, e.definition_id
             FROM relations r
             JOIN entities e ON e.id=r.target_id
             WHERE r.source_id=? AND r.relation_type='contains' AND e.entity_type='location'
@@ -71,7 +96,7 @@ def list_locations(conn: sqlite3.Connection, parent_id: str | None = None) -> li
         ).fetchall()
     else:
         rows = conn.execute(
-            "SELECT id, entity_type, name, capabilities_json FROM entities WHERE entity_type='location' ORDER BY name"
+            "SELECT id, entity_type, name, capabilities_json, definition_id FROM entities WHERE entity_type='location' ORDER BY name"
         ).fetchall()
     return [
         _location_record(
@@ -81,6 +106,7 @@ def list_locations(conn: sqlite3.Connection, parent_id: str | None = None) -> li
                 "type": row["entity_type"],
                 "name": row["name"],
                 "capabilities": json.loads(row["capabilities_json"]),
+                "definition_id": row["definition_id"],
             },
         )
         for row in rows
@@ -89,7 +115,7 @@ def list_locations(conn: sqlite3.Connection, parent_id: str | None = None) -> li
 
 def list_characters(conn: sqlite3.Connection) -> list[dict[str, Any]]:
     rows = conn.execute(
-        "SELECT id, entity_type, name, capabilities_json FROM entities WHERE entity_type='character' ORDER BY name"
+        "SELECT id, entity_type, name, capabilities_json, definition_id FROM entities WHERE entity_type='character' ORDER BY name"
     ).fetchall()
     result: list[dict[str, Any]] = []
     for row in rows:
@@ -100,6 +126,7 @@ def list_characters(conn: sqlite3.Connection) -> list[dict[str, Any]]:
                 "type": row["entity_type"],
                 "name": row["name"],
                 "capabilities": json.loads(row["capabilities_json"]),
+                "definition_id": row["definition_id"],
                 "location": state["location"],
                 "location_name": state["location_name"],
                 "current_action": state["current_action"],
@@ -114,6 +141,32 @@ def character_summary(conn: sqlite3.Connection, character_id: str = "char_darian
         raise KeyError(f"Unknown character: {character_id}")
     state = snapshot(conn, character_id)
     return {"character": entity, "state": state}
+
+
+def object_summary(conn: sqlite3.Connection, object_id: str) -> dict[str, Any]:
+    entity = _entity(conn, object_id)
+    if entity is None or entity["type"] != "object":
+        raise KeyError(f"Unknown object: {object_id}")
+
+    definition = _definition(conn, entity.get("definition_id"))
+    location_id = current_location(conn, object_id)
+    location = _entity(conn, location_id) if location_id else None
+
+    instance_effects = get_field(conn, object_id, "game.effects", {}) or {}
+    definition_effects = (definition or {}).get("effects") or {}
+    effective_effects = instance_effects or definition_effects
+
+    instance_capabilities = entity.get("capabilities") or []
+    definition_capabilities = (definition or {}).get("capabilities") or []
+    effective_capabilities = instance_capabilities or definition_capabilities
+
+    return {
+        "object": entity,
+        "definition": definition,
+        "location": location,
+        "capabilities": effective_capabilities,
+        "effects": effective_effects,
+    }
 
 
 def recent_location_activity(conn: sqlite3.Connection, *, location_id: str, limit: int = 3) -> list[dict[str, Any]]:
@@ -156,7 +209,7 @@ def location_summary(conn: sqlite3.Connection, location_id: str = "loc_thorne_es
 
     parent_row = conn.execute(
         """
-        SELECT e.id, e.entity_type, e.name, e.capabilities_json
+        SELECT e.id, e.entity_type, e.name, e.capabilities_json, e.definition_id
         FROM relations r JOIN entities e ON e.id=r.source_id
         WHERE r.target_id=? AND r.relation_type='contains'
         ORDER BY CASE e.entity_type WHEN 'world' THEN 0 ELSE 1 END
@@ -171,13 +224,14 @@ def location_summary(conn: sqlite3.Connection, location_id: str = "loc_thorne_es
             "type": parent_row["entity_type"],
             "name": parent_row["name"],
             "capabilities": json.loads(parent_row["capabilities_json"]),
+            "definition_id": parent_row["definition_id"],
         }
         if parent["type"] == "location":
             parent = _location_record(conn, parent)
 
     children = conn.execute(
         """
-        SELECT e.id, e.entity_type, e.name, e.capabilities_json
+        SELECT e.id, e.entity_type, e.name, e.capabilities_json, e.definition_id
         FROM relations r
         JOIN entities e ON e.id=r.target_id
         WHERE r.source_id=? AND r.relation_type='contains'
@@ -193,6 +247,7 @@ def location_summary(conn: sqlite3.Connection, location_id: str = "loc_thorne_es
             "type": row["entity_type"],
             "name": row["name"],
             "capabilities": json.loads(row["capabilities_json"]),
+            "definition_id": row["definition_id"],
         }
         if row["entity_type"] == "location":
             child_locations.append(_location_record(conn, record))
