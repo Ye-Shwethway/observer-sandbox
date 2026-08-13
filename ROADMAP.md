@@ -11,7 +11,7 @@ This roadmap tracks the smallest useful vertical slices for the Observer Sandbox
 - Telegram is a Creator-facing observer/control adapter, not a second simulation engine.
 - Continuous cognition remains wake-on-demand: no periodic LLM heartbeat or background reflection loop by default.
 - New features should prefer generic ids/query services over Darian/Home-specific backend contracts.
-- World/location topology follows `docs/WORLD_LOCATION_NODE_MODEL.md`; locations are recursively nestable graph nodes.
+- World/location topology and globally scoped identity follow `docs/WORLD_LOCATION_NODE_MODEL.md`.
 - Telegram presentation quality is part of acceptance, not optional polish. All Telegram work must follow `docs/TELEGRAM_OBSERVER_ARCHITECTURE.md`.
 - Basic living physiology and item effects follow `docs/PHYSIOLOGY_AND_ITEM_EFFECTS.md`.
 
@@ -21,24 +21,28 @@ Needs/recovery behavior is an engine contract, not prompt flavor text.
 
 - An action described as recovery must move its primary recovery state in the correct direction after all passive time drift is included.
 - Every basic physiological stat must have at least one valid reachable restoration path.
-- `rest` must increase energy and reduce sleep pressure; `sleep` must provide stronger energy/sleep-pressure recovery than ordinary rest; `idle` may provide only light recovery but must not paradoxically drain energy when cognition is using it as a pause.
-- Hunger must be recoverable through authored food targets; thirst through authored drink targets; cleanliness through authored wash/shower targets.
-- Target/item effects are authored in the world definition, persisted as `game.effects`, surfaced through legal `action_options()`, and deterministically applied by the engine.
-- Food/drink/shower actions without matching authored physiological effects must be rejected rather than silently pretending to restore a need.
-- Recovery math is regression-tested as before/after state, not only by checking that an action validates.
-- Persistent pending actions must be considered during world/effect migrations; do not invalidate a live pending action without an explicit safe migration/revalidation path.
+- `rest` must increase energy and reduce sleep pressure; `sleep` must provide stronger recovery; `idle` must not paradoxically drain energy when used as a pause.
+- Hunger, thirst and cleanliness require authored restorative targets/effects.
+- Target/item effects are authored in world definitions, persisted as `game.effects`, surfaced through legal `action_options()`, and deterministically applied by the engine.
+- Recovery math is regression-tested as before/after state.
+- Persistent pending actions must be considered during world/effect migrations.
 
-## World / location graph contract
+## World / location graph and identity contract
 
-- `observer_universe` is the generic world root.
-- `home` is the stable **Thorne Estate location node**, not a world root.
-- Current structure is `Observer Universe -> Thorne Estate -> Floor/Zone -> Room -> Object`.
-- A later South Lake Tahoe regional node may be inserted above Thorne Estate without changing the estate id.
-- Future locations such as Quasi's home become sibling nodes under the appropriate regional node.
-- Containment and traversal remain separate: `contains` describes hierarchy, `connected_to` describes legal movement.
-- The unimplemented estate exterior exists as a locked boundary node with no traversable edge.
-- Stable P1 room ids are retained where practical to preserve runtime state/history/pending actions.
-- Canonical mansion structure and provisional floor placement must remain explicitly distinguishable.
+- canonical root: `world_observer_universe`;
+- Thorne Estate: `loc_thorne_estate`;
+- current structure: `world_observer_universe -> loc_thorne_estate -> floor/zone -> room -> object`;
+- all spatial/resource ids are globally unique, type-prefixed, place-scoped and path-independent;
+- display names may repeat across places; ids may not collide;
+- containment/topology belongs in relations rather than mutable full paths embedded in ids;
+- future `loc_south_lake_tahoe` may be inserted above `loc_thorne_estate` without renaming the estate/interior nodes;
+- future residences such as `loc_quasi_home` can be siblings and may safely contain their own Kitchen/Bedroom/etc.;
+- `contains` describes hierarchy; `connected_to` describes legal movement;
+- the unimplemented estate exterior is a locked boundary with no traversable edge;
+- deterministic baseline routing derives from the authored graph rather than a hard-coded five-room route table;
+- prototype ids `home`, `observer_universe`, `zone_*`, `room_*` and generic estate `obj_*` ids are retired.
+
+The physical SQLite table schema remains version 3 because the existing entity/relation model already supports these identities and recursive graph relationships; the clean break is a world identity/data migration rather than a table-shape migration.
 
 ## Telegram presentation acceptance rule
 
@@ -57,13 +61,9 @@ A Telegram slice is not complete if its data is technically correct but presente
 
 ## Notification policy
 
-Telegram proactive notifications are **default ON per authorized user**. Preferences are persisted independently per user and survive bot/service restarts.
+Telegram proactive notifications are **default ON per authorized user**. Preferences persist independently per user and survive service restarts.
 
-Canonical commands:
-- `/notify on`
-- `/notify off`
-
-Compatibility aliases include `/notification on|off`, `/notifications on|off`, `/notion/on`, `/notion/off`.
+Canonical commands: `/notify on`, `/notify off`. Compatibility aliases include `/notification on|off`, `/notifications on|off`, `/notion/on`, `/notion/off`.
 
 The shared preference gates boot and successful action-completion push notifications. Completed character actions should push a concise human-friendly summary; planning/in-progress/bookkeeping ticks should not.
 
@@ -98,6 +98,7 @@ Status: CONTINUOUS AUTONOMY LIVE / ENGINE HARDENING CHECKPOINT PASSED
 - all five current basic physiology stats have restoration paths
 - generic world-object `game.effects` contract
 - bounded accelerated production-copy recovery acceptance lane
+- graph-derived deterministic routing after scoped identity reset
 
 ## P2 — Telegram Observer
 
@@ -114,7 +115,7 @@ Status: LIVE
 - `Universe is alive!` boot notification
 - human-friendly presentation contract
 - persistent per-user notification preference, default ON
-- successful action-completion proactive push implementation deployed; live receipt confirmation tracked separately
+- successful action-completion proactive push implementation deployed
 
 ### P2.2 — Browse the Sandbox
 
@@ -128,18 +129,21 @@ Goal: move from command-driven status checks to hierarchical Creator observation
    - callback routing uses stable ids/action keys.
    - reusable Back/Home navigation established.
 
-2. **Location hierarchy / Thorne Estate — IN PROGRESS**
+2. **Location hierarchy / Thorne Estate**
 
-   **P2.2.2A — Interior node foundation — IMPLEMENTED IN REPO; validation/deploy evidence tracked separately**
-   - flat five-room Home seed replaced by recursive location-node graph;
-   - `observer_universe -> home(Thorne Estate) -> floors/zones -> rooms`;
-   - stable P1 room ids retained for existing core rooms;
-   - canonical mansion areas represented, with non-source floor assignments marked provisional;
-   - exterior boundary exists but is locked and non-traversable;
-   - generic query layer exposes parent, child locations, objects, occupants, residents, exits, access/kind metadata;
-   - topology seeding safely rebuilds seed-owned containment/adjacency without resetting character runtime state.
+   **P2.2.2A — Interior node foundation + clean spatial identity reset — COMPLETE / LIVE VERIFIED**
+   - flat prototype Home model replaced by recursive mansion location graph;
+   - scoped identity revision `thorne-estate-v3.0-scoped-ids`;
+   - canonical root `world_observer_universe`, estate `loc_thorne_estate`;
+   - rooms/objects use place-scoped ids such as `loc_thorne_estate_kitchen` and `obj_thorne_estate_kitchen_refrigerator`;
+   - legacy spatial ids removed through a transactional migration;
+   - Darian's current location is remapped while profile/physiology/AI/Telegram preferences remain durable;
+   - stale pending/lease/retry state is safely cleared during the identity cutover;
+   - exterior boundary remains locked/non-traversable;
+   - query layer exposes parent, children, objects, occupants, residents, exits and metadata;
+   - deterministic baseline routing now derives from `connected_to` graph relations.
 
-   **P2.2.2B — Telegram estate browser — NEXT**
+   **P2.2.2B — Telegram Estate Browser — NEXT**
    - Universe -> Thorne Estate -> floor/zone -> room;
    - room detail shows occupants, objects, exits and current activity;
    - Back follows actual parent node rather than hard-coded Home assumptions;
@@ -193,4 +197,4 @@ Add Quasi after generic character selection/profile/navigation is already proven
 
 ## Current resume point
 
-Finish validation/deployment of **P2.2.2A Thorne Estate interior node foundation**, then implement **P2.2.2B Telegram estate browser** on the generic recursive location-query contract. Preserve continuous 1x wake-on-demand cognition, stable ids, the locked exterior boundary, Telegram presentation rules, and the shared per-user notification gate.
+The clean spatial identity reset is complete and live. Implement **P2.2.2B Telegram Estate Browser** on the generic recursive location-query contract. Do not begin broader South Lake Tahoe/world expansion until the Estate browser proves the node hierarchy cleanly. Preserve continuous 1x wake-on-demand cognition, scoped ids, the locked exterior boundary, Telegram presentation rules, and the shared per-user notification gate.
