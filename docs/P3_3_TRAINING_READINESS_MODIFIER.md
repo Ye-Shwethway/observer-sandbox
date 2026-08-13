@@ -1,6 +1,6 @@
 # P3.3 — Minimum Training Readiness Modifier
 
-Status: IMPLEMENTATION SLICE
+Status: COMPLETE / DEPLOYED / CREATOR LIVE UX VERIFICATION PENDING
 
 ## Purpose
 
@@ -46,6 +46,8 @@ The existing hard training block at systemic fatigue `>=70` remains authoritativ
 
 The derived readiness and multiplier are persisted with action modifier/outcome evidence so observer surfaces and later slices can inspect what shaped the action without overwriting raw actor state.
 
+Telegram Profile -> Recovery exposes the current derived `Training readiness` value alongside systemic fatigue. This remains a derived observer view, not a canonical profile/stat field.
+
 ## Explicit non-goals
 
 - no universal cross-domain modifier resolver
@@ -58,12 +60,35 @@ The derived readiness and multiplier are persisted with action modifier/outcome 
 - no grading/tier implementation
 - no schema v5
 
-## Acceptance
+## Acceptance and deployment evidence
 
-A bounded disposable production-copy acceptance must prove:
+P3 Training Readiness Acceptance #5 / run `31673341881` succeeded on merged candidate source against a disposable production DB copy with zero model calls.
 
-1. healthy baseline readiness preserves the existing one-hour training fatigue result;
-2. degraded but still legal readiness produces a larger fatigue cost;
-3. the modifier is persisted on the first-class action instance and completion outcome/event evidence;
-4. the existing fatigue `>=70` training block still wins;
-5. production DB is not mutated by the acceptance probe.
+Verified values:
+
+- healthy inputs: energy `80`, thirst `15`, sleepiness `15`, fatigue `0`
+  - readiness `1.000`
+  - fatigue-cost multiplier `1.000x`
+  - one-hour training fatigue after passive recovery: `18.5`
+- degraded but legal inputs: energy `50`, thirst `45`, sleepiness `45`, fatigue `40`
+  - readiness `0.595` / Telegram Recovery `59.5%`
+  - fatigue-cost multiplier `1.202x`
+  - one-hour resulting fatigue: `62.54`
+- systemic fatigue `70` still blocks training deterministically.
+- action-instance/outcome modifier persistence was verified.
+- the disposable acceptance did not mutate production.
+
+The acceptance harness itself was hardened during this slice so pre-deploy candidate source is exercised against a production-state copy rather than accidentally importing the older deployed package. Deterministic action lookup removed same-second ordering ambiguity.
+
+After acceptance, `deploy/RELEASE` was advanced by commit `9b8b59b86696515829508b532558ffce1134c507` (`release accepted P3.3 to production`). Deploy Observer Sandbox #129 / run `31673382889` succeeded.
+
+Production deploy readback verified:
+
+- service active / healthy
+- SQLite schema v4
+- autonomy enabled / normal / unpaused / `1.0x`
+- existing Gemini cognition binding preserved
+- Telegram API connected and owner/allowed-user configuration present
+- live actor state remained valid after restart.
+
+Creator live Telegram UX verification is still pending. Do not mark this slice `LIVE UX VERIFIED` until the Creator confirms the deployed Recovery presentation is correct.
