@@ -1,6 +1,6 @@
 # Minimum Research Action Semantics
 
-Status: IMPLEMENTED CANDIDATE / NOT YET DEPLOYED
+Status: COMPLETE / ACCEPTANCE VERIFIED / DEPLOYED
 
 ## Purpose
 
@@ -22,13 +22,24 @@ The first verb is `research` and the first authored target is the existing Libra
 
 ## Model vocabulary
 
-The model-backed decision provider now unions the legacy known action vocabulary with action names that are actually present in the current authoritative `action_options`. This lets later selective semantic verbs become choosable when and only when current world affordances expose them, instead of requiring every new verb to be added to a second model-only hard-coded vocabulary list.
+The model-backed decision provider unions the legacy known action vocabulary with action names actually present in current authoritative `action_options`. Later selective semantic verbs therefore become choosable only when current world affordances expose them, without requiring a second model-only hard-coded vocabulary edit.
 
 Runtime validation remains authoritative.
 
 ## Timing hardening
 
-The same slice adds a regression invariant for the existing one-simulated-minute minimum at the maximum allowed 3600x universe speed. A 1 sim minute action schedules a positive wall delay of 1/60 real second, remains in progress immediately before its due time, and completes immediately after it. No new minimum wall-delay clamp is required.
+The same slice locks the existing one-simulated-minute minimum at the maximum allowed 3600x universe speed. A 1 sim minute action schedules a positive wall delay of 1/60 real second, remains in progress immediately before its due time, and completes immediately after it. No minimum wall-delay clamp is required.
+
+## Evidence
+
+- PR #10 merged at `c50f4cf9a87b15589be3b3ea4878990da7e69d02`.
+- PR CI #365 / run `31681648655` SUCCESS after one stale duration-profile-count assertion was updated; the first failed PR run changed no production state.
+- main CI #366 / run `31681716298` SUCCESS.
+- Research Action Semantics Acceptance #1 / run `31681716339` SUCCESS on candidate source/config against a disposable copy of the live production DB with zero model calls.
+- acceptance proved Research Desk is the only research target, Bookshelf is rejected, planning clamps 5→30 and 200→90 minutes, and research completes as a first-class action/event.
+- release commit `8f3487feccc84ef10b045dff960097bc0c44ceb6`.
+- Deploy #136 / run `31681760620` SUCCESS.
+- deploy readback: service healthy, schema v4, autonomy enabled/normal/unpaused, Gemini binding preserved, Telegram connected. Production speed was 5x at that readback snapshot and must always be re-read live rather than treated as a fixed baseline.
 
 ## Non-goals
 
