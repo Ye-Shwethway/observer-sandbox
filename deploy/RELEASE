@@ -1,7 +1,7 @@
 Observer Sandbox production release marker
 
-release: autonomy-breadth-time-observability-v1
-accepted_main: 802b17fce70f9d3b28d29fd2dc56267b17f3fb9f
-acceptance_workflow: Autonomy Breadth and Time Acceptance #2
-acceptance_run: 31676984134
+release: current-action-eta-observability-v1
+accepted_main: d9fcd2ebd3556365b7b8505350d012a08f3f3ad9
+acceptance_workflow: Current Action ETA Acceptance #2
+acceptance_run: 31678671655
 status: accepted-for-production
