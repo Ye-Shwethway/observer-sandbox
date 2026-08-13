@@ -11,6 +11,7 @@ from .simulation import ACTION_EFFECTS_PER_HOUR
 NEEDS: dict[str, dict[str, Any]] = {
     "sleepiness": {"field": "needs.sleepiness", "state": "sleepiness", "direction": -1, "strong": ("rest", "sleep"), "critical": ("sleep",)},
     "energy": {"field": "needs.energy", "state": "energy", "direction": 1, "strong": ("rest", "sleep"), "critical": ("rest", "sleep")},
+    "fatigue": {"field": "physiology.fatigue", "state": "fatigue", "direction": -1, "strong": ("rest", "sleep"), "critical": ("rest", "sleep")},
     "thirst": {"field": "needs.thirst", "state": "thirst", "direction": -1, "strong": ("drink",), "critical": ("drink",)},
     "hunger": {"field": "needs.hunger", "state": "hunger", "direction": -1, "strong": ("eat",), "critical": ("eat",)},
     "cleanliness": {"field": "physiology.cleanliness", "state": "cleanliness", "direction": 1, "strong": ("shower",), "critical": ("shower",)},

@@ -69,14 +69,14 @@ jobs:
           with connect(db) as conn:
               provider = ModelDecisionProvider(conn)
 
-              # Reproduce the Creator-observed post-food condition. Thirst and hunger
-              # are both strong before eating; authored need ordering puts thirst first.
+              # Isolate this legacy thirst/hunger fixture from the newer fatigue need.
               set_field(conn, "char_darian", "runtime.location", "loc_thorne_estate_food_storage")
               set_field(conn, "char_darian", "needs.hunger", 62.9)
               set_field(conn, "char_darian", "needs.thirst", 51.9)
               set_field(conn, "char_darian", "needs.energy", 68.3)
               set_field(conn, "char_darian", "needs.sleepiness", 12.8)
               set_field(conn, "char_darian", "physiology.cleanliness", 60.0)
+              set_field(conn, "char_darian", "physiology.fatigue", 20.0)
               conn.commit()
 
               both = provider._enrich_state(snapshot(conn, "char_darian"))
@@ -85,13 +85,13 @@ jobs:
               assert all(x["action"] == "move" for x in both["action_options"])
               assert {x["target"] for x in both["action_options"]} == {"loc_thorne_estate_training_hall"}
 
-              # Exact follow-up state shown by Creator after the meal/move sequence.
               set_field(conn, "char_darian", "runtime.location", "loc_thorne_estate_training_hall")
               set_field(conn, "char_darian", "needs.hunger", 14.0)
               set_field(conn, "char_darian", "needs.thirst", 55.2)
               set_field(conn, "char_darian", "needs.energy", 75.5)
               set_field(conn, "char_darian", "needs.sleepiness", 14.0)
               set_field(conn, "char_darian", "physiology.cleanliness", 60.0)
+              set_field(conn, "char_darian", "physiology.fatigue", 20.0)
               conn.commit()
 
               hall = provider._enrich_state(snapshot(conn, "char_darian"))
@@ -129,7 +129,8 @@ jobs:
                   "kitchen_resolver": drink,
                   "thirst_before_drink": kitchen_before["thirst"],
                   "thirst_after_drink": after["thirst"],
-                  "training_blocked_while_strong_thirst": True
+                  "training_blocked_while_strong_thirst": True,
+                  "fatigue_fixture_isolated": True
               }, indent=2, sort_keys=True))
           PY
             unset PYTHONPATH

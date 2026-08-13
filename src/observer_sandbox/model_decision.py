@@ -20,6 +20,41 @@ def load_autonomy_policy(path: str | Path = DARIAN_AUTONOMY_POLICY_PATH) -> dict
     return json.loads(Path(path).read_text(encoding="utf-8"))
 
 
+def _shape_discretionary_repetition(
+    action_options: list[dict[str, Any]],
+    recent_events: list[dict[str, Any]],
+    *,
+    current_location: str,
+) -> list[dict[str, Any]]:
+    """Suppress low-value inspect/use loops without hiding all fallback behavior."""
+    action_events = [event for event in recent_events if event.get("action")]
+    if not action_events:
+        return action_options
+
+    discretionary = {"inspect", "use"}
+    blocked_pairs: set[tuple[str, str | None]] = set()
+    last = action_events[-1]
+    if last.get("action") in discretionary:
+        blocked_pairs.add((str(last["action"]), last.get("target")))
+
+    tail = action_events[-2:]
+    suppress_room_discretionary = len(tail) == 2 and all(
+        event.get("action") in discretionary and event.get("location_id") == current_location
+        for event in tail
+    )
+
+    filtered: list[dict[str, Any]] = []
+    for option in action_options:
+        action = str(option.get("action"))
+        target = option.get("target")
+        if suppress_room_discretionary and action in discretionary:
+            continue
+        if (action, target) in blocked_pairs:
+            continue
+        filtered.append(option)
+    return filtered or action_options
+
+
 class ModelDecisionProvider:
     """Model-backed P1 decision provider. Runtime validation remains authoritative."""
 
@@ -47,7 +82,7 @@ class ModelDecisionProvider:
         if limit is None:
             limit = int(self.policy.get("repetition_policy", {}).get("recent_event_window", 8))
         rows = self.conn.execute(
-            "SELECT sim_time, event_type, payload_json FROM events WHERE actor_id=? ORDER BY id DESC LIMIT ?",
+            "SELECT sim_time, event_type, location_id, payload_json FROM events WHERE actor_id=? ORDER BY id DESC LIMIT ?",
             (self.character_id, limit),
         ).fetchall()
         result: list[dict[str, Any]] = []
@@ -57,6 +92,7 @@ class ModelDecisionProvider:
                 {
                     "sim_time": row["sim_time"],
                     "event_type": row["event_type"],
+                    "location_id": row["location_id"],
                     "action": payload.get("action"),
                     "target": payload.get("target"),
                     "reason": payload.get("reason"),
@@ -106,6 +142,7 @@ class ModelDecisionProvider:
         checks = {
             "sleepiness": ("gte", float(state["sleepiness"])),
             "energy": ("lte", float(state["energy"])),
+            "fatigue": ("gte", float(state["fatigue"])),
             "thirst": ("gte", float(state["thirst"])),
             "hunger": ("gte", float(state["hunger"])),
             "cleanliness": ("lte", float(state["cleanliness"])),
@@ -179,17 +216,23 @@ class ModelDecisionProvider:
     def _enrich_state(self, state: dict[str, Any]) -> dict[str, Any]:
         enriched = dict(state)
         decision_signals = self._decision_signals(state)
+        recent_events = self._recent_events()
         options = action_options(self.conn, self.character_id)
-        enriched["action_options"] = shape_action_options_for_needs(
+        options = shape_action_options_for_needs(
             self.conn,
             state=state,
             action_options=options,
             decision_signals=decision_signals,
         )
+        enriched["action_options"] = _shape_discretionary_repetition(
+            options,
+            recent_events,
+            current_location=str(state["location"]),
+        )
         enriched["character"] = self._character_context()
         enriched["autonomy_policy"] = self.policy
         enriched["decision_signals"] = decision_signals
-        enriched["recent_events"] = self._recent_events()
+        enriched["recent_events"] = recent_events
         return enriched
 
     def choose(self, state: dict[str, Any], available_actions: list[str]) -> Action:
