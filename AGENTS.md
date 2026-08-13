@@ -4,11 +4,25 @@
 
 Before making material changes, read `NEW_CHAT_BOOTSTRAP.md` and treat newer repository/runtime evidence as authoritative over remembered chat context.
 
-Also read directly relevant contracts. For core/runtime/schema/action work read `docs/ARCHITECTURE.md` and `docs/COMPOSABLE_RUNTIME_ARCHITECTURE_AUDIT.md`; for world/location/topology work read `docs/WORLD_LOCATION_NODE_MODEL.md`; for Telegram work read `docs/TELEGRAM_OBSERVER_ARCHITECTURE.md`; for privileged runtime/world mutation read `docs/CREATOR_CONTROL_POLICY.md`; for living-needs/recovery/item effects read `docs/PHYSIOLOGY_AND_ITEM_EFFECTS.md`; for character-profile work inspect `docs/CHARACTER_PROFILE_SCHEMA.md` plus `config/characters/`; for deployment/runtime work inspect `.github/workflows/` and `deploy/`.
+Also read directly relevant contracts. For core/runtime/schema/action work read `docs/ARCHITECTURE.md` and `docs/COMPOSABLE_RUNTIME_ARCHITECTURE_AUDIT.md`; for world/location/topology work read `docs/WORLD_LOCATION_NODE_MODEL.md`; for Telegram work read `docs/TELEGRAM_OBSERVER_ARCHITECTURE.md`; for privileged runtime/world mutation read `docs/CREATOR_CONTROL_POLICY.md`; for living-needs/recovery/item effects read `docs/PHYSIOLOGY_AND_ITEM_EFFECTS.md`; for character-profile work inspect `docs/CHARACTER_PROFILE_SCHEMA.md` plus `config/characters/`; for validation/release/deployment work read `docs/PRODUCTION_VALIDATION_AND_RELEASE_PROTOCOL.md`, then inspect `.github/workflows/` and `deploy/` only as needed.
 
 ## Continuity rule
 
 `NEW_CHAT_BOOTSTRAP.md` is the durable cross-chat handoff. After every material repository or verified runtime change, update it in the same work session. Never conflate authored/committed, CI-validated, deployed, DB-applied and live-runtime-verified evidence.
+
+## Production validation and release contract
+
+All production-copy acceptance and production release work must follow `docs/PRODUCTION_VALIDATION_AND_RELEASE_PROTOCOL.md`.
+
+- Do not invent a new SSH/SQLite-copy/deploy workflow for each feature.
+- Production-state acceptance must reuse `.github/workflows/reusable-production-copy-validation.yml` unless a concrete missing invariant makes the shared path insufficient.
+- Feature-specific acceptance logic belongs in a focused validator under `scripts/validation/`; it receives only the disposable DB through `OBSERVER_SANDBOX_DB`.
+- The shared SQLite copy primitive is `scripts/validation/create_disposable_db_copy.py`; do not replace it with ad-hoc `cp`/heredoc copy logic.
+- Validation may accelerate or mutate only the disposable copy. Never accelerate or directly edit production for testing.
+- Feature validators must not call models, Telegram or other external side effects and must not operate systemd/service controls.
+- If the shared protocol itself is insufficient, update the protocol document + shared helper/workflow + focused self-test first; then reuse the updated mechanism. Do not carry feature-local infrastructure forks forward.
+- Runtime-affecting accepted changes deploy only through the canonical `.github/workflows/deploy.yml` path. Docs/test/validation-tooling-only changes do not need ceremonial production deploys.
+- Post-deploy production checks are read-only unless the Creator separately authorizes a control mutation.
 
 ## Authority order
 

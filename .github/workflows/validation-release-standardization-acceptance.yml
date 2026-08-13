@@ -1,0 +1,26 @@
+name: Validation Release Standardization Acceptance
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - 'docs/PRODUCTION_VALIDATION_AND_RELEASE_PROTOCOL.md'
+      - 'scripts/validation/production_copy.py'
+      - 'scripts/validation/create_disposable_db_copy.py'
+      - 'scripts/validation/validate_protocol_selftest.py'
+      - '.github/workflows/reusable-production-copy-validation.yml'
+      - '.github/workflows/validation-release-standardization-acceptance.yml'
+      - 'tests/test_production_copy_validation.py'
+      - 'tests/test_production_copy_validation_protocol.py'
+      - 'AGENTS.md'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  acceptance:
+    uses: ./.github/workflows/reusable-production-copy-validation.yml
+    with:
+      validator_path: scripts/validation/validate_protocol_selftest.py
+    secrets: inherit
