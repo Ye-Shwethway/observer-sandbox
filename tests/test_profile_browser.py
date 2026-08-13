@@ -2,6 +2,7 @@ from observer_sandbox.db import connect
 from observer_sandbox.event_log import record_event
 from observer_sandbox.profile_observer import profile_menu, profile_section
 from observer_sandbox.runtime import initialize
+from observer_sandbox.simulation import snapshot
 from observer_sandbox.telegram_bot import _callback_view
 
 
@@ -67,11 +68,10 @@ def test_strength_progression_observability_is_read_only_and_reflects_event_evid
         ).fetchone()
         event_count_before = int(conn.execute("SELECT COUNT(*) FROM events").fetchone()[0])
 
-        # Test-only event evidence at current simulated time. Reading the Recovery
-        # section must consume/mutate none of it.
-        sim_time = conn.execute("SELECT value_json FROM runtime_state WHERE key='sim_time'").fetchone()[0]
-        import json
-        sim_time = json.loads(sim_time)
+        # Snapshot establishes/reads the authoritative simulation clock. Test-only
+        # event evidence is then added at that exact boundary; reading Recovery
+        # must consume or mutate none of it.
+        sim_time = snapshot(conn, "char_darian")["sim_time"]
         record_event(
             conn,
             sim_time=sim_time,
