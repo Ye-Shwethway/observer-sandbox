@@ -59,12 +59,10 @@ jobs:
           from observer_sandbox.actor_runtime import actor_runtime, set_actor_runtime, set_retry
           from observer_sandbox.db import connect
           from observer_sandbox.profile_observer import profile_section
-          from observer_sandbox.runtime import initialize
           from observer_sandbox.simulation import Action, apply_action, validate_action
           from observer_sandbox.world import set_field
 
           db = os.environ["OBSERVER_SANDBOX_DB"]
-          initialize(db)
 
           def reset_runtime(conn):
               actor_id = "char_darian"
