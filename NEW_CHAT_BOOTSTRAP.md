@@ -16,9 +16,7 @@ The schema-v4 composable-runtime refinement was the deliberate one-time broad fo
 Default shape:
 `minimum required state -> minimum deterministic/query behavior -> minimum Creator-facing observation/control -> focused tests/acceptance -> deploy/readback -> next slice`.
 
-Do not pre-build large future subsystems merely because schema v4 has sockets for them. Inventory, memory, relationships, environment, combat, modifiers and regional world expansion remain demand-driven. A roadmap slice should become independently runnable/observable before moving to the next one.
-
-Avoid the Simiverse-style failure mode where extensive schema/docs/subsystems accumulate long before a usable runtime checkpoint exists.
+Do not pre-build large future subsystems merely because schema v4 has sockets for them. Inventory, memory, relationships, environment, combat, modifiers and regional world expansion remain demand-driven. Avoid the Simiverse-style failure mode where extensive schema/docs/subsystems accumulate long before a usable runtime checkpoint exists.
 
 ## Production baseline
 
@@ -37,108 +35,69 @@ Production continues autonomously. Re-read live state whenever exact current Dar
 
 ## Composable LEGO runtime — PRE-EXPANSION HARDENING COMPLETE
 
-Canonical runtime expression:
+Canonical expression:
+`Actor(s) + Action + Place + Simulation Time + Conditions/Modifiers + Resources/Targets -> Validation -> State Changes + Events`.
 
-`Actor(s) + Action + Place + Simulation Time + Conditions/Modifiers + Resources/Targets -> Validation -> State Changes + Events`
-
-Schema-v4 foundation is implemented.
-
-### State ownership
-
-Universe-global `runtime_state` owns shared state such as `sim_time`, speed, pause, world id and global/UI settings where appropriate.
-
-Per-actor `actor_runtime` owns autonomy enabled/mode, pending action id, lease, retry/backoff and cognition wake reason/stats. Retired Darian-only singleton scheduler JSON keys are no longer authoritative.
-
-Character profile ontology remains separate from actor scheduler runtime: profile/domain fields describe character facts/state; `actor_runtime` describes scheduler/cognition operation; `action_instances` describe action instances/history.
-
-### First-class actions / events / definitions
-
-`action_definitions` contains data-driven core action metadata. `action_instances` persists action id/type, actor, place, target, participants/resources, condition/modifier snapshots, duration/planned timing, status and outcome/state-change data.
-
-Events support queryable UUID, action id, location id, causal parent, structured state changes and normalized participants.
-
-`entity_definitions` + `entities.definition_id` provide reusable definition -> concrete instance separation. Immediate effect operations support add/multiply/set/clamp; `active_modifiers` is a future persistence socket, not a mandate to build a universal modifier engine now.
-
-### Multi-actor scheduling/time
-
-The service enumerates active actor runtimes. One universe has one sim clock; each action has its own interval. Concurrent same-start actions do not serially double-count time.
-
-Quasi remains test-only architecture proof, not a production autonomous character yet.
-
-### Dynamic location / possession semantics
-
-`contains` = structural hierarchy. `connected_to` = traversal. `located_at` = dynamic physical presence. Future `owned_by`, `carried_by`, `equipped_by` and container semantics remain distinct.
-
-## Schema v4 evidence
-
-CI #253 / run `31666099784`: SUCCESS on the complete schema-v4 code/test set before final documentation-only sync.
-
-Deploy #112 / run `31665737560`: SUCCESS. Live readback verified systemd active, Telegram connected, schema 4, correct world id, autonomy enabled/normal, paused false, speed 1.0 and valid actor-scoped pending action.
-
-Bounded Autonomy Acceptance #5 / run `31665851475`: SUCCESS on disposable production DB copy at 3600x with production read back unchanged; recovery trajectory ended with `needs_acceptable=true`.
-
-Evidence level: schema-v4 hardening is implemented, CI-validated, deployed, DB-applied and live-runtime verified.
+Schema v4 provides actor-scoped scheduler state, first-class action definitions/instances, concurrency-safe single universe time, richer event linkage, definition->instance sockets, generic effect/modifier contracts and dynamic `located_at` semantics. Quasi remains test-only proof, not a production autonomous character.
 
 ## World / location architecture
 
 Current hierarchy:
-`world_observer_universe -> loc_thorne_estate -> floor/zone -> room -> object`
+`world_observer_universe -> loc_thorne_estate -> floor/zone -> room -> object`.
 
-Globally scoped/path-independent ids remain mandatory. Prototype spatial ids remain retired. Estate exterior is locked/non-traversable. Do not broaden outside yet.
-
-Future regional insertion remains possible:
-`world_observer_universe -> loc_south_lake_tahoe -> loc_thorne_estate`.
+Globally scoped/path-independent ids remain mandatory. `contains` is hierarchy, `connected_to` traversal, `located_at` dynamic presence. Estate exterior remains locked/non-traversable. Future regional insertion remains possible as `world_observer_universe -> loc_south_lake_tahoe -> loc_thorne_estate` without renaming existing nodes.
 
 ## Wake-on-demand / cost policy
 
 Frequent scheduler ticks do not mean frequent LLM calls. Each active actor wakes a model only at a real decision boundary. Preserve this as characters scale; do not add periodic reflection/heartbeat loops without explicit Creator approval.
 
-## Telegram / roadmap audit result
+## Latest live liveness check — 2026-08-13 04:25 UTC
+
+Deploy #114 readback verified:
+- systemd active;
+- Telegram API connected;
+- schema version 4 healthy;
+- autonomy enabled / normal / paused false / speed 1.0;
+- Darian at Kitchen with current action `rest`;
+- valid actor-scoped pending action id `f8041eed-aeed-4f0f-a303-92eed9ca72fd`;
+- decision calls remained 19, last decision wall time `2026-08-13 03:54:55 UTC`.
+
+At that readback only about 30.5 wall minutes had elapsed since the decision, so a 60-minute rest action could legitimately still be pending. The current scheduler advances committed simulation time at action completion, so sim time may remain at the action start while a long action is in progress. Lack of a new notification during that window is not evidence that the service/universe stopped.
+
+## P2 Telegram Observer
 
 P2.1 LIVE. P2.2.1 inline Observer Home COMPLETE. P2.2.2A scoped Thorne Estate foundation COMPLETE/LIVE VERIFIED.
 
-The 2026-08-13 roadmap audit found that schema v4 remains compatible with the intended future architecture; no additional foundation rewrite is required. The required correction was **development sequencing**, not ontology.
+### P2.2.2B Minimum Telegram Estate Browser
 
-P2.2 is now a sequence of independent runnable checkpoints:
+Status: **IMPLEMENTED / CI-VALIDATED / DEPLOYED — CREATOR UI ACCEPTANCE PENDING**.
 
-1. **P2.2.2B Minimum Telegram Estate Browser — NEXT**
-   - Universe -> Thorne Estate -> floor/zone -> room
-   - room detail: occupants, objects, exits, current/recent activity when available
-   - graph-derived Back/Home navigation
-   - no item mechanics/inventory/second-character work required for acceptance
+Implemented:
+- Universe -> Thorne Estate -> floor/zone -> room through stable location callbacks;
+- location/room detail renders child areas, occupants + current action, objects, exits and recent location activity when available;
+- parent Back navigation derives from canonical `contains` relations;
+- locked exterior displays as unavailable/view-only and remains non-traversable;
+- occupant resolution uses generic dynamic-location contract;
+- recent location activity queries schema-v4 event `location_id`;
+- no item-detail/inventory behavior was added prematurely.
 
-2. **P2.2.3 Minimum Item/Object Browser**
-   - open current room object -> detail -> back
-   - show existing capabilities/effects/definition-instance data only
-   - no quantity/durability/inventory engine yet
+Evidence:
+- query contract commit `46b3e44bdd089b37a0eae6d9257c401ad904820f`;
+- Telegram browser commit `6ca1be4a886756a280e8aeec35feb4f0c27765d4`;
+- recursive navigation tests commit `6ec152df67116ceea75c4c77046c3ec54264f6a1`;
+- CI #260 / run `31666982672`: SUCCESS;
+- Deploy #114 / run `31666950518`: SUCCESS with live runtime/service/Telegram readback green.
 
-3. **P2.2.4 Character Profile Browser — single-character minimum**
-   - Characters -> Darian -> profile sections
-   - read-only/paginated canonical profile browsing
-   - no selected-character session state required while only one production character exists
+Do not call the browser live-UX-verified until the Creator personally exercises the deployed callbacks in Telegram.
 
-P2.3 remains later and must also be slice-by-slice, not a single large control project.
+## Next minimum runnable slice
 
-## Post-P2 sequencing
+After Creator estate-browser UI acceptance, resume **P2.2.3 Minimum Item/Object Browser**:
+- open an existing room object -> detail -> back;
+- show name, type/definition, capabilities, current location and authored effects where present;
+- use definition/instance-aware presentation;
+- do not add quantity/stacks/depletion/durability/inventory mutation yet.
 
-### P3 — First Richer Simulation Vertical Slice
+P2.2.4 after that is a single-character Darian Profile Browser. P3 becomes one richer simulation vertical slice, not a broad rich-state phase. Memory/relationships are demand-driven later. Quasi onboarding is a later P5 character slice using existing schema v4 rather than another core rewrite.
 
-Choose one concrete bounded simulation capability only when ready. Add only its required state/definitions, make deterministic behavior runnable, expose enough observer data, run bounded acceptance, deploy, then stop. No general-purpose rich-state framework first.
-
-### P4 — Context / Memory / Relationship Slice When Required
-
-Memory/relationship/context becomes demand-driven. Build the smallest mechanism only when a concrete autonomous behavior or observer use case needs it. No bulk memory ontology/background reflection mega-phase.
-
-### P5 — Second Production Character
-
-Quasi onboarding should use schema v4 rather than trigger another core rewrite. Minimum first slice: canonical profile/runtime seed, cognition binding/policy, valid location/state, independent wake-on-demand autonomy, Telegram character selection now that a second real character exists, and bounded two-actor acceptance. Rich relationships/group actions/shared memory remain separate later slices.
-
-### Later South Lake Tahoe expansion
-
-Regional expansion must also start with one runnable external destination/traversal path, not a large pre-authored region. Keep unimplemented Tahoe behind non-traversable boundaries and expand destination-by-destination.
-
-## Exact resume point
-
-**Resume P2.2.2B Minimum Telegram Estate Browser on schema v4.**
-
-Do not perform another broad foundation refinement unless a concrete future slice proves a missing core invariant. Preserve actor-scoped runtime, first-class actions/events, scoped ids, one concurrency-safe universe clock, wake-on-demand cognition, locked unfinished boundaries, notification preferences, Telegram presentation rules and evidence-level distinctions.
+Preserve actor-scoped runtime, first-class actions/events, scoped ids, one concurrency-safe universe clock, wake-on-demand cognition, locked unfinished boundaries, notification preferences, Telegram presentation rules and evidence-level distinctions.
