@@ -2,79 +2,70 @@
 
 ## Purpose
 
-Observer Sandbox uses a deep profile ontology from the beginning so characters can become progressively more life-like without rebuilding persistence. A field may exist before its simulation engine exists. Such a field remains canonical/static until an authorized engine activates it.
-
-The initial ontology is a union of the supplied Darian profile formats plus the Observer Sandbox architecture decisions already made for needs, physiology, injuries, recovery, memory-ready state and progressive body simulation.
+Observer Sandbox uses a deep profile ontology so characters can become progressively more life-like without rebuilding persistence. A field may exist before its simulation engine exists; it remains canonical/static until an authorized engine activates it.
 
 ## Storage model
 
-The profile system is intentionally split into schema and values:
+Character profile ontology is intentionally separate from scheduler/runtime-control state.
 
-- `profile_field_definitions`: stable ontology; field type, unit, domain, default mode, authority, sensitivity.
-- `character_profiles`: one rich profile attached to a character entity.
-- `character_profile_values`: current per-character values.
-- `character_profile_history`: append-oriented change history for canonical corrections and simulation changes.
-- `character_preferences`: likes/dislikes/interests/aversions.
-- `character_habits`: habitual behavior and strength/frequency metadata.
-- `character_routines`: ordered routine activities and conditions.
-- `character_skills`: extensible skill registry, score/tier/experience.
-- `character_relationship_state`: directed relationship state between characters.
+Profile/domain tables include:
+- `profile_field_definitions`
+- `character_profiles`
+- `character_profile_values`
+- `character_profile_history`
+- `character_preferences`
+- `character_habits`
+- `character_routines`
+- `character_skills`
+- `character_relationship_state`.
 
-The older generic `fields` table remains part of the core entity system. Character-specific rich profile state should use the profile ontology rather than adding hundreds of columns to `entities`.
+The generic `fields` table remains available for entity/domain state with explicit mode/authority.
+
+**Do not store autonomy scheduler bookkeeping in profile fields.** Schema v4 `actor_runtime` owns per-actor autonomy enabled/mode, pending action reference, lease, retry/backoff and cognition wake telemetry. First-class action state belongs to `action_instances`. Universe-wide time/speed/pause belongs to global runtime state.
+
+This separation matters when multiple characters become autonomous: a character profile describes who the character is and domain state they carry; actor runtime describes how their current cognition/action scheduler is operating.
 
 ## Domains
 
-The initial ontology contains first-class fields for:
+The profile ontology includes identity/chronology, body composition/measurements, detailed appearance, intimate anatomy/physiology, RAPS attributes, social/emotional traits, living physiology, fatigue/soreness/injury/illness/recovery, physical limits, personality/motivation/background and narrative goal/arc state.
 
-- identity and chronology
-- body composition and detailed measurements
-- face, hair, eyes, skin, facial hair, chest hair and distinctive appearance
-- sexual anatomy and sexual physiology
-- RAPS physical, mental, intellectual, sexual and verbal-charisma attributes
-- social/emotional traits
-- energy, hunger, hydration and sleepiness
-- fatigue, soreness, injury, illness and recovery
-- genetic maxima / physical limits
-- personality, motivation and background
-- narrative goal/arc state
+Variable-length preferences, habits, routines, skills and relationships use normalized collection tables rather than hundreds of scalar entity columns.
 
-Preferences, habits, routines, skills and relationships are normalized into dedicated tables because they are variable-length collections rather than scalar profile fields.
+## Sensitivity
 
-## Intimate fields
+Sensitive/intimate fields are represented explicitly and tagged through sensitivity metadata. Sensitivity affects presentation/access policy, not whether the simulation can represent the state. Telegram/UI may require deliberate private-profile views before displaying intimate fields.
 
-Sexual anatomy is not hidden in notes or discarded. It is represented explicitly and marked `sensitivity='intimate'`. Initial fields include penis length, girth, erection firmness, genital sensitivity, libido, arousal control, sexual endurance, performance, experience, weekly self/partnered satisfaction counts and genetically fixed genital measurements.
+## Progressive simulation and authority
 
-Sensitivity is a presentation/access metadata property; it does not remove the data from simulation. Telegram/UI layers can later require an explicit private-profile view before displaying intimate fields.
-
-## Progressive simulation
-
-Each field carries a mode and authority:
-
-- `canonical`: manually defined authoritative fact.
-- `static`: present but not currently simulated.
-- `derived`: calculated from other facts.
-- `simulated`: actively updated by an engine.
+Each field carries a mode:
+- `canonical` — manually authoritative
+- `static` — represented, not actively simulated
+- `derived` — calculated from other facts
+- `simulated` — actively updated by an authorized engine.
 
 Examples:
-
 - height -> canonical / `profile_core`
 - age -> derived / `time_engine`
-- hunger -> static then simulated / `needs_engine`
-- body fat -> static then simulated / `physiology_engine`
-- chest/biceps/thigh measurements -> static then simulated / `body_progression_engine`
-- erection firmness/sensitivity -> static then simulated / `sexual_physiology_engine`
-- injury state -> static then simulated / `injury_engine`
+- hunger -> simulated / `needs_engine`
+- body fat -> future simulated / `physiology_engine`
+- measurements -> future simulated / `body_progression_engine`
+- intimate physiology -> future simulated / `sexual_physiology_engine`
+- injury state -> future simulated / `injury_engine`.
 
-This lets future modules activate individual domains without changing character identity or schema.
+Domain engines may mutate only fields they own. LLMs never receive arbitrary profile-write authority.
 
-## Conflict policy for Darian source material
+## Composable-runtime relationship
 
-The supplied Darian files contain historical value differences. The ontology is therefore built from the union of all fields, while value import is deliberately separate and conflict-aware. A newer import must not silently overwrite a canonical value merely because another historical source contains a different number.
+Profile state is one input to the LEGO runtime:
 
-Examples in the supplied material include differences in IQ, body-fat percentage, genital length and historical attribute scores. These are value-reconciliation issues, not schema omissions.
+`Actor profile/state + Action + Place + Time + Conditions/Modifiers + Resources/Targets -> Validation -> State Changes + Events`.
 
-Before Darian is instantiated as the first live character, a canonical seed profile will be created from the latest approved values and every conflicting historical source value will remain traceable through source/revision metadata rather than silently merged.
+Actions may read profile/domain fields as prerequisites or modifiers, but action history belongs to events/action instances rather than being embedded into the profile. Temporary sourced effects should use the shared modifier contract rather than silently rewriting canonical traits.
+
+## Conflict policy
+
+Source disagreements are value-reconciliation issues, not reasons to weaken the ontology. New imports must not silently overwrite canonical values. Conflicting historical values remain traceable through source/revision/history metadata.
 
 ## Extension rule
 
-New domains should normally be added as field definitions or collection tables, not by restructuring existing character tables. Engines obtain explicit authority over fields; LLM agents never write arbitrary profile values directly.
+New character domains should normally add field definitions/collection structures and an explicit engine authority, not restructure the actor identity or scheduler tables. Keep Profile, Actor Runtime, Action Instances and Events distinct.
