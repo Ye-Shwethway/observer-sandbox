@@ -11,8 +11,8 @@ Roadmap synchronized: 2026-08-13
 - Cognition remains wake-on-demand; no periodic LLM heartbeat by default.
 - Canonical runtime composition:
   `Actor(s) + Action + Place + Simulation Time + Conditions/Modifiers + Resources/Targets -> Validation -> State Changes + Events`.
-- Schema v4 is the current composable foundation. Do not introduce schema v5 without a concrete missing invariant.
-- Development proceeds by minimum runnable vertical slices, not subsystem-first expansion.
+- Schema v4 remains the current composable foundation. Do not introduce schema v5 without a concrete missing invariant.
+- Development proceeds by minimum runnable vertical slices.
 
 ## Foundation / P0 / P1
 
@@ -27,7 +27,7 @@ Roadmap synchronized: 2026-08-13
 - P2.2 Browse the Sandbox — COMPLETE / LIVE UX VERIFIED.
 - P2.3.1 Restore Basic Stats — COMPLETE / LIVE UX VERIFIED.
 
-Creator controls remain typed and audited; do not expand them into arbitrary editing/admin-console behavior.
+Creator controls remain typed/audited; no arbitrary admin console.
 
 ## P3 — Richer Simulation Vertical Slices
 
@@ -37,80 +37,82 @@ Creator controls remain typed and audited; do not expand them into arbitrary edi
 - P3.4 Training Effectiveness Outcome — COMPLETE / ACCEPTANCE VERIFIED / DEPLOYED.
 - P3.5 Effective Training Load — COMPLETE / ACCEPTANCE VERIFIED / DEPLOYED.
 
-P3.5 completes the current short-term loop:
+P3.5 completes the current short-term training loop:
 `target -> readiness -> fatigue inefficiency -> effectiveness -> effective workload -> immediate physiology`.
 
 No accumulated stimulus, strength/skill progression, hypertrophy/body measurements, grading, or tiers are implemented.
 
-## Post-P3.5 stabilization — Autonomy Breadth + Time Observability v1
+## Post-P3.5 stabilization
 
-Status: DEPLOYED / ACCEPTANCE VERIFIED / LIVE OBSERVATION PARTIAL.
+### Autonomy Breadth + Time Observability v1
+Status: DEPLOYED / ACCEPTANCE VERIFIED / LIVE OBSERVATION POSITIVE.
 
-Canonical detail: `docs/AUTONOMY_BREADTH_TIME_OBSERVABILITY.md`.
+World object breadth expanded from 15 to 27 across the existing estate. Darian has been observed live beyond the Kitchen, including Living Room and Top-Class Home Gym. Generic short-inspect/use guidance and proactive next-action timing are live.
 
-Delivered:
-- world object breadth expanded from 15 to 27 instances across the existing estate topology;
-- seven previously sparse non-kitchen purposeful rooms acceptance-proven to expose legal targets;
-- Darian policy v1.4 discourages serial same-room inspect/use loops and default kitchen-appliance behavior;
-- normal guidance prefers quick inspect 2–6 sim min and simple use 2–10 while persisted compatibility bounds remain unchanged;
-- proactive Character Update completion messages expose completed duration and, when normal next planning succeeds, mandatory next action/duration/expected-update information;
-- time semantics remain linear and runtime-owned.
+### Current Action ETA Observability v1
+Status: COMPLETE / ACCEPTANCE VERIFIED / DEPLOYED / LIVE UX VERIFIED.
 
-Creator production observation already confirmed Darian moved beyond the Kitchen into the Living Room; deploy #133 later observed him training in the Top-Class Home Gym. Long-run diversity remains an observational property rather than deterministic CI evidence.
+Character and Runtime surfaces expose pending target, duration, expected simulated completion and approximate remaining real time.
 
-## Post-P3.5 stabilization — Current Action ETA Observability v1
+### Runtime Speed Control v1
+Status: COMPLETE / ACCEPTANCE VERIFIED / DEPLOYED / LIVE UX VERIFIED.
 
-Status: COMPLETE / ACCEPTANCE VERIFIED / DEPLOYED / CREATOR LIVE UX VERIFICATION PENDING.
+Global speed may change while actions are running. Remaining wall time is rescheduled without cancelling/replanning the action. Pause freezes countdown. Creator live test verified a 60-sim-minute Heavy Bag session at `30x` with roughly 2 real minutes total wait.
 
-Canonical detail: `docs/CURRENT_ACTION_ETA_OBSERVABILITY.md`.
+Evidence: PR #8 merge `1799dd7c7723866ec15dc29a05c682de8e1d5e4a`; Runtime Speed Control Acceptance #1 / `31679969684` SUCCESS; Deploy #134 / `31680016710` SUCCESS.
 
-Character `/darian`, `/watch`, character-browser card and Runtime `/status` now show, for an existing pending action:
-- friendly target;
-- planned simulated duration;
-- approximate full real wait at recorded planning speed;
-- expected simulated completion timestamp;
-- approximate remaining real time from durable `due_wall_time`.
+### Deterministic Action Duration Planning Profiles v1
+Status: COMPLETE / ACCEPTANCE VERIFIED / DEPLOYED.
 
-No pending action means no invented ETA. This is presentation-only: no time advance, scheduler mutation, action change or schema change.
+Canonical detail: `docs/DURATION_PLANNING_PROFILES.md`.
 
-Evidence:
-- PR #7 merge `17200b1468753f17f10e3951b2f2c474bef32989`;
-- PR CI #344 / `31678482152` SUCCESS;
-- main CI #346 / `31678671631` SUCCESS;
-- Current Action ETA Acceptance #2 / `31678671655` SUCCESS on candidate code + config against disposable production DB copy, zero model calls;
-- release commit `70399f872ca35960989c3257a0735eb063b26253`;
-- Deploy #133 / `31678730719` SUCCESS with service healthy, schema v4, normal/unpaused/1x autonomy, pending action preserved, Gemini binding preserved, Telegram connected.
+Broad persisted legality ranges remain unchanged for compatibility. Newly model-planned actions receive narrower preferred duration profiles and are deterministically normalized to the nearest preferred bound when the model requests an implausible duration.
 
-The first ETA acceptance attempt failed only because candidate staging omitted `config/`; no failed candidate was deployed.
+Representative profiles:
+- inspect 2–6m; Refrigerator/Pantry inspect 2–5m;
+- simple use 2–10m; Stove use 10–30m;
+- read 20–60m; Research Desk read 20–90m;
+- train 30–90m; Heavy Bag 20–45m; Free Weights 45–90m; Combat Mat/Practice Dummy 20–60m.
 
-## Current architecture opportunities — discussion candidates, not authorization
+Sleep remains intentionally unclamped until nap and overnight-sleep semantics are separated.
 
-The existing v4 foundation is sufficient for the next bounded slices. Current bottlenecks are behavior/domain semantics rather than a missing general runtime foundation.
+Evidence: PR #9 merge `4d7d949002a4444f6ae6424e502fa872f6d90a33`; PR CI #357 / `31680626619` SUCCESS; main CI #358 / `31680683357` SUCCESS; Duration Planning Profiles Acceptance #1 / `31680683416` SUCCESS; release `1130b2ec09c456293cdb7e6a5451cef15deffa56`; Deploy #135 / `31680728818` SUCCESS.
 
-Potential next directions to discuss:
+## Next — Selective Activity/Action Semantics
 
-1. **Deterministic action-duration planning profiles** — separate safe planning/preferred ranges from broad persisted legality bounds so routine inspect/use/read/move/etc. durations are consistently realistic without invalidating existing pending actions.
-2. **Autonomy decision quality / recent-action anti-repeat refinement** — recent event context already exists in cognition. Improve only if live behavior shows repetition remains despite current event window and v1.4 guidance; do not build a full memory engine just for short-term repetition.
-3. **Selective activity vocabulary/world affordance expansion** — add concrete action semantics or fixtures only where generic `inspect/use/read/train` proves too shallow in production; avoid adding objects merely to inflate choice count.
-4. **Training progression architecture** — before body measurements or attributes mutate, explicitly design stimulus/adaptation semantics and their relation to recovery/effective workload. Current effectiveness/effective-minutes are sockets, not progression authorization.
-5. **First grading slice** — grading is derived from raw authoritative values and should begin in one narrow domain only when a concrete progression/requirement/view needs it; schema v4 does not need a broad grading rewrite first.
-6. **Later systems** — inventory/depletion, P4 rich memory/relationships, P5 second production character, environment, Tahoe traversal remain demand-driven and later unless live behavior creates a concrete need.
+This is the approved next direction after duration profiles.
+
+Current vocabulary remains intentionally small:
+`move, sleep, eat, drink, shower, rest, inspect, use, train, read, idle`.
+
+The next work should add one or two meaningful semantic actions only where generic `use` or `inspect` is visibly too shallow. Candidate domains from the current estate include:
+- `research` — Research Desk / information work;
+- `monitor` — Surveillance Console / Emergency Console;
+- `maintain` or `repair` — Workshop Bench / Equipment Bench;
+- `practice` — future distinction from broad physical `train` if a concrete need is proven.
+
+Do not add all candidates at once. Each new verb should have a concrete capability/target, planning duration, validation path, first-class action/event persistence, focused tests, disposable acceptance, deployment and live observation.
+
+## Later sequence
+
+After activity semantics, unless Creator redirects:
+1. first read-only grading slice on one existing raw value;
+2. minimum training stimulus evidence on one target/domain;
+3. minimum adaptation/progression only after stimulus + recovery semantics are explicit.
+
+Later/demand-driven: inventory/depletion, soreness/injury, detailed exercise programming, rich memory/relationships, environment, P5 second character, Tahoe traversal.
 
 ## Deferred boundaries
 
 Not implemented:
-- deterministic action-duration planning profiles;
 - accumulated stimulus/adaptation;
 - attribute/skill/body-measurement progression;
-- soreness/injury or detailed exercise programming;
-- inventory/resource depletion;
 - universal grading/tier evaluation;
+- inventory/resource depletion;
 - rich memory/relationship/environment engines;
 - exterior/Tahoe traversal;
 - schema v5.
 
-## Current resume point — CREATOR DISCUSSION
+## Current resume point
 
-Current-action ETA observability is deployed. **Do not automatically implement another slice.** Review current architecture and live behavior with the Creator and select the next minimum-runnable direction explicitly.
-
-Preserve schema v4, 1x wake-on-demand autonomy, globally scoped ids, actor-scoped scheduler state, first-class actions/events, Telegram presentation rules, profile/runtime separation, typed/audited Creator control, and incremental expansion only through explicitly authorized minimum-runnable needs.
+Duration Planning Profiles v1 is deployed. Next bounded feature should be **Selective Activity/Action Semantics**, starting with the smallest high-value verb rather than another foundation rewrite or broad object expansion.
