@@ -4,7 +4,9 @@ import json
 import sqlite3
 from pathlib import Path
 
-SCHEMA_VERSION = 3
+from .composition_schema import migrate_composition_schema
+
+SCHEMA_VERSION = 4
 
 SCHEMA_SQL = """
 PRAGMA foreign_keys = ON;
@@ -239,6 +241,7 @@ def connect(path: str | Path) -> sqlite3.Connection:
 
 def migrate(conn: sqlite3.Connection) -> None:
     conn.executescript(SCHEMA_SQL)
+    migrate_composition_schema(conn)
     conn.execute(
         "INSERT INTO schema_meta(key, value) VALUES('schema_version', ?) "
         "ON CONFLICT(key) DO UPDATE SET value=excluded.value",
