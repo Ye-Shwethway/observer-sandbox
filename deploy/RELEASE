@@ -1,14 +1,13 @@
 Observer Sandbox production release marker
 
-release: stamina-progression-v1
-accepted_main: c1442f2d229a991a296b2570560a0a1e5e5484b2
-core_merge: 4888929ee2990d779731320fc4d835d837c4ab90
-core_acceptance_workflow: Stamina Progression Exemplar v1 Acceptance #2
-core_acceptance_run: 31721714882
-activation_acceptance_workflow: Stamina Progression Activation v1 Acceptance #3
-activation_acceptance_run: 31722340440
-compatibility_workflow: Strength Progression Auto Activation v1 Acceptance #4
-compatibility_run: 31722340405
-ci_workflow: CI #529
-ci_run: 31722340302
+release: stamina-conditioning-source-batch-v1
+accepted_main: 479df1e78e84b102b0861eb4de724234267b55b1
+source_batch_acceptance_workflow: Stamina Conditioning Source Batch v1 Acceptance #4
+source_batch_acceptance_run: 31724133490
+core_compatibility_workflow: Stamina Progression Exemplar v1 Acceptance #6
+core_compatibility_run: 31724133540
+activation_compatibility_workflow: Stamina Progression Activation v1 Acceptance #5
+activation_compatibility_run: 31724133597
+ci_workflow: CI #536
+ci_run: 31724133328
 status: accepted-for-production
