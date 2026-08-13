@@ -29,8 +29,8 @@ Roadmap synchronized: 2026-08-14
 - Autonomy: enabled / normal
 - Cognition: Gemini `gemini-3.5-flash-lite`
 - Telegram: connected
-- Latest verified speed: `2.0x` at Deploy #161 readback; speed is Creator-controlled and must be re-read whenever exact cadence matters.
-- Latest deployment: Deploy #161 `31734036894` SUCCESS from main merge `7516f6c09a371803508f67a1575d6ce83a170de2`.
+- Latest verified speed: `1.0x` at Deploy #164 readback; speed is Creator-controlled and must be re-read whenever exact cadence matters.
+- Latest deployment: Deploy #164 `31739837957` SUCCESS from PR #53 merge `701599074e9e9824384e624f11c288feb07d0924`.
 
 ## Completed foundation and observer layers
 
@@ -49,7 +49,24 @@ Roadmap synchronized: 2026-08-14
 - P3.4 Training Effectiveness Outcome — COMPLETE / DEPLOYED.
 - P3.5 Effective Training Load — COMPLETE / DEPLOYED.
 - Minimum Training Stimulus v1 — COMPLETE / DEPLOYED.
+- Training Session Load & Recovery Guard v1 — COMPLETE / CI VERIFIED / DEPLOYED.
 - Causal hunger, thirst, energy, sleepiness, cleanliness and fatigue resolution — DEPLOYED.
+
+### Training Session Load & Recovery Guard v1
+
+PR #53 tested head `4c8d8f3caa3814f2def3c168e76b9d426bf37416`; CI #570 / run `31739634403` succeeded; merged as `701599074e9e9824384e624f11c288feb07d0924`; Deploy #164 / run `31739837957` succeeded.
+
+The guard derives training dose from completed action history and existing effective-load evidence rather than treating current systemic fatigue as the whole training-memory model.
+
+Current v1 budgets are deliberately bounded and simple:
+- current-session limit: `90` effective minutes;
+- session break: more than `120` simulated minutes without training;
+- rolling 6-hour limit: `120` effective minutes;
+- rolling 24-hour limit: `180` effective minutes.
+
+Autonomous cognition receives the derived load status. Train-option duration is capped to the remaining budget; training options disappear when the remaining budget cannot support the minimum legal session; the final model-selected duration is checked again before scheduling.
+
+This means short rest/fatigue recovery does not erase recent training dose. No schema v5, new canonical physiology field, universal injury model, or Mind Engine was introduced.
 
 ## Thorne Estate training environment
 
@@ -144,10 +161,10 @@ For ordinary work, use focused tests + CI and the standard automatic deploy. Use
 
 ## Exact resume point
 
-Pause for Creator discussion and observe autonomous behavior after **Dynamic Resource Awareness & Choice Breadth v1**.
+Observe natural production behavior after **Training Session Load & Recovery Guard v1**.
 
-The immediate question is whether Darian now naturally broadens resource/method selection (for example rowing, treadmill, speed/agility station, altitude chamber, power rack, or Training Hall methods) when his needs/routine make them appropriate.
+The immediate question is whether Darian now ends or pauses training when his effective session/recent-load budget is exhausted and stays in recovery/non-training behavior even if systemic fatigue falls quickly afterward.
 
-Do not add forced rotation or a Mind Engine merely to manufacture variety. If broad perception is present but choices still collapse onto familiar targets, review the actual post-deploy decision history before proposing the next choice-policy layer.
+Continue observing resource/method variety at the same time, but do not add forced rotation or a Mind Engine merely to manufacture variety.
 
 Speed progression remains a future candidate, but no Speed implementation is authorized by this roadmap state alone.
