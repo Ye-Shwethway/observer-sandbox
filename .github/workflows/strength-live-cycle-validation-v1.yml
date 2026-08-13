@@ -49,31 +49,32 @@ jobs:
           VPS_USER: ${{ secrets.VPS_USER }}
           VPS_PORT: ${{ secrets.VPS_PORT || '22' }}
         run: |
-          ssh -p "$VPS_PORT" "$VPS_USER@$VPS_HOST" '
-            set -euo pipefail
-            cd /opt/observer-sandbox
-            LIVE_DB=/var/lib/observer-sandbox/observer.sqlite3
-            TMP_DB=$(mktemp /tmp/observer-strength-live-cycle-v1.XXXXXX.sqlite3)
-            trap "rm -f $TMP_DB $TMP_DB-wal $TMP_DB-shm; rm -rf /tmp/observer-strength-live-cycle-v1" EXIT
+          ssh -p "$VPS_PORT" "$VPS_USER@$VPS_HOST" "bash -s" <<'REMOTE'
+          set -euo pipefail
+          cd /opt/observer-sandbox
+          LIVE_DB=/var/lib/observer-sandbox/observer.sqlite3
+          TMP_DB=$(mktemp /tmp/observer-strength-live-cycle-v1.XXXXXX.sqlite3)
+          trap 'rm -f "$TMP_DB" "$TMP_DB-wal" "$TMP_DB-shm"; rm -rf /tmp/observer-strength-live-cycle-v1' EXIT
+          export PYTHONPATH=/tmp/observer-strength-live-cycle-v1/src
 
-            echo "--- LIVE READ-ONLY BASELINE ---"
-            export PYTHONPATH=/tmp/observer-strength-live-cycle-v1/src
-            LIVE_DB="$LIVE_DB" .venv/bin/python - <<"PY"
+          echo "--- LIVE READ-ONLY BASELINE ---"
+          LIVE_DB="$LIVE_DB" .venv/bin/python - <<'PY'
           import json, os, sqlite3
 
+          actor = "char_darian"
           live_db = os.environ["LIVE_DB"]
           conn = sqlite3.connect(f"file:{live_db}?mode=ro", uri=True)
           conn.row_factory = sqlite3.Row
           try:
-              sim_row = conn.execute("SELECT value_json FROM runtime_state WHERE key='sim_time'").fetchone()
-              speed_row = conn.execute("SELECT value_json FROM runtime_state WHERE key='speed'").fetchone()
+              sim_row = conn.execute("SELECT value_json FROM runtime_state WHERE key=?", ("sim_time",)).fetchone()
+              speed_row = conn.execute("SELECT value_json FROM runtime_state WHERE key=?", ("speed",)).fetchone()
               strength = conn.execute(
                   "SELECT value_json,mode,authority,source,observed_at FROM character_profile_values WHERE entity_id=? AND field_key=?",
-                  ("char_darian", "raps_pa.strength"),
+                  (actor, "raps_pa.strength"),
               ).fetchone()
               fatigue_row = conn.execute(
                   "SELECT value_json FROM fields WHERE entity_id=? AND field_key=?",
-                  ("char_darian", "physiology.fatigue"),
+                  (actor, "physiology.fatigue"),
               ).fetchone()
               pending = conn.execute(
                   """
@@ -82,11 +83,11 @@ jobs:
                   LEFT JOIN action_instances ai ON ai.id=ar.pending_action_id
                   WHERE ar.actor_id=?
                   """,
-                  ("char_darian",),
+                  (actor,),
               ).fetchone()
               rows = conn.execute(
-                  "SELECT id,sim_time,payload_json FROM events WHERE actor_id=? AND event_type='action_completed'",
-                  ("char_darian",),
+                  "SELECT id,sim_time,payload_json FROM events WHERE actor_id=? AND event_type=?",
+                  (actor, "action_completed"),
               ).fetchall()
               stimulus = []
               for row in rows:
@@ -100,8 +101,8 @@ jobs:
                           "effective_minutes": evidence.get("effective_minutes"),
                       })
               settlements = conn.execute(
-                  "SELECT id,sim_time,payload_json FROM events WHERE actor_id=? AND event_type='strength_progression_settled'",
-                  ("char_darian",),
+                  "SELECT id,sim_time,payload_json FROM events WHERE actor_id=? AND event_type=?",
+                  (actor, "strength_progression_settled"),
               ).fetchall()
               consumed = set()
               for row in settlements:
@@ -131,9 +132,10 @@ jobs:
               conn.close()
           PY
 
-            cp "$LIVE_DB" "$TMP_DB"
-            export OBSERVER_SANDBOX_DB="$TMP_DB"
-            .venv/bin/python - <<"PY"
+          cp "$LIVE_DB" "$TMP_DB"
+          export OBSERVER_SANDBOX_DB="$TMP_DB"
+          echo "--- DISPOSABLE PRODUCTION-COPY VALIDATION ---"
+          .venv/bin/python - <<'PY'
           import json, math, os
           from datetime import datetime, timedelta
 
@@ -159,17 +161,18 @@ jobs:
 
           def stimulus_rows(conn):
               found = []
-              for row in conn.execute(
-                  "SELECT id,sim_time,payload_json FROM events WHERE actor_id=? AND event_type='action_completed'",
-                  (actor,),
-              ).fetchall():
+              rows = conn.execute(
+                  "SELECT id,sim_time,payload_json FROM events WHERE actor_id=? AND event_type=?",
+                  (actor, "action_completed"),
+              ).fetchall()
+              for row in rows:
                   payload = json.loads(row["payload_json"] or "{}")
-                  ev = payload.get("training_stimulus")
-                  if isinstance(ev, dict) and ev.get("domain") == "strength" and float(ev.get("stimulus_units") or 0) > 0:
+                  evidence = payload.get("training_stimulus")
+                  if isinstance(evidence, dict) and evidence.get("domain") == "strength" and float(evidence.get("stimulus_units") or 0) > 0:
                       found.append({
                           "event_id": int(row["id"]),
                           "sim_time": row["sim_time"],
-                          "stimulus_units": float(ev["stimulus_units"]),
+                          "stimulus_units": float(evidence["stimulus_units"]),
                           "payload": payload,
                       })
               found.sort(key=lambda item: (datetime.fromisoformat(item["sim_time"]), item["event_id"]))
@@ -199,21 +202,13 @@ jobs:
               selected = unconsumed[-1]
               selected_time = datetime.fromisoformat(selected["sim_time"])
               selected_after = selected["payload"].get("after") or copied_baseline
-
               assert recovery_time_factor(0.0) == 0.0
               assert recovery_time_factor(6.0) == 0.0
               assert 0.0 < recovery_time_factor(24.0) < 1.0
               assert recovery_time_factor(48.0) == 1.0
-
-              immediate = strength_recovery_realization_evidence(
-                  conn, actor, as_of_sim_time=selected_time.isoformat(), state=selected_after
-              )
-              six_hour = strength_recovery_realization_evidence(
-                  conn, actor, as_of_sim_time=(selected_time + timedelta(hours=6)).isoformat(), state=selected_after
-              )
-              mid = strength_recovery_realization_evidence(
-                  conn, actor, as_of_sim_time=(selected_time + timedelta(hours=24)).isoformat(), state=selected_after
-              )
+              immediate = strength_recovery_realization_evidence(conn, actor, as_of_sim_time=selected_time.isoformat(), state=selected_after)
+              six_hour = strength_recovery_realization_evidence(conn, actor, as_of_sim_time=(selected_time + timedelta(hours=6)).isoformat(), state=selected_after)
+              mid = strength_recovery_realization_evidence(conn, actor, as_of_sim_time=(selected_time + timedelta(hours=24)).isoformat(), state=selected_after)
               assert immediate.time_factor == 0.0
               assert six_hour.time_factor == 0.0
               assert 0.0 < mid.time_factor < 1.0
@@ -222,16 +217,13 @@ jobs:
                   "SELECT COUNT(*) FROM events WHERE actor_id=? AND event_type=?",
                   (actor, SETTLEMENT_EVENT_TYPE),
               ).fetchone()[0]
-
               boundary_trace = []
               positive_result = None
               for _ in range(40):
                   if selected["event_id"] in consumed_ids(conn):
                       break
                   after = apply_action(conn, Action("rest", 240, None, "disposable Strength recovery validation"), actor)
-                  result = maybe_settle_strength_progression(
-                      conn, actor, as_of_sim_time=str(after["sim_time"]), state=after
-                  )
+                  result = maybe_settle_strength_progression(conn, actor, as_of_sim_time=str(after["sim_time"]), state=after)
                   boundary_trace.append({
                       "sim_time": after["sim_time"],
                       "fatigue": after["fatigue"],
@@ -249,28 +241,15 @@ jobs:
               assert positive_result["reason"] == "eligible_stimulus"
               assert selected["event_id"] in settlement["consumed_stimulus_event_ids"]
               assert settlement["positive_delta"] > 0.0
-
               expected_positive = 0.0
-              for ev in settlement.get("positive_evidence") or []:
-                  expected = (
-                      BASE_POSITIVE_SCALE
-                      * float(ev["stimulus_units"])
-                      * float(ev["level_factor"])
-                      * float(ev["saturation_factor"])
-                      * float(ev["recovery_factor"])
-                  )
-                  assert math.isclose(expected, float(ev["realized_delta"]), rel_tol=0, abs_tol=2e-9)
-                  expected_positive += float(ev["realized_delta"])
+              for evidence in settlement.get("positive_evidence") or []:
+                  expected = BASE_POSITIVE_SCALE * float(evidence["stimulus_units"]) * float(evidence["level_factor"]) * float(evidence["saturation_factor"]) * float(evidence["recovery_factor"])
+                  assert math.isclose(expected, float(evidence["realized_delta"]), rel_tol=0, abs_tol=2e-9)
+                  expected_positive += float(evidence["realized_delta"])
               assert math.isclose(expected_positive, float(settlement["positive_delta"]), rel_tol=0, abs_tol=2e-9)
 
               copied_strength_after = strength_value(conn)
-              assert math.isclose(
-                  copied_strength_after,
-                  copied_strength_before + float(settlement["net_delta"]),
-                  rel_tol=0,
-                  abs_tol=1e-6,
-              )
-
+              assert math.isclose(copied_strength_after, copied_strength_before + float(settlement["net_delta"]), rel_tol=0, abs_tol=1e-6)
               history = conn.execute(
                   """
                   SELECT old_value_json,new_value_json,mode,authority,reason,sim_time
@@ -290,11 +269,8 @@ jobs:
                   "SELECT COUNT(*) FROM events WHERE actor_id=? AND event_type=?",
                   (actor, SETTLEMENT_EVENT_TYPE),
               ).fetchone()[0]
-
               same_state = snapshot(conn, actor)
-              same_boundary = maybe_settle_strength_progression(
-                  conn, actor, as_of_sim_time=str(same_state["sim_time"]), state=same_state
-              )
+              same_boundary = maybe_settle_strength_progression(conn, actor, as_of_sim_time=str(same_state["sim_time"]), state=same_state)
               assert same_boundary["state"] == "skipped"
               assert same_boundary["reason"] == "same_or_older_boundary"
               assert conn.execute(
@@ -305,7 +281,6 @@ jobs:
               recent_at_event = recent_strength_stimulus_units(conn, actor, as_of_sim_time=selected["sim_time"])
               selected_level = strength_level_factor(copied_strength_before)
               selected_saturation = saturation_factor(recent_at_event)
-
               print(json.dumps({
                   "ok": True,
                   "disposable_production_copy": True,
@@ -337,9 +312,9 @@ jobs:
               }, indent=2, sort_keys=True, default=str))
           PY
 
-            echo "--- LIVE SERVICE READBACK (NO VALIDATION MUTATION) ---"
-            unset OBSERVER_SANDBOX_DB
-            unset PYTHONPATH
-            systemctl is-active observer-sandbox
-            /opt/observer-sandbox/.venv/bin/sandboxctl --db "$LIVE_DB" status
-          '
+          echo "--- LIVE SERVICE READBACK (NO VALIDATION MUTATION) ---"
+          unset OBSERVER_SANDBOX_DB
+          unset PYTHONPATH
+          systemctl is-active observer-sandbox
+          /opt/observer-sandbox/.venv/bin/sandboxctl --db "$LIVE_DB" status
+          REMOTE
