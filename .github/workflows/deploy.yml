@@ -1,14 +1,17 @@
 name: Deploy Observer Sandbox
-# Control-plane deploy. Secrets are provisioned privately; deploy does not enable autonomy.
-# Production release policy: accepted main is deployed only by workflow dispatch or deploy/RELEASE marker.
+# Canonical production deploy. Normal runtime releases auto-deploy after an accepted PR merge to main.
+# workflow_dispatch and deploy/RELEASE remain explicit fallback paths.
 
 on:
   workflow_dispatch:
   push:
     branches: [main]
     paths:
+      - 'src/**'
+      - 'config/**'
+      - 'pyproject.toml'
+      - 'deploy/observer-sandbox.service'
       - 'deploy/RELEASE'
-      - '.github/workflows/deploy.yml'
 
 concurrency:
   group: observer-sandbox-production
@@ -20,6 +23,13 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+        with:
+          fetch-depth: 2
+
+      - name: Authorize deploy trigger
+        env:
+          GITHUB_EVENT_NAME: ${{ github.event_name }}
+        run: python scripts/validation/deploy_trigger_policy.py --event "$GITHUB_EVENT_PATH" --event-name "$GITHUB_EVENT_NAME"
 
       - name: Require deployment secrets
         env:
