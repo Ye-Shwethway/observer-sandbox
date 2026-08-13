@@ -18,6 +18,7 @@ from .observer_query import (
     list_locations,
     list_worlds,
     location_summary,
+    object_summary,
     observer_status,
     recent_history,
 )
@@ -114,6 +115,49 @@ def _yes_no(value: bool) -> str:
 
 def _title_action(value: str | None) -> str:
     return (value or "idle").replace("_", " ").title()
+
+
+def _friendly_field(value: str) -> str:
+    key = value.split(".")[-1].replace("_", " ").title()
+    return key
+
+
+def _fmt_number(value: Any, *, signed: bool = False) -> str:
+    if isinstance(value, bool):
+        return "Yes" if value else "No"
+    if isinstance(value, (int, float)):
+        number = float(value)
+        text = f"{number:.1f}".rstrip("0").rstrip(".")
+        if signed and number > 0:
+            return f"+{text}"
+        return text
+    return str(value)
+
+
+def _fmt_effect_spec(spec: Any) -> str:
+    if isinstance(spec, (int, float)):
+        return _fmt_number(spec, signed=True)
+    if not isinstance(spec, dict):
+        return str(spec)
+    parts: list[str] = []
+    labels = {
+        "add": "Add",
+        "multiply": "×",
+        "set": "Set",
+        "clamp_min": "Min",
+        "clamp_max": "Max",
+    }
+    for operation in ("add", "multiply", "set", "clamp_min", "clamp_max"):
+        if operation not in spec:
+            continue
+        value = spec[operation]
+        if operation == "add":
+            parts.append(_fmt_number(value, signed=True))
+        elif operation == "multiply":
+            parts.append(f"×{_fmt_number(value)}")
+        else:
+            parts.append(f"{labels[operation]} {_fmt_number(value)}")
+    return ", ".join(parts) if parts else str(spec)
 
 
 def _notifications_enabled(conn, user_id: int) -> bool:
@@ -257,11 +301,49 @@ def _fmt_location(data: dict[str, Any]) -> str:
     return "\n".join(lines)
 
 
+def _fmt_object(data: dict[str, Any]) -> str:
+    obj = data["object"]
+    definition = data.get("definition")
+    location = data.get("location")
+    capabilities = data.get("capabilities") or []
+    effects = data.get("effects") or {}
+
+    lines = [f"📦 {obj['name']}", "━━━━━━━━━━━━━━━━━━"]
+    lines.append("🧩 Concrete object")
+    if definition:
+        lines.append(f"🧬 Definition   {definition['name']}")
+    else:
+        lines.append("🧬 Definition   Instance-only fixture")
+    if location:
+        lines.append(f"📍 Location     {location['name']}")
+
+    if capabilities:
+        lines.extend(["", "⚙️ Capabilities"])
+        lines.append("• " + " · ".join(str(value).replace("_", " ").title() for value in capabilities))
+
+    if effects:
+        lines.extend(["", "✨ Authored effects"])
+        for action, fields in effects.items():
+            lines.append(f"• {_title_action(str(action))}")
+            if isinstance(fields, dict):
+                for field_key, spec in fields.items():
+                    lines.append(f"  ↳ {_friendly_field(str(field_key))}: {_fmt_effect_spec(spec)}")
+            else:
+                lines.append(f"  ↳ {_fmt_effect_spec(fields)}")
+    else:
+        lines.extend(["", "✨ Authored effects", "• None"])
+
+    return "\n".join(lines)
+
+
 def _location_keyboard(data: dict[str, Any]) -> list[list[dict[str, str]]]:
     keyboard: list[list[dict[str, str]]] = []
     for child in data.get("child_locations") or []:
         icon = _location_icon(child)
         keyboard.append([{"text": f"{icon} {child['name']}", "callback_data": f"loc:{child['id']}"}])
+
+    for obj in data.get("objects") or []:
+        keyboard.append([{"text": f"📦 {obj['name']}", "callback_data": f"obj:{obj['id']}"}])
 
     parent = data.get("parent")
     if parent:
@@ -272,6 +354,15 @@ def _location_keyboard(data: dict[str, Any]) -> list[list[dict[str, str]]]:
     else:
         keyboard.append([{"text": "← Universe", "callback_data": "nav:universe"}])
 
+    keyboard.append([{"text": "⌂ Observer Home", "callback_data": "nav:home"}])
+    return keyboard
+
+
+def _object_keyboard(data: dict[str, Any]) -> list[list[dict[str, str]]]:
+    location = data.get("location")
+    keyboard: list[list[dict[str, str]]] = []
+    if location:
+        keyboard.append([{"text": f"← {location['name']}", "callback_data": f"loc:{location['id']}"}])
     keyboard.append([{"text": "⌂ Observer Home", "callback_data": "nav:home"}])
     return keyboard
 
@@ -358,6 +449,10 @@ def _callback_view(conn, user_id: int, callback_data: str) -> tuple[str, list[li
         location_id = callback_data.split(":", 1)[1]
         data = location_summary(conn, location_id)
         return _fmt_location(data), _location_keyboard(data)
+    if callback_data.startswith("obj:"):
+        object_id = callback_data.split(":", 1)[1]
+        data = object_summary(conn, object_id)
+        return _fmt_object(data), _object_keyboard(data)
     if callback_data.startswith("char:"):
         character_id = callback_data.split(":", 1)[1]
         return _fmt_character(character_summary(conn, character_id)), [
