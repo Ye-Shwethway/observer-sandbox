@@ -1,6 +1,6 @@
 # P3.3 — Minimum Training Readiness Modifier
 
-Status: COMPLETE / DEPLOYED / CREATOR LIVE UX VERIFICATION PENDING
+Status: COMPLETE / DEPLOYED / LIVE UX VERIFIED
 
 ## Purpose
 
@@ -10,7 +10,7 @@ Activate one concrete schema-v4 modifier path for training without building a un
 
 Conditions continue to decide whether an action is legal. Modifiers change the magnitude/quality/cost/risk of an otherwise legal action.
 
-For the first slice, training readiness is derived from existing authoritative live state only:
+Training readiness is derived from existing authoritative live state only:
 
 - energy
 - thirst
@@ -21,7 +21,7 @@ No new canonical physiology fields are introduced.
 
 ## Readiness calculation
 
-Each input contributes a normalized `0..1` readiness component. A comfortable baseline receives `1.0` for that component; deterioration toward the existing strong/critical or training-block thresholds reduces it toward `0.0`.
+Each input contributes a normalized `0..1` readiness component:
 
 - energy: `75+ -> 1.0`, `20 or below -> 0.0`
 - thirst: `25 or below -> 1.0`, `75+ -> 0.0`
@@ -44,9 +44,9 @@ Therefore:
 
 The existing hard training block at systemic fatigue `>=70` remains authoritative and unchanged.
 
-The derived readiness and multiplier are persisted with action modifier/outcome evidence so observer surfaces and later slices can inspect what shaped the action without overwriting raw actor state.
+The derived readiness and multiplier are persisted with action modifier/outcome evidence without overwriting raw actor state.
 
-Telegram Profile -> Recovery exposes the current derived `Training readiness` value alongside systemic fatigue. This remains a derived observer view, not a canonical profile/stat field.
+Telegram Profile -> Recovery exposes the current derived `Training readiness` value alongside systemic fatigue. This is a derived observer view, not a canonical profile/stat field.
 
 ## Explicit non-goals
 
@@ -74,21 +74,12 @@ Verified values:
   - readiness `0.595` / Telegram Recovery `59.5%`
   - fatigue-cost multiplier `1.202x`
   - one-hour resulting fatigue: `62.54`
-- systemic fatigue `70` still blocks training deterministically.
-- action-instance/outcome modifier persistence was verified.
+- systemic fatigue `70` still blocks training deterministically;
+- action-instance/outcome modifier persistence was verified;
 - the disposable acceptance did not mutate production.
 
-The acceptance harness itself was hardened during this slice so pre-deploy candidate source is exercised against a production-state copy rather than accidentally importing the older deployed package. Deterministic action lookup removed same-second ordering ambiguity.
+After acceptance, `deploy/RELEASE` was advanced by commit `9b8b59b86696515829508b532558ffce1134c507`. Deploy Observer Sandbox #129 / run `31673382889` succeeded and verified service health, schema v4, normal 1x autonomy, preserved Gemini cognition binding, and Telegram connectivity.
 
-After acceptance, `deploy/RELEASE` was advanced by commit `9b8b59b86696515829508b532558ffce1134c507` (`release accepted P3.3 to production`). Deploy Observer Sandbox #129 / run `31673382889` succeeded.
+## Creator verification
 
-Production deploy readback verified:
-
-- service active / healthy
-- SQLite schema v4
-- autonomy enabled / normal / unpaused / `1.0x`
-- existing Gemini cognition binding preserved
-- Telegram API connected and owner/allowed-user configuration present
-- live actor state remained valid after restart.
-
-Creator live Telegram UX verification is still pending. Do not mark this slice `LIVE UX VERIFIED` until the Creator confirms the deployed Recovery presentation is correct.
+On 2026-08-13 the Creator tested the deployed Telegram Recovery flow and confirmed it worked correctly. P3.3 is therefore LIVE UX VERIFIED.
