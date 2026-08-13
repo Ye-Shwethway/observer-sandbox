@@ -27,6 +27,13 @@ def _fmt_delta(label: str, icon: str, before: float, after: float, *, high_is_go
     return f"{icon} {label:<11} {before:.1f} → {after:.1f}  {direction}{abs(delta):.1f} {marker}"
 
 
+def _target_name(conn, target_id: str | None) -> str | None:
+    if not target_id:
+        return None
+    row = conn.execute("SELECT name FROM entities WHERE id=?", (target_id,)).fetchone()
+    return str(row["name"]) if row else None
+
+
 def format_action_completion(action: dict[str, Any], before: dict[str, Any], after: dict[str, Any]) -> str:
     title = _title_action(action.get("action"))
     target = action.get("target_name") or action.get("target")
@@ -36,7 +43,7 @@ def format_action_completion(action: dict[str, Any], before: dict[str, Any], aft
     lines = [
         "✨ CHARACTER UPDATE",
         "━━━━━━━━━━━━━━━━━━",
-        f"👤 Darian Thorne",
+        "👤 Darian Thorne",
         f"🎬 {title}",
         f"🕒 {_fmt_time(after.get('sim_time'))}",
     ]
@@ -84,7 +91,12 @@ def dispatch_action_completion(
     if owner_id is not None:
         recipients.add(owner_id)
 
-    message = format_action_completion(action, before, after)
+    display_action = dict(action)
+    target_name = _target_name(conn, action.get("target"))
+    if target_name:
+        display_action["target_name"] = target_name
+    message = format_action_completion(display_action, before, after)
+
     sent = 0
     for user_id in sorted(recipients):
         if not _notifications_enabled(conn, user_id):
