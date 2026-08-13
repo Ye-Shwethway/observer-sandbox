@@ -117,17 +117,16 @@ def _nearest_first_hops(
 
 
 def _active_supported_need(decision_signals: dict[str, Any]) -> dict[str, Any] | None:
-    """Return the highest-priority strong/critical need this guard can resolve.
+    """Return the highest-priority need only when this guard can resolve it.
 
-    decision_signals already order critical needs before strong needs. Within the
-    same level, preserve that authored signal order rather than inventing a second
-    priority system here.
+    needs_attention is already ordered by the authored autonomy policy. Never skip
+    over an unsupported higher-priority need to force a lower thirst/hunger action.
     """
     attention = decision_signals.get("needs_attention") or []
-    for item in attention:
-        if isinstance(item, dict) and item.get("need") in NEED_RESOLVERS:
-            return item
-    return None
+    first = next((item for item in attention if isinstance(item, dict)), None)
+    if not isinstance(first, dict):
+        return None
+    return first if first.get("need") in NEED_RESOLVERS else None
 
 
 def shape_action_options_for_needs(
@@ -139,10 +138,10 @@ def shape_action_options_for_needs(
 ) -> list[dict[str, Any]]:
     """Expose only causal recovery choices for supported strong physiological needs.
 
-    v2 covers hunger and thirst using the same authored-affordance pattern. When a
-    supported strong/critical need is active, expose only a local action whose
-    authored effect reduces that need, or otherwise shortest-path movement toward
-    the nearest room containing such a resolver.
+    v2 covers hunger and thirst using the same authored-affordance pattern. When the
+    highest-priority strong/critical need is supported, expose only a local action
+    whose authored effect reduces that need, or otherwise shortest-path movement
+    toward the nearest room containing such a resolver.
 
     If no authored resolver or route exists, preserve the original options rather
     than deadlocking autonomy; the missing-world-data condition remains observable.
