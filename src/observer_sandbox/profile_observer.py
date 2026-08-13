@@ -6,6 +6,7 @@ from typing import Any
 
 from .grading import evaluate_attribute_field
 from .simulation import snapshot
+from .strength_progression_observer import strength_progression_profile_items
 from .training_modifiers import training_readiness_modifier
 
 
@@ -157,7 +158,8 @@ def _runtime_values(conn: sqlite3.Connection, character_id: str, field_keys: tup
         )
 
     if "physiology.fatigue" in field_keys:
-        modifier = training_readiness_modifier(snapshot(conn, character_id))
+        state = snapshot(conn, character_id)
+        modifier = training_readiness_modifier(state)
         content.append(
             {
                 "kind": "derived",
@@ -170,6 +172,7 @@ def _runtime_values(conn: sqlite3.Connection, character_id: str, field_keys: tup
                 "mode": "derived",
             }
         )
+        content.extend(strength_progression_profile_items(conn, character_id, state=state))
     return content
 
 
