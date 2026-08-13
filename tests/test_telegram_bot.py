@@ -107,8 +107,33 @@ def test_recursive_estate_browser_uses_graph_parent_and_room_details(tmp_path, m
         assert "Kitchen" in kitchen_text
         assert "Objects" in kitchen_text
         assert "Exits" in kitchen_text
+        assert any(row[0]["callback_data"] == "obj:obj_thorne_estate_kitchen_pantry" for row in kitchen_keyboard)
         assert kitchen_keyboard[-2][0]["callback_data"] == "loc:loc_thorne_estate_ground_floor"
         assert kitchen_keyboard[-1][0]["callback_data"] == "nav:home"
+
+
+def test_minimum_object_browser_shows_capabilities_effects_and_back(tmp_path, monkeypatch):
+    db = tmp_path / "observer.sqlite3"
+    initialize(db)
+    monkeypatch.setenv("OBSERVER_TELEGRAM_OWNER_ID", "111")
+
+    with connect(db) as conn:
+        text, keyboard = _callback_view(conn, 111, "obj:obj_thorne_estate_kitchen_pantry")
+        assert "📦 Pantry" in text
+        assert "Instance-only fixture" in text
+        assert "Location     Kitchen" in text
+        assert "Capabilities" in text
+        assert "Eat" in text and "Inspect" in text
+        assert "Authored effects" in text
+        assert "Hunger: -40" in text
+        assert "Energy: +5" in text
+        assert "Thirst: +1" in text
+        assert keyboard[0][0]["callback_data"] == "loc:loc_thorne_estate_kitchen"
+        assert keyboard[-1][0]["callback_data"] == "nav:home"
+
+        water_text, _ = _callback_view(conn, 111, "obj:obj_thorne_estate_kitchen_drinking_water")
+        assert "Drinking Water" in water_text
+        assert "Thirst: -55" in water_text
 
 
 def test_action_completion_notification_is_human_friendly():
