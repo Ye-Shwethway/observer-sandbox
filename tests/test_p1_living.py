@@ -91,12 +91,13 @@ def test_recovery_actions_increase_energy_and_rest_is_available_anywhere(tmp_pat
         options = action_options(conn)
         rest = next(option for option in options if option["action"] == "rest" and option["target"] is None)
         assert rest["effects_per_hour"]["energy"] > 0
+        assert "sleepiness" not in rest["effects_per_hour"]
         before = snapshot(conn)
         after_idle = apply_action(conn, Action("idle", 60, None, "brief pause"))
         assert after_idle["energy"] > before["energy"]
         after_rest = apply_action(conn, Action("rest", 60, None, "recover low energy"))
         assert after_rest["energy"] >= after_idle["energy"] + 7.9
-        assert after_rest["sleepiness"] < after_idle["sleepiness"]
+        assert after_rest["sleepiness"] > after_idle["sleepiness"]
 
 
 def test_sleep_is_strong_recovery_and_can_escape_critical_energy(tmp_path):

@@ -6,10 +6,11 @@ from collections import deque
 from typing import Any
 
 from .simulation import ACTION_EFFECTS_PER_HOUR
+from .sleep_pressure import sleep_pressure_signal
 
 
 NEEDS: dict[str, dict[str, Any]] = {
-    "sleepiness": {"field": "needs.sleepiness", "state": "sleepiness", "direction": -1, "strong": ("rest", "sleep"), "critical": ("sleep",)},
+    "sleepiness": {"field": "needs.sleepiness", "state": "sleepiness", "direction": -1, "strong": ("sleep",), "critical": ("sleep",)},
     "energy": {"field": "needs.energy", "state": "energy", "direction": 1, "strong": ("rest", "sleep"), "critical": ("rest", "sleep")},
     "fatigue": {"field": "physiology.fatigue", "state": "fatigue", "direction": -1, "strong": ("rest", "sleep"), "critical": ("rest", "sleep")},
     "thirst": {"field": "needs.thirst", "state": "thirst", "direction": -1, "strong": ("drink",), "critical": ("drink",)},
@@ -95,7 +96,48 @@ def _first_hops(conn: sqlite3.Connection, start: str, goals: set[str]) -> set[st
     return hops
 
 
+def _inject_sleep_pressure(conn: sqlite3.Connection, state: dict[str, Any], decision_signals: dict[str, Any]) -> None:
+    pressure = sleep_pressure_signal(
+        conn,
+        state=state,
+        actor_id=str(state.get("actor_id", "char_darian")),
+    )
+    decision_signals["sleep_pressure"] = pressure
+    if pressure["level"] not in {"strong", "critical"}:
+        return
+
+    attention = [
+        item for item in (decision_signals.get("needs_attention") or [])
+        if not (isinstance(item, dict) and item.get("need") == "sleepiness")
+    ]
+    attention.insert(
+        0,
+        {
+            "need": "sleepiness",
+            "level": pressure["level"],
+            "value": pressure["raw_sleepiness"],
+            "threshold": "derived_sleep_pressure",
+            "hours_awake": pressure["hours_awake"],
+            "reasons": pressure["reasons"],
+        },
+    )
+    attention.sort(key=lambda item: 0 if item.get("level") == "critical" else 1)
+    decision_signals["needs_attention"] = attention
+    decision_signals["highest_priority"] = attention[0]
+    decision_signals["instruction"] = (
+        "Address highest_priority before discretionary behavior. Derived sleep pressure is a biological sleep need: rest does not resolve it; use real sleep when sleepiness is highest priority."
+    )
+    if pressure["night_window"] and decision_signals["highest_priority"].get("need") == "sleepiness":
+        decision_signals["recommended_duration"] = {
+            "action": "sleep",
+            "min_minutes": 360,
+            "max_minutes": 540,
+            "guidance": "Use a normal overnight sleep duration rather than a short rest or nap when night sleep pressure is strong or critical.",
+        }
+
+
 def shape_action_options_for_needs(conn: sqlite3.Connection, *, state: dict[str, Any], action_options: list[dict[str, Any]], decision_signals: dict[str, Any], intrinsic_effects_per_hour: dict[str, dict[str, float]] | None = None) -> list[dict[str, Any]]:
+    _inject_sleep_pressure(conn, state, decision_signals)
     attention = decision_signals.get("needs_attention") or []
     active = next((x for x in attention if isinstance(x, dict)), None)
     if not active or active.get("need") not in NEEDS:
@@ -106,6 +148,11 @@ def shape_action_options_for_needs(conn: sqlite3.Connection, *, state: dict[str,
     intrinsic = ACTION_EFFECTS_PER_HOUR if intrinsic_effects_per_hour is None else intrinsic_effects_per_hour
     local = [o for o in action_options if _option_better(o, cfg, actions, current)]
     if local:
+        if active.get("need") == "sleepiness" and decision_signals.get("sleep_pressure", {}).get("night_window"):
+            for option in local:
+                if option.get("action") == "sleep":
+                    option["duration"] = (360, 540)
+                    option["sleep_pressure"] = decision_signals["sleep_pressure"]
         return local
     goals = _resolver_rooms(conn, cfg, actions, current, intrinsic)
     hops = _first_hops(conn, str(state["location"]), goals)

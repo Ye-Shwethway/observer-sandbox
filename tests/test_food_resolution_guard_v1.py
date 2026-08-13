@@ -59,14 +59,14 @@ def test_energy_exemplar_uses_increasing_rest_effect_and_blocks_training(tmp_pat
         assert after["energy"] > 40.0
 
 
-def test_sleepiness_batch_resolves_strong_locally_and_routes_critical_to_bed(tmp_path):
+def test_sleepiness_batch_routes_strong_and_critical_to_real_sleep(tmp_path):
     db = tmp_path / "observer.sqlite3"
     initialize(db)
     with connect(db) as conn:
         _set_needs(conn, location=TRAINING_HALL, sleepiness=70.0)
         strong = _enriched(conn)
         assert strong["decision_signals"]["highest_priority"]["need"] == "sleepiness"
-        assert {(o["action"], o["target"]) for o in strong["action_options"]} == {("rest", None)}
+        assert {(o["action"], o["target"]) for o in strong["action_options"]} == {("move", FOYER)}
 
         _set_needs(conn, location=TRAINING_HALL, sleepiness=85.0)
         critical = _enriched(conn)
@@ -101,7 +101,7 @@ def test_authored_priority_order_controls_full_supported_family(tmp_path):
         enriched = _enriched(conn)
         attention = enriched["decision_signals"]["needs_attention"]
         assert [x["need"] for x in attention[:5]] == ["sleepiness", "energy", "thirst", "hunger", "cleanliness"]
-        assert {(o["action"], o["target"]) for o in enriched["action_options"]} == {("rest", None)}
+        assert {(o["action"], o["target"]) for o in enriched["action_options"]} == {("move", FOYER)}
 
 
 def test_hunger_route_still_uses_nearest_authored_resolver(tmp_path):
