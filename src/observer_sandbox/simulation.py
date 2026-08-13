@@ -10,6 +10,7 @@ from typing import Any, Protocol
 
 from .event_log import record_event
 from .training_modifiers import training_readiness_modifier
+from .training_stimulus import training_stimulus_evidence
 from .world import get_field, set_field
 
 
@@ -435,9 +436,14 @@ def apply_action(
     after = snapshot(conn, actor_id)
     changes = _state_changes(before, after)
     training_load = _training_load_evidence(action)
+    training_stimulus = training_stimulus_evidence(
+        action_name=action.name, target=action.target, training_load=training_load
+    )
     outcome: dict[str, Any] = {"state_changes": changes, "modifiers": action.modifiers}
     if training_load is not None:
         outcome["training_load"] = training_load
+    if training_stimulus is not None:
+        outcome["training_stimulus"] = training_stimulus
 
     conn.execute(
         """UPDATE action_instances
@@ -463,6 +469,8 @@ def apply_action(
     }
     if training_load is not None:
         payload["training_load"] = training_load
+    if training_stimulus is not None:
+        payload["training_stimulus"] = training_stimulus
     record_event(
         conn,
         sim_time=ended.isoformat(),
