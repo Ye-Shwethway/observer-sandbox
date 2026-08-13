@@ -4,104 +4,59 @@
   "name": "Observer Universe",
   "start_location": "room_bedroom",
   "locations": [
-    {
-      "id": "home",
-      "name": "Thorne Estate",
-      "parent": "observer_universe",
-      "kind": "estate",
-      "access": "interior_only",
-      "canon": true,
-      "metadata": {
-        "setting": "South Lake Tahoe, California",
-        "architecture": "Modern fortress with high-tech security and tactical reinforcements",
-        "layout": "Three-story estate with reinforced underground level",
-        "layout_status": "canonical_structure"
-      }
-    },
+    {"id": "home", "name": "Thorne Estate", "parent": "observer_universe", "kind": "estate", "access": "interior_only", "canon": true, "metadata": {"setting": "South Lake Tahoe, California", "architecture": "Modern fortress with high-tech security and tactical reinforcements", "layout": "Three-story estate with reinforced underground level", "layout_status": "canonical_structure"}},
     {"id": "zone_ground", "name": "Ground Floor", "parent": "home", "kind": "floor", "access": "open", "canon": false, "metadata": {"layout_status": "provisional_layout"}},
     {"id": "zone_second", "name": "Second Floor", "parent": "home", "kind": "floor", "access": "open", "canon": false, "metadata": {"layout_status": "provisional_layout"}},
     {"id": "zone_third", "name": "Third Floor", "parent": "home", "kind": "floor", "access": "restricted", "canon": false, "metadata": {"layout_status": "provisional_layout"}},
     {"id": "zone_underground", "name": "Underground Level", "parent": "home", "kind": "floor", "access": "restricted", "canon": true, "metadata": {"layout_status": "canonical_structure"}},
-
     {"id": "room_foyer", "name": "Grand Foyer", "parent": "zone_ground", "kind": "room", "access": "open", "canon": false},
     {"id": "room_living", "name": "Living Room", "parent": "zone_ground", "kind": "room", "access": "open", "canon": true},
     {"id": "room_kitchen", "name": "Kitchen", "parent": "zone_ground", "kind": "room", "access": "open", "canon": false},
     {"id": "room_dining", "name": "Dining Area", "parent": "zone_ground", "kind": "room", "access": "open", "canon": false},
     {"id": "room_library", "name": "Library & Study", "parent": "zone_ground", "kind": "room", "access": "open", "canon": true},
     {"id": "room_garage", "name": "Garage & Workshop", "parent": "zone_ground", "kind": "room", "access": "restricted", "canon": true},
-
     {"id": "room_bedroom", "name": "Darian's Master Suite", "parent": "zone_second", "kind": "room", "access": "private", "canon": true},
     {"id": "room_bathroom", "name": "Master Bathroom", "parent": "zone_second", "kind": "room", "access": "private", "canon": false},
     {"id": "room_quasi", "name": "Quasi's Room", "parent": "zone_second", "kind": "room", "access": "private", "canon": true},
     {"id": "room_guest", "name": "Guest Rooms", "parent": "zone_second", "kind": "room", "access": "private", "canon": true},
-
     {"id": "room_intel", "name": "Surveillance & Intelligence Hub", "parent": "zone_third", "kind": "room", "access": "restricted", "canon": true},
     {"id": "room_comms", "name": "Secure Communications Room", "parent": "zone_third", "kind": "room", "access": "restricted", "canon": true},
-
     {"id": "room_training", "name": "Training Hall", "parent": "zone_underground", "kind": "room", "access": "restricted", "canon": true},
     {"id": "room_gym", "name": "Top-Class Home Gym", "parent": "zone_underground", "kind": "room", "access": "restricted", "canon": true},
     {"id": "room_medical", "name": "Medical Bay", "parent": "zone_underground", "kind": "room", "access": "restricted", "canon": true},
     {"id": "room_armory", "name": "Armory & Storage", "parent": "zone_underground", "kind": "room", "access": "restricted", "canon": true},
     {"id": "room_food_storage", "name": "Food Supply Storage", "parent": "zone_underground", "kind": "room", "access": "restricted", "canon": true},
     {"id": "room_bunker", "name": "Underground Bunker", "parent": "zone_underground", "kind": "room", "access": "restricted", "canon": true},
-
     {"id": "boundary_exterior", "name": "Estate Exterior", "parent": "home", "kind": "boundary", "access": "locked", "canon": true, "metadata": {"traversable": false, "reason": "Outer environment not yet implemented"}}
   ],
   "objects": [
     {"id": "obj_bed", "name": "Bed", "room": "room_bedroom", "capabilities": ["sleep", "rest"]},
     {"id": "obj_nightstand", "name": "Nightstand", "room": "room_bedroom", "capabilities": ["inspect", "use"]},
-    {
-      "id": "obj_shower",
-      "name": "Shower",
-      "room": "room_bathroom",
-      "capabilities": ["shower"],
-      "effects": {"shower": {"physiology.cleanliness": {"set": 100.0}}}
-    },
-    {
-      "id": "obj_sink",
-      "name": "Sink",
-      "room": "room_bathroom",
-      "capabilities": ["drink", "use"],
-      "effects": {"drink": {"needs.thirst": -35.0}}
-    },
+    {"id": "obj_shower", "name": "Shower", "room": "room_bathroom", "capabilities": ["shower"], "effects": {"shower": {"physiology.cleanliness": {"set": 100.0}}}},
+    {"id": "obj_sink", "name": "Sink", "room": "room_bathroom", "capabilities": ["drink", "use"], "effects": {"drink": {"needs.thirst": -35.0}}},
     {"id": "obj_toilet", "name": "Toilet", "room": "room_bathroom", "capabilities": ["use"]},
     {"id": "obj_fridge", "name": "Refrigerator", "room": "room_kitchen", "capabilities": ["inspect", "use"]},
-    {
-      "id": "obj_pantry",
-      "name": "Pantry",
-      "room": "room_kitchen",
-      "capabilities": ["inspect", "eat", "use"],
-      "effects": {"eat": {"needs.hunger": -40.0, "needs.energy": 5.0, "needs.thirst": 1.0}}
-    },
+    {"id": "obj_pantry", "name": "Pantry", "room": "room_kitchen", "capabilities": ["inspect", "eat", "use"], "effects": {"eat": {"needs.hunger": -40.0, "needs.energy": 5.0, "needs.thirst": 1.0}}},
     {"id": "obj_stove", "name": "Stove", "room": "room_kitchen", "capabilities": ["cook", "use"]},
     {"id": "obj_table", "name": "Dining Table", "room": "room_dining", "capabilities": ["use"]},
     {"id": "obj_sofa", "name": "Sofa", "room": "room_living", "capabilities": ["rest", "read"]},
-    {"id": "obj_bookshelf", "name": "Bookshelf", "room": "room_library", "capabilities": ["inspect", "read"]},
-    {
-      "id": "obj_water",
-      "name": "Drinking Water",
-      "room": "room_kitchen",
-      "capabilities": ["drink"],
-      "effects": {"drink": {"needs.thirst": -55.0}}
-    },
-    {
-      "id": "obj_meal_stock",
-      "name": "Meal Ingredients",
-      "room": "room_kitchen",
-      "capabilities": ["cook", "eat"],
-      "effects": {"eat": {"needs.hunger": -50.0, "needs.energy": 8.0, "needs.thirst": 2.0}}
-    },
+    {"id": "obj_bookshelf", "name": "Bookshelf", "room": "room_living", "capabilities": ["inspect", "read"]},
+    {"id": "obj_water", "name": "Drinking Water", "room": "room_kitchen", "capabilities": ["drink"], "effects": {"drink": {"needs.thirst": -55.0}}},
+    {"id": "obj_meal_stock", "name": "Meal Ingredients", "room": "room_kitchen", "capabilities": ["cook", "eat"], "effects": {"eat": {"needs.hunger": -50.0, "needs.energy": 8.0, "needs.thirst": 2.0}}},
     {"id": "obj_weights", "name": "Free Weights", "room": "room_gym", "capabilities": ["train", "inspect"]},
     {"id": "obj_heavy_bag", "name": "Heavy Bag", "room": "room_gym", "capabilities": ["train", "inspect"]}
   ],
   "connections": [
     ["room_bedroom", "room_bathroom"],
+    ["room_bedroom", "room_living"],
     ["room_bedroom", "room_foyer"],
+    ["room_bathroom", "room_kitchen"],
     ["room_foyer", "room_living"],
     ["room_foyer", "room_library"],
     ["room_foyer", "room_garage"],
     ["room_living", "room_kitchen"],
     ["room_living", "room_dining"],
+    ["room_living", "room_gym"],
     ["room_kitchen", "room_dining"],
     ["room_foyer", "room_intel"],
     ["room_intel", "room_comms"],
