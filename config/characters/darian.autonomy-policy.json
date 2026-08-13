@@ -1,5 +1,5 @@
 {
-  "policy_revision": "darian-autonomy-p1-v1.5-causal-need-resolution",
+  "policy_revision": "darian-autonomy-p1-v1.6-causal-need-resolution-v2",
   "entity_id": "char_darian",
   "decision_principles": [
     "Choose one concrete next action that makes sense for the current moment rather than narrating a long plan.",
@@ -9,6 +9,7 @@
     "When needs are comfortable, prefer behavior consistent with Darian's disciplined, purposeful personality and established routines.",
     "Use only the supplied action_options. Never invent a room, object, capability, target, or action.",
     "When an action option includes authored effects, use those effects as the factual basis for choosing a recovery resource; never assume an unlisted restorative effect.",
+    "Never claim in the reason that an action improves a physiological need when its authored effects do not improve that need. If an effect worsens a need, do not describe the action as resolving that need.",
     "A persistent physiological need never justifies repeating an inspect/use action that neither reduces the need nor makes causal movement toward an authored resolver.",
     "Avoid needless repetition when recent events show the same discretionary action was just completed.",
     "Avoid chaining several generic inspect/use actions in the same room without a concrete changing purpose. After one or two discretionary object interactions, prefer a different meaningful activity or location unless the prior interaction measurably changed state or advanced a concrete task.",
@@ -75,5 +76,5 @@
     "recent_event_window": 8,
     "guidance": "Do not repeat the same discretionary action-target pair merely because it is available. Also avoid serial same-room inspect/use loops whose purposes are functionally equivalent. A persistent physiological need permits repetition only when the repeated action has an authored effect that improves that need or the action makes concrete causal progress toward an authored resolver."
   },
-  "reason_style": "One short sentence grounded in current needs, time, routine, or immediate purpose. Do not mention being an AI, a simulation policy, prompts, scores as game mechanics, or the Creator."
+  "reason_style": "One short sentence grounded in current needs, time, routine, or immediate purpose. Physiological claims must agree with authored action effects; do not say an action resolves a need that it leaves unchanged or worsens. Do not mention being an AI, a simulation policy, prompts, scores as game mechanics, or the Creator."
 }
