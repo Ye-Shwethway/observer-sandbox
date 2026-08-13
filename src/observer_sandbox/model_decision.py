@@ -11,7 +11,9 @@ from .need_resolution import shape_action_options_for_needs
 from .resource_awareness import enrich_options_with_usage, reachable_location_awareness, recent_action_usage
 from .secrets import load_runtime_secrets
 from .simulation import ACTION_NAMES, Action, action_options, snapshot, validate_action
+from .training_load_guard import projected_training_allowed, shape_training_options_for_load
 from .training_methods import enrich_training_action_options
+from .training_modifiers import training_readiness_modifier
 
 
 REPO_ROOT = Path(__file__).resolve().parents[2]
@@ -220,6 +222,12 @@ class ModelDecisionProvider:
         decision_signals = self._decision_signals(state)
         recent_events = self._recent_events()
         options = enrich_training_action_options(action_options(self.conn, self.character_id))
+        options, training_load_guard = shape_training_options_for_load(
+            self.conn,
+            self.character_id,
+            state=state,
+            action_options=options,
+        )
         options = shape_action_options_for_needs(
             self.conn,
             state=state,
@@ -236,6 +244,14 @@ class ModelDecisionProvider:
             recent_action_usage(self.conn, self.character_id),
         )
         enriched["action_options"] = options
+        enriched["training_load_guard"] = {
+            **training_load_guard,
+            "guidance": (
+                "Recent training dose is already substantial; choose recovery or ordinary non-training activity before another workout."
+                if not training_load_guard["allowed"]
+                else "Training remains available only within the remaining effective-load budget shown on train options."
+            ),
+        }
         enriched["resource_awareness"] = {
             "current_location": {
                 "id": state["location"],
@@ -265,6 +281,14 @@ class ModelDecisionProvider:
             state=enriched,
             available_actions=known_actions,
         )
+        if decision["action"] == "train":
+            readiness = training_readiness_modifier(state)
+            if not projected_training_allowed(
+                enriched["training_load_guard"],
+                duration_minutes=decision["duration_minutes"],
+                effectiveness=float(readiness["effectiveness"]),
+            ):
+                raise ValueError("Training duration exceeds the remaining recent-load budget")
         return Action(
             decision["action"],
             decision["duration_minutes"],
