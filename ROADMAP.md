@@ -12,8 +12,7 @@ Roadmap synchronized: 2026-08-13
 - Canonical runtime composition:
   `Actor(s) + Action + Place + Simulation Time + Conditions/Modifiers + Resources/Targets -> Validation -> State Changes + Events`.
 - Schema v4 remains the current composable foundation. Do not introduce schema v5 without a concrete missing invariant.
-- Development proceeds by minimum runnable vertical slices.
-- Repeated expansion follows **exemplar-first, then batch-by-pattern**: prove one new structural pattern, then batch equivalent follow-ons into one PR, one pre-merge disposable production-copy dry-run, and one deploy/readback.
+- Repeated expansion follows **exemplar-first, then batch-by-pattern**: prove one structural pattern, then batch equivalent follow-ons into one PR, one pre-merge disposable production-copy dry-run, and one deploy/readback.
 
 ## Foundation / P0 / P1
 
@@ -38,7 +37,7 @@ Roadmap synchronized: 2026-08-13
 
 P3.5 short-term training loop:
 `target -> readiness -> fatigue inefficiency -> effectiveness -> effective workload -> immediate physiology`.
-No accumulated stimulus, strength/skill progression, hypertrophy/body measurements, grading, or tiers are implemented.
+No accumulated stimulus, strength/skill progression, hypertrophy/body measurements, or adaptation yet.
 
 ## Post-P3.5 stabilization
 
@@ -46,56 +45,61 @@ No accumulated stimulus, strength/skill progression, hypertrophy/body measuremen
 - Current Action ETA Observability v1 — COMPLETE / ACCEPTANCE VERIFIED / DEPLOYED / LIVE UX VERIFIED.
 - Runtime Speed Control v1 — COMPLETE / ACCEPTANCE VERIFIED / DEPLOYED / LIVE UX VERIFIED.
 - Deterministic Action Duration Planning Profiles v1 — COMPLETE / ACCEPTANCE VERIFIED / DEPLOYED.
-- Minimum action timing invariant — CI VERIFIED: `1 sim min @ 3600x` remains a positive `1/60` real-second due interval.
+- Minimum action timing invariant — CI VERIFIED.
 
 ## Selective Activity/Action Semantics
 
 ### Research v1 — exemplar
 Status: COMPLETE / ACCEPTANCE VERIFIED / DEPLOYED.
 
-- first-class `research` action, legal 10–180m;
-- Research Desk only;
-- preferred 30–90m;
-- existing capability/colocation validation and first-class action/event persistence reused;
-- model vocabulary can now pick semantic verbs exposed by authoritative action options;
-- no knowledge, XP, memory or progression subsystem.
-
-Evidence: PR #10 merge `c50f4cf9a87b15589be3b3ea4878990da7e69d02`; Research Action Semantics Acceptance #1 / `31681716339` SUCCESS; Deploy #136 / `31681760620` SUCCESS.
-
 ### Activity Semantics Batch 1 — Monitor
 Status: COMPLETE / PRE-MERGE PRODUCTION-COPY ACCEPTANCE VERIFIED / DEPLOYED.
 
-Research v1 established the structural pattern. Batch 1 then applied the same pattern across three equivalent console affordances in one development cycle:
-- Surveillance Console;
-- Secure Communications Terminal;
-- Emergency Console.
+`monitor` is authored on Surveillance Console, Secure Communications Terminal and Emergency Console with the same capability/colocation/action-event invariant. No findings/intelligence/environment subsystem was added.
 
-`monitor` contract:
-- first-class action;
-- legal duration 5–120m;
-- preferred planning 15–45m;
-- local object + `monitor` capability + colocation;
-- passive physiology/time plus ordinary first-class action/event evidence only;
-- no findings, alerts, communications payload, intelligence engine or environment engine.
+Evidence: PR #11 merge `8a8f14b7da13ac0ab0ecbb461fefcdfc3639d7f8`; acceptance `31682656839`; Deploy #137 `31682743508` SUCCESS.
 
-Batch execution evidence:
-- one branch/PR (#11);
-- PR CI #374 / `31682656794` SUCCESS;
-- **pre-merge** Activity Semantics Batch 1 Acceptance #1 / `31682656839` SUCCESS on one disposable copy of live production DB, covering all three targets, zero model calls, unsupported Media Console rejected;
-- PR #11 merged at `8a8f14b7da13ac0ab0ecbb461fefcdfc3639d7f8` only after the batch was green;
-- release `5e650c11ef6c144f4816f3d77704562cba3156d6`;
-- Deploy #137 / `31682743508` SUCCESS;
-- production readback healthy: schema v4, autonomy enabled/normal/unpaused, Gemini preserved, Telegram connected, speed 5x at that snapshot.
+## Read-only grading
 
-This validates the new expansion policy. Do not return to one-PR/one-deploy-per-equivalent-item expansion unless rollback/risk boundaries require it.
+### Grading exemplar — Strength
+Status: COMPLETE / PRE-MERGE ACCEPTANCE VERIFIED / DEPLOYED.
+
+- raw `raps_pa.strength = 90` remains authoritative and unchanged;
+- named proof scheme `raps-100-proof-v1` derives `Grade S`;
+- grade is query/presentation metadata, not a second source of truth;
+- Telegram Attributes displays raw value plus derived grade;
+- no schema change.
+
+Evidence: PR #12 merge `d0bdabc1faaede8adb6c3e8dd29a9b5ff9ba3cb3`; Read-Only Grading Proof Acceptance #1 `31683547092`; Deploy #138 `31683632205` SUCCESS.
+
+### Attribute Grading Batch 1
+Status: COMPLETE / PRE-MERGE PRODUCTION-COPY ACCEPTANCE VERIFIED / DEPLOYED.
+
+The Strength exemplar pattern is expanded to **36 explicitly opted-in compatible 0..100 Attributes-section fields**.
+
+Boundaries:
+- `raps_ia.iq` is excluded because it uses a different scale;
+- `Skills` collection is excluded and requires its own grading family;
+- `Body` measurements/composition are excluded and require a **separate exemplar + batch** because units, normalization and calculation semantics differ materially;
+- explicit field membership prevents future numeric fields from silently inheriting this scheme;
+- raw profile values remain unchanged.
+
+Evidence: PR #13 merge `76bcf7fe7225a9504909f9d939bbcdd673bac7c6`; CI #386 SUCCESS; Attribute Grading Batch 1 Acceptance #3 `31683936844` SUCCESS; release `d14cae7ef88fc9e157caa5fa0b930f36aba3cf77`; Deploy #139 `31684009154` SUCCESS.
+
+## Grading family rule
+
+Do not use one numeric evaluator merely because multiple domains contain numbers.
+
+- 0..100 compatible Attributes: current `raps-100-proof-v1` family.
+- IQ: separate scale/evaluator if grading becomes useful.
+- Skills: separate family because progression/experience semantics may differ.
+- Body measurements/composition: separate exemplar and batch; evaluator may need units, body composition, stature/proportion context and/or genetic ceilings rather than flat thresholds.
 
 ## Next planned sequence
 
-Do not add more verbs just for breadth. `maintain/repair/diagnose/practice` may require distinct state or consequences and should become new exemplars only when a concrete runnable need appears.
-
-Unless Creator redirects:
-1. first read-only grading proof on one existing raw value;
-2. minimum training stimulus evidence on one target/domain;
+The current grading architecture is proven without schema v5. Before long-term training progression:
+1. define/prove the separate **Body grading family** only if Creator wants body grades now; do not reuse attribute thresholds by default;
+2. otherwise proceed to **minimum training stimulus evidence** on one target/domain;
 3. minimum adaptation/progression only after stimulus + recovery semantics are explicit.
 
 ## Deferred boundaries
@@ -103,7 +107,8 @@ Unless Creator redirects:
 Not implemented:
 - accumulated stimulus/adaptation;
 - attribute/skill/body-measurement progression;
-- universal grading/tier evaluation;
+- body-measurement grading evaluator;
+- IQ/skills grading evaluators;
 - inventory/resource depletion;
 - rich memory/relationship/environment engines;
 - exterior/Tahoe traversal;
@@ -111,4 +116,4 @@ Not implemented:
 
 ## Current resume point
 
-The exemplar-first/batch expansion workflow is proven and Monitor Batch 1 is live. The next proposed bounded feature is the **first read-only grading proof on one existing raw value**; no implementation should begin until Creator direction confirms that next slice.
+Attribute Grading Batch 1 is live. Body measurements are explicitly a separate grading family. The next implementation decision is **Body grading exemplar** versus **Minimum Training Stimulus**, with body grading requiring its own calculation design rather than inheriting the attribute evaluator.
