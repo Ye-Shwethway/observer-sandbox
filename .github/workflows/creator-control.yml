@@ -1,0 +1,86 @@
+name: Creator Control
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths:
+      - '.github/workflows/creator-control.yml'
+
+concurrency:
+  group: observer-sandbox-production
+  cancel-in-progress: false
+
+jobs:
+  restore-basic-stats:
+    if: ${{ vars.VPS_DEPLOY_ENABLED == 'true' }}
+    runs-on: ubuntu-latest
+    steps:
+      - name: Configure SSH
+        env:
+          VPS_SSH_KEY: ${{ secrets.VPS_SSH_KEY }}
+          VPS_HOST: ${{ secrets.VPS_HOST }}
+          VPS_PORT: ${{ secrets.VPS_PORT || '22' }}
+        run: |
+          test -n "$VPS_HOST"
+          test -n "$VPS_SSH_KEY"
+          install -m 700 -d ~/.ssh
+          printf '%s\n' "$VPS_SSH_KEY" > ~/.ssh/id_ed25519
+          chmod 600 ~/.ssh/id_ed25519
+          ssh-keyscan -p "$VPS_PORT" -H "$VPS_HOST" >> ~/.ssh/known_hosts
+
+      - name: Restore Darian basic stats under Creator authority
+        env:
+          VPS_HOST: ${{ secrets.VPS_HOST }}
+          VPS_USER: ${{ secrets.VPS_USER }}
+          VPS_PORT: ${{ secrets.VPS_PORT || '22' }}
+          REMOTE_EVENT: ${{ github.event_name }}
+        run: |
+          ssh -p "$VPS_PORT" "$VPS_USER@$VPS_HOST" "REMOTE_EVENT='$REMOTE_EVENT' bash -s" <<'REMOTE'
+          set -euo pipefail
+          cd /opt/observer-sandbox
+          export OBSERVER_SANDBOX_DB=/var/lib/observer-sandbox/observer.sqlite3
+          MARKER_KEY='creator_control_initial_basic_stats_restore'
+
+          if [ "$REMOTE_EVENT" = "push" ]; then
+            MARKED=$(.venv/bin/python - <<'PY'
+          import os
+          from observer_sandbox.db import connect, migrate
+          db = os.environ['OBSERVER_SANDBOX_DB']
+          with connect(db) as conn:
+              migrate(conn)
+              row = conn.execute(
+                  "SELECT value FROM schema_meta WHERE key=?",
+                  ("creator_control_initial_basic_stats_restore",),
+              ).fetchone()
+              print("1" if row is not None else "0")
+          PY
+          )
+            if [ "$MARKED" = "1" ]; then
+              echo 'INITIAL_CREATOR_RESTORE_ALREADY_APPLIED=true'
+              .venv/bin/sandboxctl living-status
+              exit 0
+            fi
+          fi
+
+          .venv/bin/sandboxctl creator restore-basic-stats --character char_darian --requested-by "github-actions:${REMOTE_EVENT}"
+
+          if [ "$REMOTE_EVENT" = "push" ]; then
+            .venv/bin/python - <<'PY'
+          import os
+          from observer_sandbox.db import connect, migrate
+          db = os.environ['OBSERVER_SANDBOX_DB']
+          with connect(db) as conn:
+              migrate(conn)
+              conn.execute(
+                  "INSERT OR REPLACE INTO schema_meta(key,value) VALUES(?,?)",
+                  ("creator_control_initial_basic_stats_restore", "1"),
+              )
+              conn.commit()
+          PY
+          fi
+
+          echo '--- POST-RESTORE PRODUCTION READBACK ---'
+          .venv/bin/sandboxctl status
+          .venv/bin/sandboxctl living-status
+          REMOTE
