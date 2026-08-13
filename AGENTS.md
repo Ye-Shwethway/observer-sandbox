@@ -4,7 +4,7 @@
 
 Before making material changes, read `NEW_CHAT_BOOTSTRAP.md` and treat newer repository/runtime evidence as authoritative over remembered chat context.
 
-Also read directly relevant contracts. For core/runtime/schema/action work read `docs/ARCHITECTURE.md` and `docs/COMPOSABLE_RUNTIME_ARCHITECTURE_AUDIT.md`; for world/location/topology work read `docs/WORLD_LOCATION_NODE_MODEL.md`; for Telegram work read `docs/TELEGRAM_OBSERVER_ARCHITECTURE.md`; for living-needs/recovery/item effects read `docs/PHYSIOLOGY_AND_ITEM_EFFECTS.md`; for character-profile work inspect `docs/CHARACTER_PROFILE_SCHEMA.md` plus `config/characters/`; for deployment/runtime work inspect `.github/workflows/` and `deploy/`.
+Also read directly relevant contracts. For core/runtime/schema/action work read `docs/ARCHITECTURE.md` and `docs/COMPOSABLE_RUNTIME_ARCHITECTURE_AUDIT.md`; for world/location/topology work read `docs/WORLD_LOCATION_NODE_MODEL.md`; for Telegram work read `docs/TELEGRAM_OBSERVER_ARCHITECTURE.md`; for privileged runtime/world mutation read `docs/CREATOR_CONTROL_POLICY.md`; for living-needs/recovery/item effects read `docs/PHYSIOLOGY_AND_ITEM_EFFECTS.md`; for character-profile work inspect `docs/CHARACTER_PROFILE_SCHEMA.md` plus `config/characters/`; for deployment/runtime work inspect `.github/workflows/` and `deploy/`.
 
 ## Continuity rule
 
@@ -36,6 +36,20 @@ All new simulation/runtime work must preserve the LEGO rule:
 - Definitions/Templates, Instances and Runtime State are distinct concepts.
 - Conditions/modifiers should use the shared effect/modifier contract; do not invent incompatible per-feature effect formats.
 - Full feature engines may remain deferred, but their implementations must attach through these generic contracts.
+
+## Creator control contract
+
+All privileged direct world/runtime mutations must follow `docs/CREATOR_CONTROL_POLICY.md`.
+
+- Creator controls are typed administrative interventions, not character actions and not LLM/cognition proposals.
+- Creator authorization permits a bounded mutation; it does not silently transfer domain field ownership away from the normal engine.
+- Telegram owner-only controls must re-check authority server-side; hiding a button is not authorization.
+- A potentially destructive/mutating inline control should use an explicit confirmation step.
+- If a control makes an outstanding action semantically stale, cancel/invalidate that action and clear relevant lease/retry state before cognition resumes.
+- Every successful privileged mutation must write a queryable audit event containing actor/target context, request source, before/after evidence and state changes.
+- Reuse the same backend control service from Telegram, CLI and Actions; do not duplicate SQLite mutation logic in UI/workflow adapters.
+- LLMs never receive Creator-control authority.
+- Do not build arbitrary-field editors, SQL consoles or generic unrestricted admin mutation surfaces; add one narrow control only when a concrete operational use case exists.
 
 ## World / location node contract
 
