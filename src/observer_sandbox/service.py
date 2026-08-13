@@ -7,6 +7,7 @@ import time
 from pathlib import Path
 
 from .actor_runtime import pending_action
+from .agility_progression_activation import maybe_settle_agility_progression
 from .autonomy import autonomy_tick
 from .db import connect
 from .runtime import initialize
@@ -49,50 +50,18 @@ def main() -> None:
                     before = snapshot(conn, actor_id) if pending_before else None
                     result = autonomy_tick(conn, actor_id=actor_id)
                     if result.get("state") == "completed" and pending_before and before:
-                        # Progression activation is checked only at completed-action
-                        # simulation boundaries, never on the tight service poll.
-                        # Each progression family is isolated so one failed settlement
-                        # cannot roll back the completed action or block another family.
                         after = result["after"]
-                        try:
-                            maybe_settle_strength_progression(
-                                conn,
-                                actor_id,
-                                as_of_sim_time=str(after["sim_time"]),
-                                state=after,
-                            )
-                            after = snapshot(conn, actor_id)
-                        except Exception:
-                            pass
+                        for settle in (maybe_settle_strength_progression, maybe_settle_stamina_progression, maybe_settle_agility_progression):
+                            try:
+                                settle(conn, actor_id, as_of_sim_time=str(after["sim_time"]), state=after)
+                                after = snapshot(conn, actor_id)
+                            except Exception:
+                                pass
 
-                        try:
-                            maybe_settle_stamina_progression(
-                                conn,
-                                actor_id,
-                                as_of_sim_time=str(after["sim_time"]),
-                                state=after,
-                            )
-                            after = snapshot(conn, actor_id)
-                        except Exception:
-                            pass
-
-                        # The next normal decision boundary would occur on the next
-                        # service poll anyway. Resolve it immediately so the single
-                        # completion notification can show the Creator what is now
-                        # in progress and when its next update is expected.
                         next_result = autonomy_tick(conn, actor_id=actor_id)
                         next_pending = next_result.get("pending") if next_result.get("state") == "planned" else None
-                        dispatch_action_completion(
-                            conn,
-                            action_id=str(result["action_id"]),
-                            action=pending_before,
-                            before=before,
-                            after=after,
-                            next_action=next_pending,
-                        )
+                        dispatch_action_completion(conn, action_id=str(result["action_id"]), action=pending_before, before=before, after=after, next_action=next_pending)
         except Exception:
-            # Scheduler failures are recorded per actor; observer delivery remains
-            # downstream/best-effort and must never kill or roll back the universe.
             pass
         time.sleep(2)
 
