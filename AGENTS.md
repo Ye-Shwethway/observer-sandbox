@@ -4,85 +4,82 @@
 
 Before making material changes, read `NEW_CHAT_BOOTSTRAP.md` and treat newer repository/runtime evidence as authoritative over remembered chat context.
 
-Also read the directly relevant source/config files for the task. For architecture work, read `docs/ARCHITECTURE.md`; for world/location/topology work, read `docs/WORLD_LOCATION_NODE_MODEL.md`; for Telegram work, read `docs/TELEGRAM_OBSERVER_ARCHITECTURE.md`; for living-needs, recovery, world-resource or item-effect work, read `docs/PHYSIOLOGY_AND_ITEM_EFFECTS.md`; for character-profile work, inspect `config/characters/` and the profile schema modules; for deployment/runtime work, inspect `.github/workflows/` and `deploy/`.
+Also read directly relevant contracts. For core/runtime/schema/action work read `docs/ARCHITECTURE.md` and `docs/COMPOSABLE_RUNTIME_ARCHITECTURE_AUDIT.md`; for world/location/topology work read `docs/WORLD_LOCATION_NODE_MODEL.md`; for Telegram work read `docs/TELEGRAM_OBSERVER_ARCHITECTURE.md`; for living-needs/recovery/item effects read `docs/PHYSIOLOGY_AND_ITEM_EFFECTS.md`; for character-profile work inspect `docs/CHARACTER_PROFILE_SCHEMA.md` plus `config/characters/`; for deployment/runtime work inspect `.github/workflows/` and `deploy/`.
 
 ## Continuity rule
 
-`NEW_CHAT_BOOTSTRAP.md` is the durable cross-chat handoff and must remain synchronized with the project.
-
-After every material repository or verified runtime change, update `NEW_CHAT_BOOTSTRAP.md` in the same work session/change set. Material changes include architecture decisions, schema changes, canonical character changes, provider/model behavior, roadmap status, deployment/runtime topology, workflow behavior, live verification state, and the next resume point.
-
-Do not update it for trivial typo-only edits unless the edit changes a stated project fact.
-
-Never confuse these states:
-
-- authored/committed in GitHub;
-- CI-validated;
-- deployed to VPS;
-- migration/schema applied to the live database;
-- live-runtime verified.
-
-The bootstrap must state the strongest level actually proven.
+`NEW_CHAT_BOOTSTRAP.md` is the durable cross-chat handoff. After every material repository or verified runtime change, update it in the same work session. Never conflate authored/committed, CI-validated, deployed, DB-applied and live-runtime-verified evidence.
 
 ## Authority order
 
 1. Explicit current Creator instruction.
-2. Current canonical repository config/schema and architecture contracts.
+2. Current canonical repository config/schema/contracts.
 3. Verified live VPS/runtime/database evidence.
-4. Deployed repository/workflow evidence.
+4. Deployed workflow evidence.
 5. Current CI/test evidence.
 6. `NEW_CHAT_BOOTSTRAP.md`.
-7. Older handoffs or chat/model memory.
+7. Older chat/model memory.
 
-Chat/model memory is context only and must not override newer repository or live evidence.
+## Composable runtime contract
+
+All new simulation/runtime work must preserve the LEGO rule:
+
+`Actor(s) + Action + Place + Simulation Time + Conditions/Modifiers + Resources/Targets -> Validation -> State Changes + Events`
+
+- LLMs propose structured actions; they never mutate arbitrary DB/world state directly.
+- Universe-global state (`sim_time`, speed, pause, world identity) stays separate from actor-scoped scheduler/cognition state.
+- Actor autonomy, pending action, lease, retry and wake telemetry belong to `actor_runtime`; do not reintroduce singleton Darian scheduler keys.
+- Actions are first-class `action_instances` referencing data-driven `action_definitions`.
+- New action types should extend definition metadata and reusable validation primitives rather than grow character-specific switch logic.
+- One shared universe clock must not double-count concurrent actor durations; action intervals are independently recorded.
+- Events must retain action/location/state-change linkage and participants where relevant.
+- Definitions/Templates, Instances and Runtime State are distinct concepts.
+- Conditions/modifiers should use the shared effect/modifier contract; do not invent incompatible per-feature effect formats.
+- Full feature engines may remain deferred, but their implementations must attach through these generic contracts.
 
 ## World / location node contract
 
 All spatial/world changes must preserve `docs/WORLD_LOCATION_NODE_MODEL.md`.
 
 - Locations are recursively nestable graph nodes, not hard-coded screen labels.
-- Containment (`contains`) and physical traversal (`connected_to`) are separate concepts.
 - Entity ids are technical identities, never display names.
-- World/spatial/resource ids must be globally unique, type-prefixed and place-scoped where names can repeat: `world_*`, `loc_*`, `obj_*`.
-- Keep ids path-independent: do not encode a mutable full containment path solely for uniqueness. Parent/floor/topology belongs in relations.
+- Spatial/resource ids are globally unique, type-prefixed and place-scoped where names repeat: `world_*`, `loc_*`, `obj_*`.
+- Keep ids path-independent; mutable parent/floor topology belongs in relations.
 - Canonical current root is `world_observer_universe`; Thorne Estate is `loc_thorne_estate`.
-- Prototype ids such as `home`, `observer_universe`, `zone_*`, `room_*`, and generic estate `obj_*` ids are obsolete and must not be reintroduced into new runtime/world definitions.
-- A future `loc_south_lake_tahoe` may become the parent of `loc_thorne_estate`; future residences such as `loc_quasi_home` may be siblings without identity collisions.
-- Locked/unimplemented boundaries must have no traversable edge; do not rely on prompt wording to keep characters inside an unfinished region.
-- Canonical source facts and provisional implementation layout must remain distinguishable through metadata/documentation.
-- Deterministic routing must derive from authored graph relations, not a hard-coded room-pair table.
-- Telegram and other UIs must consume generic location-query contracts rather than encode mansion-specific topology in handlers.
+- Prototype ids `home`, `observer_universe`, `zone_*`, `room_*` and generic estate `obj_*` are obsolete.
+- `contains` means structural/static containment; `connected_to` means traversable topology; `located_at` is generic dynamic presence.
+- Ownership/possession (`owned_by`, `carried_by`, `equipped_by`) must not be conflated with current physical location.
+- Locked/unimplemented boundaries must have no traversable edge.
+- Canon facts and provisional layout must remain distinguishable.
+- Deterministic routing derives from graph relations, not hard-coded room-pair tables.
+- Telegram/UI consumes generic query contracts rather than mansion-specific topology.
 
 ## Living physiology and item-effect contract
 
-All basic living-needs and recovery changes must preserve `docs/PHYSIOLOGY_AND_ITEM_EFFECTS.md`.
+All needs/recovery changes must preserve `docs/PHYSIOLOGY_AND_ITEM_EFFECTS.md`.
 
 - Recovery-labelled actions must improve the intended need after passive drift.
-- Every basic physiological stat must retain a reachable restoration path.
-- Food/drink/shower effects belong to authored world/item effect profiles rather than prompt prose or Telegram handlers.
-- `action_options()` must expose relevant authored effects to cognition while the deterministic engine remains authoritative.
-- Do not add a restorative capability without its deterministic effect definition and regression coverage.
-- Because autonomy persists pending actions across restarts, world/capability/effect changes must account for currently pending plans before removing or invalidating targets.
+- Every current basic physiological stat retains a reachable restoration path.
+- Food/drink/shower effects are authored deterministic effects, not prompt prose.
+- `action_options()` exposes useful effect information to cognition while the deterministic engine remains authoritative.
+- Shared effect operations include add/multiply/set/clamp; temporary/sourced modifiers use the composable modifier contract.
+- Do not add restorative capabilities without deterministic effects and regression coverage.
+- Persistent first-class pending actions must be considered during world/effect migrations.
 
 ## Telegram presentation contract
 
-Every new or modified Creator-facing Telegram message must follow the presentation rules in `docs/TELEGRAM_OBSERVER_ARCHITECTURE.md`.
+Every Creator-facing Telegram message follows `docs/TELEGRAM_OBSERVER_ARCHITECTURE.md`.
 
-Telegram output is a human-facing observer UI, not a raw log or database dump. New commands and callbacks must therefore reuse the shared formatting conventions rather than introducing one-off raw output.
-
-At minimum:
-
-- simulated timestamps shown to users use `dd-mm-yyyy (Day) hh:mm AM/PM` in 12-hour format;
-- canonical ISO timestamps remain unchanged in storage/runtime internals;
-- prefer human-readable entity names over internal ids in normal views;
-- use concise sections, whitespace, icons, and restrained decoration for scanability;
-- use friendly labels such as Yes/No or ON/OFF rather than raw booleans where appropriate;
-- default activity/history views emphasize meaningful universe/character events and suppress engine/control bookkeeping noise;
-- large datasets are sectioned or paginated instead of dumped into one message;
-- presentation changes must not move business logic into Telegram handlers.
-
-Tests for Telegram features should validate these presentation contracts where relevant.
+- visible sim time: `dd-mm-yyyy (Day) hh:mm AM/PM`;
+- canonical ISO time remains internal;
+- friendly entity names in normal views;
+- concise sections, whitespace and restrained icons;
+- ON/OFF and Yes/No instead of raw booleans;
+- default history suppresses engine/control bookkeeping;
+- paginate/section large datasets;
+- presentation stays downstream of generic query/control services;
+- proactive character-action notifications must resolve the actual actor name, not assume Darian forever.
 
 ## Scope discipline
 
-Observer Sandbox is intentionally small and modular. Do not reproduce EIDOLON/Simiverse-scale orchestration or subsystem sprawl unless the Creator explicitly asks for it. Prefer bounded, testable increments with stable extension points.
+Observer Sandbox is intentionally small and modular. Do not recreate EIDOLON/Simiverse-scale subsystem sprawl. Build bounded, tested vertical slices on the generic contracts above.
