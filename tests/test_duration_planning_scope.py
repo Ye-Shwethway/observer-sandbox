@@ -6,4 +6,5 @@ def test_v1_scope_stays_bounded():
     assert "research" in GENERIC_PROFILES
     assert "monitor" in GENERIC_PROFILES
     assert len(GENERIC_PROFILES) == 12
-    assert len(TARGET_PROFILES) == 9
+    assert len(TARGET_PROFILES) == 5
+    assert all(action != "train" for action, _target in TARGET_PROFILES)

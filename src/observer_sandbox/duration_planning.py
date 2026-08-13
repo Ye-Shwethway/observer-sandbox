@@ -3,6 +3,8 @@ from __future__ import annotations
 from dataclasses import dataclass
 from typing import Any
 
+from .training_methods import training_profile_for_target
+
 
 @dataclass(frozen=True)
 class DurationProfile:
@@ -29,20 +31,40 @@ GENERIC_PROFILES: dict[str, DurationProfile] = {
 }
 
 
+# Non-training target-specific planning remains here until those domains gain
+# their own authored metadata. Training targets are intentionally data-driven
+# through config/training_methods.v1.json.
 TARGET_PROFILES: dict[tuple[str, str], DurationProfile] = {
     ("inspect", "obj_thorne_estate_kitchen_refrigerator"): DurationProfile(2, 5, "quick refrigerator check"),
     ("inspect", "obj_thorne_estate_kitchen_pantry"): DurationProfile(2, 5, "quick pantry check"),
     ("use", "obj_thorne_estate_kitchen_stove"): DurationProfile(10, 30, "meal preparation"),
     ("read", "obj_thorne_estate_library_research_desk"): DurationProfile(20, 90, "focused research reading"),
     ("research", "obj_thorne_estate_library_research_desk"): DurationProfile(30, 90, "focused desk research"),
-    ("train", "obj_thorne_estate_gym_heavy_bag"): DurationProfile(20, 45, "heavy-bag session"),
-    ("train", "obj_thorne_estate_gym_free_weights"): DurationProfile(45, 90, "strength session"),
-    ("train", "obj_thorne_estate_training_combat_mat"): DurationProfile(20, 60, "combat-mat practice"),
-    ("train", "obj_thorne_estate_training_practice_dummy"): DurationProfile(20, 60, "practice-dummy session"),
 }
 
 
+def _training_duration_profile(target: str | None) -> DurationProfile | None:
+    profile = training_profile_for_target(target)
+    if profile is None:
+        return None
+    planning = profile.get("planning")
+    if not isinstance(planning, dict):
+        return None
+    bounds = planning.get("preferred_duration")
+    purpose = planning.get("purpose")
+    if not isinstance(bounds, list) or len(bounds) != 2 or not isinstance(purpose, str):
+        return None
+    low, high = int(bounds[0]), int(bounds[1])
+    if low <= 0 or high < low:
+        return None
+    return DurationProfile(low, high, purpose)
+
+
 def duration_profile(action: str, target: str | None) -> DurationProfile | None:
+    if action == "train":
+        authored = _training_duration_profile(target)
+        if authored is not None:
+            return authored
     if target is not None:
         targeted = TARGET_PROFILES.get((action, target))
         if targeted is not None:
