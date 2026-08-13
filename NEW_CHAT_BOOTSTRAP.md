@@ -23,9 +23,9 @@ This handoff is intentionally **proposal-gated**.
 
 On a fresh chat:
 1. reconcile the canonical files above;
-2. summarize current completed/live-verified state and the proposed next slice;
+2. summarize current completed/verified state and the proposed next slice;
 3. do **not** modify code/config/schema/workflows/production merely because the proposal exists;
-4. wait for explicit Creator approval before implementing P3.2 or any alternate next slice.
+4. wait for explicit Creator approval before implementing P3.3 or any alternate next slice.
 
 If the Creator changes the proposed direction, current instruction wins and the roadmap should be revised before implementation.
 
@@ -219,40 +219,68 @@ Evidence:
 
 Do not automatically expand this into a full training system.
 
-## Proposed next slice — P3.2 Minimum Targeted Training Session
+## P3.2 — Minimum Targeted Training Session
 
-Status: **PROPOSAL ONLY / NOT AUTHORIZED / CREATOR APPROVAL REQUIRED**.
+Status: COMPLETE / ACCEPTANCE VERIFIED.
 
-Intent: exercise the already-built LEGO composition foundation in ordinary autonomous behavior by making the existing `train` action use a real nearby training object.
+Purpose: prove the schema-v4 LEGO target composition path in ordinary autonomous behavior without adding a separate training subsystem.
 
-Proposed minimum scope:
-- keep existing `train` action and fatigue mechanics;
-- expose existing Home Gym targets such as Heavy Bag and Free Weights when co-located;
-- deterministic validation checks target capability and co-location;
-- persist target/resource on first-class action instance and event;
-- cognition sees only legal targeted-training options through current wake-on-demand path;
-- Telegram current/history/notification surfaces show the friendly selected training target through existing generic target resolution;
-- focused tests + bounded disposable acceptance prove targeted training completes and fatigue behavior remains correct.
+Verified behavior:
+- existing Home Gym objects `Heavy Bag` and `Free Weights` are legal `train` targets only when co-located;
+- target legality comes from the existing `train` action definition (`target_mode=object`, capability `train`, co-location required) and world object capabilities;
+- cognition receives targeted training through existing `action_options()` and the normal wake-on-demand decision path;
+- the selected target survives autonomous scheduling in actor pending state and `action_instances.target_id`;
+- completion keeps action/location/target linkage in the first-class event payload;
+- existing P3.1 fatigue behavior remains intact (`+18.5` net fatigue for the 60-minute acceptance training session);
+- observer status/history and action-completion notification formatting resolve friendly target names such as `Heavy Bag` / `Free Weights` rather than exposing internal ids.
 
-Explicit non-goals:
-- no reps/sets/weights programming;
+Implementation intentionally reused the already-present generic target runtime instead of creating parallel training-target code.
+
+Evidence:
+- merge commit `9d4b7995f9213638641db5b0cedf062b438e8b43`;
+- focused tests `tests/test_p3_targeted_training.py`;
+- PR CI #301 / run `31672106003` SUCCESS;
+- main CI #302 / run `31672141174` SUCCESS;
+- P3 Targeted Training Acceptance #1 / run `31672141154` SUCCESS on a disposable production DB copy with zero model calls;
+- acceptance read back production after the disposable probe and did not mutate the live DB.
+
+Explicit non-goals retained:
+- no reps/sets/load programming;
 - no exercise taxonomy/framework;
 - no strength/skill gain;
 - no hypertrophy/body progression;
 - no per-muscle soreness/injury system;
 - no grading/tier progression;
-- no schema v5 unless a concrete missing invariant is proven.
+- no modifier evaluation expansion in P3.2;
+- no schema v5.
 
-Why proposed:
-- small and independently observable;
-- directly proves `Actor + Action + Place + Target/Resource` in production logic;
-- improves world specificity without subsystem sprawl;
-- gives future skill progression/grading a clean attachment point without implementing either now.
+## Proposed next slice — P3.3 Minimum Training Readiness Modifier
 
-**Do not implement this proposal until the Creator explicitly approves it in the new chat.**
+Status: **PROPOSAL ONLY / NOT AUTHORIZED / CREATOR APPROVAL REQUIRED**.
+
+Creator direction: after targeted training is proven, begin expanding the schema-v4 modifier layer slice-by-slice because realistic action outcomes can depend on many pre-action and post-action factors. Do not respond by building a universal modifier mega-engine.
+
+Proposed first minimum modifier activation:
+- reuse existing live state rather than inventing new physiology domains;
+- derive one deterministic training-readiness/effectiveness factor from a very small set of already-authoritative inputs such as systemic fatigue, energy, thirst and sleepiness;
+- distinguish **conditions** (whether/how an action may proceed) from **modifiers** (how strongly/efficiently/riskily an allowed action produces effects);
+- apply the factor to one bounded training outcome/cost so the modifier has a real deterministic consequence rather than being display-only metadata;
+- preserve raw authoritative fields; the derived readiness/effectiveness value must not overwrite them;
+- expose only the minimum Creator-facing observation needed to validate the result;
+- focused tests + bounded disposable acceptance before any further modifier sources are added.
+
+Future modifier sources such as injury, soreness, stimulants, nutrition, equipment/facility quality, skill/proficiency, environment or psychological state remain deferred until separate concrete runnable slices need them. Existing `active_modifiers`, action `conditions_json` and `modifiers_json` are sockets to reuse, not permission to pre-build all evaluators now.
+
+Conceptual rule to preserve:
+
+`conditions -> action legality / allowed execution shape`
+
+`modifiers -> magnitude / quality / cost / risk of an otherwise valid action and its effects`
+
+Do not introduce schema v5 unless P3.3 proves a concrete missing invariant in schema v4.
 
 ## Exact new-chat resume point
 
-**The repository is prepared for instant reconciliation. P2.2 browsing, P2.3.1 Creator Restore Control and P3.1 systemic fatigue/recovery are COMPLETE / LIVE UX VERIFIED. Latest handoff CI #298 / run `31671034749` succeeded. The proposed next slice is P3.2 Minimum Targeted Training Session, but it is NOT authorized. A fresh chat must reconcile the canonical repo first, summarize the current checkpoint and proposal, then wait for explicit Creator approval before code/config/schema/workflow changes or production mutation.**
+**P2.2 browsing, P2.3.1 Creator Restore Control, P3.1 systemic fatigue/recovery and P3.2 Minimum Targeted Training Session are complete at their stated evidence levels. P3.2 merged at `9d4b7995f9213638641db5b0cedf062b438e8b43`; main CI #302 and P3 Targeted Training Acceptance #1 succeeded. The proposed next slice is P3.3 Minimum Training Readiness Modifier, but it is NOT authorized. A fresh chat must reconcile the canonical repo first, summarize the checkpoint and proposal, then wait for explicit Creator approval before P3.3 code/config/schema/workflow or production mutation.**
 
-Preserve 1x wake-on-demand production autonomy, scoped ids, locked unfinished boundaries, actor-scoped scheduler state, first-class actions/events, Telegram presentation rules, notification preferences, profile/runtime separation, grading-as-future-derived capability, typed/audited Creator-control authority and the minimum-runnable expansion policy.
+Preserve 1x wake-on-demand production autonomy, scoped ids, locked unfinished boundaries, actor-scoped scheduler state, first-class actions/events, Telegram presentation rules, notification preferences, profile/runtime separation, grading-as-future-derived capability, typed/audited Creator-control authority, modifier expansion by concrete runnable need, and the minimum-runnable expansion policy.
