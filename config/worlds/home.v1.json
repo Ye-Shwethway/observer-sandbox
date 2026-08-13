@@ -1,6 +1,6 @@
 {
   "world_id": "home",
-  "revision": "home-v1",
+  "revision": "home-v1.1-effects",
   "name": "Darian Home",
   "start_location": "room_bedroom",
   "rooms": [
@@ -13,17 +13,53 @@
   "objects": [
     {"id": "obj_bed", "name": "Bed", "room": "room_bedroom", "capabilities": ["sleep", "rest"]},
     {"id": "obj_nightstand", "name": "Nightstand", "room": "room_bedroom", "capabilities": ["inspect", "use"]},
-    {"id": "obj_shower", "name": "Shower", "room": "room_bathroom", "capabilities": ["shower"]},
-    {"id": "obj_sink", "name": "Sink", "room": "room_bathroom", "capabilities": ["drink", "use"]},
+    {
+      "id": "obj_shower",
+      "name": "Shower",
+      "room": "room_bathroom",
+      "capabilities": ["shower"],
+      "effects": {
+        "shower": {"physiology.cleanliness": {"set": 100.0}}
+      }
+    },
+    {
+      "id": "obj_sink",
+      "name": "Sink",
+      "room": "room_bathroom",
+      "capabilities": ["drink", "use"],
+      "effects": {
+        "drink": {"needs.thirst": -35.0}
+      }
+    },
     {"id": "obj_toilet", "name": "Toilet", "room": "room_bathroom", "capabilities": ["use"]},
-    {"id": "obj_fridge", "name": "Refrigerator", "room": "room_kitchen", "capabilities": ["inspect", "eat", "drink"]},
-    {"id": "obj_pantry", "name": "Pantry", "room": "room_kitchen", "capabilities": ["inspect", "eat"]},
+    {"id": "obj_fridge", "name": "Refrigerator", "room": "room_kitchen", "capabilities": ["inspect", "use"]},
+    {"id": "obj_pantry", "name": "Pantry", "room": "room_kitchen", "capabilities": ["inspect", "use"]},
     {"id": "obj_stove", "name": "Stove", "room": "room_kitchen", "capabilities": ["cook", "use"]},
-    {"id": "obj_table", "name": "Dining Table", "room": "room_kitchen", "capabilities": ["eat", "use"]},
+    {"id": "obj_table", "name": "Dining Table", "room": "room_kitchen", "capabilities": ["use"]},
     {"id": "obj_sofa", "name": "Sofa", "room": "room_living", "capabilities": ["rest", "read"]},
     {"id": "obj_bookshelf", "name": "Bookshelf", "room": "room_living", "capabilities": ["inspect", "read"]},
-    {"id": "obj_water", "name": "Drinking Water", "room": "room_kitchen", "capabilities": ["drink"]},
-    {"id": "obj_meal_stock", "name": "Meal Ingredients", "room": "room_kitchen", "capabilities": ["cook", "eat"]},
+    {
+      "id": "obj_water",
+      "name": "Drinking Water",
+      "room": "room_kitchen",
+      "capabilities": ["drink"],
+      "effects": {
+        "drink": {"needs.thirst": -55.0}
+      }
+    },
+    {
+      "id": "obj_meal_stock",
+      "name": "Meal Ingredients",
+      "room": "room_kitchen",
+      "capabilities": ["cook", "eat"],
+      "effects": {
+        "eat": {
+          "needs.hunger": -50.0,
+          "needs.energy": 8.0,
+          "needs.thirst": 2.0
+        }
+      }
+    },
     {"id": "obj_weights", "name": "Free Weights", "room": "room_gym", "capabilities": ["train", "inspect"]},
     {"id": "obj_heavy_bag", "name": "Heavy Bag", "room": "room_gym", "capabilities": ["train", "inspect"]}
   ],
