@@ -5,6 +5,7 @@ import json
 import pytest
 
 from observer_sandbox.db import connect
+from observer_sandbox.profile_observer import profile_section
 from observer_sandbox.runtime import initialize
 from observer_sandbox.simulation import Action, action_options, apply_action, validate_action
 from observer_sandbox.training_modifiers import training_readiness_modifier
@@ -36,6 +37,12 @@ def test_healthy_training_readiness_preserves_p3_1_fatigue_baseline(tmp_path):
         assert readiness["readiness"] == 1.0
         assert readiness["fatigue_cost_multiplier"] == 1.0
 
+        recovery = profile_section(conn, "char_darian", "recovery")
+        derived = next(row for row in recovery["content"] if row["field_key"] == "training.readiness")
+        assert derived["value"] == 100.0
+        assert derived["unit"] == "percent"
+        assert derived["mode"] == "derived"
+
         after = apply_action(conn, Action("train", 60, FREE_WEIGHTS, "healthy readiness training"))
         assert after["fatigue"] == pytest.approx(18.5)
 
@@ -54,6 +61,10 @@ def test_degraded_but_legal_readiness_increases_training_fatigue_cost(tmp_path):
         })
         assert 0.0 < modifier["readiness"] < 1.0
         assert 1.0 < modifier["fatigue_cost_multiplier"] <= 1.5
+
+        recovery = profile_section(conn, "char_darian", "recovery")
+        derived = next(row for row in recovery["content"] if row["field_key"] == "training.readiness")
+        assert derived["value"] == pytest.approx(modifier["readiness"] * 100.0)
 
         after = apply_action(conn, Action("train", 60, FREE_WEIGHTS, "degraded readiness training"))
         assert after["fatigue"] > 58.5  # old fixed-cost result from a 40-fatigue start
