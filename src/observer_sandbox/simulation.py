@@ -51,7 +51,7 @@ PASSIVE_DRIFT_PER_HOUR = {
 }
 ACTION_EFFECTS_PER_HOUR: dict[str, dict[str, float]] = {
     "sleep": {"energy": 11.0, "sleepiness": -15.0, "hunger": 0.5, "thirst": 0.75, "fatigue": -10.0},
-    "rest": {"energy": 10.0, "sleepiness": -4.0, "fatigue": -7.0},
+    "rest": {"energy": 10.0, "fatigue": -7.0},
     "train": {"energy": -10.0, "hunger": 4.0, "thirst": 6.0, "cleanliness": -6.0, "fatigue": 20.0},
     "read": {"energy": -0.5, "fatigue": -1.0},
     "idle": {"energy": 3.0, "fatigue": -2.0},
