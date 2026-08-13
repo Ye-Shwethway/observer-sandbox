@@ -17,6 +17,9 @@ from observer_sandbox.db import connect
 from observer_sandbox.runtime import initialize
 from observer_sandbox.simulation import Action, runtime_value, set_runtime_value, snapshot, validate_action
 
+BED = "obj_thorne_estate_master_bed"
+WEIGHTS = "obj_thorne_estate_gym_free_weights"
+
 
 class FixedProvider:
     def __init__(self, action: Action):
@@ -40,20 +43,20 @@ def test_action_contract_rejects_wrong_or_remote_targets(tmp_path):
     initialize(db)
     with connect(db) as conn:
         for action in (
-            Action("rest", 30, "obj_weights"),
-            Action("train", 60, "obj_bed"),
-            Action("idle", 10, "obj_bed"),
-            Action("sleep", 5, "obj_bed"),
+            Action("rest", 30, WEIGHTS),
+            Action("train", 60, BED),
+            Action("idle", 10, BED),
+            Action("sleep", 5, BED),
         ):
             with pytest.raises(ValueError):
                 validate_action(conn, "char_darian", action)
-        validate_action(conn, "char_darian", Action("rest", 30, "obj_bed"))
+        validate_action(conn, "char_darian", Action("rest", 30, BED))
 
 
 def test_scheduler_does_not_call_model_when_disabled_or_paused(tmp_path):
     db = tmp_path / "observer.sqlite3"
     initialize(db)
-    provider = FixedProvider(Action("rest", 30, "obj_bed", "recover"))
+    provider = FixedProvider(Action("rest", 30, BED, "recover"))
     with connect(db) as conn:
         assert autonomy_tick(conn, provider=provider, now_wall=1000)["state"] == "disabled"
         assert provider.calls == 0
@@ -67,7 +70,7 @@ def test_scheduler_does_not_call_model_when_disabled_or_paused(tmp_path):
 def test_scheduler_persists_then_completes_one_action(tmp_path):
     db = tmp_path / "observer.sqlite3"
     initialize(db)
-    provider = FixedProvider(Action("rest", 30, "obj_bed", "short recovery"))
+    provider = FixedProvider(Action("rest", 30, BED, "short recovery"))
     with connect(db) as conn:
         _enable(conn, speed=60.0)
         before = snapshot(conn)
@@ -79,11 +82,9 @@ def test_scheduler_persists_then_completes_one_action(tmp_path):
         assert snapshot(conn)["sim_time"] == before["sim_time"]
         assert snapshot(conn)["current_action"] == "rest"
         assert provider.calls == 1
-
         active = autonomy_tick(conn, provider=provider, now_wall=1015)
         assert active["state"] == "in_progress"
         assert provider.calls == 1
-
         completed = autonomy_tick(conn, provider=provider, now_wall=1030)
         assert completed["state"] == "completed"
         assert runtime_value(conn, PENDING_KEY, None) is None
@@ -97,13 +98,13 @@ def test_scheduler_persists_then_completes_one_action(tmp_path):
 def test_scheduler_recovers_completed_pending_without_duplicate(tmp_path):
     db = tmp_path / "observer.sqlite3"
     initialize(db)
-    provider = FixedProvider(Action("rest", 30, "obj_bed", "short recovery"))
+    provider = FixedProvider(Action("rest", 30, BED, "short recovery"))
     with connect(db) as conn:
         _enable(conn, speed=60.0)
         planned = autonomy_tick(conn, provider=provider, now_wall=1000)
         action_id = planned["pending"]["action_id"]
         from observer_sandbox.simulation import apply_action
-        apply_action(conn, Action("rest", 30, "obj_bed", "short recovery"), action_id=action_id)
+        apply_action(conn, Action("rest", 30, BED, "short recovery"), action_id=action_id)
         assert runtime_value(conn, PENDING_KEY, None) is not None
         recovered = autonomy_tick(conn, provider=provider, now_wall=1031)
         assert recovered["state"] == "recovered_completed"
@@ -115,17 +116,15 @@ def test_scheduler_recovers_completed_pending_without_duplicate(tmp_path):
 def test_canary_runs_exactly_one_action_then_disables(tmp_path):
     db = tmp_path / "observer.sqlite3"
     initialize(db)
-    provider = FixedProvider(Action("rest", 30, "obj_bed", "bounded canary recovery"))
+    provider = FixedProvider(Action("rest", 30, BED, "bounded canary recovery"))
     with connect(db) as conn:
         set_autonomy_speed(conn, 60.0)
         armed = arm_canary_once(conn)
         assert armed["autonomy_enabled"] is True
         assert armed["mode"] == CANARY_MODE
-
         planned = autonomy_tick(conn, provider=provider, now_wall=1000)
         assert planned["state"] == "planned"
         assert planned["pending"]["autonomy_mode"] == CANARY_MODE
-
         completed = autonomy_tick(conn, provider=provider, now_wall=1030)
         assert completed["state"] == "completed"
         assert runtime_value(conn, "autonomy_enabled", True) is False
@@ -134,7 +133,6 @@ def test_canary_runs_exactly_one_action_then_disables(tmp_path):
         assert provider.calls == 1
         assert conn.execute("SELECT COUNT(*) FROM events WHERE event_type='action_completed'").fetchone()[0] == 1
         assert conn.execute("SELECT COUNT(*) FROM events WHERE event_type='autonomy_canary_completed'").fetchone()[0] == 1
-
         assert autonomy_tick(conn, provider=provider, now_wall=1031)["state"] == "disabled"
         assert provider.calls == 1
 
@@ -142,7 +140,7 @@ def test_canary_runs_exactly_one_action_then_disables(tmp_path):
 def test_synchronous_canary_command_completes_without_wall_time_wait(tmp_path):
     db = tmp_path / "observer.sqlite3"
     initialize(db)
-    provider = FixedProvider(Action("rest", 30, "obj_bed", "bounded synchronous canary"))
+    provider = FixedProvider(Action("rest", 30, BED, "bounded synchronous canary"))
     with connect(db) as conn:
         before = snapshot(conn)
         result = run_canary_once(conn, provider=provider, now_wall=1000)
@@ -177,7 +175,7 @@ def test_canary_decision_failure_disables_immediately(tmp_path):
 def test_control_guards_pending_action_and_speed(tmp_path):
     db = tmp_path / "observer.sqlite3"
     initialize(db)
-    provider = FixedProvider(Action("rest", 30, "obj_bed", "recover"))
+    provider = FixedProvider(Action("rest", 30, BED, "recover"))
     with connect(db) as conn:
         set_autonomy_paused(conn, False)
         with pytest.raises(ValueError):
