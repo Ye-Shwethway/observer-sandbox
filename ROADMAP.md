@@ -35,63 +35,82 @@ Roadmap synchronized: 2026-08-13
 - P3.4 Training Effectiveness Outcome — COMPLETE / ACCEPTANCE VERIFIED / DEPLOYED.
 - P3.5 Effective Training Load — COMPLETE / ACCEPTANCE VERIFIED / DEPLOYED.
 - Minimum Training Stimulus v1 — COMPLETE / PRE-MERGE PRODUCTION-COPY ACCEPTANCE VERIFIED / DEPLOYED.
-- Adaptation Curve v1 — COMPLETE / PRE-MERGE PRODUCTION-COPY ACCEPTANCE VERIFIED / DEPLOYED / READ-ONLY.
-- Stimulus Saturation / Diminishing Returns v1 — COMPLETE / PRE-MERGE PRODUCTION-COPY ACCEPTANCE VERIFIED / DEPLOYED / READ-ONLY.
 
-Current progression evidence chain:
-`target -> readiness -> fatigue inefficiency -> effectiveness -> effective workload -> immediate physiology -> session stimulus evidence -> read-only level/ceiling adaptation factor -> read-only recent-stimulus saturation factor`.
+Current short-term chain:
+`target -> readiness -> fatigue inefficiency -> effectiveness -> effective workload -> immediate physiology -> session Strength stimulus evidence`.
 
-Minimum Training Stimulus v1 remains deliberately narrow:
-- action: `train`;
-- target: Free Weights only;
-- domain: Strength only;
-- `stimulus_units = effective_minutes / 60`;
-- evidence persists in action outcome + completion event;
-- Heavy Bag and other targets emit no Strength stimulus in v1;
-- raw Strength and derived grade do not change.
+Minimum Training Stimulus v1 remains narrow: Free Weights + Strength only; `stimulus_units = effective_minutes / 60`; Heavy Bag and other targets do not emit Strength stimulus in v1.
 
-Adaptation Curve v1 is read-only:
-- curve id `strength-level-curve-v1`;
+## Strength progression math gates
+
+All pre-mutation math gates are now COMPLETE / PRE-MERGE PRODUCTION-COPY ACCEPTANCE VERIFIED / DEPLOYED.
+
+### Adaptation Curve v1 — READ-ONLY
+- curve `strength-level-curve-v1`;
 - `effective_ceiling = natural_ceiling * ceiling_multiplier`;
-- `remaining_fraction = clamp((effective_ceiling - current) / effective_ceiling, 0, 1)`;
-- `level_factor = remaining_fraction ^ 2` by default;
-- default natural ceiling `100`, default ceiling multiplier `1.0`;
-- Strength 90 -> factor `0.01`; 95 -> `0.0025`; 99 -> `0.0001`;
-- an abstract ceiling modifier changes effective headroom without mutating raw Strength.
+- `level_factor = clamp((effective_ceiling-current)/effective_ceiling,0,1)^2`;
+- default natural ceiling 100;
+- Strength 90 -> 0.01, 95 -> 0.0025, 99 -> 0.0001.
 
-Stimulus Saturation v1 is read-only:
-- curve id `strength-stimulus-saturation-v1`;
-- source: existing `action_completed` training stimulus evidence, not a new mutable progression counter;
-- rolling window: 72 simulated hours;
-- only `training_stimulus.domain == strength` counts;
+### Stimulus Saturation / Diminishing Returns v1 — READ-ONLY
+- 72 simulated-hour Strength-stimulus window from existing completion-event evidence;
 - `saturation_factor = 1 / (1 + 0.3 * recent_strength_stimulus_units)`;
-- reference: 0 units -> 1.0, 1 -> ~0.7692, 2 -> 0.625, 4 -> ~0.4545;
-- querying does not consume stimulus, alter events, or mutate Strength;
-- event insertion ID ordering is explicitly not assumed to equal simulated-time ordering.
+- no mutable saturation counter; event insertion id is not treated as simulated-time chronology.
 
-Evidence: Minimum Training Stimulus PR #14 merge `3578de12ebc750aca397b16f01f8bd368e1af11a`, acceptance `31685799302`, Deploy #140 `31685928444`; Adaptation Curve PR #15 merge `52644bfcbb8b7b9cb4196d8b5f253a32e053aaf2`, acceptance `31686888383`, release `abfe82d279fb1c85a027109185b1d28ae859fbd1`, Deploy #141 `31686957768`; Stimulus Saturation PR #16 merge `f02f2407957872dad192701b3726c3f2d8ff096d`, CI #405 SUCCESS, acceptance #2 `31687327606`, release `052931125b23f1f50166bea8142f8da358b694ec`, Deploy #142 `31687401802` SUCCESS.
+### Recovery Realization v1 — READ-ONLY
+- latest positive Strength stimulus establishes the recovery boundary;
+- <=6 sim hours -> zero time realization;
+- 6..48h -> linear ramp;
+- >=48h -> full time eligibility;
+- state quality uses energy, alertness and systemic-fatigue recovery;
+- fatigue >=70 hard-blocks realization;
+- `recovery_factor = clamp(time_factor * state_quality * recovery_multiplier,0,1)`.
 
-## Progression mutation gates
+### Detraining / Prolonged-Untrained Decay v1 — READ-ONLY
+- no Strength-training history -> no invented decay start;
+- first 14 simulated days untrained -> zero decay pressure;
+- after grace: `time_factor = 1 - exp(-overdue_days/60)`;
+- high-level exposure `= clamp(current/effective_ceiling,0,1)^2`;
+- decay pressure stays bounded and does not mutate Strength.
 
-Raw Strength/stat mutation is **not authorized** yet.
+### Adaptation Preview v1 — READ-ONLY
+- positive proof scale `0.25` raw Strength points per fully-realized low-level stimulus unit before level/saturation/recovery factors;
+- positive preview: `0.25 * recent_stimulus * level_factor * saturation_factor * recovery_factor * adaptation_rate_multiplier`;
+- at Strength 90, one recent fully recovered 1.0 stimulus unit projects about `+0.001923` with default modifiers;
+- negative proof rate: `0.02 * decay_pressure * preview_days * decay_rate_multiplier`;
+- default preview horizon 1 simulated day;
+- no raw mutation or stimulus consumption.
 
-Required order before Stat Mutation Gate v1:
-1. Adaptation Curve v1 — COMPLETE / read-only.
-2. Stimulus Saturation / Diminishing Returns v1 — COMPLETE / read-only.
-3. Recovery Realization v1 — pending.
-4. Detraining / Prolonged-Untrained Decay v1 — pending and mandatory before mutation.
-5. Adaptation Preview v1 — pending; compose positive and negative projected deltas without mutation.
-6. Stat Mutation Gate v1 — only after all prior gates are accepted; tiny audited decimal raw-stat updates only.
+Special modifiers remain factorized: effective-ceiling, adaptation-rate, recovery, detraining-pressure and decay-rate are distinct simulation sockets. No real-world drug dosing/medical guidance is modeled.
 
-Positive path:
-`eligible stimulus -> level/ceiling difficulty -> saturation/diminishing return -> recovery realization -> previewed positive delta`.
+## Stat Mutation Gate v1
 
-Regression path:
-`elapsed relevant untrained time -> detraining eligibility -> decay curve -> previewed negative delta`.
+### Strength Progression Settlement v1 Core
+Status: COMPLETE / PRE-MERGE PRODUCTION-COPY ACCEPTANCE VERIFIED / DEPLOYED / **NOT AUTOMATICALLY ACTIVE**.
 
-Special modifiers stay abstract and factorized (for example effective-ceiling, adaptation-rate, or recovery multipliers). Do not implement real-world drug dosing/medical guidance.
+Core safety invariants:
+1. first settlement is non-mutating bootstrap; historical pre-feature Strength stimulus is marked consumed so deployment cannot retroactively jump Strength;
+2. consumed stimulus event ids are persisted in `strength_progression_settled` audit events and cannot be credited twice;
+3. positive stimulus requires >=48 simulated hours and fatigue below the existing 70 hard block; blocked/too-young stimulus remains pending;
+4. detraining uses an analytic integral across the exact unsettled simulated-time interval and resets at Strength-training events;
+5. every cursor advance is audited; every actual raw Strength mutation is also written to `character_profile_history`;
+6. replay at the same simulated settlement boundary is a no-op;
+7. mutation authority becomes `strength-progression-settlement-v1`, mode `simulated`, six-decimal raw precision, bounded to 0..100.
 
-Canonical contract: `docs/TRAINING_PROGRESSION_GATES.md`.
+Evidence: PR #20 merge `d6c94c90aec354faedd42656c42d078cb5bd42a3`; CI #420 SUCCESS; Strength Progression Settlement v1 Acceptance #2 `31688789743` SUCCESS on a disposable live production DB copy; release `028f1bf4506f2a0192a2df987d1c3cb24b8a4fe5`; Deploy #146 `31688891757` SUCCESS.
+
+The core is deliberately not called by the production service yet. Production Strength therefore must not change merely because this code is deployed.
+
+## Activation rule
+
+The next bounded slice is **Strength Progression Automatic Activation v1**. Activation must remain separate from the mutation-core PR and must prove on a disposable production copy that:
+- the first automatic settlement is bootstrap-only and preserves live Strength;
+- automatic scheduling cannot double-consume stimulus or double-apply detraining;
+- no-op/cursor event volume is bounded rather than emitted every tight service tick;
+- future eligible Strength stimulus settles without manual DB edits;
+- production deployment/readback preserves Telegram/Gemini/autonomy/runtime health.
+
+Preferred activation policy: evaluate after action-completion boundaries, but only call settlement when either (a) an eligible unconsumed Strength stimulus exists or (b) a bounded detraining checkpoint is due (target: at most once per simulated day for pure time-decay settlement). Bootstrap is the one explicit exception.
 
 ## Post-P3.5 stabilization
 
@@ -110,40 +129,18 @@ Do not add more verbs merely for breadth. A verb requiring new state/consequence
 
 ## Read-only grading
 
-### Strength exemplar
-Status: COMPLETE / PRE-MERGE ACCEPTANCE VERIFIED / DEPLOYED.
-
-- raw `raps_pa.strength = 90` remains authoritative;
-- named proof scheme `raps-100-proof-v1` derives Grade S;
-- grade is query/presentation metadata only;
-- no schema change.
-
-### Attribute Grading Batch 1
-Status: COMPLETE / PRE-MERGE PRODUCTION-COPY ACCEPTANCE VERIFIED / DEPLOYED.
-
-- 36 explicitly opted-in compatible 0..100 Attributes fields are graded;
-- IQ is excluded because it uses a different scale;
-- Skills require their own family;
-- Body measurements/composition require a **separate exemplar + batch** because their normalization/calculation semantics differ materially;
-- raw profile values remain unchanged.
-
-## Grading family rule
-
-Do not use one numeric evaluator merely because multiple domains contain numbers.
-
-- 0..100 compatible Attributes: current `raps-100-proof-v1` family.
-- IQ: separate scale/evaluator if useful.
-- Skills: separate family because progression/experience semantics may differ.
-- Body measurements/composition: separate exemplar and batch; evaluator may need units, body composition, stature/proportion context and/or genetic ceilings rather than flat thresholds.
+- Strength grading exemplar — COMPLETE / DEPLOYED.
+- Attribute Grading Batch 1 — COMPLETE / DEPLOYED; 36 explicitly opted-in compatible 0..100 Attributes fields.
+- IQ remains excluded because its scale differs.
+- Skills remain a separate grading/progression family.
+- Body measurements/composition remain a **separate exemplar + batch** because units, stature/proportion, composition and calculation semantics differ materially.
 
 ## Deferred boundaries
 
 Not implemented:
-- recovery realization;
-- detraining/prolonged-untrained decay;
-- composed adaptation preview;
-- raw attribute/skill/body-measurement progression mutation;
-- hypertrophy/body composition progression;
+- automatic production Strength settlement activation;
+- progression for non-Strength attributes, skills, body measurements or composition;
+- hypertrophy/body-composition progression;
 - body-measurement grading evaluator;
 - IQ/skills grading evaluators;
 - inventory/resource depletion;
@@ -153,4 +150,4 @@ Not implemented:
 
 ## Current resume point
 
-**Adaptation Curve v1 and Stimulus Saturation v1 are live/read-only.** The next bounded implementation slice is **Recovery Realization v1 — Free Weights + Strength only**. Do not mutate Strength. After recovery, implement mandatory Detraining/Prolonged-Untrained Decay, then a composed Adaptation Preview. Only after all are accepted may Stat Mutation Gate v1 be considered.
+All required Strength progression formulas plus the idempotent settlement core are proven. Resume with **Strength Progression Automatic Activation v1**. Keep activation bounded and separately accepted; do not batch other attributes into this first mutation activation exemplar.
