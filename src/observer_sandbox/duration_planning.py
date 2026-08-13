@@ -23,6 +23,7 @@ GENERIC_PROFILES: dict[str, DurationProfile] = {
     "use": DurationProfile(2, 10, "simple object use"),
     "train": DurationProfile(30, 90, "ordinary training session"),
     "read": DurationProfile(20, 60, "focused reading"),
+    "research": DurationProfile(20, 90, "focused research session"),
     "idle": DurationProfile(5, 20, "brief idle period"),
 }
 
@@ -32,6 +33,7 @@ TARGET_PROFILES: dict[tuple[str, str], DurationProfile] = {
     ("inspect", "obj_thorne_estate_kitchen_pantry"): DurationProfile(2, 5, "quick pantry check"),
     ("use", "obj_thorne_estate_kitchen_stove"): DurationProfile(10, 30, "meal preparation"),
     ("read", "obj_thorne_estate_library_research_desk"): DurationProfile(20, 90, "focused research reading"),
+    ("research", "obj_thorne_estate_library_research_desk"): DurationProfile(30, 90, "focused desk research"),
     ("train", "obj_thorne_estate_gym_heavy_bag"): DurationProfile(20, 45, "heavy-bag session"),
     ("train", "obj_thorne_estate_gym_free_weights"): DurationProfile(45, 90, "strength session"),
     ("train", "obj_thorne_estate_training_combat_mat"): DurationProfile(20, 60, "combat-mat practice"),

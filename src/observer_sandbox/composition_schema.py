@@ -123,6 +123,7 @@ ACTION_DEFINITIONS: tuple[dict[str, Any], ...] = (
     {"action_type": "use", "label": "Use", "min": 1, "max": 120, "target_mode": "object", "capability": "use", "colocation": 1},
     {"action_type": "train", "label": "Train", "min": 10, "max": 240, "target_mode": "object", "capability": "train", "colocation": 1},
     {"action_type": "read", "label": "Read", "min": 5, "max": 240, "target_mode": "object", "capability": "read", "colocation": 1},
+    {"action_type": "research", "label": "Research", "min": 10, "max": 180, "target_mode": "object", "capability": "research", "colocation": 1},
     {"action_type": "idle", "label": "Idle", "min": 1, "max": 120, "target_mode": "none", "capability": None, "colocation": 0},
 )
 

@@ -185,12 +185,15 @@ class ModelDecisionProvider:
         return enriched
 
     def choose(self, state: dict[str, Any], available_actions: list[str]) -> Action:
+        enriched = self._enrich_state(state)
+        option_actions = {str(option["action"]) for option in enriched["action_options"]}
+        known_actions = sorted(set(available_actions) | option_actions)
         decision = generate_character_decision(
             self.conn,
             character_id=self.character_id,
             role=self.role,
-            state=self._enrich_state(state),
-            available_actions=available_actions,
+            state=enriched,
+            available_actions=known_actions,
         )
         return Action(
             decision["action"],
