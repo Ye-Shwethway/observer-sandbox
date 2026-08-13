@@ -4,6 +4,7 @@ import json
 import sqlite3
 from typing import Any
 
+from .grading import evaluate_raps_100
 from .simulation import snapshot
 from .training_modifiers import training_readiness_modifier
 
@@ -189,19 +190,28 @@ def _profile_values(conn: sqlite3.Connection, character_id: str, domains: tuple[
         """,
         (character_id, *domains, *domains),
     ).fetchall()
-    return [
-        {
+    content: list[dict[str, Any]] = []
+    for row in rows:
+        value = json.loads(row["value_json"])
+        item: dict[str, Any] = {
             "kind": "field",
             "field_key": row["field_key"],
             "domain": row["domain"],
             "label": row["label"],
-            "value": json.loads(row["value_json"]),
+            "value": value,
             "data_type": row["data_type"],
             "unit": row["unit"],
             "mode": row["mode"],
         }
-        for row in rows
-    ]
+        if row["field_key"] == "raps_pa.strength" and isinstance(value, (int, float)):
+            result = evaluate_raps_100(value)
+            item["grade"] = {
+                "scheme_id": result.scheme_id,
+                "grade": result.grade,
+                "label": result.label,
+            }
+        content.append(item)
+    return content
 
 
 def _skills(conn: sqlite3.Connection, character_id: str) -> list[dict[str, Any]]:
