@@ -6,7 +6,10 @@ from collections import deque
 from typing import Any
 
 
-HUNGER_FIELD_KEY = "needs.hunger"
+NEED_RESOLVERS: dict[str, dict[str, str]] = {
+    "hunger": {"field_key": "needs.hunger", "action": "eat"},
+    "thirst": {"field_key": "needs.thirst", "action": "drink"},
+}
 
 
 def _effect_reduces_field(spec: Any, *, current_value: float) -> bool:
@@ -25,16 +28,28 @@ def _effect_reduces_field(spec: Any, *, current_value: float) -> bool:
     return False
 
 
-def _option_reduces_hunger(option: dict[str, Any], *, current_hunger: float) -> bool:
-    if option.get("action") != "eat":
+def _option_reduces_need(
+    option: dict[str, Any],
+    *,
+    action: str,
+    field_key: str,
+    current_value: float,
+) -> bool:
+    if option.get("action") != action:
         return False
     effects = option.get("effects")
     if not isinstance(effects, dict):
         return False
-    return _effect_reduces_field(effects.get(HUNGER_FIELD_KEY), current_value=current_hunger)
+    return _effect_reduces_field(effects.get(field_key), current_value=current_value)
 
 
-def _hunger_resolver_rooms(conn: sqlite3.Connection, *, current_hunger: float) -> set[str]:
+def _resolver_rooms(
+    conn: sqlite3.Connection,
+    *,
+    action: str,
+    field_key: str,
+    current_value: float,
+) -> set[str]:
     rows = conn.execute(
         """
         SELECT r.source_id AS room_id,e.capabilities_json,f.value_json
@@ -47,13 +62,13 @@ def _hunger_resolver_rooms(conn: sqlite3.Connection, *, current_hunger: float) -
     rooms: set[str] = set()
     for row in rows:
         capabilities = json.loads(row["capabilities_json"] or "[]")
-        if "eat" not in capabilities:
+        if action not in capabilities:
             continue
         effects = json.loads(row["value_json"] or "{}")
-        eat_effects = effects.get("eat") if isinstance(effects, dict) else None
-        if not isinstance(eat_effects, dict):
+        action_effects = effects.get(action) if isinstance(effects, dict) else None
+        if not isinstance(action_effects, dict):
             continue
-        if _effect_reduces_field(eat_effects.get(HUNGER_FIELD_KEY), current_value=current_hunger):
+        if _effect_reduces_field(action_effects.get(field_key), current_value=current_value):
             rooms.add(str(row["room_id"]))
     return rooms
 
@@ -101,6 +116,20 @@ def _nearest_first_hops(
     return first_hops
 
 
+def _active_supported_need(decision_signals: dict[str, Any]) -> dict[str, Any] | None:
+    """Resolve only the authored highest-priority need when this guard supports it.
+
+    `needs_attention` is already ordered by the cognition policy: critical before
+    strong, then the authored same-level need order. Never skip an unsupported
+    higher-priority need to force a lower hunger/thirst action.
+    """
+    attention = decision_signals.get("needs_attention") or []
+    first = next((item for item in attention if isinstance(item, dict)), None)
+    if not isinstance(first, dict):
+        return None
+    return first if first.get("need") in NEED_RESOLVERS else None
+
+
 def shape_action_options_for_needs(
     conn: sqlite3.Connection,
     *,
@@ -108,39 +137,46 @@ def shape_action_options_for_needs(
     action_options: list[dict[str, Any]],
     decision_signals: dict[str, Any],
 ) -> list[dict[str, Any]]:
-    """Prevent causally useless discretionary behavior under strong hunger.
+    """Expose only causal recovery choices for supported strong physiological needs.
 
-    v1 deliberately covers hunger only. If strong/critical hunger is active and no
-    different critical physiological need competes for priority, expose only a
-    local authored hunger-reducing eat action, or otherwise only shortest-path
-    movement that makes causal progress toward a room containing such a resolver.
+    v2 covers hunger and thirst using the same authored-affordance pattern. When the
+    highest-priority strong/critical need is supported, expose only a local action
+    whose authored effect reduces that need, or otherwise shortest-path movement
+    toward the nearest room containing such a resolver.
 
-    If no authored resolver or route exists, preserve the original options rather
-    than deadlocking autonomy; that missing-world-data condition remains observable.
+    If the highest-priority need is not yet supported, or no authored resolver/route
+    exists, preserve the original options rather than silently reordering needs or
+    deadlocking autonomy.
     """
-    attention = decision_signals.get("needs_attention") or []
-    hunger_signal = next((item for item in attention if item.get("need") == "hunger"), None)
-    if not isinstance(hunger_signal, dict):
+    active = _active_supported_need(decision_signals)
+    if active is None:
         return action_options
 
-    competing_critical = any(
-        item.get("level") == "critical" and item.get("need") != "hunger"
-        for item in attention
-        if isinstance(item, dict)
-    )
-    if competing_critical:
-        return action_options
+    need = str(active["need"])
+    resolver = NEED_RESOLVERS[need]
+    field_key = resolver["field_key"]
+    action = resolver["action"]
+    current_value = float(state[need])
 
-    current_hunger = float(state["hunger"])
     local_resolvers = [
         option
         for option in action_options
-        if _option_reduces_hunger(option, current_hunger=current_hunger)
+        if _option_reduces_need(
+            option,
+            action=action,
+            field_key=field_key,
+            current_value=current_value,
+        )
     ]
     if local_resolvers:
         return local_resolvers
 
-    destination_rooms = _hunger_resolver_rooms(conn, current_hunger=current_hunger)
+    destination_rooms = _resolver_rooms(
+        conn,
+        action=action,
+        field_key=field_key,
+        current_value=current_value,
+    )
     first_hops = _nearest_first_hops(
         conn,
         start_room=str(state["location"]),

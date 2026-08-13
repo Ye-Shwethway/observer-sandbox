@@ -1,15 +1,15 @@
-name: Food Resolution Guard v1 Acceptance
+name: Causal Need Resolution v2 Acceptance
 
 on:
   pull_request:
     branches: [main]
     paths:
-      - 'config/worlds/home.v1.json'
       - 'config/characters/darian.autonomy-policy.json'
       - 'src/observer_sandbox/need_resolution.py'
       - 'src/observer_sandbox/model_decision.py'
       - 'tests/test_food_resolution_guard_v1.py'
-      - 'docs/FOOD_RESOLUTION_GUARD_V1.md'
+      - 'tests/test_cognition_policy.py'
+      - 'docs/CAUSAL_NEED_RESOLUTION_V2.md'
       - '.github/workflows/food-resolution-guard-v1-acceptance.yml'
 
 permissions:
@@ -39,10 +39,10 @@ jobs:
           VPS_USER: ${{ secrets.VPS_USER }}
           VPS_PORT: ${{ secrets.VPS_PORT || '22' }}
         run: |
-          ssh -p "$VPS_PORT" "$VPS_USER@$VPS_HOST" 'rm -rf /tmp/observer-food-resolution-v1 && mkdir -p /tmp/observer-food-resolution-v1'
-          rsync -az -e "ssh -p $VPS_PORT" src/ "$VPS_USER@$VPS_HOST:/tmp/observer-food-resolution-v1/src/"
-          rsync -az -e "ssh -p $VPS_PORT" config/ "$VPS_USER@$VPS_HOST:/tmp/observer-food-resolution-v1/config/"
-      - name: Dry-run observed hunger incident on production copy
+          ssh -p "$VPS_PORT" "$VPS_USER@$VPS_HOST" 'rm -rf /tmp/observer-causal-need-v2 && mkdir -p /tmp/observer-causal-need-v2'
+          rsync -az -e "ssh -p $VPS_PORT" src/ "$VPS_USER@$VPS_HOST:/tmp/observer-causal-need-v2/src/"
+          rsync -az -e "ssh -p $VPS_PORT" config/ "$VPS_USER@$VPS_HOST:/tmp/observer-causal-need-v2/config/"
+      - name: Dry-run observed thirst follow-up on production copy
         env:
           VPS_HOST: ${{ secrets.VPS_HOST }}
           VPS_USER: ${{ secrets.VPS_USER }}
@@ -51,78 +51,85 @@ jobs:
           ssh -p "$VPS_PORT" "$VPS_USER@$VPS_HOST" '
             set -euo pipefail
             cd /opt/observer-sandbox
-            TMP_DB=$(mktemp /tmp/observer-food-resolution-v1.XXXXXX.sqlite3)
-            trap "rm -f $TMP_DB $TMP_DB-wal $TMP_DB-shm; rm -rf /tmp/observer-food-resolution-v1" EXIT
+            TMP_DB=$(mktemp /tmp/observer-causal-need-v2.XXXXXX.sqlite3)
+            trap "rm -f $TMP_DB $TMP_DB-wal $TMP_DB-shm; rm -rf /tmp/observer-causal-need-v2" EXIT
             cp /var/lib/observer-sandbox/observer.sqlite3 "$TMP_DB"
             export OBSERVER_SANDBOX_DB="$TMP_DB"
-            export PYTHONPATH=/tmp/observer-food-resolution-v1/src
+            export PYTHONPATH=/tmp/observer-causal-need-v2/src
             .venv/bin/python - <<"PY"
           import json, os
           from observer_sandbox.db import connect
           from observer_sandbox.model_decision import ModelDecisionProvider
           from observer_sandbox.runtime import initialize
           from observer_sandbox.simulation import Action, apply_action, snapshot
-          from observer_sandbox.world import get_field, set_field
+          from observer_sandbox.world import set_field
 
           db = os.environ["OBSERVER_SANDBOX_DB"]
           initialize(db)
           with connect(db) as conn:
-              world_revision = conn.execute(
-                  "SELECT value_json FROM runtime_state WHERE key=?",
-                  ("world_identity_revision",),
-              ).fetchone()[0]
-              assert json.loads(world_revision) == "thorne-estate-v3.1-food-resolution"
+              provider = ModelDecisionProvider(conn)
 
-              provisions = conn.execute(
-                  "SELECT name,capabilities_json FROM entities WHERE id=?",
-                  ("obj_thorne_estate_food_storage_provisions",),
-              ).fetchone()
-              assert provisions["name"] == "Stored Food Provisions"
-              assert "eat" in json.loads(provisions["capabilities_json"])
-              shelves = conn.execute(
-                  "SELECT capabilities_json FROM entities WHERE id=?",
-                  ("obj_thorne_estate_food_storage_supply_shelves",),
-              ).fetchone()
-              assert json.loads(shelves["capabilities_json"]) == ["inspect"]
-
+              # Reproduce the Creator-observed post-food condition. Thirst and hunger
+              # are both strong before eating; authored need ordering puts thirst first.
               set_field(conn, "char_darian", "runtime.location", "loc_thorne_estate_food_storage")
-              set_field(conn, "char_darian", "needs.hunger", 61.3)
-              set_field(conn, "char_darian", "needs.thirst", 50.2)
-              set_field(conn, "char_darian", "needs.energy", 69.6)
-              set_field(conn, "char_darian", "needs.sleepiness", 10.8)
-              set_field(conn, "char_darian", "physiology.cleanliness", 41.3)
+              set_field(conn, "char_darian", "needs.hunger", 62.9)
+              set_field(conn, "char_darian", "needs.thirst", 51.9)
+              set_field(conn, "char_darian", "needs.energy", 68.3)
+              set_field(conn, "char_darian", "needs.sleepiness", 12.8)
+              set_field(conn, "char_darian", "physiology.cleanliness", 60.0)
               conn.commit()
 
-              state = snapshot(conn, "char_darian")
-              provider = ModelDecisionProvider(conn)
-              enriched = provider._enrich_state(state)
-              options = enriched["action_options"]
-              assert len(options) == 1
-              assert options[0]["action"] == "eat"
-              assert options[0]["target"] == "obj_thorne_estate_food_storage_provisions"
-              assert options[0]["effects"]["needs.hunger"] < 0
+              both = provider._enrich_state(snapshot(conn, "char_darian"))
+              assert [x["need"] for x in both["decision_signals"]["needs_attention"][:2]] == ["thirst", "hunger"]
+              assert both["action_options"]
+              assert all(x["action"] == "move" for x in both["action_options"])
+              assert {x["target"] for x in both["action_options"]} == {"loc_thorne_estate_training_hall"}
 
-              before_hunger = state["hunger"]
+              # Exact follow-up state shown by Creator after the meal/move sequence.
+              set_field(conn, "char_darian", "runtime.location", "loc_thorne_estate_training_hall")
+              set_field(conn, "char_darian", "needs.hunger", 14.0)
+              set_field(conn, "char_darian", "needs.thirst", 55.2)
+              set_field(conn, "char_darian", "needs.energy", 75.5)
+              set_field(conn, "char_darian", "needs.sleepiness", 14.0)
+              set_field(conn, "char_darian", "physiology.cleanliness", 60.0)
+              conn.commit()
+
+              hall = provider._enrich_state(snapshot(conn, "char_darian"))
+              assert hall["decision_signals"]["highest_priority"]["need"] == "thirst"
+              assert hall["action_options"]
+              assert all(x["action"] == "move" for x in hall["action_options"])
+              assert all(x["action"] != "train" for x in hall["action_options"])
+
+              set_field(conn, "char_darian", "runtime.location", "loc_thorne_estate_kitchen")
+              conn.commit()
+              kitchen_before = snapshot(conn, "char_darian")
+              kitchen = provider._enrich_state(kitchen_before)
+              assert len(kitchen["action_options"]) == 1
+              drink = kitchen["action_options"][0]
+              assert drink["action"] == "drink"
+              assert drink["target"] == "obj_thorne_estate_kitchen_drinking_water"
+              assert drink["effects"]["needs.thirst"] < 0
+
               after = apply_action(
                   conn,
-                  Action("eat", 20, "obj_thorne_estate_food_storage_provisions", "resolve strong hunger"),
+                  Action("drink", 5, "obj_thorne_estate_kitchen_drinking_water", "rehydrate before training"),
                   "char_darian",
               )
-              assert after["hunger"] < 55.0
-              assert after["hunger"] < before_hunger
-              assert get_field(conn, "obj_thorne_estate_food_storage_supply_shelves", "game.effects", {}) == {}
+              assert after["thirst"] < 50.0
+              assert after["thirst"] < kitchen_before["thirst"]
 
               print(json.dumps({
                   "ok": True,
                   "disposable": True,
                   "candidate_source": True,
                   "model_calls": 0,
-                  "reproduced_incident_hunger": before_hunger,
-                  "strong_hunger_options": options,
-                  "resolved_hunger": after["hunger"],
-                  "supply_shelves_inspect_only": True,
-                  "training_displaced_while_strong_hunger": False,
-                  "world_revision": json.loads(world_revision)
+                  "both_strong_priority": [x["need"] for x in both["decision_signals"]["needs_attention"][:2]],
+                  "food_storage_first_hop": both["action_options"],
+                  "training_hall_thirst_options": hall["action_options"],
+                  "kitchen_resolver": drink,
+                  "thirst_before_drink": kitchen_before["thirst"],
+                  "thirst_after_drink": after["thirst"],
+                  "training_blocked_while_strong_thirst": True
               }, indent=2, sort_keys=True))
           PY
             unset PYTHONPATH

@@ -9,17 +9,28 @@ FOOD_STORAGE = "loc_thorne_estate_food_storage"
 HOME_GYM = "loc_thorne_estate_home_gym"
 TRAINING_HALL = "loc_thorne_estate_training_hall"
 LIVING_ROOM = "loc_thorne_estate_living_room"
+KITCHEN = "loc_thorne_estate_kitchen"
 SUPPLY_SHELVES = "obj_thorne_estate_food_storage_supply_shelves"
 FOOD_PROVISIONS = "obj_thorne_estate_food_storage_provisions"
+DRINKING_WATER = "obj_thorne_estate_kitchen_drinking_water"
 
 
-def _set_strong_hunger(conn, *, location: str, hunger: float = 61.3, thirst: float = 50.2) -> None:
+def _set_needs(
+    conn,
+    *,
+    location: str,
+    hunger: float = 61.3,
+    thirst: float = 49.0,
+    energy: float = 69.6,
+    sleepiness: float = 10.8,
+    cleanliness: float = 60.0,
+) -> None:
     set_field(conn, "char_darian", "runtime.location", location)
     set_field(conn, "char_darian", "needs.hunger", hunger)
     set_field(conn, "char_darian", "needs.thirst", thirst)
-    set_field(conn, "char_darian", "needs.energy", 69.6)
-    set_field(conn, "char_darian", "needs.sleepiness", 10.8)
-    set_field(conn, "char_darian", "physiology.cleanliness", 41.3)
+    set_field(conn, "char_darian", "needs.energy", energy)
+    set_field(conn, "char_darian", "needs.sleepiness", sleepiness)
+    set_field(conn, "char_darian", "physiology.cleanliness", cleanliness)
     conn.commit()
 
 
@@ -27,10 +38,9 @@ def test_food_storage_exposes_real_food_and_suppresses_inspect_loop_under_strong
     db = tmp_path / "observer.sqlite3"
     initialize(db)
     with connect(db) as conn:
-        _set_strong_hunger(conn, location=FOOD_STORAGE)
+        _set_needs(conn, location=FOOD_STORAGE, hunger=61.3, thirst=49.0)
         state = snapshot(conn, "char_darian")
-        enriched = ModelDecisionProvider(conn)._enrich_state(state)
-        options = enriched["action_options"]
+        options = ModelDecisionProvider(conn)._enrich_state(state)["action_options"]
 
         assert options == [
             {
@@ -45,11 +55,57 @@ def test_food_storage_exposes_real_food_and_suppresses_inspect_loop_under_strong
         assert all(option["action"] != "train" for option in options)
 
 
-def test_eating_stored_food_resolves_strong_hunger(tmp_path):
+def test_same_level_thirst_precedes_hunger_using_authored_need_order(tmp_path):
     db = tmp_path / "observer.sqlite3"
     initialize(db)
     with connect(db) as conn:
-        _set_strong_hunger(conn, location=FOOD_STORAGE)
+        _set_needs(conn, location=FOOD_STORAGE, hunger=62.9, thirst=51.9)
+        state = snapshot(conn, "char_darian")
+        enriched = ModelDecisionProvider(conn)._enrich_state(state)
+
+        assert [item["need"] for item in enriched["decision_signals"]["needs_attention"][:2]] == ["thirst", "hunger"]
+        options = enriched["action_options"]
+        assert options
+        assert all(option["action"] == "move" for option in options)
+        assert {option["target"] for option in options} == {TRAINING_HALL}
+        assert all(option["action"] != "train" for option in options)
+        assert all(option["action"] != "eat" for option in options)
+
+
+def test_strong_thirst_routes_to_water_and_blocks_training_until_resolved(tmp_path):
+    db = tmp_path / "observer.sqlite3"
+    initialize(db)
+    with connect(db) as conn:
+        _set_needs(conn, location=TRAINING_HALL, hunger=13.7, thirst=55.2)
+        state = snapshot(conn, "char_darian")
+        options = ModelDecisionProvider(conn)._enrich_state(state)["action_options"]
+
+        assert options
+        assert all(option["action"] == "move" for option in options)
+        assert all(option["action"] != "train" for option in options)
+
+        _set_needs(conn, location=KITCHEN, hunger=13.7, thirst=55.2)
+        kitchen_state = snapshot(conn, "char_darian")
+        local = ModelDecisionProvider(conn)._enrich_state(kitchen_state)["action_options"]
+        assert local == [
+            {
+                "action": "drink",
+                "target": DRINKING_WATER,
+                "target_name": "Drinking Water",
+                "duration": (1, 30),
+                "effects": {"needs.thirst": -55.0},
+            }
+        ]
+
+        after = apply_action(conn, Action("drink", 5, DRINKING_WATER, "rehydrate before training"), "char_darian")
+        assert after["thirst"] < 50.0
+
+
+def test_eating_stored_food_resolves_strong_hunger_but_does_not_claim_hydration(tmp_path):
+    db = tmp_path / "observer.sqlite3"
+    initialize(db)
+    with connect(db) as conn:
+        _set_needs(conn, location=FOOD_STORAGE, hunger=61.3, thirst=49.0)
         before = snapshot(conn, "char_darian")
         after = apply_action(
             conn,
@@ -59,17 +115,14 @@ def test_eating_stored_food_resolves_strong_hunger(tmp_path):
         assert before["hunger"] == 61.3
         assert after["hunger"] < 55.0
         assert after["hunger"] < before["hunger"]
-
-        follow_up = ModelDecisionProvider(conn)._enrich_state(after)["action_options"]
-        assert len(follow_up) > 1
-        assert any(option["action"] != "eat" for option in follow_up)
+        assert after["thirst"] > before["thirst"]
 
 
 def test_strong_hunger_routes_only_toward_nearest_authored_food_resolvers(tmp_path):
     db = tmp_path / "observer.sqlite3"
     initialize(db)
     with connect(db) as conn:
-        _set_strong_hunger(conn, location=HOME_GYM, thirst=49.0)
+        _set_needs(conn, location=HOME_GYM, hunger=61.3, thirst=49.0)
         state = snapshot(conn, "char_darian")
         options = ModelDecisionProvider(conn)._enrich_state(state)["action_options"]
 
@@ -79,14 +132,14 @@ def test_strong_hunger_routes_only_toward_nearest_authored_food_resolvers(tmp_pa
         assert all(option["action"] != "train" for option in options)
 
 
-def test_competing_critical_need_prevents_hunger_guard_from_overriding_priority(tmp_path):
+def test_unsupported_higher_priority_need_is_not_skipped(tmp_path):
     db = tmp_path / "observer.sqlite3"
     initialize(db)
     with connect(db) as conn:
-        _set_strong_hunger(conn, location=FOOD_STORAGE, hunger=61.3, thirst=80.0)
+        _set_needs(conn, location=TRAINING_HALL, hunger=13.7, thirst=55.2, sleepiness=70.0)
         state = snapshot(conn, "char_darian")
-        options = ModelDecisionProvider(conn)._enrich_state(state)["action_options"]
-
-        # v1 must not force hunger resolution over a different critical need.
-        assert any(option["action"] == "inspect" and option["target"] == SUPPLY_SHELVES for option in options)
-        assert any(option["action"] == "eat" and option["target"] == FOOD_PROVISIONS for option in options)
+        enriched = ModelDecisionProvider(conn)._enrich_state(state)
+        assert enriched["decision_signals"]["highest_priority"]["need"] == "sleepiness"
+        # Thirst is supported by the causal guard, but must not jump ahead of the
+        # higher-priority sleepiness signal until that domain gets its own guard.
+        assert any(option["action"] == "train" for option in enriched["action_options"])
