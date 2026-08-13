@@ -1,5 +1,5 @@
 {
-  "revision": "training-method-semantics-v1.1-resource-awareness",
+  "revision": "training-method-semantics-v1",
   "profiles": {
     "obj_thorne_estate_gym_free_weights": {"method_id": "free_weight_strength", "method_name": "Free-Weight Strength Work", "family": "resistance", "workload_channels": ["resistance"], "tags": ["free_weight", "compound"], "planning": {"preferred_duration": [45, 90], "purpose": "strength session"}},
     "obj_thorne_estate_gym_heavy_bag": {"method_id": "heavy_bag_rounds", "method_name": "Heavy-Bag Rounds", "family": "combat_conditioning", "workload_channels": ["conditioning", "combat"], "tags": ["interval", "striking"], "planning": {"preferred_duration": [20, 45], "purpose": "heavy-bag session"}},
