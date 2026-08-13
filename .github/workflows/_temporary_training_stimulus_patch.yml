@@ -1,0 +1,57 @@
+name: Temporary Training Stimulus Patch
+
+on:
+  push:
+    branches:
+      - ianeo/minimum-training-stimulus-v1
+
+permissions:
+  contents: write
+
+jobs:
+  patch:
+    if: github.actor != 'github-actions[bot]'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ianeo/minimum-training-stimulus-v1
+      - name: Patch simulation integration
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+
+          path = Path('src/observer_sandbox/simulation.py')
+          text = path.read_text()
+
+          old_import = 'from .training_modifiers import training_readiness_modifier\n'
+          new_import = old_import + 'from .training_stimulus import training_stimulus_evidence\n'
+          if 'from .training_stimulus import training_stimulus_evidence\n' not in text:
+              if old_import not in text:
+                  raise SystemExit('training modifier import anchor not found')
+              text = text.replace(old_import, new_import, 1)
+
+          old_outcome = '''    training_load = _training_load_evidence(action)\n    outcome: dict[str, Any] = {"state_changes": changes, "modifiers": action.modifiers}\n    if training_load is not None:\n        outcome["training_load"] = training_load\n'''
+          new_outcome = '''    training_load = _training_load_evidence(action)\n    training_stimulus = training_stimulus_evidence(\n        action_name=action.name, target=action.target, training_load=training_load\n    )\n    outcome: dict[str, Any] = {"state_changes": changes, "modifiers": action.modifiers}\n    if training_load is not None:\n        outcome["training_load"] = training_load\n    if training_stimulus is not None:\n        outcome["training_stimulus"] = training_stimulus\n'''
+          if old_outcome in text:
+              text = text.replace(old_outcome, new_outcome, 1)
+          elif 'training_stimulus = training_stimulus_evidence(' not in text:
+              raise SystemExit('outcome anchor not found')
+
+          old_payload = '''    if training_load is not None:\n        payload["training_load"] = training_load\n    record_event(\n'''
+          new_payload = '''    if training_load is not None:\n        payload["training_load"] = training_load\n    if training_stimulus is not None:\n        payload["training_stimulus"] = training_stimulus\n    record_event(\n'''
+          if old_payload in text:
+              text = text.replace(old_payload, new_payload, 1)
+          elif 'payload["training_stimulus"] = training_stimulus' not in text:
+              raise SystemExit('payload anchor not found')
+
+          path.write_text(text)
+          PY
+      - name: Remove temporary workflow and commit patch
+        run: |
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git rm .github/workflows/_temporary_training_stimulus_patch.yml
+          git add src/observer_sandbox/simulation.py
+          git commit -m 'integrate minimum training stimulus evidence'
+          git push origin HEAD:ianeo/minimum-training-stimulus-v1
