@@ -1,0 +1,166 @@
+name: Strength Progression Auto Activation v1 Acceptance
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - 'src/observer_sandbox/strength_progression_activation.py'
+      - 'src/observer_sandbox/service.py'
+      - 'tests/test_strength_progression_activation_v1.py'
+      - 'docs/STRENGTH_PROGRESSION_AUTO_ACTIVATION_V1.md'
+      - '.github/workflows/strength-progression-auto-activation-v1-acceptance.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  acceptance:
+    if: ${{ vars.VPS_DEPLOY_ENABLED == 'true' }}
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Configure SSH
+        env:
+          VPS_SSH_KEY: ${{ secrets.VPS_SSH_KEY }}
+          VPS_HOST: ${{ secrets.VPS_HOST }}
+          VPS_PORT: ${{ secrets.VPS_PORT || '22' }}
+        run: |
+          test -n "$VPS_HOST"
+          test -n "$VPS_SSH_KEY"
+          install -m 700 -d ~/.ssh
+          printf '%s\n' "$VPS_SSH_KEY" > ~/.ssh/id_ed25519
+          chmod 600 ~/.ssh/id_ed25519
+          ssh-keyscan -p "$VPS_PORT" -H "$VPS_HOST" >> ~/.ssh/known_hosts
+      - name: Stage candidate
+        env:
+          VPS_HOST: ${{ secrets.VPS_HOST }}
+          VPS_USER: ${{ secrets.VPS_USER }}
+          VPS_PORT: ${{ secrets.VPS_PORT || '22' }}
+        run: |
+          ssh -p "$VPS_PORT" "$VPS_USER@$VPS_HOST" 'rm -rf /tmp/observer-strength-auto-v1 && mkdir -p /tmp/observer-strength-auto-v1'
+          rsync -az -e "ssh -p $VPS_PORT" src/ "$VPS_USER@$VPS_HOST:/tmp/observer-strength-auto-v1/src/"
+      - name: Dry-run bounded automatic activation on production copy
+        env:
+          VPS_HOST: ${{ secrets.VPS_HOST }}
+          VPS_USER: ${{ secrets.VPS_USER }}
+          VPS_PORT: ${{ secrets.VPS_PORT || '22' }}
+        run: |
+          ssh -p "$VPS_PORT" "$VPS_USER@$VPS_HOST" '
+            set -euo pipefail
+            cd /opt/observer-sandbox
+            TMP_DB=$(mktemp /tmp/observer-strength-auto-v1.XXXXXX.sqlite3)
+            trap "rm -f $TMP_DB $TMP_DB-wal $TMP_DB-shm; rm -rf /tmp/observer-strength-auto-v1" EXIT
+            cp /var/lib/observer-sandbox/observer.sqlite3 "$TMP_DB"
+            export OBSERVER_SANDBOX_DB="$TMP_DB"
+            export PYTHONPATH=/tmp/observer-strength-auto-v1/src
+            .venv/bin/python - <<"PY"
+          import json, os
+          from datetime import timedelta
+          from observer_sandbox.db import connect
+          from observer_sandbox.event_log import record_event
+          from observer_sandbox.simulation import ensure_sim_clock, snapshot
+          from observer_sandbox.strength_progression import SETTLEMENT_EVENT_TYPE
+          from observer_sandbox.strength_progression_activation import maybe_settle_strength_progression
+
+          db = os.environ["OBSERVER_SANDBOX_DB"]
+          with connect(db) as conn:
+              t0 = ensure_sim_clock(conn)
+              before = conn.execute(
+                  "SELECT value_json,mode,authority FROM character_profile_values WHERE entity_id=? AND field_key=?",
+                  ("char_darian", "raps_pa.strength"),
+              ).fetchone()
+              original_strength = float(json.loads(before["value_json"]))
+              state = snapshot(conn, "char_darian")
+
+              bootstrap = maybe_settle_strength_progression(
+                  conn, "char_darian", as_of_sim_time=t0.isoformat(), state=state
+              )
+              assert bootstrap["state"] == "settled"
+              assert bootstrap["reason"] == "bootstrap"
+              assert bootstrap["settlement"]["new_strength"] == original_strength
+
+              # Tight/short boundaries must not emit progression settlement spam.
+              count_after_bootstrap = conn.execute(
+                  "SELECT COUNT(*) FROM events WHERE actor_id=? AND event_type=?",
+                  ("char_darian", SETTLEMENT_EVENT_TYPE),
+              ).fetchone()[0]
+              for minutes in (1, 5, 30, 60, 120):
+                  skipped = maybe_settle_strength_progression(
+                      conn,
+                      "char_darian",
+                      as_of_sim_time=(t0 + timedelta(minutes=minutes)).isoformat(),
+                      state={"energy":75,"sleepiness":25,"fatigue":20},
+                  )
+                  assert skipped["state"] == "skipped"
+              assert conn.execute(
+                  "SELECT COUNT(*) FROM events WHERE actor_id=? AND event_type=?",
+                  ("char_darian", SETTLEMENT_EVENT_TYPE),
+              ).fetchone()[0] == count_after_bootstrap
+
+              stimulus_time = t0 + timedelta(hours=3)
+              stimulus_id = record_event(
+                  conn,
+                  sim_time=stimulus_time.isoformat(),
+                  actor_id="char_darian",
+                  event_type="action_completed",
+                  payload={"training_stimulus":{"domain":"strength","stimulus_units":1.0}},
+              )
+              conn.commit()
+
+              # Daily checkpoint may advance the cursor, but must not consume the
+              # not-yet-recovered stimulus.
+              daily = maybe_settle_strength_progression(
+                  conn,
+                  "char_darian",
+                  as_of_sim_time=(t0 + timedelta(hours=24)).isoformat(),
+                  state={"energy":75,"sleepiness":25,"fatigue":20},
+              )
+              assert daily["state"] == "settled"
+              assert stimulus_id not in daily["settlement"]["consumed_stimulus_event_ids"]
+
+              # Once 48h old, the stimulus settles at the next boundary even though
+              # less than 24h may have elapsed since a recent daily checkpoint.
+              eligible_time = stimulus_time + timedelta(hours=48)
+              positive = maybe_settle_strength_progression(
+                  conn,
+                  "char_darian",
+                  as_of_sim_time=eligible_time.isoformat(),
+                  state={"energy":75,"sleepiness":25,"fatigue":20},
+              )
+              assert positive["state"] == "settled"
+              assert positive["reason"] == "eligible_stimulus"
+              assert stimulus_id in positive["settlement"]["consumed_stimulus_event_ids"]
+              assert 0 < positive["settlement"]["positive_delta"] < 0.01
+
+              same = maybe_settle_strength_progression(
+                  conn,
+                  "char_darian",
+                  as_of_sim_time=eligible_time.isoformat(),
+                  state={"energy":75,"sleepiness":25,"fatigue":20},
+              )
+              assert same["state"] == "skipped"
+
+              after_copy = conn.execute(
+                  "SELECT value_json,mode,authority FROM character_profile_values WHERE entity_id=? AND field_key=?",
+                  ("char_darian", "raps_pa.strength"),
+              ).fetchone()
+              assert float(json.loads(after_copy["value_json"])) > original_strength
+              print(json.dumps({
+                  "ok": True,
+                  "disposable": True,
+                  "candidate_source": True,
+                  "model_calls": 0,
+                  "bootstrap_preserved_strength": True,
+                  "short_boundary_event_spam": False,
+                  "daily_checkpoint_bounded": True,
+                  "eligible_stimulus_settled": True,
+                  "eligible_positive_delta": positive["settlement"]["positive_delta"],
+                  "same_boundary_replay_skipped": True,
+                  "copy_strength_after_test": float(json.loads(after_copy["value_json"]))
+              }, indent=2, sort_keys=True))
+          PY
+            unset PYTHONPATH
+            export OBSERVER_SANDBOX_DB=/var/lib/observer-sandbox/observer.sqlite3
+            echo "--- LIVE PRODUCTION READBACK (UNTOUCHED) ---"
+            .venv/bin/sandboxctl status
+          '
