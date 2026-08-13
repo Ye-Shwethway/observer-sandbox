@@ -14,6 +14,7 @@ Roadmap audit: 2026-08-13 — aligned to schema v4 and minimum-runnable expansio
 - World identity/topology follows `docs/WORLD_LOCATION_NODE_MODEL.md`.
 - Physiology/effects follow `docs/PHYSIOLOGY_AND_ITEM_EFFECTS.md`.
 - Telegram presentation follows `docs/TELEGRAM_OBSERVER_ARCHITECTURE.md`.
+- Future cross-domain grading/progression follows `docs/FUTURE_GRADING_SYSTEM.md` when a concrete grading slice is authorized.
 
 ## Development policy — MINIMUM RUNNABLE EXPANSION
 
@@ -28,7 +29,7 @@ Each new slice should normally contain only:
 
 A slice is complete when that narrow feature is independently runnable/observable. Do **not** wait for a whole phase containing several future features before declaring a usable checkpoint.
 
-Avoid speculative subsystem construction. Existing schema-v4 sockets are extension points, not instructions to pre-build inventory, memory, relationships, weather, combat or other engines before a concrete runnable slice needs them.
+Avoid speculative subsystem construction. Existing schema-v4 sockets are extension points, not instructions to pre-build inventory, memory, relationships, weather, combat, grading or other engines before a concrete runnable slice needs them.
 
 Prefer:
 `one small feature -> run -> observe -> validate -> keep -> next feature`
@@ -57,12 +58,28 @@ Implemented foundation:
 - service enumerates active actor runtimes instead of assuming Darian-only scheduling;
 - action notifications resolve actual actor identity rather than hard-coding Darian.
 
-Deferred intentionally until their feature slices: inventory quantity/depletion/durability, full active-modifier evaluation across domains, rich relationship/memory/environment engines, complex multi-party synchronization/combat.
+Deferred intentionally until their feature slices: inventory quantity/depletion/durability, full active-modifier evaluation across domains, rich relationship/memory/environment engines, complex multi-party synchronization/combat and universal grading evaluation.
 
 Acceptance evidence:
 - multi-actor/concurrency/definition-instance/modifier/event tests included in CI;
 - bounded schema-v4 accelerated production-copy recovery acceptance run #5 succeeded with `needs_acceptable=true` without mutating production;
 - production readback showed schema 4, autonomy ON/normal, 1x and a valid actor-scoped pending action.
+
+## Future grading / progression — RESERVED, NO SCHEMA CHANGE NOW
+
+Observer Sandbox is expected to gain a reusable grading/progression language later for character attributes, skills, items, locations/facilities, quests/challenges, unlock requirements and other gradeable subjects.
+
+Current decision:
+- schema v4 remains sufficient; do not introduce schema v5 merely to pre-build grading;
+- preserve the authoritative underlying raw value/state;
+- a grade is normally a derived evaluation under a named grading scheme unless a concrete domain explicitly defines grade itself as canonical state;
+- grading must remain cross-domain and presentation-independent rather than being hard-coded independently into profile, skill, item, location, quest or Telegram code;
+- exact tier vocabulary, thresholds, caps and unlock rules are intentionally deferred until the first concrete grading use case;
+- first implementation must be a minimum-runnable grading slice in one domain, then expand domain-by-domain only after acceptance.
+
+P2.2.4 Profile Browser intentionally shows authoritative raw profile values without speculative grade badges. Future grading should attach without restructuring that browser.
+
+Canonical note: `docs/FUTURE_GRADING_SYSTEM.md`.
 
 ## World / location graph
 
@@ -128,7 +145,7 @@ Acceptance evidence:
 
 #### P2.2.3 — Minimum Item/Object Browser
 
-Status: IMPLEMENTED / CI-VALIDATED / DEPLOYED — CREATOR UI ACCEPTANCE PENDING
+Status: COMPLETE / LIVE UX VERIFIED
 
 Implemented minimum scope:
 - room object rows are actionable `obj:*` callbacks;
@@ -143,27 +160,39 @@ Acceptance evidence:
 - object query contract commit `715a575642012c7aaef92cc26d27e8d8ba69ce8a`;
 - Telegram object browser commit `b26423aa1bc67ad239eb9059042e3efe5479d41c`;
 - focused browser tests commit `835f90a3bfbe13e165fa90187712ddc4da564dd7`;
-- CI #265 / run `31667412478` SUCCESS, including Pantry capabilities/effects/back navigation and Drinking Water thirst-effect assertions;
-- Deploy #116 / run `31667377479` SUCCESS; readback verified service active, Telegram API connected, schema v4 healthy and Darian autonomy still ON/normal/unpaused at 1x.
-
-Acceptance remaining for **P2.2.3 only**:
-- Creator opens at least one deployed room object in Telegram, sees a readable detail view, and returns to the room successfully.
+- CI #265 / run `31667412478` SUCCESS;
+- Deploy #116 / run `31667377479` SUCCESS;
+- Creator exercised the deployed object detail/back flow in Telegram and confirmed it worked.
 
 #### P2.2.4 — Character Profile Browser (single-character minimum)
 
-Status: NEXT AFTER CREATOR ITEM-BROWSER CHECK
+Status: IMPLEMENTED / CI-VALIDATED / DEPLOYED — CREATOR UI ACCEPTANCE PENDING
 
-Minimum runnable scope:
-- Characters -> Darian -> profile section menu;
-- read-only section browsing for existing canonical/profile data;
-- section/paginate large profiles;
-- current state and profile remain distinct surfaces.
+Implemented minimum scope:
+- Characters -> Darian current-state view now exposes a separate Profile entry;
+- Profile opens a read-only section menu generated from represented profile data;
+- first sections: Identity, Appearance, Body, Attributes, Personality, Skills, Preferences & Habits, Background;
+- scalar profile values come from `character_profile_values` joined to `profile_field_definitions`;
+- skills/preferences/hobbies/habits come from their normalized profile collection tables;
+- `private` and `intimate` sensitivity fields are excluded from this ordinary profile browser at the query layer;
+- current runtime state remains distinct from profile truth;
+- values are rendered human-readably, including height and common units;
+- no grade badges are shown yet; future grading remains a separate derived layer;
+- no second-character selection/session persistence is added while Darian remains the only production autonomous character.
 
-Acceptance for **P2.2.4 only**:
-- Creator can browse several Darian profile sections without raw dumps/internal ids;
-- no second character or Telegram selected-character persistence is required yet.
+Acceptance evidence:
+- future grading direction doc commit `f3cf9438aa84b68bfca230ca0392b5dd4ff3604f`;
+- profile read-query contract commit `2d9c43ad5d66cae0d9ff0e6d4f6c474599afa012`;
+- Telegram profile presentation commit `db9f8702fc812a81f447f74d6e9e21d91b8419d5`;
+- Telegram integration commit `0fd68b22a7d5a8b7d360dc8a617124753b5b3847`;
+- focused browser tests commit `d926687d443bc6e5e841ef3c06d1a293d82ca71a`;
+- CI #272 / run `31668499392` SUCCESS;
+- Deploy #119 / run `31668483842` SUCCESS for the Telegram integration.
 
-This intentionally avoids building multi-character UI state before a second production character exists.
+Acceptance remaining for **P2.2.4 only**:
+- Creator opens Darian -> Profile in Telegram;
+- Creator browses several sections and confirms values/layout/back navigation are readable;
+- sensitive/private fields remain absent from the normal profile browser.
 
 ### P2.3 — Creator Control Expansion
 
@@ -235,6 +264,6 @@ Expand destination-by-destination afterward.
 
 ## Current resume point
 
-**Creator should exercise P2.2.3 Minimum Item/Object Browser in Telegram. If the deployed object detail/back flow is good, close that slice and proceed to P2.2.4 single-character Darian Profile Browser.**
+**Creator should exercise P2.2.4 Character Profile Browser in Telegram: Characters -> Darian -> Profile -> several sections -> back. If the deployed read-only profile surfaces are good, close P2.2.4 before selecting the next independently runnable slice.**
 
-No additional core/schema work is required for the current browser path. Preserve 1x wake-on-demand production autonomy, globally scoped ids, locked unfinished boundaries, actor-scoped scheduler state, first-class actions/events, Telegram presentation rules and per-user notification preferences.
+No additional core/schema work is required for the current browser path. Universal grading is documented as a future additive capability, not a reason for another broad foundation pass now. Preserve 1x wake-on-demand production autonomy, globally scoped ids, locked unfinished boundaries, actor-scoped scheduler state, first-class actions/events, Telegram presentation rules and per-user notification preferences.
