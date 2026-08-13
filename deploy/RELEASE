@@ -1,7 +1,7 @@
 Observer Sandbox production release marker
 
-release: P3.4-minimum-training-effectiveness-outcome
-accepted_main: ea69d5c0f81bf5500fca9b4d6ea62a251fbdcd9f
-acceptance_workflow: P3 Training Effectiveness Acceptance #1
-acceptance_run: 31673822547
+release: P3.5-minimum-effective-training-load
+accepted_main: b6f29493a30a458133587463068df9814395eb75
+acceptance_workflow: P3 Effective Training Load Acceptance #1
+acceptance_run: 31674911581
 status: accepted-for-production
