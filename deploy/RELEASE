@@ -1,7 +1,7 @@
 Observer Sandbox production release marker
 
-release: P3.5-minimum-effective-training-load
-accepted_main: b6f29493a30a458133587463068df9814395eb75
-acceptance_workflow: P3 Effective Training Load Acceptance #1
-acceptance_run: 31674911581
+release: autonomy-breadth-time-observability-v1
+accepted_main: 802b17fce70f9d3b28d29fd2dc56267b17f3fb9f
+acceptance_workflow: Autonomy Breadth and Time Acceptance #2
+acceptance_run: 31676984134
 status: accepted-for-production
