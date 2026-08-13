@@ -9,6 +9,7 @@ from datetime import datetime, timedelta, timezone
 from typing import Any, Protocol
 
 from .event_log import record_event
+from .training_modifiers import training_readiness_modifier
 from .world import get_field, set_field
 
 
@@ -209,6 +210,8 @@ def action_options(conn: sqlite3.Connection, actor_id: str = "char_darian") -> l
                     option["effects"] = effects
                 if name in ACTION_EFFECTS_PER_HOUR:
                     option["effects_per_hour"] = ACTION_EFFECTS_PER_HOUR[name]
+                if name == "train":
+                    option["modifiers"] = {"training_readiness": training_readiness_modifier(state)}
                 options.append(option)
 
     for name in ("rest", "idle"):
@@ -297,8 +300,11 @@ def _advance_needs(conn: sqlite3.Connection, actor_id: str, action: Action) -> N
     }
     for stat, rate in PASSIVE_DRIFT_PER_HOUR.items():
         values[stat] += rate * hours
+    readiness = action.modifiers.get("training_readiness") if action.name == "train" else None
+    fatigue_multiplier = float(readiness.get("fatigue_cost_multiplier", 1.0)) if isinstance(readiness, dict) else 1.0
     for stat, rate in ACTION_EFFECTS_PER_HOUR.get(action.name, {}).items():
-        values[stat] += rate * hours
+        effective_rate = rate * fatigue_multiplier if action.name == "train" and stat == "fatigue" else rate
+        values[stat] += effective_rate * hours
     if action.target:
         effects = _object_effects(conn, action.target).get(action.name, {})
         if isinstance(effects, dict):
@@ -340,6 +346,9 @@ def ensure_action_instance(
 ) -> str:
     action_id = action_id or str(uuid.uuid4())
     before = snapshot(conn, actor_id)
+    modifiers = dict(action.modifiers)
+    if action.name == "train" and "training_readiness" not in modifiers:
+        modifiers["training_readiness"] = training_readiness_modifier(before)
     conn.execute(
         """INSERT OR IGNORE INTO action_instances(
         id,action_type,actor_id,place_id,target_id,status,duration_minutes,intent,participants_json,resources_json,
@@ -348,7 +357,7 @@ def ensure_action_instance(
         (
             action_id, action.name, actor_id, before["location"], action.target, status, action.duration_minutes,
             action.reason, json.dumps(list(action.participants)), json.dumps(list(action.resources)),
-            json.dumps(action.conditions), json.dumps(action.modifiers), before["sim_time"],
+            json.dumps(action.conditions), json.dumps(modifiers), before["sim_time"],
             before["sim_time"] if status == "in_progress" else None, planned_wall_time, due_wall_time, speed_at_plan,
         ),
     )
@@ -374,7 +383,16 @@ def apply_action(
 
     validate_action(conn, actor_id, action)
     action_id = ensure_action_instance(conn, action, actor_id, action_id=action_id)
-    instance = conn.execute("SELECT planned_sim_time FROM action_instances WHERE id=?", (action_id,)).fetchone()
+    instance = conn.execute(
+        "SELECT planned_sim_time,modifiers_json FROM action_instances WHERE id=?",
+        (action_id,),
+    ).fetchone()
+    persisted_modifiers = json.loads(instance["modifiers_json"] or "{}") if instance else dict(action.modifiers)
+    if persisted_modifiers != action.modifiers:
+        action = Action(
+            action.name, action.duration_minutes, action.target, action.reason, action.participants,
+            action.resources, action.conditions, persisted_modifiers,
+        )
     current_clock = ensure_sim_clock(conn)
     started = datetime.fromisoformat(instance["planned_sim_time"]) if instance and instance["planned_sim_time"] else current_clock
     ended = started + timedelta(minutes=action.duration_minutes)
@@ -396,7 +414,10 @@ def apply_action(
         """UPDATE action_instances
         SET status='completed',started_sim_time=COALESCE(started_sim_time,?),ended_sim_time=?,outcome_json=?,updated_at=CURRENT_TIMESTAMP
         WHERE id=?""",
-        (started.isoformat(), ended.isoformat(), json.dumps({"state_changes": changes}, ensure_ascii=False), action_id),
+        (
+            started.isoformat(), ended.isoformat(),
+            json.dumps({"state_changes": changes, "modifiers": action.modifiers}, ensure_ascii=False), action_id,
+        ),
     )
     participants = [{"entity_id": participant, "role": "participant"} for participant in action.participants]
     record_event(
@@ -414,6 +435,7 @@ def apply_action(
             "target": action.target,
             "duration_minutes": action.duration_minutes,
             "reason": action.reason,
+            "modifiers": action.modifiers,
             "before": before,
             "after": after,
             "action_started_sim_time": started.isoformat(),

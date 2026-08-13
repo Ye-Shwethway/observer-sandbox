@@ -4,6 +4,9 @@ import json
 import sqlite3
 from typing import Any
 
+from .simulation import snapshot
+from .training_modifiers import training_readiness_modifier
+
 
 PROFILE_SECTIONS: tuple[dict[str, Any], ...] = (
     {"id": "identity", "label": "Identity", "icon": "👤", "domains": ("identity",)},
@@ -149,6 +152,21 @@ def _runtime_values(conn: sqlite3.Connection, character_id: str, field_keys: tup
                 "data_type": definition["data_type"],
                 "unit": definition["unit"],
                 "mode": row["mode"] if row is not None else "simulated",
+            }
+        )
+
+    if "physiology.fatigue" in field_keys:
+        modifier = training_readiness_modifier(snapshot(conn, character_id))
+        content.append(
+            {
+                "kind": "derived",
+                "field_key": "training.readiness",
+                "domain": "physiology",
+                "label": "Training readiness",
+                "value": round(float(modifier["readiness"]) * 100.0, 1),
+                "data_type": "number",
+                "unit": "percent",
+                "mode": "derived",
             }
         )
     return content
