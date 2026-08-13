@@ -62,6 +62,18 @@ Profile state is one input to the LEGO runtime:
 
 Actions may read profile/domain fields as prerequisites or modifiers, but action history belongs to events/action instances rather than being embedded into the profile. Temporary sourced effects should use the shared modifier contract rather than silently rewriting canonical traits.
 
+## Future grading relationship
+
+Observer Sandbox is expected to gain a cross-domain grading/progression layer later. Character attributes and skills are likely early consumers, but grading must not become a second source of truth for the profile.
+
+Default rule:
+- the underlying profile value remains authoritative;
+- a grade is normally a derived evaluation under a named grading scheme;
+- changing grade thresholds must not silently rewrite the raw profile value;
+- Telegram/profile presentation may display grade badges later, but presentation must not own grading logic.
+
+Do not add speculative grade columns to profile tables during P2.2.4. The first grading implementation must be a separate minimum-runnable slice driven by a concrete use case and follow `docs/FUTURE_GRADING_SYSTEM.md`.
+
 ## Conflict policy
 
 Source disagreements are value-reconciliation issues, not reasons to weaken the ontology. New imports must not silently overwrite canonical values. Conflicting historical values remain traceable through source/revision/history metadata.
