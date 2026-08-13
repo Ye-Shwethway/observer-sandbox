@@ -13,6 +13,17 @@ This roadmap tracks the smallest useful vertical slices for the Observer Sandbox
 - New features should prefer generic ids/query services over Darian/Home-specific backend contracts.
 - Telegram presentation quality is part of acceptance, not optional polish. All Telegram work must follow `docs/TELEGRAM_OBSERVER_ARCHITECTURE.md`.
 
+## Simulation recovery correctness
+
+Needs/recovery behavior is an engine contract, not prompt flavor text.
+
+- An action described as recovery must move its primary recovery state in the correct direction after all passive time drift is included.
+- `rest` must increase energy and reduce sleep pressure; `sleep` must provide stronger energy/sleep-pressure recovery than ordinary rest; `idle` may provide only light recovery but must not paradoxically drain energy when cognition is using it as a pause.
+- Every critical living need must have at least one valid reachable action path that can actually correct it.
+- The action options given to the LLM must not force a semantic contradiction where the reason says “recover/rest” but the deterministic action effect worsens the need.
+- Recovery math is regression-tested as before/after state, not only by checking that an action validates.
+- Future physiology expansion must preserve these directional invariants before adding more detailed rates or modifiers.
+
 ## Telegram presentation acceptance rule
 
 Every new Telegram command, callback, notification, menu, browse page, or detail view must preserve the established presentation contract:
@@ -64,7 +75,7 @@ Status: FOUNDATION COMPLETE
 
 ## P1 — Living Darian Minimum
 
-Status: CONTINUOUS AUTONOMY LIVE
+Status: CONTINUOUS AUTONOMY LIVE / ENGINE HARDENING ACTIVE
 
 - persistent character state and home graph
 - validated action contract
@@ -73,6 +84,8 @@ Status: CONTINUOUS AUTONOMY LIVE
 - wake-on-demand LLM cognition
 - cognition call telemetry
 - 1x continuous production autonomy
+- recovery-direction invariants for energy/sleep pressure
+- targetless `rest` recovery available in every room, while object-backed rest remains supported
 
 ## P2 — Telegram Observer
 
@@ -104,7 +117,7 @@ Goal: move from command-driven status checks to hierarchical Creator observation
    - reusable Back/Home navigation is established.
    - notification status is visible from Observer Home.
 
-2. **Location hierarchy — NEXT**
+2. **Location hierarchy — NEXT AFTER CURRENT ENGINE HARDENING**
    - list rooms/sublocations from the canonical world graph;
    - open a room;
    - show occupants, items/objects, exits/relations and current activity;
@@ -157,4 +170,4 @@ Add Quasi after generic character selection/profile/navigation is already proven
 
 ## Current resume point
 
-Proceed with **P2.2.2: Location hierarchy and room detail browsing** using the now-established inline callback framework. Preserve continuous 1x wake-on-demand autonomy, the Telegram presentation contract, and the shared per-user notification preference gate while building the observer UI.
+Finish the current **P1 needs/recovery engine hardening** and verify it in CI/live production, then resume **P2.2.2: Location hierarchy and room detail browsing**. Preserve continuous 1x wake-on-demand cognition, Telegram presentation rules, and the shared per-user notification preference gate.
