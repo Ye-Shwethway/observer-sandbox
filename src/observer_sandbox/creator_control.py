@@ -3,7 +3,7 @@ from __future__ import annotations
 import sqlite3
 from typing import Any
 
-from .actor_runtime import actor_runtime, set_actor_runtime, set_retry
+from .actor_runtime import actor_runtime, set_actor_runtime, set_lease, set_retry
 from .event_log import record_event
 from .simulation import snapshot
 from .world import set_field
@@ -16,6 +16,15 @@ BASIC_STAT_BASELINE: dict[str, float] = {
     "needs.sleepiness": 15.0,
     "physiology.cleanliness": 80.0,
     "physiology.fatigue": 0.0,
+}
+
+_FIELD_AUTHORITIES = {
+    "needs.energy": "needs_engine",
+    "needs.hunger": "needs_engine",
+    "needs.thirst": "needs_engine",
+    "needs.sleepiness": "needs_engine",
+    "physiology.cleanliness": "physiology_engine",
+    "physiology.fatigue": "physiology_engine",
 }
 
 
@@ -31,7 +40,8 @@ def restore_basic_stats(
     This is an administrative world-state control, not an AI action. Any pending
     autonomous action is cancelled because its original need/reason may no longer
     be valid after the restore. The universe clock, location, profile canon and
-    autonomy enabled/mode are preserved.
+    autonomy enabled/mode are preserved. Creator authority authorizes the control;
+    domain field ownership remains with the normal simulation engines.
     """
     row = conn.execute(
         "SELECT id,name FROM entities WHERE id=? AND entity_type='character'",
@@ -57,7 +67,7 @@ def restore_basic_stats(
             field_key,
             value,
             mode="simulated",
-            authority="creator_control",
+            authority=_FIELD_AUTHORITIES[field_key],
             source="creator-basic-stats-restore",
         )
     set_field(
@@ -75,6 +85,7 @@ def restore_basic_stats(
         pending_action_id=None,
         wake_reason="creator_basic_stats_restored",
     )
+    set_lease(conn, actor_id, None)
     set_retry(conn, actor_id, None)
 
     after = snapshot(conn, actor_id)
