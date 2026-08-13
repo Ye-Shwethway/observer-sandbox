@@ -92,30 +92,32 @@ jobs:
           with connect(db) as conn:
               reset_runtime(conn)
 
+              healthy_reason = "P3.3 healthy readiness acceptance"
               set_state(conn, 80.0, 15.0, 15.0, 0.0)
               healthy = apply_action(
                   conn,
-                  Action("train", 60, "obj_thorne_estate_gym_free_weights", "P3.3 healthy readiness acceptance"),
+                  Action("train", 60, "obj_thorne_estate_gym_free_weights", healthy_reason),
               )
               healthy_row = conn.execute(
-                  "SELECT modifiers_json FROM action_instances WHERE actor_id=? ORDER BY created_at DESC,id DESC LIMIT 1",
-                  ("char_darian",),
+                  "SELECT modifiers_json FROM action_instances WHERE actor_id=? AND intent=? ORDER BY rowid DESC LIMIT 1",
+                  ("char_darian", healthy_reason),
               ).fetchone()
               healthy_mod = json.loads(healthy_row["modifiers_json"])["training_readiness"]
               assert healthy_mod["readiness"] == 1.0, healthy_mod
               assert healthy_mod["fatigue_cost_multiplier"] == 1.0, healthy_mod
               assert healthy["fatigue"] == 18.5, healthy
 
+              degraded_reason = "P3.3 degraded readiness acceptance"
               set_state(conn, 50.0, 45.0, 45.0, 40.0)
               recovery = profile_section(conn, "char_darian", "recovery")
               readiness_row = next(row for row in recovery["content"] if row["field_key"] == "training.readiness")
               degraded = apply_action(
                   conn,
-                  Action("train", 60, "obj_thorne_estate_gym_free_weights", "P3.3 degraded readiness acceptance"),
+                  Action("train", 60, "obj_thorne_estate_gym_free_weights", degraded_reason),
               )
               degraded_row = conn.execute(
-                  "SELECT modifiers_json,outcome_json FROM action_instances WHERE actor_id=? ORDER BY created_at DESC,id DESC LIMIT 1",
-                  ("char_darian",),
+                  "SELECT modifiers_json,outcome_json FROM action_instances WHERE actor_id=? AND intent=? ORDER BY rowid DESC LIMIT 1",
+                  ("char_darian", degraded_reason),
               ).fetchone()
               degraded_modifiers = json.loads(degraded_row["modifiers_json"])
               degraded_outcome = json.loads(degraded_row["outcome_json"])
