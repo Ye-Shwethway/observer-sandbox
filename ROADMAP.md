@@ -130,7 +130,7 @@ Evidence:
 - Hunger resolver v1 — DEPLOYED / CREATOR LIVE VERIFIED.
 - Thirst/hunger causal resolver v2 — DEPLOYED / CREATOR LIVE VERIFIED.
 - Complete five-need causal resolver v3 — COMPLETE / CI VERIFIED / PRODUCTION-COPY COMPATIBILITY VERIFIED / DEPLOYED.
-- Fatigue Causal Recovery + Inspect Loop Guard v1 — IMPLEMENTED / CI VERIFIED / PRE-MERGE PRODUCTION-COPY ACCEPTANCE VERIFIED; PR #27 pending merge/deploy.
+- Fatigue Causal Recovery + Inspect Loop Guard v1 — COMPLETE / CI VERIFIED / PRODUCTION-COPY ACCEPTANCE VERIFIED / DEPLOYED / LIVE HEALTH VERIFIED.
 
 v3 used the accelerated development rule correctly:
 - Energy was the directionality exemplar;
@@ -150,14 +150,21 @@ Current authored priority is:
 
 Evidence for v3: PR #24 merge `e1e6d79479fa4d2ae837c395ec3b2fdb7391dc8f`; CI #451 `31698384623` SUCCESS; production-copy compatibility acceptance #12 `31698384587` SUCCESS; Deploy #150 `31698521410` SUCCESS.
 
-Pre-merge evidence for Fatigue Causal Recovery + Inspect Loop Guard v1:
-- PR #27 head `547a71631b25096025a40aa6e42d13d785756bcd` all-green before documentation update;
-- CI #469 run `31703255025` SUCCESS;
-- Fatigue Causal Recovery v1 Acceptance #3 run `31703254895` SUCCESS;
-- Causal Need Resolution v2 compatibility Acceptance #15 run `31703255122` SUCCESS;
-- copied production baseline in acceptance: fatigue `71.285` at sim `2025-05-02T14:59:00+00:00` in Training Hall;
+Evidence for Fatigue Causal Recovery + Inspect Loop Guard v1:
+- final PR #27 head `cb500d9319aa6247c7db2132dbc52f70fa917aec`;
+- CI #471 run `31703588016` SUCCESS;
+- Fatigue Causal Recovery v1 Acceptance #5 run `31703588566` SUCCESS;
+- Causal Need Resolution v2 compatibility Acceptance #17 run `31703587998` SUCCESS;
+- copied production baseline: fatigue `71.285` at sim `2025-05-02T14:59:00+00:00` in Training Hall;
 - reproduced disposable-copy fatigue `72.4` yielded only `rest`; 180 sim-min natural rest reduced fatigue to `46.9`;
-- production mutation `false`, model calls `0`.
+- production mutation `false`, model calls `0`;
+- PR #27 merge `31484c561948d84e97d5c677f15cd1ced7f8ad89`;
+- release `9121904f3db9009af32e30dbb925c5c60cd837cb`;
+- post-release CI #473 run `31703753642` SUCCESS;
+- Deploy #153 run `31703753498` SUCCESS;
+- post-deploy service active/healthy, schema v4, Gemini binding preserved, Telegram connected.
+
+Post-deploy readback also reported speed `2.0x`, fatigue `70.91`, and a pre-existing pending `inspect` action at sim `2025-05-02T15:14:00+00:00`. Deployment preserves already-planned actions, so that pending inspect is not evidence against the new next-boundary selection guard. The live `2.0x` speed was not changed by this slice and must not be silently altered by validation tooling.
 
 ## Post-P3.5 stabilization
 
@@ -214,6 +221,6 @@ This slice is validation/tuning, not a new progression-domain implementation. Pr
 
 ## Current resume point
 
-Finish merge/deploy/readback for **Fatigue Causal Recovery + Inspect Loop Guard v1**. Then resume **Strength Progression Live Cycle Validation & Tuning v1** under the disposable production-copy validation policy. After that cycle is validated, propose the next physical progression domain and first prove its domain-specific stimulus/recovery/decay semantics before any batch expansion.
+Resume **Strength Progression Live Cycle Validation & Tuning v1** under the disposable production-copy validation policy. First treat live production only as a read-only source of baseline/evidence and reconcile the observed live speed `2.0x` before assuming any wall-time cadence. After the Strength cycle is validated, propose the next physical progression domain and first prove its domain-specific stimulus/recovery/decay semantics before any batch expansion.
 
 Body measurements/composition remain a separate architecture line.
