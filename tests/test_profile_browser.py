@@ -1,6 +1,8 @@
 from observer_sandbox.db import connect
+from observer_sandbox.event_log import record_event
 from observer_sandbox.profile_observer import profile_menu, profile_section
 from observer_sandbox.runtime import initialize
+from observer_sandbox.simulation import snapshot
 from observer_sandbox.telegram_bot import _callback_view
 
 
@@ -39,6 +41,62 @@ def test_profile_query_exposes_seeded_public_sections_and_filters_sensitive_fiel
         recovery = profile_section(conn, "char_darian", "recovery")
         assert recovery["content"][0]["field_key"] == "physiology.fatigue"
         assert recovery["content"][0]["value"] == 0.0
+        recovery_keys = {item["field_key"] for item in recovery["content"]}
+        assert {
+            "training.readiness",
+            "strength.progression.raw",
+            "strength.progression.stimulus",
+            "strength.progression.level_factor",
+            "strength.progression.saturation",
+            "strength.progression.recovery",
+            "strength.progression.status",
+            "strength.progression.settlement",
+            "strength.progression.detraining",
+            "strength.progression.next",
+        } <= recovery_keys
+
+
+def test_strength_progression_observability_is_read_only_and_reflects_event_evidence(tmp_path, monkeypatch):
+    db = tmp_path / "observer.sqlite3"
+    initialize(db)
+    monkeypatch.setenv("OBSERVER_TELEGRAM_OWNER_ID", "111")
+
+    with connect(db) as conn:
+        raw_before = conn.execute(
+            "SELECT value_json,mode,authority FROM character_profile_values WHERE entity_id=? AND field_key=?",
+            ("char_darian", "raps_pa.strength"),
+        ).fetchone()
+        event_count_before = int(conn.execute("SELECT COUNT(*) FROM events").fetchone()[0])
+
+        # Snapshot establishes/reads the authoritative simulation clock. Test-only
+        # event evidence is then added at that exact boundary; reading Recovery
+        # must consume or mutate none of it.
+        sim_time = snapshot(conn, "char_darian")["sim_time"]
+        record_event(
+            conn,
+            sim_time=sim_time,
+            actor_id="char_darian",
+            event_type="action_completed",
+            payload={"training_stimulus": {"domain": "strength", "stimulus_units": 1.0}},
+        )
+        conn.commit()
+        seeded_event_count = int(conn.execute("SELECT COUNT(*) FROM events").fetchone()[0])
+
+        recovery = profile_section(conn, "char_darian", "recovery")
+        by_key = {item["field_key"]: item for item in recovery["content"]}
+        assert by_key["strength.progression.raw"]["value"] == "90.000000"
+        assert by_key["strength.progression.stimulus"]["value"].startswith("1.000 units")
+        assert by_key["strength.progression.level_factor"]["value"] == "1.000%"
+        assert by_key["strength.progression.status"]["value"].startswith("Recovering")
+        assert "14.0 d remaining" in by_key["strength.progression.detraining"]["value"]
+
+        raw_after = conn.execute(
+            "SELECT value_json,mode,authority FROM character_profile_values WHERE entity_id=? AND field_key=?",
+            ("char_darian", "raps_pa.strength"),
+        ).fetchone()
+        assert dict(raw_after) == dict(raw_before)
+        assert int(conn.execute("SELECT COUNT(*) FROM events").fetchone()[0]) == seeded_event_count
+        assert seeded_event_count == event_count_before + 1
 
 
 def test_telegram_profile_browser_is_readable_and_navigable(tmp_path, monkeypatch):
@@ -82,7 +140,16 @@ def test_telegram_profile_browser_is_readable_and_navigable(tmp_path, monkeypatc
         recovery_text, _ = _callback_view(conn, 111, "psec:char_darian:recovery")
         assert "RECOVERY" in recovery_text.upper()
         assert "Systemic fatigue" in recovery_text
-        assert "0" in recovery_text
+        assert "Training readiness" in recovery_text
+        assert "Strength raw" in recovery_text
+        assert "Recent Strength stimulus" in recovery_text
+        assert "Level gain factor" in recovery_text
+        assert "Saturation yield" in recovery_text
+        assert "Recovery realization" in recovery_text
+        assert "Adaptation status" in recovery_text
+        assert "Latest settlement" in recovery_text
+        assert "Detraining" in recovery_text
+        assert "Next progression boundary" in recovery_text
 
         preferences_text, _ = _callback_view(conn, 111, "psec:char_darian:preferences")
         assert "Likes" in preferences_text
