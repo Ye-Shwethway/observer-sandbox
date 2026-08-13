@@ -17,8 +17,12 @@ on:
       VPS_SSH_KEY:
         required: true
 
+permissions:
+  contents: read
+
 jobs:
   validate-production-copy:
+    if: ${{ vars.VPS_DEPLOY_ENABLED == 'true' }}
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -31,6 +35,9 @@ jobs:
             scripts/validation/*.py) ;;
             *) echo "validator_path must be under scripts/validation/" >&2; exit 2 ;;
           esac
+          case "$VALIDATOR_PATH" in
+            *..*) echo "validator path traversal is not allowed" >&2; exit 2 ;;
+          esac
           test -f "$VALIDATOR_PATH"
 
       - name: Configure SSH
@@ -39,12 +46,14 @@ jobs:
           VPS_HOST: ${{ secrets.VPS_HOST }}
           VPS_PORT: ${{ secrets.VPS_PORT || '22' }}
         run: |
+          test -n "$VPS_HOST"
+          test -n "$VPS_SSH_KEY"
           install -m 700 -d ~/.ssh
           printf '%s\n' "$VPS_SSH_KEY" > ~/.ssh/id_ed25519
           chmod 600 ~/.ssh/id_ed25519
           ssh-keyscan -p "$VPS_PORT" -H "$VPS_HOST" >> ~/.ssh/known_hosts
 
-      - name: Stage candidate validation surface
+      - name: Stage complete candidate tree
         env:
           VPS_HOST: ${{ secrets.VPS_HOST }}
           VPS_USER: ${{ secrets.VPS_USER }}
@@ -54,9 +63,13 @@ jobs:
         run: |
           REMOTE_ROOT="/tmp/observer-validation-${RUN_ID}-${RUN_ATTEMPT}"
           ssh -p "$VPS_PORT" "$VPS_USER@$VPS_HOST" "rm -rf '$REMOTE_ROOT' && mkdir -p '$REMOTE_ROOT'"
-          rsync -az -e "ssh -p $VPS_PORT" src/ "$VPS_USER@$VPS_HOST:$REMOTE_ROOT/src/"
-          rsync -az -e "ssh -p $VPS_PORT" config/ "$VPS_USER@$VPS_HOST:$REMOTE_ROOT/config/"
-          rsync -az -e "ssh -p $VPS_PORT" scripts/validation/ "$VPS_USER@$VPS_HOST:$REMOTE_ROOT/scripts/validation/"
+          rsync -az --delete \
+            --exclude '.git/' \
+            --exclude '.venv/' \
+            --exclude 'runtime-data/' \
+            --exclude '__pycache__/' \
+            -e "ssh -p $VPS_PORT" \
+            ./ "$VPS_USER@$VPS_HOST:$REMOTE_ROOT/"
 
       - name: Run feature validator on disposable production copy
         env:
@@ -74,19 +87,19 @@ jobs:
           COPY_DB="$ROOT/observer-copy.sqlite3"
           trap 'rm -rf "$ROOT"' EXIT
 
-          cd /opt/observer-sandbox
-          .venv/bin/python "$ROOT/scripts/validation/create_disposable_db_copy.py" \
+          cd "$ROOT"
+          export PYTHONPATH="$ROOT/src:$ROOT/scripts/validation"
+          /opt/observer-sandbox/.venv/bin/python "$ROOT/scripts/validation/create_disposable_db_copy.py" \
             --source /var/lib/observer-sandbox/observer.sqlite3 \
             --destination "$COPY_DB"
 
           export OBSERVER_SANDBOX_DB="$COPY_DB"
           export OBSERVER_CONFIG_DIR="$ROOT/config"
           export OBSERVER_VALIDATION_DISPOSABLE=1
-          export PYTHONPATH="$ROOT/src"
 
           unset OBSERVER_GEMINI_API_KEY OBSERVER_NANOGPT_API_KEY OBSERVER_OPENAI_API_KEY OBSERVER_OPENROUTER_API_KEY
           unset OBSERVER_TELEGRAM_BOT_TOKEN OBSERVER_TELEGRAM_OWNER_ID OBSERVER_TELEGRAM_ALLOWED_USER_IDS
 
-          .venv/bin/python "$ROOT/$VALIDATOR_PATH"
-          printf '%s\n' '{"ok":true,"production_mutated_by_validation":false,"validation_db":"disposable-copy","model_credentials_exposed":false,"telegram_credentials_exposed":false}'
+          /opt/observer-sandbox/.venv/bin/python "$ROOT/$VALIDATOR_PATH"
+          printf '%s\n' '{"ok":true,"production_mutated_by_validation":false,"safety_basis":"live SQLite opened only mode=ro/query_only; validator receives disposable copy path","model_credentials_exposed":false,"telegram_credentials_exposed":false}'
           REMOTE
