@@ -1,0 +1,95 @@
+name: Strength Progression Production Bootstrap
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - '.github/workflows/strength-progression-production-bootstrap.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  bootstrap:
+    if: ${{ vars.VPS_DEPLOY_ENABLED == 'true' }}
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Configure SSH
+        env:
+          VPS_SSH_KEY: ${{ secrets.VPS_SSH_KEY }}
+          VPS_HOST: ${{ secrets.VPS_HOST }}
+          VPS_PORT: ${{ secrets.VPS_PORT || '22' }}
+        run: |
+          test -n "$VPS_HOST"
+          test -n "$VPS_SSH_KEY"
+          install -m 700 -d ~/.ssh
+          printf '%s\n' "$VPS_SSH_KEY" > ~/.ssh/id_ed25519
+          chmod 600 ~/.ssh/id_ed25519
+          ssh-keyscan -p "$VPS_PORT" -H "$VPS_HOST" >> ~/.ssh/known_hosts
+      - name: Bootstrap or verify live Strength progression cursor
+        env:
+          VPS_HOST: ${{ secrets.VPS_HOST }}
+          VPS_USER: ${{ secrets.VPS_USER }}
+          VPS_PORT: ${{ secrets.VPS_PORT || '22' }}
+        run: |
+          ssh -p "$VPS_PORT" "$VPS_USER@$VPS_HOST" '
+            set -euo pipefail
+            cd /opt/observer-sandbox
+            export OBSERVER_SANDBOX_DB=/var/lib/observer-sandbox/observer.sqlite3
+            .venv/bin/python - <<"PY"
+          import json, os
+          from observer_sandbox.db import connect
+          from observer_sandbox.simulation import ensure_sim_clock, snapshot
+          from observer_sandbox.strength_progression import SETTLEMENT_EVENT_TYPE
+          from observer_sandbox.strength_progression_activation import maybe_settle_strength_progression
+
+          db = os.environ["OBSERVER_SANDBOX_DB"]
+          with connect(db) as conn:
+              sim_time = ensure_sim_clock(conn).isoformat()
+              before = conn.execute(
+                  "SELECT value_json,mode,authority,source FROM character_profile_values WHERE entity_id=? AND field_key=?",
+                  ("char_darian", "raps_pa.strength"),
+              ).fetchone()
+              before_value = float(json.loads(before["value_json"]))
+              result = maybe_settle_strength_progression(
+                  conn,
+                  "char_darian",
+                  as_of_sim_time=sim_time,
+                  state=snapshot(conn, "char_darian"),
+              )
+              after = conn.execute(
+                  "SELECT value_json,mode,authority,source FROM character_profile_values WHERE entity_id=? AND field_key=?",
+                  ("char_darian", "raps_pa.strength"),
+              ).fetchone()
+              after_value = float(json.loads(after["value_json"]))
+              rows = conn.execute(
+                  "SELECT id,sim_time,payload_json FROM events WHERE actor_id=? AND event_type=? ORDER BY id",
+                  ("char_darian", SETTLEMENT_EVENT_TYPE),
+              ).fetchall()
+              assert rows, "Strength progression bootstrap cursor was not established"
+              first_payload = json.loads(rows[0]["payload_json"] or "{}")
+              assert first_payload.get("bootstrap") is True
+              assert float(first_payload.get("old_strength")) == float(first_payload.get("new_strength"))
+              assert before_value == after_value, "activation bootstrap must not mutate raw Strength"
+              print(json.dumps({
+                  "ok": True,
+                  "live_db": True,
+                  "activation_call_state": result["state"],
+                  "activation_call_reason": result["reason"],
+                  "sim_time": sim_time,
+                  "strength_before": before_value,
+                  "strength_after": after_value,
+                  "strength_mode_after": after["mode"],
+                  "strength_authority_after": after["authority"],
+                  "settlement_count": len(rows),
+                  "first_settlement_event_id": int(rows[0]["id"]),
+                  "first_settlement_bootstrap": True,
+                  "first_settlement_consumed_stimulus_count": len(first_payload.get("consumed_stimulus_event_ids") or []),
+                  "bootstrap_no_raw_mutation": True
+              }, indent=2, sort_keys=True))
+          PY
+            systemctl is-active observer-sandbox
+            .venv/bin/sandboxctl status
+          '
