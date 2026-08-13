@@ -7,24 +7,22 @@ Last synchronized: 2026-08-13
 
 Read `AGENTS.md`, then this file, then `ROADMAP.md`, then task-relevant contracts.
 
-Core/runtime/schema/action: `docs/ARCHITECTURE.md` + `docs/COMPOSABLE_RUNTIME_ARCHITECTURE_AUDIT.md`.
-Spatial: `docs/WORLD_LOCATION_NODE_MODEL.md`.
-Character/profile: `docs/CHARACTER_PROFILE_SCHEMA.md`.
-Telegram: `docs/TELEGRAM_OBSERVER_ARCHITECTURE.md` + `docs/TELEGRAM_NOTIFICATION_POLICY.md`.
-Creator controls: `docs/CREATOR_CONTROL_POLICY.md`.
-Needs/training: `docs/PHYSIOLOGY_AND_ITEM_EFFECTS.md`, `docs/P3_3_TRAINING_READINESS_MODIFIER.md`, `docs/P3_4_TRAINING_EFFECTIVENESS.md`, `docs/P3_5_EFFECTIVE_TRAINING_LOAD.md`.
-Autonomy breadth/time: `docs/AUTONOMY_BREADTH_TIME_OBSERVABILITY.md`.
-Current-action timing: `docs/CURRENT_ACTION_ETA_OBSERVABILITY.md`.
-Future grading: `docs/FUTURE_GRADING_SYSTEM.md`.
+Key contracts:
+- core/runtime/schema/action: `docs/ARCHITECTURE.md`, `docs/COMPOSABLE_RUNTIME_ARCHITECTURE_AUDIT.md`
+- Telegram: `docs/TELEGRAM_OBSERVER_ARCHITECTURE.md`, `docs/TELEGRAM_NOTIFICATION_POLICY.md`
+- Creator controls: `docs/CREATOR_CONTROL_POLICY.md`
+- training/physiology: `docs/PHYSIOLOGY_AND_ITEM_EFFECTS.md`, P3.3–P3.5 docs
+- autonomy/time: `docs/AUTONOMY_BREADTH_TIME_OBSERVABILITY.md`, `docs/CURRENT_ACTION_ETA_OBSERVABILITY.md`, `docs/RUNTIME_SPEED_CONTROL.md`, `docs/DURATION_PLANNING_PROFILES.md`
+- future grading: `docs/FUTURE_GRADING_SYSTEM.md`
 
-Authority: current Creator instruction > canonical repo/contracts > verified live VPS/runtime/DB > deployed workflow evidence > CI/tests > this bootstrap > older chat/memory. Never conflate committed, CI-validated, acceptance-verified, deployed, DB-applied, and Creator-live-verified states.
+Authority: current Creator instruction > canonical repo/contracts > verified live VPS/runtime/DB > deployed workflow evidence > CI/tests > this bootstrap > older chat/memory.
 
 ## Development policy
 
 Use minimum runnable expansion:
 `minimum required state -> minimum behavior/evidence -> minimum Creator-facing surface -> focused tests -> disposable acceptance -> deploy/readback -> Creator acceptance -> next slice`.
 
-Do not pre-build large inventory, grading, memory, relationship, environment, combat, training, or regional systems merely because extension sockets exist.
+Do not pre-build broad inventory, grading, memory, relationships, environment, combat, training progression, or regional systems merely because extension sockets exist.
 
 ## Production baseline
 
@@ -36,17 +34,18 @@ Do not pre-build large inventory, grading, memory, relationship, environment, co
 - world root `world_observer_universe`
 - estate `loc_thorne_estate`
 - world revision `thorne-estate-v3.0-scoped-ids`
-- Darian autonomy enabled / normal / unpaused / 1x / wake-on-demand
+- Darian autonomy enabled / normal / wake-on-demand
+- Creator may change global speed live; most recent Creator-verified test used `30x`
 - Gemini cognition binding preserved
 - Telegram connected private Creator observer
 
-Production continues autonomously. Re-read live state whenever exact current Darian action/stats matter.
+Production continues autonomously. Re-read live state whenever exact current Darian action/stats/speed matter.
 
 ## Canonical runtime rule
 
 `Actor(s) + Action + Place + Simulation Time + Conditions/Modifiers + Resources/Targets -> Validation -> State Changes + Events`
 
-LLMs propose structured actions only. Deterministic runtime owns legality and mutation. First-class action instances/events preserve target, modifiers, outcome, state changes, location, participants and timing evidence.
+LLMs propose structured actions only. Deterministic runtime owns legality and mutation. First-class actions/events preserve target, modifiers, outcome, state changes, location, participants and timing evidence.
 
 ## Proven feature state
 
@@ -57,43 +56,25 @@ LLMs propose structured actions only. Deterministic runtime owns legality and mu
 - P3.3 Training Readiness Modifier — COMPLETE / DEPLOYED / LIVE UX VERIFIED.
 - P3.4 Training Effectiveness Outcome — COMPLETE / ACCEPTANCE VERIFIED / DEPLOYED.
 - P3.5 Effective Training Load — COMPLETE / ACCEPTANCE VERIFIED / DEPLOYED.
-- Autonomy Breadth + Time Observability v1 — DEPLOYED / ACCEPTANCE VERIFIED; Creator already observed broader location use, but diversity remains observational rather than deterministic CI truth.
-- Current Action ETA Observability v1 — COMPLETE / ACCEPTANCE VERIFIED / DEPLOYED / CREATOR LIVE UX VERIFICATION PENDING.
+- Autonomy Breadth + Time Observability v1 — DEPLOYED / ACCEPTANCE VERIFIED; broader estate use observed live.
+- Current Action ETA Observability v1 — COMPLETE / ACCEPTANCE VERIFIED / DEPLOYED / LIVE UX VERIFIED.
+- Runtime Speed Control v1 — COMPLETE / ACCEPTANCE VERIFIED / DEPLOYED / LIVE UX VERIFIED.
+- Deterministic Action Duration Planning Profiles v1 — COMPLETE / ACCEPTANCE VERIFIED / DEPLOYED.
 
-P3.5 completes the current short-term training loop:
+P3.5 short-term training loop remains:
 `target -> readiness -> fatigue inefficiency -> effectiveness -> effective workload -> immediate physiology`.
-It does not implement accumulated stimulus, attribute/skill gain, body-measurement progression, grading, or tiers.
+No accumulated stimulus, attribute/skill/body-measurement progression, grading, or tiers yet.
 
-## Current Action ETA evidence
+## Time and planning state
 
-Character `/darian`, `/watch`, character-browser card, and Runtime `/status` now show pending target, planned duration, expected simulated completion and approximate remaining real time when a pending action exists. No ETA is invented when no action is pending. Simulation time/scheduler semantics are unchanged.
+Global speed can change while actions are pending. Running actions keep identity/target/simulated end; only remaining wall-clock due time is rescheduled. Pause freezes countdown. Telegram status and Character Update surfaces show duration/ETA/remaining time.
 
-Evidence:
-- PR #7 merge `17200b1468753f17f10e3951b2f2c474bef32989`;
-- PR CI #344 / `31678482152` SUCCESS;
-- main CI #346 / `31678671631` SUCCESS;
-- Current Action ETA Acceptance #2 / `31678671655` SUCCESS on candidate code + config and disposable production DB copy, zero model calls;
-- release commit `70399f872ca35960989c3257a0735eb063b26253`;
-- Deploy #133 / `31678730719` SUCCESS;
-- production readback healthy: schema v4, autonomy enabled/normal/unpaused/1x, pending action preserved, Gemini preserved, Telegram connected.
+New model-backed actions now use deterministic preferred planning profiles while broad persisted legality bounds remain unchanged. Representative v1 profiles: inspect 2–6m, use 2–10m, read 20–60m, Heavy Bag 20–45m, Free Weights 45–90m. Sleep remains unclamped until nap/night-sleep semantics are separated.
 
-The first ETA acceptance attempt failed only because candidate staging omitted `config/`; no failed candidate was deployed.
+## Exact resume point
 
-## Deferred boundaries
+The approved next direction is **Selective Activity/Action Semantics expansion**. Current action vocabulary is still shallow (`move/sleep/eat/drink/shower/rest/inspect/use/train/read/idle`). Add only a very small number of meaningful verbs where generic `use`/`inspect` is clearly inadequate, reusing schema-v4 `action_definitions`, capabilities, validation, first-class actions/events and duration profiles.
 
-Still not implemented:
-- deterministic action-duration planning profiles;
-- accumulated training stimulus/adaptation;
-- attribute/skill/body-measurement progression;
-- soreness/injury and detailed exercise programming;
-- inventory/resource depletion;
-- universal grading/tier evaluation;
-- rich memory/relationship/environment engines;
-- exterior/Tahoe traversal;
-- schema v5.
+Likely first semantic candidates from current estate affordances: `research`, `monitor`, `maintain/repair`, or `practice`. Do not implement all at once. Choose the smallest useful vertical slice and validate/deploy it before adding another.
 
-## Exact resume point — DISCUSSION
-
-Current-action ETA observability is deployed. The Creator explicitly requested that development now pause for a roadmap/current-architecture discussion before selecting the next slice.
-
-Do **not** automatically implement another slice. Re-read current roadmap/architecture and discuss the highest-leverage options. Preserve schema v4, 1x wake-on-demand autonomy, globally scoped ids, actor-scoped runtime, first-class actions/events, Telegram presentation rules, profile/runtime separation, typed/audited Creator control, and minimum-runnable expansion.
+After activity semantics, planned discussion sequence remains: first read-only grading proof -> minimum training stimulus -> later adaptation/progression, unless Creator redirects.
