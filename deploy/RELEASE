@@ -1,7 +1,7 @@
 Observer Sandbox production release marker
 
-release: food-resolution-guard-v1
-accepted_main: 6117b4b8f08ae3afc8d0db6849a7aa061a34b51f
-acceptance_workflow: Food Resolution Guard v1 Acceptance #4
-acceptance_run: 31691041378
+release: causal-need-resolution-v2
+accepted_main: 4a0c5d67f0ed9460fc319702fa846a676090c606
+acceptance_workflow: Causal Need Resolution v2 Acceptance #11
+acceptance_run: 31692492180
 status: accepted-for-production
