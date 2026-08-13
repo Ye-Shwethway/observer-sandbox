@@ -11,13 +11,18 @@ def test_initialize_and_status(tmp_path):
     assert result.schema_version == 3
     assert result.runtime_state["paused"] is False
     assert result.runtime_state["speed"] == 1.0
-    assert result.runtime_state["world_id"] == "home"
+    assert result.runtime_state["world_id"] == "observer_universe"
 
     with connect(db) as conn:
         tables = {
             row[0]
             for row in conn.execute("SELECT name FROM sqlite_master WHERE type='table'")
         }
+        assert conn.execute("SELECT entity_type FROM entities WHERE id='observer_universe'").fetchone()[0] == "world"
+        assert conn.execute("SELECT entity_type FROM entities WHERE id='home'").fetchone()[0] == "location"
+        assert conn.execute(
+            "SELECT 1 FROM relations WHERE source_id='observer_universe' AND relation_type='contains' AND target_id='home'"
+        ).fetchone() is not None
     assert {
         "entities",
         "relations",
