@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import json
 import sqlite3
+from collections import deque
 from dataclasses import dataclass
 from datetime import datetime, timedelta, timezone
 from typing import Any, Protocol
@@ -42,8 +43,6 @@ PHYSIOLOGY_FIELDS = {
     "physiology.cleanliness": "cleanliness",
 }
 
-# Passive time drift per simulated hour. Positive hunger/thirst/sleepiness are worse;
-# positive energy/cleanliness are better.
 PASSIVE_DRIFT_PER_HOUR = {
     "energy": -2.0,
     "hunger": 2.5,
@@ -52,8 +51,6 @@ PASSIVE_DRIFT_PER_HOUR = {
     "cleanliness": -0.8,
 }
 
-# Intrinsic action effects are independent of a particular target object. Target-specific
-# effects (food, water, shower, future consumables) are defined on world objects instead.
 ACTION_EFFECTS_PER_HOUR: dict[str, dict[str, float]] = {
     "sleep": {"energy": 11.0, "sleepiness": -15.0, "hunger": 0.5, "thirst": 0.75},
     "rest": {"energy": 10.0, "sleepiness": -4.0},
@@ -62,18 +59,20 @@ ACTION_EFFECTS_PER_HOUR: dict[str, dict[str, float]] = {
     "idle": {"energy": 3.0},
 }
 
-NEXT_HOP = {
-    ("room_bedroom", "room_bathroom"): "room_bathroom", ("room_bedroom", "room_living"): "room_living",
-    ("room_bedroom", "room_kitchen"): "room_bathroom", ("room_bedroom", "room_gym"): "room_living",
-    ("room_bathroom", "room_bedroom"): "room_bedroom", ("room_bathroom", "room_living"): "room_bedroom",
-    ("room_bathroom", "room_kitchen"): "room_kitchen", ("room_bathroom", "room_gym"): "room_bedroom",
-    ("room_living", "room_bedroom"): "room_bedroom", ("room_living", "room_bathroom"): "room_bedroom",
-    ("room_living", "room_kitchen"): "room_kitchen", ("room_living", "room_gym"): "room_gym",
-    ("room_kitchen", "room_bedroom"): "room_bathroom", ("room_kitchen", "room_bathroom"): "room_bathroom",
-    ("room_kitchen", "room_living"): "room_living", ("room_kitchen", "room_gym"): "room_living",
-    ("room_gym", "room_bedroom"): "room_living", ("room_gym", "room_bathroom"): "room_living",
-    ("room_gym", "room_kitchen"): "room_living", ("room_gym", "room_living"): "room_living",
-}
+MASTER_SUITE = "loc_thorne_estate_master_suite"
+MASTER_BATHROOM = "loc_thorne_estate_master_bathroom"
+LIVING_ROOM = "loc_thorne_estate_living_room"
+KITCHEN = "loc_thorne_estate_kitchen"
+HOME_GYM = "loc_thorne_estate_home_gym"
+LIBRARY = "loc_thorne_estate_library"
+
+MASTER_BED = "obj_thorne_estate_master_bed"
+MASTER_SHOWER = "obj_thorne_estate_master_shower"
+DRINKING_WATER = "obj_thorne_estate_kitchen_drinking_water"
+MEAL_INGREDIENTS = "obj_thorne_estate_kitchen_meal_ingredients"
+FREE_WEIGHTS = "obj_thorne_estate_gym_free_weights"
+LIBRARY_BOOKSHELF = "obj_thorne_estate_library_bookshelf"
+LIVING_SOFA = "obj_thorne_estate_living_sofa"
 
 
 def _clamp(value: float) -> float:
@@ -104,7 +103,7 @@ def ensure_sim_clock(conn: sqlite3.Connection) -> datetime:
 
 
 def snapshot(conn: sqlite3.Connection, actor_id: str = "char_darian") -> dict[str, Any]:
-    location = get_field(conn, actor_id, "runtime.location", "room_bedroom")
+    location = get_field(conn, actor_id, "runtime.location", MASTER_SUITE)
     room = conn.execute("SELECT name FROM entities WHERE id=?", (location,)).fetchone()
     return {
         "actor_id": actor_id, "sim_time": ensure_sim_clock(conn).isoformat(), "location": location,
@@ -166,20 +165,8 @@ def action_options(conn: sqlite3.Connection, actor_id: str = "char_darian") -> l
                 if effects:
                     option["effects"] = effects
                 options.append(option)
-    options.append({
-        "action": "rest",
-        "target": None,
-        "target_name": None,
-        "duration": ACTION_DURATION_BOUNDS["rest"],
-        "effects_per_hour": ACTION_EFFECTS_PER_HOUR["rest"],
-    })
-    options.append({
-        "action": "idle",
-        "target": None,
-        "target_name": None,
-        "duration": ACTION_DURATION_BOUNDS["idle"],
-        "effects_per_hour": ACTION_EFFECTS_PER_HOUR["idle"],
-    })
+    options.append({"action": "rest", "target": None, "target_name": None, "duration": ACTION_DURATION_BOUNDS["rest"], "effects_per_hour": ACTION_EFFECTS_PER_HOUR["rest"]})
+    options.append({"action": "idle", "target": None, "target_name": None, "duration": ACTION_DURATION_BOUNDS["idle"], "effects_per_hour": ACTION_EFFECTS_PER_HOUR["idle"]})
     return options
 
 
@@ -189,7 +176,7 @@ def validate_action(conn: sqlite3.Connection, actor_id: str, action: Action) -> 
     low, high = ACTION_DURATION_BOUNDS[action.name]
     if action.duration_minutes < low or action.duration_minutes > high:
         raise ValueError(f"Action {action.name} duration must be between {low} and {high} minutes")
-    location = get_field(conn, actor_id, "runtime.location", "room_bedroom")
+    location = get_field(conn, actor_id, "runtime.location", MASTER_SUITE)
     if action.name == "move":
         if not action.target:
             raise ValueError("move requires a target room")
@@ -238,18 +225,14 @@ def _advance_needs(conn: sqlite3.Connection, actor_id: str, action: Action) -> N
         "sleepiness": float(get_field(conn, actor_id, "needs.sleepiness", 15.0)),
         "cleanliness": float(get_field(conn, actor_id, "physiology.cleanliness", 80.0)),
     }
-
     for stat, rate in PASSIVE_DRIFT_PER_HOUR.items():
         values[stat] += rate * hours
-
     for stat, rate in ACTION_EFFECTS_PER_HOUR.get(action.name, {}).items():
         values[stat] += rate * hours
-
     if action.target:
         target_effects = _object_effects(conn, action.target).get(action.name, {})
         if isinstance(target_effects, dict):
             _apply_effect_spec(values, target_effects)
-
     set_field(conn, actor_id, "needs.energy", _clamp(values["energy"]))
     set_field(conn, actor_id, "needs.hunger", _clamp(values["hunger"]))
     set_field(conn, actor_id, "needs.thirst", _clamp(values["thirst"]))
@@ -281,40 +264,53 @@ def apply_action(conn: sqlite3.Connection, action: Action, actor_id: str = "char
     return after
 
 
-def _move_toward(location: str, destination: str, reason: str) -> Action:
+def _move_toward(conn: sqlite3.Connection, location: str, destination: str, reason: str) -> Action:
     if location == destination:
         raise ValueError("move_toward called while already at destination")
-    target = NEXT_HOP.get((location, destination))
-    if target is None:
-        raise ValueError(f"No authored Home v1 route from {location} to {destination}")
-    return Action("move", 5, target, reason)
+    queue: deque[tuple[str, str | None]] = deque([(location, None)])
+    seen = {location}
+    while queue:
+        node, first_hop = queue.popleft()
+        for neighbor in reachable_rooms(conn, node):
+            target = neighbor["id"]
+            if target in seen:
+                continue
+            hop = target if first_hop is None else first_hop
+            if target == destination:
+                return Action("move", 5, hop, reason)
+            seen.add(target)
+            queue.append((target, hop))
+    raise ValueError(f"No authored route from {location} to {destination}")
 
 
 class BaselineLivingPolicy:
+    def __init__(self, conn: sqlite3.Connection):
+        self.conn = conn
+
     def choose(self, state: dict[str, Any], available_actions: list[str]) -> Action:
         location = state["location"]
         if state["sleepiness"] >= 72:
-            return Action("sleep", 480, "obj_bed", "recover from high sleep pressure") if location == "room_bedroom" else _move_toward(location, "room_bedroom", "go to bed")
+            return Action("sleep", 480, MASTER_BED, "recover from high sleep pressure") if location == MASTER_SUITE else _move_toward(self.conn, location, MASTER_SUITE, "go to bed")
         if state["energy"] <= 28:
             return Action("rest", 60, None, "recover low energy")
         if state["thirst"] >= 55:
-            return Action("drink", 5, "obj_water", "respond to thirst") if location == "room_kitchen" else _move_toward(location, "room_kitchen", "get water")
+            return Action("drink", 5, DRINKING_WATER, "respond to thirst") if location == KITCHEN else _move_toward(self.conn, location, KITCHEN, "get water")
         if state["hunger"] >= 60:
-            return Action("eat", 25, "obj_meal_stock", "respond to hunger") if location == "room_kitchen" else _move_toward(location, "room_kitchen", "get food")
+            return Action("eat", 25, MEAL_INGREDIENTS, "respond to hunger") if location == KITCHEN else _move_toward(self.conn, location, KITCHEN, "get food")
         if state["cleanliness"] <= 45:
-            return Action("shower", 15, "obj_shower", "restore cleanliness") if location == "room_bathroom" else _move_toward(location, "room_bathroom", "take a shower")
+            return Action("shower", 15, MASTER_SHOWER, "restore cleanliness") if location == MASTER_BATHROOM else _move_toward(self.conn, location, MASTER_BATHROOM, "take a shower")
         hour = datetime.fromisoformat(state["sim_time"]).hour
         if 8 <= hour < 11 and state["energy"] >= 50:
-            return Action("train", 60, "obj_weights", "morning training block") if location == "room_gym" else _move_toward(location, "room_gym", "start morning training")
+            return Action("train", 60, FREE_WEIGHTS, "morning training block") if location == HOME_GYM else _move_toward(self.conn, location, HOME_GYM, "start morning training")
         if 19 <= hour < 22:
-            return Action("read", 45, "obj_bookshelf", "evening wind-down") if location == "room_living" else _move_toward(location, "room_living", "wind down in living room")
-        if location == "room_living":
-            return Action("rest", 30, "obj_sofa", "unstructured recovery time")
-        return _move_toward(location, "room_living", "return to common area")
+            return Action("read", 45, LIBRARY_BOOKSHELF, "evening wind-down") if location == LIBRARY else _move_toward(self.conn, location, LIBRARY, "wind down with reading")
+        if location == LIVING_ROOM:
+            return Action("rest", 30, LIVING_SOFA, "unstructured recovery time")
+        return _move_toward(self.conn, location, LIVING_ROOM, "return to common area")
 
 
 def run_until(conn: sqlite3.Connection, end_time: datetime, *, decision_provider: DecisionProvider | None = None, actor_id: str = "char_darian", max_actions: int = 200) -> list[dict[str, Any]]:
-    provider = decision_provider or BaselineLivingPolicy()
+    provider = decision_provider or BaselineLivingPolicy(conn)
     trace: list[dict[str, Any]] = []
     for _ in range(max_actions):
         state = snapshot(conn, actor_id)
