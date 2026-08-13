@@ -1,0 +1,144 @@
+name: Autonomy Breadth and Time Acceptance
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths:
+      - '.github/workflows/autonomy-breadth-time-acceptance.yml'
+      - 'config/worlds/home.v1.json'
+      - 'config/characters/darian.autonomy-policy.json'
+      - 'src/observer_sandbox/service.py'
+      - 'src/observer_sandbox/telegram_notifications.py'
+      - 'src/observer_sandbox/composition_schema.py'
+
+jobs:
+  acceptance:
+    if: ${{ vars.VPS_DEPLOY_ENABLED == 'true' }}
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Configure SSH
+        env:
+          VPS_SSH_KEY: ${{ secrets.VPS_SSH_KEY }}
+          VPS_HOST: ${{ secrets.VPS_HOST }}
+          VPS_PORT: ${{ secrets.VPS_PORT || '22' }}
+        run: |
+          test -n "$VPS_HOST"
+          test -n "$VPS_SSH_KEY"
+          install -m 700 -d ~/.ssh
+          printf '%s\n' "$VPS_SSH_KEY" > ~/.ssh/id_ed25519
+          chmod 600 ~/.ssh/id_ed25519
+          ssh-keyscan -p "$VPS_PORT" -H "$VPS_HOST" >> ~/.ssh/known_hosts
+
+      - name: Stage candidate source and config on VPS
+        env:
+          VPS_HOST: ${{ secrets.VPS_HOST }}
+          VPS_USER: ${{ secrets.VPS_USER }}
+          VPS_PORT: ${{ secrets.VPS_PORT || '22' }}
+        run: |
+          ssh -p "$VPS_PORT" "$VPS_USER@$VPS_HOST" 'rm -rf /tmp/observer-breadth-time-candidate && mkdir -p /tmp/observer-breadth-time-candidate'
+          rsync -az -e "ssh -p $VPS_PORT" src/ "$VPS_USER@$VPS_HOST:/tmp/observer-breadth-time-candidate/src/"
+          rsync -az -e "ssh -p $VPS_PORT" config/ "$VPS_USER@$VPS_HOST:/tmp/observer-breadth-time-candidate/config/"
+
+      - name: Prove breadth timing and notification behavior on disposable production copy
+        env:
+          VPS_HOST: ${{ secrets.VPS_HOST }}
+          VPS_USER: ${{ secrets.VPS_USER }}
+          VPS_PORT: ${{ secrets.VPS_PORT || '22' }}
+        run: |
+          ssh -p "$VPS_PORT" "$VPS_USER@$VPS_HOST" '
+            set -euo pipefail
+            cd /opt/observer-sandbox
+            TMP_DB=$(mktemp /tmp/observer-breadth-time.XXXXXX.sqlite3)
+            trap "rm -f $TMP_DB $TMP_DB-wal $TMP_DB-shm; rm -rf /tmp/observer-breadth-time-candidate" EXIT
+            cp /var/lib/observer-sandbox/observer.sqlite3 "$TMP_DB"
+            export OBSERVER_SANDBOX_DB="$TMP_DB"
+            export PYTHONPATH=/tmp/observer-breadth-time-candidate/src
+            .venv/bin/python - <<"PY"
+          import json
+          import os
+          from observer_sandbox.db import connect
+          from observer_sandbox.model_decision import load_autonomy_policy
+          from observer_sandbox.runtime import initialize
+          from observer_sandbox.simulation import action_options
+          from observer_sandbox.telegram_notifications import format_action_completion
+          from observer_sandbox.world import set_field
+
+          db = os.environ["OBSERVER_SANDBOX_DB"]
+          initialize(db)
+          policy = load_autonomy_policy("/tmp/observer-breadth-time-candidate/config/characters/darian.autonomy-policy.json")
+
+          with connect(db) as conn:
+              object_count = int(conn.execute("SELECT COUNT(*) FROM entities WHERE entity_type='object'").fetchone()[0])
+              assert object_count == 27, object_count
+              inspect_bounds = tuple(conn.execute(
+                  "SELECT min_duration_minutes,max_duration_minutes FROM action_definitions WHERE action_type='inspect'"
+              ).fetchone())
+              use_bounds = tuple(conn.execute(
+                  "SELECT min_duration_minutes,max_duration_minutes FROM action_definitions WHERE action_type='use'"
+              ).fetchone())
+              assert inspect_bounds == (1, 60), inspect_bounds
+              assert use_bounds == (1, 120), use_bounds
+              assert policy["duration_guidance"]["quick_discretionary"]["inspect_minutes"] == [2, 6]
+              assert policy["duration_guidance"]["quick_discretionary"]["simple_use_minutes"] == [2, 10]
+
+              targets = {
+                  "loc_thorne_estate_garage": "obj_thorne_estate_garage_workbench",
+                  "loc_thorne_estate_intelligence_hub": "obj_thorne_estate_intel_surveillance_console",
+                  "loc_thorne_estate_comms": "obj_thorne_estate_comms_secure_terminal",
+                  "loc_thorne_estate_training_hall": "obj_thorne_estate_training_practice_dummy",
+                  "loc_thorne_estate_medical_bay": "obj_thorne_estate_medical_diagnostic_station",
+                  "loc_thorne_estate_armory": "obj_thorne_estate_armory_equipment_bench",
+                  "loc_thorne_estate_bunker": "obj_thorne_estate_bunker_emergency_console",
+              }
+              for room_id, target_id in targets.items():
+                  set_field(conn, "char_darian", "runtime.location", room_id)
+                  conn.commit()
+                  assert any(option["target"] == target_id for option in action_options(conn)), (room_id, target_id)
+
+          before = {
+              "sim_time": "2025-05-01T15:20:00+00:00",
+              "location_name": "Kitchen",
+              "energy": 74.5, "hunger": 20.0, "thirst": 15.0,
+              "sleepiness": 15.0, "cleanliness": 80.0,
+          }
+          after = {
+              "sim_time": "2025-05-01T15:25:00+00:00",
+              "location_name": "Kitchen",
+              "energy": 74.3, "hunger": 20.2, "thirst": 15.2,
+              "sleepiness": 15.2, "cleanliness": 79.9,
+          }
+          completed = {
+              "action": "inspect", "target_name": "Pantry", "duration_minutes": 5,
+              "speed_at_plan": 1.0, "reason": "Check supplies briefly.",
+          }
+          next_action = {
+              "action": "move", "target_name": "Living Room", "duration_minutes": 5,
+              "speed_at_plan": 1.0, "planned_sim_time": "2025-05-01T15:25:00+00:00",
+          }
+          text = format_action_completion(completed, before, after, actor_name="Darian Thorne", next_action=next_action)
+          assert "Took 5 sim min" in text
+          assert "Next: Move → Living Room" in text
+          assert "Expected update: 01-05-2025 (Thursday) 03:30 PM" in text
+
+          print(json.dumps({
+              "ok": True,
+              "disposable": True,
+              "candidate_source": True,
+              "model_calls": 0,
+              "object_count": 27,
+              "non_kitchen_target_rooms": len(targets),
+              "quick_inspect_guidance": policy["duration_guidance"]["quick_discretionary"]["inspect_minutes"],
+              "quick_use_guidance": policy["duration_guidance"]["quick_discretionary"]["simple_use_minutes"],
+              "pending_compatible_runtime_bounds": True,
+              "notification_timing_visible": True,
+          }, indent=2, sort_keys=True))
+          PY
+            export OBSERVER_SANDBOX_DB=/var/lib/observer-sandbox/observer.sqlite3
+            unset PYTHONPATH
+            echo "--- PRODUCTION READBACK (UNCHANGED BY ACCEPTANCE COPY) ---"
+            .venv/bin/sandboxctl status
+            .venv/bin/sandboxctl living-status
+          '
