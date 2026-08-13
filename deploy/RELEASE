@@ -1,11 +1,14 @@
 Observer Sandbox production release marker
 
-release: training-method-semantics-v1
-accepted_main: 5551296b031da15587d68cb15ca8ea543c0bbbaa
-acceptance_workflow: Training Method Semantics v1 Acceptance #2
-acceptance_run: 31717340834
-compatibility_workflow: Causal Need Resolution v2 Acceptance #19 + Fatigue Causal Recovery v1 Acceptance #8
-compatibility_runs: 31717340427, 31717340432
-ci_workflow: CI #518
-ci_run: 31717340539
+release: stamina-progression-v1
+accepted_main: c1442f2d229a991a296b2570560a0a1e5e5484b2
+core_merge: 4888929ee2990d779731320fc4d835d837c4ab90
+core_acceptance_workflow: Stamina Progression Exemplar v1 Acceptance #2
+core_acceptance_run: 31721714882
+activation_acceptance_workflow: Stamina Progression Activation v1 Acceptance #3
+activation_acceptance_run: 31722340440
+compatibility_workflow: Strength Progression Auto Activation v1 Acceptance #4
+compatibility_run: 31722340405
+ci_workflow: CI #529
+ci_run: 31722340302
 status: accepted-for-production
