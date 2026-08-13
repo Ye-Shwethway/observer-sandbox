@@ -1,7 +1,7 @@
 Observer Sandbox production release marker
 
-release: minimum-training-stimulus-v1
-accepted_main: 3578de12ebc750aca397b16f01f8bd368e1af11a
-acceptance_workflow: Minimum Training Stimulus Acceptance #2
-acceptance_run: 31685799302
+release: adaptation-curve-v1-read-only
+accepted_main: 52644bfcbb8b7b9cb4196d8b5f253a32e053aaf2
+acceptance_workflow: Adaptation Curve v1 Acceptance #1
+acceptance_run: 31686888383
 status: accepted-for-production
