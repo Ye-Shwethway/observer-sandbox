@@ -15,6 +15,7 @@ PROFILE_SECTIONS: tuple[dict[str, Any], ...] = (
         "icon": "⚡",
         "domains": ("raps_pa", "raps_ma", "raps_ia", "social", "raps_vc"),
     },
+    {"id": "recovery", "label": "Recovery", "icon": "🛌", "runtime_fields": ("physiology.fatigue",)},
     {"id": "personality", "label": "Personality", "icon": "🧠", "domains": ("personality",)},
     {"id": "skills", "label": "Skills", "icon": "🎯", "collection": "skills"},
     {"id": "preferences", "label": "Preferences & Habits", "icon": "❤️", "collection": "preferences"},
@@ -57,6 +58,15 @@ def profile_menu(conn: sqlite3.Connection, character_id: str) -> dict[str, Any]:
 
 
 def _section_has_data(conn: sqlite3.Connection, character_id: str, section: dict[str, Any]) -> bool:
+    runtime_fields = tuple(section.get("runtime_fields") or ())
+    if runtime_fields:
+        placeholders = ",".join("?" for _ in runtime_fields)
+        row = conn.execute(
+            f"SELECT 1 FROM fields WHERE entity_id=? AND field_key IN ({placeholders}) LIMIT 1",
+            (character_id, *runtime_fields),
+        ).fetchone()
+        return row is not None
+
     collection = section.get("collection")
     if collection == "skills":
         row = conn.execute("SELECT 1 FROM character_skills WHERE entity_id=? LIMIT 1", (character_id,)).fetchone()
@@ -91,8 +101,11 @@ def profile_section(conn: sqlite3.Connection, character_id: str, section_id: str
     if section is None:
         raise KeyError(f"Unknown profile section: {section_id}")
 
+    runtime_fields = tuple(section.get("runtime_fields") or ())
     collection = section.get("collection")
-    if collection == "skills":
+    if runtime_fields:
+        content = _runtime_values(conn, character_id, runtime_fields)
+    elif collection == "skills":
         content = _skills(conn, character_id)
     elif collection == "preferences":
         content = _preferences(conn, character_id)
@@ -104,6 +117,40 @@ def profile_section(conn: sqlite3.Connection, character_id: str, section_id: str
         "section": {"id": section["id"], "label": section["label"], "icon": section["icon"]},
         "content": content,
     }
+
+
+def _runtime_values(conn: sqlite3.Connection, character_id: str, field_keys: tuple[str, ...]) -> list[dict[str, Any]]:
+    if not field_keys:
+        return []
+    placeholders = ",".join("?" for _ in field_keys)
+    rows = conn.execute(
+        f"""
+        SELECT f.field_key, f.value_json, f.mode,
+               COALESCE(d.domain, 'runtime') AS domain,
+               COALESCE(d.label, f.field_key) AS label,
+               COALESCE(d.data_type, 'number') AS data_type,
+               d.unit
+        FROM fields f
+        LEFT JOIN profile_field_definitions d ON d.field_key=f.field_key
+        WHERE f.entity_id=? AND f.field_key IN ({placeholders})
+          AND COALESCE(d.sensitivity, 'normal')='normal'
+        ORDER BY f.field_key
+        """,
+        (character_id, *field_keys),
+    ).fetchall()
+    return [
+        {
+            "kind": "field",
+            "field_key": row["field_key"],
+            "domain": row["domain"],
+            "label": row["label"],
+            "value": json.loads(row["value_json"]),
+            "data_type": row["data_type"],
+            "unit": row["unit"],
+            "mode": row["mode"],
+        }
+        for row in rows
+    ]
 
 
 def _profile_values(conn: sqlite3.Connection, character_id: str, domains: tuple[str, ...]) -> list[dict[str, Any]]:
