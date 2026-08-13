@@ -118,7 +118,7 @@ The Strength progression mutation flow is ACTIVE.
 
 Status: COMPLETE / DEPLOYED / CREATOR LIVE UX VERIFIED.
 
-`Profile -> Recovery` now exposes read-only Strength progression diagnostics:
+`Profile -> Recovery` exposes read-only Strength progression diagnostics:
 - six-decimal raw Strength;
 - recent qualifying Strength stimulus / 72h;
 - level adaptation factor;
@@ -133,6 +133,29 @@ Creator live-verified the initial no-stimulus/bootstrap state. Wording polish su
 Evidence:
 - PR #25 merge `d291e77f4c290bc4b0487888e52a4c6063349f36`, CI #457 `31699319018` SUCCESS, Deploy #151 `31699394074` SUCCESS;
 - wording polish PR #26 merge `ebf18df5cc728ea600490f4b23da6e8bc35096ef`, CI #462 `31700255690` SUCCESS, release `fb45466d61494dbe066c47a39f17a48ef240ddd3`, Deploy #152 `31700418122` SUCCESS.
+
+## Strength Progression Live Cycle Validation v1
+
+Status: **COMPLETE / REAL PRODUCTION EVIDENCE VALIDATED ON DISPOSABLE COPY / NO TUNING REQUIRED**.
+
+The first complete real Strength progression cycle is now validated before expansion to another domain.
+
+Clean evidence:
+- canonical validation doc `docs/STRENGTH_LIVE_CYCLE_VALIDATION_V1.md`;
+- PR #33 merge `02e7ddd640d727189b643092219fab95d7bb4ac0`;
+- Strength Live Cycle Validation v1 #9 run `31709316031` SUCCESS;
+- CI #491 run `31709315939` SUCCESS;
+- live production was opened read-only and copied with the SQLite backup API;
+- real Free Weights stimulus event `202`: `48.06` effective min -> `0.801` Strength stimulus units;
+- copied first eligible settlement at stimulus age `49.8h`;
+- level factor `0.01`, saturation `0.806256551`, recovery factor `1.0`;
+- expected gain approximately `0.0016145287433775`, recorded `+0.001614529`;
+- copied raw Strength `90.0 -> 90.001615`;
+- consumed-id persistence, same-boundary idempotency and history authority all passed;
+- `model_calls=0`, `telegram_calls=0`, `production_mutated=false`;
+- no Strength constants or formulas changed.
+
+This closes the Strength validation/tuning gate. The retained workflow is a production-copy validation harness, not a production mutation path.
 
 ## Causal physiological need resolution
 
@@ -214,8 +237,8 @@ Not implemented:
 
 The Creator approved this sequence before broader universe-feature growth:
 
-1. **Strength Progression Live Cycle Validation & Tuning v1** — validate the full Strength exemplar end to end on a disposable production-copy database.
-2. **Thorne Estate Interior / Training Environment Expansion** — enrich the current sparse Training Hall and Top-Class Home Gym against `docs/DARIAN_MANSION_REFERENCE.md`; also enrich directly relevant interior support surfaces where they reuse the same proven world/object pattern.
+1. **Strength Progression Live Cycle Validation & Tuning v1** — COMPLETE; no tuning required.
+2. **Thorne Estate Interior / Training Environment Expansion** — NEXT; enrich the current sparse Training Hall and Top-Class Home Gym against `docs/DARIAN_MANSION_REFERENCE.md`; also enrich directly relevant interior support surfaces where they reuse the same proven world/object pattern.
 3. **Training Methods / Semantics Expansion** — expand beyond a flat generic `train` surface so equipment/method completions provide richer composable training evidence without yet adding new non-Strength attribute mutation.
 4. **Character Simulation Unlock Expansion** — start with a Stamina progression exemplar, then batch only structurally equivalent physical attributes; progress next to skills, body composition/measurements, and later cognitive/social/emotional families.
 
@@ -225,29 +248,27 @@ Expansion invariants:
 - each new progression family must prove its own stimulus mapping, recovery/realization and decay semantics before batch expansion;
 - body measurements/composition remain a separate architecture line rather than inheriting Strength formulas by default.
 
-## Next slice — Strength Progression Live Cycle Validation & Tuning v1
+## Next slice — Thorne Estate Interior / Training Environment Expansion
 
-Before environment/progression expansion, validate one complete real Strength cycle while preserving production safety.
+Goal: make the implemented mansion interior materially richer before opening another profile progression domain.
 
-Required validation:
-1. read live production baseline evidence for Strength, fatigue/readiness, recent stimulus, speed and pending action without mutation;
-2. copy the current production DB to a disposable validation DB;
-3. use real copied Free Weights completion/stimulus evidence where available; do not fabricate Strength stimulus or directly set Strength;
-4. inspect copied Profile/Recovery diagnostics immediately after the qualifying stimulus;
-5. let recovery proceed through ordinary action semantics on the disposable copy; accelerated simulated observation is permitted only on the copy;
-6. inspect the <=6h, 6..48h and >=48h recovery boundaries on the copy when practical;
-7. verify the first eligible automatic settlement only at an action-completion boundary;
-8. compare actual stimulus, level factor, saturation, recovery factor and settlement delta with the v1 formulas;
-9. verify raw Strength history/event evidence, consumed IDs, duplicate-credit suppression and same-boundary idempotency;
-10. tune constants only if concrete evidence shows a mismatch; otherwise preserve formulas and mark the cycle validated;
-11. after all-green merge/deploy, perform read-only production health/runtime readback only.
+Scope:
+1. reconcile `config/worlds/home.v1.json` against `docs/DARIAN_MANSION_REFERENCE.md`;
+2. prove one new equipment/content expansion exemplar using the existing schema-v4 entity/object/capability contracts;
+3. batch structurally equivalent Top-Class Home Gym and Training Hall equipment in the same bounded slice;
+4. preserve existing traversable interior topology and keep exterior/Tahoe boundaries locked;
+5. expose new objects generically through existing world/query/action-option surfaces;
+6. do not introduce Stamina or other non-Strength mutation yet;
+7. do not make equipment own progression formulas;
+8. validate every batched object on a disposable production-copy database before merge/deploy;
+9. after all-green merge/deploy, perform read-only production health/world readback.
 
-This slice is validation/tuning, not a new progression-domain implementation. Production runtime acceleration, direct progression edits, fabricated stimulus, and validation-induced Telegram activity are prohibited.
+Initial canonical richness targets include Olympic-level strength equipment, modern endurance/speed equipment and mansion-documented Training Hall simulation/drill surfaces. Exact object grouping must remain bounded by the exemplar-first/batch-by-pattern rule rather than adding every conceivable gym item.
 
 ## Current resume point
 
-Resume **Strength Progression Live Cycle Validation & Tuning v1** under the disposable production-copy validation policy. Treat live production only as a read-only evidence source and re-read its current speed instead of assuming cadence.
+Resume **Thorne Estate Interior / Training Environment Expansion** from `docs/DARIAN_MANSION_REFERENCE.md`, `docs/WORLD_LOCATION_NODE_MODEL.md`, `config/worlds/home.v1.json`, and the current generic world/action-option contracts.
 
-After the Strength cycle closes, proceed directly to **Thorne Estate Interior / Training Environment Expansion**, then **Training Methods / Semantics Expansion**, then **Stamina Progression Exemplar** and physical-attribute batch expansion.
+After environment enrichment, proceed to **Training Methods / Semantics Expansion**, then **Stamina Progression Exemplar** and physical-attribute batch expansion.
 
 Body measurements/composition remain a separate architecture line.
