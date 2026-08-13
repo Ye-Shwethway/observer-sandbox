@@ -14,6 +14,7 @@ Roadmap audit: 2026-08-13 — aligned to schema v4 and minimum-runnable expansio
 - World identity/topology follows `docs/WORLD_LOCATION_NODE_MODEL.md`.
 - Physiology/effects follow `docs/PHYSIOLOGY_AND_ITEM_EFFECTS.md`.
 - Telegram presentation follows `docs/TELEGRAM_OBSERVER_ARCHITECTURE.md`.
+- Privileged direct interventions follow `docs/CREATOR_CONTROL_POLICY.md`.
 - Future cross-domain grading/progression follows `docs/FUTURE_GRADING_SYSTEM.md` when a concrete grading slice is authorized.
 
 ## Development policy — MINIMUM RUNNABLE EXPANSION
@@ -29,7 +30,7 @@ Each new slice should normally contain only:
 
 A slice is complete when that narrow feature is independently runnable/observable. Do **not** wait for a whole phase containing several future features before declaring a usable checkpoint.
 
-Avoid speculative subsystem construction. Existing schema-v4 sockets are extension points, not instructions to pre-build inventory, memory, relationships, weather, combat, grading or other engines before a concrete runnable slice needs them.
+Avoid speculative subsystem construction. Existing schema-v4 sockets are extension points, not instructions to pre-build inventory, memory, relationships, weather, combat, grading, Creator-control or other engines before a concrete runnable slice needs them.
 
 Prefer:
 `one small feature -> run -> observe -> validate -> keep -> next feature`
@@ -104,7 +105,7 @@ Includes wake-on-demand scheduler, validated actions, persistent state, five-sta
 
 ## P2 — Telegram Observer
 
-Status: CORE OBSERVER/BROWSING PATH LIVE / P2.3 DEFERRED
+Status: CORE OBSERVER/BROWSING PATH LIVE / P2.3 EXPANDS SLICE-BY-SLICE
 
 ### P2.1 — Mobile Observer MVP
 
@@ -193,15 +194,53 @@ P3 may extend this proven browser with narrow live-state sections when a concret
 
 ### P2.3 — Creator Control Expansion
 
-Status: LATER / SLICE-BY-SLICE ONLY
+Status: FIRST SLICE IMPLEMENTED / CI-VALIDATED / DEPLOYED / PRODUCTION MUTATION VERIFIED — TELEGRAM UI CHECK PENDING
 
-Potential slices: owner user management, provider/model browsing/rebinding, richer runtime/history controls and notification categories.
+P2.3 remains slice-by-slice only. Do not implement a broad admin console.
 
-Each must be independently runnable and useful. Do not implement the full P2.3 list as one project-sized batch.
+#### P2.3.1 — Restore Basic Stats
+
+Purpose: provide one safe Creator-authority intervention when slow real-time recovery makes live observation/development impractical.
+
+Implemented minimum scope:
+- reusable actor-scoped `restore_basic_stats()` backend;
+- restores Energy `75`, Hunger `20`, Thirst `15`, Sleepiness `15`, Cleanliness `80`, Fatigue `0`;
+- preserves simulation time, location, profile canon, autonomy enabled state and autonomy mode;
+- cancels stale pending action, clears lease/retry and sets wake reason `creator_basic_stats_restored` so cognition can re-evaluate;
+- normal field ownership remains with the needs/physiology/living engines; Creator authority authorizes the intervention rather than becoming permanent field authority;
+- appends a `creator_basic_stats_restored` audit event with before/after/state changes/request source;
+- CLI: `sandboxctl creator restore-basic-stats --character <id>`;
+- Telegram owner-only `/restorestats [character_id]`;
+- Telegram owner-only `🩺 Restore Basic Stats` button with explicit confirmation screen;
+- allowed users neither receive the button nor pass server-side mutation authorization;
+- guarded `.github/workflows/creator-control.yml` uses the same backend; its initial push automatically restored production once and persisted a marker so later workflow edits do not accidentally reapply it.
+
+Evidence:
+- backend `89cb9f4b37726a7a6bdda9770ec252fbaa3e12ca`;
+- CLI `e35fb37fd45f9bc81af6943c59da5c64153a256c`;
+- Telegram `583141d9f20849dac69671de5972960eed27e9c3`;
+- focused tests `a4f825838ce93ed28ac5b95794d630dccc29854b`;
+- engine-ownership/lease refinement `ceae7247abcbe0a40fe65602e1bb3f970028a73c`;
+- CI #292 / run `31670662395` SUCCESS;
+- Deploy #126 / run `31670662394` SUCCESS;
+- workflow `d6ce3328f2a3b5b8314dd9e74054ab9681a6ff0f`;
+- Creator Control #1 / run `31670700838` SUCCESS.
+
+Live production restore evidence from `2026-08-13T05:33:26Z`:
+- before: Energy `39.498`, Hunger `29.081`, Thirst `35.835`, Sleepiness `35.335`, Cleanliness `100.0`, Fatigue `0.0`, action `rest`;
+- after: Energy `75.0`, Hunger `20.0`, Thirst `15.0`, Sleepiness `15.0`, Cleanliness `80.0`, Fatigue `0.0`, action `idle`;
+- location remained Master Bathroom;
+- sim time remained `2025-05-01T14:50:00+00:00`;
+- pending rest action `9d11373e-b3cd-4425-b3e2-3152687ca1bb` was cancelled;
+- autonomy remained enabled/normal, unpaused, `1x`.
+
+Canonical contract: `docs/CREATOR_CONTROL_POLICY.md`.
+
+Future potential slices remain owner user management, provider/model browsing/rebinding, richer runtime/history controls and notification categories. Each must be independently runnable and useful.
 
 ## P3 — First Richer Simulation Vertical Slice
 
-Status: FIRST SLICE IMPLEMENTED / CI-VALIDATED / DEPLOYED / BOUNDED ACCEPTANCE PASSED — CREATOR UI CHECK PENDING
+Status: FIRST SLICE COMPLETE / LIVE UX VERIFIED
 
 ### P3.1 — Minimum Systemic Training Fatigue / Recovery
 
@@ -238,13 +277,10 @@ Implementation/evidence:
 - Deploy #120 delivered the fatigue engine; Deploy #122 / run `31669140421` delivered the latest Recovery observer source and completed successfully;
 - P3 Training Recovery Acceptance #2 / run `31669332118` SUCCESS on a disposable production DB copy with **zero model calls**;
 - bounded acceptance proved fatigue `0.0 -> 18.5` after 60m training, then `18.5 -> 10.0` after 60m rest, and proved fatigue `75` blocks training in both option generation and validation;
-- the acceptance copy did not mutate production. Its production readback remained schema v4, autonomy enabled/normal, unpaused, `1x`, with a valid pending action.
+- the acceptance copy did not mutate production;
+- Creator opened the deployed Recovery section and confirmed `Systemic fatigue` and navigation were good.
 
-Creator acceptance remaining for **P3.1 only**:
-- open `Characters -> Darian -> Profile -> Recovery` in Telegram;
-- confirm `Systemic fatigue` is readable and Back navigation remains correct.
-
-Do not automatically expand P3.1 into a full training system after this check. Select the next minimum runnable slice separately.
+Do not automatically expand P3.1 into a full training system. Select the next minimum runnable slice separately.
 
 ## P4 — Context / Memory / Relationship Slice When Behavior Requires It
 
@@ -290,6 +326,6 @@ Expand destination-by-destination afterward.
 
 ## Current resume point
 
-**P2.2 browsing is live-verified and P3.1 systemic training fatigue/recovery is implemented, deployed and bounded-accepted. Creator should now check `Characters -> Darian -> Profile -> Recovery` in Telegram. If that one live view is good, close P3.1 as LIVE UX VERIFIED and select the next independently runnable slice rather than expanding the training subsystem automatically.**
+**P3.1 is COMPLETE / LIVE UX VERIFIED. P2.3.1 Restore Basic Stats is implemented, deployed and already used successfully against production. Creator should test the Telegram owner flow `Characters -> Darian -> 🩺 Restore Basic Stats -> confirmation`. Because the production restore has already been applied once, confirming again would intentionally perform another restore; backing out after checking the confirmation screen is sufficient to validate the UI without changing state again. If the UI is good, mark P2.3.1 LIVE UX VERIFIED and select the next independent minimum-runnable slice.**
 
-No additional core/schema refinement is required. Preserve 1x wake-on-demand production autonomy, globally scoped ids, locked unfinished boundaries, actor-scoped scheduler state, first-class actions/events, Telegram presentation rules, profile/runtime separation, grading-as-future-derived-capability and per-user notification preferences.
+No additional core/schema refinement is required. Preserve 1x wake-on-demand production autonomy, globally scoped ids, locked unfinished boundaries, actor-scoped scheduler state, first-class actions/events, Telegram presentation rules, profile/runtime separation, grading-as-future-derived capability, typed/audited Creator-control authority and per-user notification preferences.
