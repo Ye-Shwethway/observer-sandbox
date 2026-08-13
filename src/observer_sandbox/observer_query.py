@@ -6,6 +6,7 @@ from typing import Any
 
 from .autonomy import autonomy_status
 from .simulation import snapshot
+from .world import get_field
 
 
 def _entity(conn: sqlite3.Connection, entity_id: str) -> dict[str, Any] | None:
@@ -30,6 +31,16 @@ def _entity_name(conn: sqlite3.Connection, entity_id: str | None) -> str | None:
     return entity["name"] if entity else None
 
 
+def _location_record(conn: sqlite3.Connection, entity: dict[str, Any]) -> dict[str, Any]:
+    result = dict(entity)
+    if entity["type"] == "location":
+        result["kind"] = get_field(conn, entity["id"], "world.location_kind", "location")
+        result["access"] = get_field(conn, entity["id"], "world.access", "open")
+        result["canon"] = bool(get_field(conn, entity["id"], "world.canon", False))
+        result["metadata"] = get_field(conn, entity["id"], "world.metadata", {}) or {}
+    return result
+
+
 def list_worlds(conn: sqlite3.Connection) -> list[dict[str, Any]]:
     rows = conn.execute(
         "SELECT id, entity_type, name, capabilities_json FROM entities WHERE entity_type='world' ORDER BY name"
@@ -45,8 +56,8 @@ def list_worlds(conn: sqlite3.Connection) -> list[dict[str, Any]]:
     ]
 
 
-def list_locations(conn: sqlite3.Connection, world_id: str | None = None) -> list[dict[str, Any]]:
-    if world_id:
+def list_locations(conn: sqlite3.Connection, parent_id: str | None = None) -> list[dict[str, Any]]:
+    if parent_id:
         rows = conn.execute(
             """
             SELECT e.id, e.entity_type, e.name, e.capabilities_json
@@ -55,19 +66,22 @@ def list_locations(conn: sqlite3.Connection, world_id: str | None = None) -> lis
             WHERE r.source_id=? AND r.relation_type='contains' AND e.entity_type='location'
             ORDER BY e.name
             """,
-            (world_id,),
+            (parent_id,),
         ).fetchall()
     else:
         rows = conn.execute(
             "SELECT id, entity_type, name, capabilities_json FROM entities WHERE entity_type='location' ORDER BY name"
         ).fetchall()
     return [
-        {
-            "id": row["id"],
-            "type": row["entity_type"],
-            "name": row["name"],
-            "capabilities": json.loads(row["capabilities_json"]),
-        }
+        _location_record(
+            conn,
+            {
+                "id": row["id"],
+                "type": row["entity_type"],
+                "name": row["name"],
+                "capabilities": json.loads(row["capabilities_json"]),
+            },
+        )
         for row in rows
     ]
 
@@ -105,6 +119,28 @@ def location_summary(conn: sqlite3.Connection, location_id: str = "home") -> dic
     entity = _entity(conn, location_id)
     if entity is None:
         raise KeyError(f"Unknown location: {location_id}")
+    location = _location_record(conn, entity)
+
+    parent_row = conn.execute(
+        """
+        SELECT e.id, e.entity_type, e.name, e.capabilities_json
+        FROM relations r JOIN entities e ON e.id=r.source_id
+        WHERE r.target_id=? AND r.relation_type='contains'
+        ORDER BY CASE e.entity_type WHEN 'world' THEN 0 ELSE 1 END
+        LIMIT 1
+        """,
+        (location_id,),
+    ).fetchone()
+    parent = None
+    if parent_row is not None:
+        parent = {
+            "id": parent_row["id"],
+            "type": parent_row["entity_type"],
+            "name": parent_row["name"],
+            "capabilities": json.loads(parent_row["capabilities_json"]),
+        }
+        if parent["type"] == "location":
+            parent = _location_record(conn, parent)
 
     children = conn.execute(
         """
@@ -112,15 +148,29 @@ def location_summary(conn: sqlite3.Connection, location_id: str = "home") -> dic
         FROM relations r
         JOIN entities e ON e.id=r.target_id
         WHERE r.source_id=? AND r.relation_type='contains'
-        ORDER BY e.entity_type, e.name
+        ORDER BY CASE e.entity_type WHEN 'location' THEN 0 ELSE 1 END, e.name
         """,
         (location_id,),
     ).fetchall()
+    child_locations: list[dict[str, Any]] = []
+    objects: list[dict[str, Any]] = []
+    for row in children:
+        record = {
+            "id": row["id"],
+            "type": row["entity_type"],
+            "name": row["name"],
+            "capabilities": json.loads(row["capabilities_json"]),
+        }
+        if row["entity_type"] == "location":
+            child_locations.append(_location_record(conn, record))
+        elif row["entity_type"] == "object":
+            record["effects"] = get_field(conn, row["id"], "game.effects", {}) or {}
+            objects.append(record)
+
     residents = conn.execute(
         """
         SELECT e.id, e.entity_type, e.name
-        FROM relations r
-        JOIN entities e ON e.id=r.target_id
+        FROM relations r JOIN entities e ON e.id=r.target_id
         WHERE r.source_id=? AND r.relation_type='resident'
         ORDER BY e.name
         """,
@@ -141,19 +191,25 @@ def location_summary(conn: sqlite3.Connection, location_id: str = "home") -> dic
             if json.loads(row["value_json"]) == location_id:
                 occupants.append({"id": row["id"], "name": row["name"]})
 
+    exits = conn.execute(
+        """
+        SELECT e.id, e.name
+        FROM relations r JOIN entities e ON e.id=r.target_id
+        WHERE r.source_id=? AND r.relation_type='connected_to' AND e.entity_type='location'
+        ORDER BY e.name
+        """,
+        (location_id,),
+    ).fetchall()
+
     return {
-        "location": entity,
-        "children": [
-            {
-                "id": row["id"],
-                "type": row["entity_type"],
-                "name": row["name"],
-                "capabilities": json.loads(row["capabilities_json"]),
-            }
-            for row in children
-        ],
+        "location": location,
+        "parent": parent,
+        "children": child_locations + objects,
+        "child_locations": child_locations,
+        "objects": objects,
         "residents": [dict(row) for row in residents],
         "occupants": occupants,
+        "exits": [dict(row) for row in exits],
     }
 
 
