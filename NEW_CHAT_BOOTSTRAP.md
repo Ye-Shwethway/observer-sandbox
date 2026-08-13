@@ -5,7 +5,7 @@ Last synchronized: 2026-08-13
 
 ## Startup / authority
 
-Read `AGENTS.md`, then this file, then task-relevant contracts. Core/runtime/schema/action work: `docs/ARCHITECTURE.md` + `docs/COMPOSABLE_RUNTIME_ARCHITECTURE_AUDIT.md`. Spatial work: `docs/WORLD_LOCATION_NODE_MODEL.md`. Telegram: `docs/TELEGRAM_OBSERVER_ARCHITECTURE.md` + `docs/TELEGRAM_NOTIFICATION_POLICY.md`. Needs/effects: `docs/PHYSIOLOGY_AND_ITEM_EFFECTS.md`.
+Read `AGENTS.md`, then this file, then task-relevant contracts. Core/runtime/schema/action work: `docs/ARCHITECTURE.md` + `docs/COMPOSABLE_RUNTIME_ARCHITECTURE_AUDIT.md`. Spatial work: `docs/WORLD_LOCATION_NODE_MODEL.md`. Character/profile work: `docs/CHARACTER_PROFILE_SCHEMA.md`. Telegram: `docs/TELEGRAM_OBSERVER_ARCHITECTURE.md` + `docs/TELEGRAM_NOTIFICATION_POLICY.md`. Needs/effects: `docs/PHYSIOLOGY_AND_ITEM_EFFECTS.md`.
 
 Authority: current Creator instruction > canonical repo > verified live VPS/runtime/DB > deployed workflow evidence > CI/tests > this bootstrap > old chat/memory. Never conflate committed, CI-validated, deployed, DB-applied and live-behavior-verified states.
 
@@ -34,38 +34,17 @@ The prior audit is no longer merely proposed. Schema-v4 foundation is implemente
 
 ### State ownership
 
-Universe-global `runtime_state` owns shared state such as:
-- `sim_time`
-- speed
-- pause
-- world id
-- global/UI settings where appropriate.
+Universe-global `runtime_state` owns shared state such as `sim_time`, speed, pause, world id and global/UI settings where appropriate.
 
-Per-actor `actor_runtime` owns:
-- autonomy enabled/mode
-- pending action id
-- lease
-- retry/backoff
-- cognition wake reason/stats.
+Per-actor `actor_runtime` owns autonomy enabled/mode, pending action id, lease, retry/backoff and cognition wake reason/stats. Retired Darian-only singleton scheduler JSON keys are migrated into `actor_runtime` and are no longer authoritative.
 
-Retired Darian-only singleton scheduler JSON keys are migrated into `actor_runtime` and are no longer authoritative.
+Character profile ontology remains separate from actor scheduler runtime: profile/domain fields describe character facts/state; `actor_runtime` describes scheduler/cognition operation; `action_instances` describe current/history action instances.
 
 ### First-class actions
 
 `action_definitions` contains data-driven core action metadata. Current verbs include move/sleep/eat/drink/shower/rest/inspect/use/train/read/idle.
 
-`action_instances` persists:
-- action id/type
-- actor
-- place
-- target
-- participants/resources
-- condition/modifier snapshots
-- duration and planned sim/wall timing
-- status
-- outcome/state-change data.
-
-Actor runtime references a pending action by id. Domain-specific validation may layer on top of generic action-definition metadata.
+`action_instances` persists action id/type, actor, place, target, participants/resources, condition/modifier snapshots, duration/planned timing, status and outcome/state-change data. Actor runtime references a pending action by id. Domain-specific validation may layer on top of generic action-definition metadata.
 
 ### Multi-actor scheduling/time
 
@@ -77,15 +56,7 @@ Quasi is **not yet a production autonomous character**; the stub is test-only pr
 
 ### Events
 
-Events now support queryable:
-- event UUID
-- action id
-- location id
-- caused-by event id
-- structured state changes
-- normalized `event_participants`.
-
-Action-completion events link back to the action instance.
+Events now support queryable event UUID, action id, location id, caused-by event id, structured state changes and normalized `event_participants`. Action-completion events link back to the action instance.
 
 ### Definitions / instances / modifiers
 
@@ -95,30 +66,27 @@ Immediate effect operations support add/multiply/set/clamp. `active_modifiers` p
 
 ### Dynamic location / possession semantics
 
-`contains` = structural/static hierarchy.
-`connected_to` = traversable topology.
-`located_at` = dynamic physical presence.
-Future ownership/possession relations remain distinct: `owned_by`, `carried_by`, `equipped_by`, container/storage semantics.
+`contains` = structural/static hierarchy. `connected_to` = traversable topology. `located_at` = dynamic physical presence. Future ownership/possession remains distinct: `owned_by`, `carried_by`, `equipped_by`, container/storage semantics.
 
 `src/observer_sandbox/location_runtime.py` exposes the generic dynamic-location boundary. Character `runtime.location` remains a mirrored compatibility/cache path during transition; static fixtures may resolve through structural containment.
 
 ## Schema v4 migration/evidence
 
-Key implementation commits include:
-- composition schema foundation `c617ffe13c2cc081d3ef34d9f7357a808fe5c285`
+Key implementation commits:
+- composition schema `c617ffe13c2cc081d3ef34d9f7357a808fe5c285`
 - DB schema v4 `9f3accd77e1f0cff399a136981c2e887b9362f1a`
 - actor runtime `88998c35ab1ef7507cbbfffe2cf8c9e086cb85ae`
-- runtime initialization/migration `3916e4a124c5d0667ac82cecb5b0b8aec7e58e33`
+- runtime migration `3916e4a124c5d0667ac82cecb5b0b8aec7e58e33`
 - event linkage `e8c1da4745799089c697dedfe65ea36749e0b9a8`
-- actor-scoped autonomy scheduler `00cfa11fe60d3ab4708b7dbb09fe98610da2acd7`
+- actor-scoped scheduler `00cfa11fe60d3ab4708b7dbb09fe98610da2acd7`
 - concurrency-safe action time `f2b372c577514e97b23c4b330bfc37dbfa9c1fa6`
 - multi-actor service loop `9b210e3c9b332659a3303c4cd1a74c59c02de1cc`
 - generic dynamic location `57c62df9f542e36c29007a4fae8bf6defb5bcc4f`
 - actor-generic Telegram action notification `dffd5869ff7431ce2a21f05d3b92b9f8086d33a8`
 
-CI #248 / run `31665917748`: SUCCESS after schema-v4 composition tests, including independent multi-actor pending actions, concurrent-clock invariant, action/event participants, definition-instance/modifier sockets and dynamic-location contract.
+CI #253 / run `31666099784`: SUCCESS on the complete schema-v4 code/test set before final documentation-only sync. It includes fresh schema boot, actor-scoped autonomy/wake behavior, first-class action/event linkage, independent multi-actor pending actions, concurrency-clock invariant, definition-instance/modifier sockets and dynamic-location contract.
 
-Deploy #112 / run `31665737560`: SUCCESS. Live readback verified systemd active, Telegram API connected, **schema_version=4**, `world_id=world_observer_universe`, autonomy enabled/normal, paused false, speed 1.0, and a valid actor-scoped pending action id. Cognition telemetry survived migration; old legacy pending was cleared at migration boundary rather than invented as a partial v4 action.
+Deploy #112 / run `31665737560`: SUCCESS. Live readback verified systemd active, Telegram API connected, **schema_version=4**, `world_id=world_observer_universe`, autonomy enabled/normal, paused false, speed 1.0 and a valid actor-scoped pending action id. Cognition telemetry survived migration; old legacy pending was cleared at migration boundary rather than invented as a partial v4 action.
 
 Bounded Autonomy Acceptance #5 / run `31665851475`: SUCCESS on a disposable production DB copy at 3600x. Production was read back unchanged afterward. Starting copied state included Energy 32.165 / Cleanliness 42.533. Trajectory: rest 60m -> move to Master Bathroom 5m -> rest 30m -> shower 15m. Final copied state: Energy 43.498, Hunger 30.331, Thirst 37.335, Sleepiness 34.835, Cleanliness 100.0, `needs_acceptable=true`.
 
@@ -144,7 +112,7 @@ Frequent scheduler ticks do not mean frequent LLM calls. Each active actor wakes
 
 P2.1 LIVE; P2.2.1 inline Observer Home COMPLETE; P2.2.2A scoped Thorne Estate foundation COMPLETE/LIVE VERIFIED.
 
-Action-completion notifications are downstream of deterministic commit, per-user gated/deduplicated, and now resolve the actual actor name rather than hard-coding Darian. Telegram presentation rules remain mandatory.
+Action-completion notifications are downstream of deterministic commit, per-user gated/deduplicated and now resolve the actual actor name rather than hard-coding Darian. Telegram presentation rules remain mandatory.
 
 ## Roadmap / exact resume point
 
