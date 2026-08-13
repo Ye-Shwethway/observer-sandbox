@@ -36,9 +36,8 @@ jobs:
           VPS_USER: ${{ secrets.VPS_USER }}
           VPS_PORT: ${{ secrets.VPS_PORT || '22' }}
         run: |
-          CANDIDATE_DIR="/tmp/observer-p3-readiness-${GITHUB_SHA}"
-          ssh -p "$VPS_PORT" "$VPS_USER@$VPS_HOST" "rm -rf '$CANDIDATE_DIR' && mkdir -p '$CANDIDATE_DIR'"
-          rsync -az -e "ssh -p $VPS_PORT" src/ "$VPS_USER@$VPS_HOST:$CANDIDATE_DIR/src/"
+          ssh -p "$VPS_PORT" "$VPS_USER@$VPS_HOST" 'rm -rf /tmp/observer-p3-readiness-candidate && mkdir -p /tmp/observer-p3-readiness-candidate'
+          rsync -az -e "ssh -p $VPS_PORT" src/ "$VPS_USER@$VPS_HOST:/tmp/observer-p3-readiness-candidate/src/"
 
       - name: Prove readiness modifier on disposable production copy
         env:
@@ -46,16 +45,15 @@ jobs:
           VPS_USER: ${{ secrets.VPS_USER }}
           VPS_PORT: ${{ secrets.VPS_PORT || '22' }}
         run: |
-          ssh -p "$VPS_PORT" "$VPS_USER@$VPS_HOST" "
+          ssh -p "$VPS_PORT" "$VPS_USER@$VPS_HOST" '
             set -euo pipefail
             cd /opt/observer-sandbox
-            CANDIDATE_DIR=/tmp/observer-p3-readiness-${GITHUB_SHA}
-            TMP_DB=\$(mktemp /tmp/observer-p3-readiness.XXXXXX.sqlite3)
-            trap 'rm -f \$TMP_DB \$TMP_DB-wal \$TMP_DB-shm; rm -rf \$CANDIDATE_DIR' EXIT
-            cp /var/lib/observer-sandbox/observer.sqlite3 \"\$TMP_DB\"
-            export OBSERVER_SANDBOX_DB=\"\$TMP_DB\"
-            export PYTHONPATH=\"\$CANDIDATE_DIR/src\"
-            .venv/bin/python - <<'PY'
+            TMP_DB=$(mktemp /tmp/observer-p3-readiness.XXXXXX.sqlite3)
+            trap "rm -f $TMP_DB $TMP_DB-wal $TMP_DB-shm; rm -rf /tmp/observer-p3-readiness-candidate" EXIT
+            cp /var/lib/observer-sandbox/observer.sqlite3 "$TMP_DB"
+            export OBSERVER_SANDBOX_DB="$TMP_DB"
+            export PYTHONPATH=/tmp/observer-p3-readiness-candidate/src
+            .venv/bin/python - <<"PY"
           import json
           import os
           from observer_sandbox.actor_runtime import actor_runtime, set_actor_runtime, set_retry
@@ -157,7 +155,7 @@ jobs:
           PY
             export OBSERVER_SANDBOX_DB=/var/lib/observer-sandbox/observer.sqlite3
             unset PYTHONPATH
-            echo '--- PRODUCTION READBACK (UNCHANGED BY P3.3 ACCEPTANCE COPY) ---'
+            echo "--- PRODUCTION READBACK (UNCHANGED BY P3.3 ACCEPTANCE COPY) ---"
             .venv/bin/sandboxctl status
             .venv/bin/sandboxctl living-status
-          "
+          '
