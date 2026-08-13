@@ -194,11 +194,13 @@ P3 may extend this proven browser with narrow live-state sections when a concret
 
 ### P2.3 — Creator Control Expansion
 
-Status: FIRST SLICE IMPLEMENTED / CI-VALIDATED / DEPLOYED / PRODUCTION MUTATION VERIFIED — TELEGRAM UI CHECK PENDING
+Status: FIRST SLICE COMPLETE / LIVE UX VERIFIED
 
 P2.3 remains slice-by-slice only. Do not implement a broad admin console.
 
 #### P2.3.1 — Restore Basic Stats
+
+Status: COMPLETE / LIVE UX VERIFIED
 
 Purpose: provide one safe Creator-authority intervention when slow real-time recovery makes live observation/development impractical.
 
@@ -224,7 +226,8 @@ Evidence:
 - CI #292 / run `31670662395` SUCCESS;
 - Deploy #126 / run `31670662394` SUCCESS;
 - workflow `d6ce3328f2a3b5b8314dd9e74054ab9681a6ff0f`;
-- Creator Control #1 / run `31670700838` SUCCESS.
+- Creator Control #1 / run `31670700838` SUCCESS;
+- Creator inspected the deployed Telegram owner confirmation flow and confirmed it was good without needing to reapply the restore.
 
 Live production restore evidence from `2026-08-13T05:33:26Z`:
 - before: Energy `39.498`, Hunger `29.081`, Thirst `35.835`, Sleepiness `35.335`, Cleanliness `100.0`, Fatigue `0.0`, action `rest`;
@@ -274,13 +277,43 @@ Implementation/evidence:
 - Profile Browser Recovery integration regression `1fb5e4a270a753a1940dc1cc2fa75c030948125e`;
 - CI #282 / run `31669206182` SUCCESS after aligning the Profile Browser contract;
 - CI #284 / run `31669332087` SUCCESS for the final acceptance-workflow revision;
-- Deploy #120 delivered the fatigue engine; Deploy #122 / run `31669140421` delivered the latest Recovery observer source and completed successfully;
+- Deploy #120 delivered the fatigue engine; Deploy #122 / run `31669140421` delivered the Recovery observer source and completed successfully;
 - P3 Training Recovery Acceptance #2 / run `31669332118` SUCCESS on a disposable production DB copy with **zero model calls**;
 - bounded acceptance proved fatigue `0.0 -> 18.5` after 60m training, then `18.5 -> 10.0` after 60m rest, and proved fatigue `75` blocks training in both option generation and validation;
 - the acceptance copy did not mutate production;
 - Creator opened the deployed Recovery section and confirmed `Systemic fatigue` and navigation were good.
 
 Do not automatically expand P3.1 into a full training system. Select the next minimum runnable slice separately.
+
+### P3.2 — Minimum Targeted Training Session — PROPOSAL ONLY / CREATOR APPROVAL REQUIRED
+
+Purpose: prove the schema-v4 LEGO composition path in normal autonomous production behavior by making the existing `train` action bind to a real nearby training object instead of remaining a generic targetless activity.
+
+Proposed minimum scope, if approved:
+- reuse current `train` action and existing fatigue behavior; do not create a broad training subsystem;
+- expose existing Home Gym training objects such as Heavy Bag and Free Weights as valid training targets/resources when Darian is co-located with them;
+- require deterministic target capability/co-location validation rather than prompt-only assumptions;
+- persist the selected target on the first-class `action_instance` and resulting event;
+- let cognition see only legal targeted training options and choose among them through the existing wake-on-demand decision path;
+- surface the friendly target in Telegram action/current-history/notification presentation using existing generic target resolution;
+- add focused tests plus a bounded disposable acceptance proving at least one targeted training action completes and fatigue still behaves correctly.
+
+Explicit non-goals:
+- no exercise taxonomy or workout program;
+- no reps/sets/load calculation;
+- no strength or skill gain;
+- no hypertrophy/body change;
+- no per-muscle soreness/injury system;
+- no grading/tier progression;
+- no new schema version unless implementation proves a concrete missing invariant.
+
+Why this is the proposed next slice:
+- it is independently observable and runnable;
+- it directly exercises `Actor + Action + Place + Target/Resource` from the LEGO runtime contract;
+- it increases autonomous-world specificity without speculative subsystem growth;
+- it creates a clean later attachment point for skill progression or grading without implementing either early.
+
+**Approval gate:** this section is a proposal only. A new chat must load/reconcile the canonical repository, present this proposal and wait for explicit Creator approval before any P3.2 code, config, workflow, schema or production mutation is performed.
 
 ## P4 — Context / Memory / Relationship Slice When Behavior Requires It
 
@@ -326,6 +359,6 @@ Expand destination-by-destination afterward.
 
 ## Current resume point
 
-**P3.1 is COMPLETE / LIVE UX VERIFIED. P2.3.1 Restore Basic Stats is implemented, deployed and already used successfully against production. Creator should test the Telegram owner flow `Characters -> Darian -> 🩺 Restore Basic Stats -> confirmation`. Because the production restore has already been applied once, confirming again would intentionally perform another restore; backing out after checking the confirmation screen is sufficient to validate the UI without changing state again. If the UI is good, mark P2.3.1 LIVE UX VERIFIED and select the next independent minimum-runnable slice.**
+**Handoff-ready checkpoint. P2.2 browsing, P2.3.1 Creator Restore Control and P3.1 systemic fatigue/recovery are COMPLETE / LIVE UX VERIFIED. The proposed next minimum-runnable slice is P3.2 Minimum Targeted Training Session, but it is NOT authorized yet. On the next chat, first reconcile `AGENTS.md` + `NEW_CHAT_BOOTSTRAP.md` + this roadmap and relevant contracts, summarize the proposal/current production evidence, and WAIT for explicit Creator approval before implementation or production mutation.**
 
-No additional core/schema refinement is required. Preserve 1x wake-on-demand production autonomy, globally scoped ids, locked unfinished boundaries, actor-scoped scheduler state, first-class actions/events, Telegram presentation rules, profile/runtime separation, grading-as-future-derived capability, typed/audited Creator-control authority and per-user notification preferences.
+No additional core/schema refinement is currently required. Preserve 1x wake-on-demand production autonomy, globally scoped ids, locked unfinished boundaries, actor-scoped scheduler state, first-class actions/events, Telegram presentation rules, profile/runtime separation, grading-as-future-derived capability, typed/audited Creator-control authority and per-user notification preferences.
