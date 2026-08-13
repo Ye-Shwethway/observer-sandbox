@@ -12,18 +12,19 @@ Spatial: `docs/WORLD_LOCATION_NODE_MODEL.md`.
 Character/profile: `docs/CHARACTER_PROFILE_SCHEMA.md`.
 Telegram: `docs/TELEGRAM_OBSERVER_ARCHITECTURE.md` + `docs/TELEGRAM_NOTIFICATION_POLICY.md`.
 Creator controls: `docs/CREATOR_CONTROL_POLICY.md`.
-Needs/effects/training: `docs/PHYSIOLOGY_AND_ITEM_EFFECTS.md`, `docs/P3_3_TRAINING_READINESS_MODIFIER.md`, `docs/P3_4_TRAINING_EFFECTIVENESS.md`, `docs/P3_5_EFFECTIVE_TRAINING_LOAD.md`.
+Needs/training: `docs/PHYSIOLOGY_AND_ITEM_EFFECTS.md`, `docs/P3_3_TRAINING_READINESS_MODIFIER.md`, `docs/P3_4_TRAINING_EFFECTIVENESS.md`, `docs/P3_5_EFFECTIVE_TRAINING_LOAD.md`.
+Current autonomy breadth/time release: `docs/AUTONOMY_BREADTH_TIME_OBSERVABILITY.md`.
 Future grading: `docs/FUTURE_GRADING_SYSTEM.md`.
 
-Authority: current Creator instruction > canonical repo/contracts > verified live VPS/runtime/DB > deployed workflow evidence > CI/tests > this bootstrap > older chat/memory. Never conflate authored, CI-validated, acceptance-verified, deployed, DB-applied, and Creator-live-UX-verified states.
+Authority: current Creator instruction > canonical repo/contracts > verified live VPS/runtime/DB > deployed workflow evidence > CI/tests > this bootstrap > older chat/memory. Never conflate committed, CI-validated, acceptance-verified, deployed, DB-applied, and Creator-live-verified states.
 
-## Development policy — minimum runnable expansion
+## Development policy
 
-Schema v4 is the broad composable foundation. Normal development follows:
+Use minimum runnable expansion:
 
-`minimum required state -> minimum deterministic behavior/evidence -> minimum Creator-facing surface if needed -> focused tests -> disposable acceptance -> deploy/readback -> Creator acceptance -> next slice`.
+`minimum required state -> minimum behavior/evidence -> minimum Creator-facing surface -> focused tests -> disposable acceptance -> deploy/readback -> Creator acceptance -> next slice`.
 
-Do not pre-build large inventory, grading, memory, relationship, environment, combat, training, or regional subsystems merely because extension sockets exist.
+Do not pre-build large inventory, grading, memory, relationship, environment, combat, training, or regional systems merely because extension sockets exist.
 
 ## Production baseline
 
@@ -37,7 +38,7 @@ Do not pre-build large inventory, grading, memory, relationship, environment, co
 - world identity revision: `thorne-estate-v3.0-scoped-ids`
 - Darian autonomy: enabled / normal / unpaused / `1x` / wake-on-demand
 - cognition: existing Gemini character binding preserved
-- Telegram: connected private Creator observer; owner/allowed-user configuration present
+- Telegram: connected private Creator observer
 
 Production continues autonomously. Re-read live state whenever exact current Darian action/stats matter.
 
@@ -45,82 +46,77 @@ Production continues autonomously. Re-read live state whenever exact current Dar
 
 `Actor(s) + Action + Place + Simulation Time + Conditions/Modifiers + Resources/Targets -> Validation -> State Changes + Events`
 
-LLMs propose structured actions only. Deterministic runtime owns legality and mutation. First-class action instances/events preserve target, modifiers, outcome, state changes, location, and participant evidence.
+LLMs propose structured actions only. Deterministic runtime owns legality and mutation. First-class actions/events preserve target, modifiers, outcome, state changes, location, and participant evidence.
 
-## Proven Creator-facing state
+## Proven feature state
 
 - P2.2 Browse the Sandbox — COMPLETE / LIVE UX VERIFIED.
 - P2.3.1 Restore Basic Stats — COMPLETE / LIVE UX VERIFIED.
 - P3.1 Systemic Training Fatigue / Recovery — COMPLETE / LIVE UX VERIFIED.
 - P3.2 Targeted Training Session — COMPLETE / ACCEPTANCE VERIFIED.
 - P3.3 Training Readiness Modifier — COMPLETE / DEPLOYED / LIVE UX VERIFIED.
+- P3.4 Training Effectiveness Outcome — COMPLETE / ACCEPTANCE VERIFIED / DEPLOYED.
+- P3.5 Effective Training Load — COMPLETE / ACCEPTANCE VERIFIED / DEPLOYED.
 
-P3.3 reference degraded state: energy `50`, thirst `45`, sleepiness `45`, fatigue `40` -> readiness `0.595`, fatigue multiplier `1.202x`, resulting one-hour fatigue `62.54`. Fatigue `>=70` remains a hard training condition.
+P3.5 completes the current short-term training loop:
+`target -> readiness -> fatigue inefficiency -> effectiveness -> effective workload -> immediate physiology`.
+It does not implement accumulated stimulus, attribute/skill gain, body-measurement progression, grading, or tiers.
 
-## P3.4 — Minimum Training Effectiveness Outcome
+## Autonomy Breadth + Time Observability v1
 
-Status: COMPLETE / ACCEPTANCE VERIFIED / DEPLOYED.
+Status: DEPLOYED / ACCEPTANCE VERIFIED / CREATOR LIVE BEHAVIOR VERIFICATION PENDING.
 
-Canonical doc: `docs/P3_4_TRAINING_EFFECTIVENESS.md`.
+Canonical detail: `docs/AUTONOMY_BREADTH_TIME_OBSERVABILITY.md`.
 
-P3.4 separated:
-- readiness = pre-action state summary;
-- fatigue-cost multiplier = physiological cost;
-- effectiveness = useful training-work fraction recorded in action/outcome evidence.
+Motivation was Creator-observed production repetition around Kitchen/Pantry/Refrigerator/Stove and opaque action timing.
 
-For v1, `effectiveness = readiness`. It does not mutate skill/attribute/body progression.
+Delivered:
+- estate object seed expanded from 15 to 27 objects without new topology/exterior traversal;
+- purposeful actionable fixtures added across Master Suite, Living Room, Library, Garage, Intelligence Hub, Comms, Training Hall, Medical Bay, Armory, Food Storage, and Bunker;
+- seven previously sparse non-kitchen purposeful rooms are acceptance-proven to expose legal targets;
+- Darian policy revision `darian-autonomy-p1-v1.4-breadth-duration-aware` discourages serial same-room generic inspect/use loops and default kitchen appliance inspection;
+- normal guidance prefers quick inspection `2–6` simulated minutes and simple use `2–10` when the purpose is not sustained;
+- persisted compatibility bounds remain `inspect 1–60` and `use 1–120` so a deploy cannot invalidate an already-running action;
+- Telegram completion push now shows completed duration and may show the immediately planned next action, next duration, and expected simulated completion timestamp;
+- proactive notification contract remains at most one push per committed action.
 
-Evidence:
-- merge `ea69d5c0f81bf5500fca9b4d6ea62a251fbdcd9f`;
-- main CI #318 / run `31673822574` SUCCESS;
-- P3 Training Effectiveness Acceptance #1 / run `31673822547` SUCCESS;
-- Deploy #130 / run `31673858850` SUCCESS.
-
-## P3.5 — Minimum Effective Training Load
-
-Status: COMPLETE / ACCEPTANCE VERIFIED / DEPLOYED.
-
-Canonical docs: `docs/P3_5_EFFECTIVE_TRAINING_LOAD.md` + `docs/PHYSIOLOGY_AND_ITEM_EFFECTS.md`.
-
-P3.5 makes effectiveness change immediate session-level physiology only:
-- passive drift remains full-duration;
-- intrinsic training energy/hunger/thirst/cleanliness effects scale by effectiveness;
-- systemic fatigue remains on P3.3's separate fatigue-cost multiplier;
-- `effective_minutes = planned_minutes × effectiveness` is persisted in action outcome and completion-event evidence;
-- no long-term skill/attribute/body/grading progression is mutated.
-
-Verified degraded reference:
-- effectiveness `0.595`;
-- 60 planned minutes -> `35.7` effective minutes;
-- fatigue multiplier `1.202x`;
-- resulting energy `42.05`, hunger `24.88`, thirst `51.57`, sleepiness `48.0`, cleanliness `75.63`, fatigue `62.54`.
+Time semantics are unchanged and linear: action interval advances by `duration_minutes`; scheduler wall wait is approximately `duration_minutes × 60 / speed`. At production `1x`, one sim minute is about one real minute between normal action boundaries.
 
 Evidence:
-- PR #4 merge `b6f29493a30a458133587463068df9814395eb75`;
-- PR CI #324 / run `31674874707` SUCCESS;
-- main CI #325 / run `31674911465` SUCCESS;
-- P3 Effective Training Load Acceptance #1 / run `31674911581` SUCCESS on candidate code against a disposable production DB copy, zero model calls, no skill score/tier/experience mutation;
-- release commit `22ff453715659d2c772ffcd19868716413a715a1`;
-- Deploy #131 / run `31674963422` SUCCESS;
-- post-deploy readback: service healthy, schema v4, autonomy enabled/normal/unpaused/`1x`, Gemini cognition binding preserved, Telegram API connected.
+- PR #5 merge `ac19e132bc5fa10688bb54e69fe885b1ae196510`; PR CI #332 / `31676550067` SUCCESS;
+- pending-action safety PR #6 merge `29be3e8d70d99b23f17380a7bfd4d5adf8a07101`; PR CI #334 / `31676811535` SUCCESS;
+- accepted main `802b17fce70f9d3b28d29fd2dc56267b17f3fb9f`;
+- main CI #336 / `31676984174` SUCCESS;
+- Autonomy Breadth and Time Acceptance #2 / `31676984134` SUCCESS: 27 objects, seven non-kitchen target rooms, quick-duration guidance, pending-compatible bounds, timing UI visible, zero model calls, production DB unchanged;
+- release commit `7163284d19df19cda252437563d13c83d939b197`;
+- Deploy #132 / `31677053654` SUCCESS;
+- deploy readback: service healthy, schema v4, autonomy enabled/normal/unpaused/1x, existing pending action preserved, Gemini binding preserved, Telegram API connected.
+
+The first acceptance attempt failed only from acceptance-harness SSH/SQL quoting; no failed candidate was deployed.
 
 ## Deferred boundaries
 
 Still not implemented:
+- deterministic per-action/per-target duration profiles;
 - accumulated training stimulus/adaptation;
-- attribute gain;
-- skill XP/progression;
+- attribute or skill progression;
 - hypertrophy/body-measurement progression;
 - soreness/injury;
-- exercise taxonomy/programming/reps/sets/load;
-- equipment/facility-quality modifier expansion;
+- exercise programming/reps/sets/load;
+- inventory/depletion;
 - grading/tier progression;
+- exterior/Tahoe traversal;
 - schema v5.
 
-## Exact resume point — STOP / DISCUSSION REQUIRED
+## Exact resume point
 
-P3.5 is complete, acceptance-verified, and deployed. **Do not select, design, or implement a P3.6 or any other new development slice yet.** The Creator explicitly requested a discussion after P3.5 before development continues.
+The autonomy breadth/time stabilization release is deployed. **Do not claim behavioral diversity is live-verified yet.** The Creator should observe normal Telegram production messages and verify two things:
 
-A fresh chat must reconcile canonical state first, then remain at this discussion gate until the Creator explicitly authorizes the next direction.
+1. notifications now expose useful duration/next-action ETA information;
+2. Darian actually begins using a broader mix of estate rooms/objects rather than falling back into repeated kitchen appliance loops.
 
-Preserve schema v4, 1x wake-on-demand autonomy, globally scoped ids, actor-scoped runtime, first-class actions/events, Telegram presentation rules, profile/runtime separation, typed/audited Creator control, and incremental expansion only through explicitly chosen minimum-runnable needs.
+If duration guidance still produces implausible choices, the next relevant discussion is a bounded deterministic per-action/per-target duration-profile design, not another blanket narrowing of persisted action bounds.
+
+Do not automatically resume long-term training progression/grading work from P3.5. Choose the next development direction only after the Creator reviews this live behavior.
+
+Preserve schema v4, 1x wake-on-demand autonomy, globally scoped ids, actor-scoped runtime, first-class actions/events, Telegram presentation rules, profile/runtime separation, typed/audited Creator control, and incremental expansion.
