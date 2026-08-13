@@ -2,122 +2,91 @@
 
 ## Startup
 
-Before making material changes, read `NEW_CHAT_BOOTSTRAP.md` and treat newer repository/runtime evidence as authoritative over remembered chat context.
-
-Also read directly relevant contracts. For core/runtime/schema/action work read `docs/ARCHITECTURE.md` and `docs/COMPOSABLE_RUNTIME_ARCHITECTURE_AUDIT.md`; for world/location/topology work read `docs/WORLD_LOCATION_NODE_MODEL.md`; for Telegram work read `docs/TELEGRAM_OBSERVER_ARCHITECTURE.md`; for privileged runtime/world mutation read `docs/CREATOR_CONTROL_POLICY.md`; for living-needs/recovery/item effects read `docs/PHYSIOLOGY_AND_ITEM_EFFECTS.md`; for character-profile work inspect `docs/CHARACTER_PROFILE_SCHEMA.md` plus `config/characters/`; for validation/release/deployment work read `docs/PRODUCTION_VALIDATION_AND_RELEASE_PROTOCOL.md`, then inspect `.github/workflows/` and `deploy/` only as needed.
-
-## Continuity rule
-
-`NEW_CHAT_BOOTSTRAP.md` is the durable cross-chat handoff. After every material repository or verified runtime change, update it in the same work session. Never conflate authored/committed, CI-validated, deployed, DB-applied and live-runtime-verified evidence.
-
-## Production validation and release contract
-
-All production-copy acceptance and production release work must follow `docs/PRODUCTION_VALIDATION_AND_RELEASE_PROTOCOL.md`.
-
-- Do not invent a new SSH/SQLite-copy/deploy workflow for each feature.
-- Production-state acceptance must reuse `.github/workflows/reusable-production-copy-validation.yml` unless a concrete missing invariant makes the shared path insufficient.
-- Feature-specific acceptance logic belongs in a focused validator under `scripts/validation/`; it receives only the disposable DB through `OBSERVER_SANDBOX_DB`.
-- The shared SQLite copy primitive is `scripts/validation/create_disposable_db_copy.py`; do not replace it with ad-hoc `cp`/heredoc copy logic.
-- Validation may accelerate or mutate only the disposable copy. Never accelerate or directly edit production for testing.
-- Feature validators must not call models, Telegram or other external side effects and must not operate systemd/service controls.
-- If the shared protocol itself is insufficient, update the protocol document + shared helper/workflow + focused self-test first; then reuse the updated mechanism. Do not carry feature-local infrastructure forks forward.
-- Runtime-affecting accepted changes deploy only through the canonical `.github/workflows/deploy.yml` path. Docs/test/validation-tooling-only changes do not need ceremonial production deploys.
-- Post-deploy production checks are read-only unless the Creator separately authorizes a control mutation.
+Before material work, read `NEW_CHAT_BOOTSTRAP.md` and the directly relevant canonical docs. Newer repository and verified runtime evidence override remembered chat context.
 
 ## Authority order
 
 1. Explicit current Creator instruction.
-2. Current canonical repository config/schema/contracts.
-3. Verified live VPS/runtime/database evidence.
-4. Deployed workflow evidence.
-5. Current CI/test evidence.
-6. `NEW_CHAT_BOOTSTRAP.md`.
-7. Older chat/model memory.
+2. Current canonical repository contracts/config/schema.
+3. Verified live runtime/database evidence.
+4. Current CI/deploy evidence.
+5. `NEW_CHAT_BOOTSTRAP.md`.
+6. Older chat memory.
+
+## Development workflow
+
+Default to the shortest reliable loop:
+
+`branch -> focused tests + CI -> merge -> automatic deploy when runtime-affecting -> read-only production check`
+
+Follow `docs/PRODUCTION_VALIDATION_AND_RELEASE_PROTOCOL.md`.
+
+- Do not create extra release PRs, release-marker ceremony, deploy-authorization helpers, or duplicate compatibility gates by default.
+- Disposable production-copy validation is optional. Use it only when a stateful/migration/runtime risk cannot be covered adequately by local tests and CI.
+- When production-copy validation is used, reuse the existing shared helper/workflow instead of inventing new SSH/copy infrastructure.
+- Runtime-affecting changes deploy through `.github/workflows/deploy.yml` after merge to `main`.
+- Prefer small reversible changes and Git revert/rollback over defensive process layers.
+- A new gate must have a concrete reliability benefit worth its maintenance/retry cost.
+
+## Continuity
+
+Update `NEW_CHAT_BOOTSTRAP.md` after material repository or verified runtime changes. Distinguish committed, tested, merged, deployed, and live-verified states.
 
 ## Composable runtime contract
 
-All new simulation/runtime work must preserve the LEGO rule:
+Preserve the LEGO rule:
 
 `Actor(s) + Action + Place + Simulation Time + Conditions/Modifiers + Resources/Targets -> Validation -> State Changes + Events`
 
-- LLMs propose structured actions; they never mutate arbitrary DB/world state directly.
-- Universe-global state (`sim_time`, speed, pause, world identity) stays separate from actor-scoped scheduler/cognition state.
-- Actor autonomy, pending action, lease, retry and wake telemetry belong to `actor_runtime`; do not reintroduce singleton Darian scheduler keys.
-- Actions are first-class `action_instances` referencing data-driven `action_definitions`.
-- New action types should extend definition metadata and reusable validation primitives rather than grow character-specific switch logic.
-- One shared universe clock must not double-count concurrent actor durations; action intervals are independently recorded.
-- Events must retain action/location/state-change linkage and participants where relevant.
-- Definitions/Templates, Instances and Runtime State are distinct concepts.
-- Conditions/modifiers should use the shared effect/modifier contract; do not invent incompatible per-feature effect formats.
-- Full feature engines may remain deferred, but their implementations must attach through these generic contracts.
+- LLMs propose structured actions; they do not mutate arbitrary DB/world state directly.
+- Universe-global state stays separate from actor scheduler/cognition state.
+- Actions are first-class `action_instances` referencing data-driven definitions.
+- Prefer reusable definition/effect metadata over character-specific switch logic.
+- Events retain action/location/state-change linkage and participants where relevant.
+- Definitions, instances, and runtime state remain distinct.
 
-## Creator control contract
+## Creator controls
 
-All privileged direct world/runtime mutations must follow `docs/CREATOR_CONTROL_POLICY.md`.
+Privileged direct mutations follow `docs/CREATOR_CONTROL_POLICY.md`.
 
-- Creator controls are typed administrative interventions, not character actions and not LLM/cognition proposals.
-- Creator authorization permits a bounded mutation; it does not silently transfer domain field ownership away from the normal engine.
-- Telegram owner-only controls must re-check authority server-side; hiding a button is not authorization.
-- A potentially destructive/mutating inline control should use an explicit confirmation step.
-- If a control makes an outstanding action semantically stale, cancel/invalidate that action and clear relevant lease/retry state before cognition resumes.
-- Every successful privileged mutation must write a queryable audit event containing actor/target context, request source, before/after evidence and state changes.
-- Reuse the same backend control service from Telegram, CLI and Actions; do not duplicate SQLite mutation logic in UI/workflow adapters.
+- Creator controls are typed administrative interventions, not character actions.
 - LLMs never receive Creator-control authority.
-- Do not build arbitrary-field editors, SQL consoles or generic unrestricted admin mutation surfaces; add one narrow control only when a concrete operational use case exists.
+- Successful privileged mutations remain auditable.
+- Avoid unrestricted arbitrary-field/SQL-style control surfaces.
 
-## World / location node contract
+## World model
 
-All spatial/world changes must preserve `docs/WORLD_LOCATION_NODE_MODEL.md`.
+Spatial/world changes follow `docs/WORLD_LOCATION_NODE_MODEL.md`.
 
-- Locations are recursively nestable graph nodes, not hard-coded screen labels.
-- Entity ids are technical identities, never display names.
-- Spatial/resource ids are globally unique, type-prefixed and place-scoped where names repeat: `world_*`, `loc_*`, `obj_*`.
-- Keep ids path-independent; mutable parent/floor topology belongs in relations.
-- Canonical current root is `world_observer_universe`; Thorne Estate is `loc_thorne_estate`.
-- Prototype ids `home`, `observer_universe`, `zone_*`, `room_*` and generic estate `obj_*` are obsolete.
-- `contains` means structural/static containment; `connected_to` means traversable topology; `located_at` is generic dynamic presence.
-- Ownership/possession (`owned_by`, `carried_by`, `equipped_by`) must not be conflated with current physical location.
-- Locked/unimplemented boundaries must have no traversable edge.
-- Canon facts and provisional layout must remain distinguishable.
-- Deterministic routing derives from graph relations, not hard-coded room-pair tables.
-- Telegram/UI consumes generic query contracts rather than mansion-specific topology.
+- Locations are recursively nestable graph nodes.
+- Entity IDs are technical identities, not display names.
+- `contains` is structural containment; `connected_to` is traversable topology; `located_at` is dynamic presence.
+- Locked/unimplemented boundaries have no traversable edge.
+- Routing derives from relations rather than hard-coded room pairs.
 
-## Living physiology and item-effect contract
+## Physiology and effects
 
-All needs/recovery changes must preserve `docs/PHYSIOLOGY_AND_ITEM_EFFECTS.md`.
+Living-needs/item-effect changes follow `docs/PHYSIOLOGY_AND_ITEM_EFFECTS.md`.
 
-- Recovery-labelled actions must improve the intended need after passive drift.
-- Every current basic physiological stat retains a reachable restoration path.
-- Food/drink/shower effects are authored deterministic effects, not prompt prose.
-- `action_options()` exposes useful effect information to cognition while the deterministic engine remains authoritative.
-- Shared effect operations include add/multiply/set/clamp; temporary/sourced modifiers use the composable modifier contract.
-- Do not add restorative capabilities without deterministic effects and regression coverage.
-- Persistent first-class pending actions must be considered during world/effect migrations.
+- Recovery actions must deterministically improve their intended need after drift.
+- Effects are authored data, not prompt prose.
+- Cognition may see effect summaries; the deterministic engine remains authoritative.
 
-## Telegram presentation contract
+## Telegram presentation
 
-Every Creator-facing Telegram message follows `docs/TELEGRAM_OBSERVER_ARCHITECTURE.md`.
+Creator-facing Telegram output follows `docs/TELEGRAM_OBSERVER_ARCHITECTURE.md`.
 
-- visible sim time: `dd-mm-yyyy (Day) hh:mm AM/PM`;
-- canonical ISO time remains internal;
-- friendly entity names in normal views;
-- concise sections, whitespace and restrained icons;
-- ON/OFF and Yes/No instead of raw booleans;
-- default history suppresses engine/control bookkeeping;
-- paginate/section large datasets;
-- presentation stays downstream of generic query/control services;
-- proactive character-action notifications must resolve the actual actor name, not assume Darian forever.
+- Use friendly entity names and concise sections.
+- Keep canonical ISO time internal; use the approved human-readable time format in UI.
+- Hide engine bookkeeping from normal history views.
+- Presentation stays downstream of generic query/control services.
 
-## Expansion execution policy
+## Expansion policy
 
-Use **exemplar-first, then batch-by-pattern** for repeated world/action/content expansion.
+Use exemplar-first only when a genuinely new invariant is introduced. Once a pattern is proven, batch structurally equivalent follow-ons in one reviewable change.
 
-- The first item in a new structural pattern is a small standalone exemplar used to prove schema shape, validation, persistence, observability and acceptance behavior.
-- Once that pattern is green and deployed, structurally equivalent follow-on items should normally be implemented as one bounded batch rather than one PR/deploy per item.
-- A batch should use one branch/PR, one focused regression suite, one disposable production-copy dry-run covering every item, iterative fixes on that copy as needed, then merge only when the entire batch is green, followed by one production deploy/readback.
-- Batch only items that reuse the same proven invariant and validation path. If an item requires a new state model, new authority rule, new mutation invariant or materially different runtime semantics, remove it from the batch and treat it as a new exemplar.
-- Do not batch merely to maximize item count. Keep batches reviewable and rollback-friendly.
+Do not force a production-copy acceptance or separate deploy ceremony for every batch. Use focused tests, CI, merge, and the standard deploy unless concrete risk requires more.
 
 ## Scope discipline
 
-Observer Sandbox is intentionally small and modular. Do not recreate EIDOLON/Simiverse-scale subsystem sprawl. Build bounded, tested vertical slices on the generic contracts above.
+Observer Sandbox is intentionally small and modular. Do not recreate EIDOLON/Simiverse-scale subsystem sprawl. Build bounded, understandable, reversible slices.
