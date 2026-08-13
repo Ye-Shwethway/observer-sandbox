@@ -1,0 +1,24 @@
+name: Production Copy Protocol Acceptance
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - '.github/workflows/reusable-production-copy-validation.yml'
+      - '.github/workflows/production-copy-protocol-acceptance.yml'
+      - 'scripts/validation/production_copy.py'
+      - 'scripts/validation/create_disposable_db_copy.py'
+      - 'scripts/validation/validate_production_copy_protocol_v1.py'
+      - 'docs/PRODUCTION_VALIDATION_AND_RELEASE_PROTOCOL.md'
+      - 'AGENTS.md'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  protocol-acceptance:
+    uses: ./.github/workflows/reusable-production-copy-validation.yml
+    with:
+      validator_path: scripts/validation/validate_production_copy_protocol_v1.py
+    secrets: inherit
