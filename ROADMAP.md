@@ -2,122 +2,64 @@
 
 Status: ACTIVE
 
-This roadmap tracks the smallest useful vertical slices for the Observer Sandbox. Keep the project intentionally modular; deepen each phase only when it improves the Creator's ability to observe or operate the universe.
-
 ## Global product principles
 
-- Runtime/world state remains authoritative in the Python/SQLite core.
-- AI models propose structured cognition; they do not directly mutate world state.
-- Telegram is a Creator-facing observer/control adapter, not a second simulation engine.
-- Continuous cognition remains wake-on-demand: no periodic LLM heartbeat or background reflection loop by default.
-- New features should prefer generic ids/query services over Darian/Home-specific backend contracts.
-- World/location topology and globally scoped identity follow `docs/WORLD_LOCATION_NODE_MODEL.md`.
-- Composable runtime design follows the LEGO-like expression `Actor(s) + Action + Place + Simulation Time + Conditions/Modifiers + Resources/Targets -> validated transition -> State Changes + Events` and the pre-expansion audit in `docs/COMPOSABLE_RUNTIME_ARCHITECTURE_AUDIT.md`.
-- Telegram presentation quality is part of acceptance, not optional polish. All Telegram work must follow `docs/TELEGRAM_OBSERVER_ARCHITECTURE.md`.
-- Basic living physiology and item effects follow `docs/PHYSIOLOGY_AND_ITEM_EFFECTS.md`.
+- Python/SQLite runtime/world state is authoritative.
+- AI proposes structured cognition; it never directly mutates arbitrary world state.
+- Telegram is a Creator-facing observer/control adapter, not a simulation engine.
+- Cognition remains wake-on-demand; no periodic LLM heartbeat by default.
+- Core simulation follows `docs/ARCHITECTURE.md` and the LEGO rule:
+  `Actor(s) + Action + Place + Simulation Time + Conditions/Modifiers + Resources/Targets -> Validation -> State Changes + Events`.
+- World identity/topology follows `docs/WORLD_LOCATION_NODE_MODEL.md`.
+- Physiology/effects follow `docs/PHYSIOLOGY_AND_ITEM_EFFECTS.md`.
+- Telegram presentation follows `docs/TELEGRAM_OBSERVER_ARCHITECTURE.md`.
 
-## Simulation recovery correctness
+## Core composition / schema v4 — PRE-EXPANSION GATE COMPLETE
 
-Needs/recovery behavior is an engine contract, not prompt flavor text.
+Canonical audit: `docs/COMPOSABLE_RUNTIME_ARCHITECTURE_AUDIT.md`.
 
-- An action described as recovery must move its primary recovery state in the correct direction after all passive time drift is included.
-- Every basic physiological stat must have at least one valid reachable restoration path.
-- `rest` must increase energy and reduce sleep pressure; `sleep` must provide stronger recovery; `idle` must not paradoxically drain energy when used as a pause.
-- Hunger, thirst and cleanliness require authored restorative targets/effects.
-- Target/item effects are authored in world definitions, persisted as `game.effects`, surfaced through legal `action_options()`, and deterministically applied by the engine.
-- Recovery math is regression-tested as before/after state.
-- Persistent pending actions must be considered during world/effect migrations.
+Implemented foundation:
+- SQLite schema v4;
+- actor-scoped autonomy/pending/lease/retry/cognition in `actor_runtime`;
+- universe-global pause/speed/time/world kept separate;
+- data-driven `action_definitions`;
+- first-class `action_instances` with actor/place/target/participants/resources/conditions/modifiers/time/status/outcome;
+- concurrent actions do not double-advance the one universe clock;
+- richer event linkage with action/location/state changes/participants/causal socket;
+- reusable `entity_definitions` -> concrete `entities` instance path;
+- immediate effect operations add/multiply/set/clamp;
+- `active_modifiers` persistence socket with timing/source/stack policy;
+- generic dynamic `located_at` contract plus distinct ownership/possession semantics;
+- service enumerates active actor runtimes instead of assuming Darian-only scheduling;
+- action notifications resolve actual actor identity rather than hard-coding Darian.
 
-## World / location graph and identity contract
+Deferred intentionally until their feature slices: inventory quantity/depletion/durability, full active-modifier evaluation across domains, rich relationship/memory/environment engines, complex multi-party synchronization/combat.
 
-- canonical root: `world_observer_universe`;
-- Thorne Estate: `loc_thorne_estate`;
-- current structure: `world_observer_universe -> loc_thorne_estate -> floor/zone -> room -> object`;
-- all spatial/resource ids are globally unique, type-prefixed, place-scoped and path-independent;
-- display names may repeat across places; ids may not collide;
-- containment/topology belongs in relations rather than mutable full paths embedded in ids;
-- future `loc_south_lake_tahoe` may be inserted above `loc_thorne_estate` without renaming the estate/interior nodes;
-- future residences such as `loc_quasi_home` can be siblings and may safely contain their own Kitchen/Bedroom/etc.;
-- `contains` describes hierarchy; `connected_to` describes legal movement;
-- the unimplemented estate exterior is a locked boundary with no traversable edge;
-- deterministic baseline routing derives from the authored graph rather than a hard-coded five-room route table;
-- prototype ids `home`, `observer_universe`, `zone_*`, `room_*` and generic estate `obj_*` ids are retired.
+Acceptance evidence:
+- multi-actor/concurrency/definition-instance/modifier/event tests included in CI;
+- bounded schema-v4 accelerated production-copy recovery acceptance run #5 succeeded with `needs_acceptable=true` without mutating production;
+- production readback showed schema 4, autonomy ON/normal, 1x and a valid actor-scoped pending action.
 
-The physical SQLite table schema remains version 3 because the existing entity/relation model already supports these identities and recursive graph relationships; the clean break is a world identity/data migration rather than a table-shape migration.
+## World / location graph
 
-## Proposed pre-expansion composable runtime hardening gate
-
-Status: **AUDITED / PROPOSED — IMPLEMENTATION REQUIRES CREATOR APPROVAL**
-
-The one-time architecture audit found several Darian-only prototype assumptions that should be removed before broad world expansion or a second autonomous character. Canonical audit: `docs/COMPOSABLE_RUNTIME_ARCHITECTURE_AUDIT.md`.
-
-Recommended bounded sequence:
-
-1. actor-scoped autonomy/runtime state so multiple characters can hold independent pending actions, leases/retries and cognition telemetry;
-2. first-class action instance envelope with stable action id, actor/participants, target/resources, place, planned start/end time, conditions/modifiers and status;
-3. data-driven action-definition registry instead of allowing the Python action switch/constant layer to grow indefinitely;
-4. first-class condition/modifier/effect contract supporting additive/set/multiplicative and future temporary/source/stack semantics;
-5. queryable event envelope with location, participants, action/causal references and structured state-change summaries;
-6. definition/template vs concrete instance vs runtime-state distinction, plus explicit ownership/possession/dynamic-location semantics before inventory expands;
-7. fresh-DB, legacy-development migration and accelerated autonomy acceptance after the hardening cutover.
-
-This is a small generic foundation pass, not a large EIDOLON/Simiverse-style rewrite. Full inventory, relationships, memory, environment/weather and complex group synchronization remain deferred to their feature slices.
-
-## Telegram presentation acceptance rule
-
-Every new Telegram command, callback, notification, menu, browse page, or detail view must preserve the established presentation contract:
-
-- visible simulated timestamps: `dd-mm-yyyy (Day) hh:mm AM/PM` in 12-hour format;
-- internal timestamps remain canonical ISO-8601;
-- use human-readable names instead of internal ids in normal views;
-- use concise sections, whitespace, restrained icons, and consistent labels for mobile scanability;
-- prefer friendly ON/OFF and Yes/No status text over raw booleans;
-- suppress engine/control bookkeeping from default observer history;
-- paginate/section large data rather than dumping it;
-- keep formatting in shared presentation helpers and backend semantics in query/control services.
-
-A Telegram slice is not complete if its data is technically correct but presented as a raw log/database dump.
-
-## Notification policy
-
-Telegram proactive notifications are **default ON per authorized user**. Preferences persist independently per user and survive service restarts.
-
-Canonical commands: `/notify on`, `/notify off`. Compatibility aliases include `/notification on|off`, `/notifications on|off`, `/notion/on`, `/notion/off`.
-
-The shared preference gates boot and successful action-completion push notifications. Completed character actions should push a concise human-friendly summary; planning/in-progress/bookkeeping ticks should not.
+Current root: `world_observer_universe`; estate: `loc_thorne_estate`.
+Spatial/resource ids are globally scoped and path-independent. `contains` is structural hierarchy, `connected_to` traversal, `located_at` dynamic presence. Future `loc_south_lake_tahoe` can be inserted above the estate; future `loc_quasi_home` can be a sibling. Estate exterior remains locked/non-traversable.
 
 ## P0 — Foundation & Remote Control
 
 Status: COMPLETE / LIVE VERIFIED
 
-- repository/runtime foundation
-- persistent SQLite
-- VPS deployment and systemd service
-- GitHub Actions remote deployment/readback
-
 ## P0.5 — AI Provider Layer
 
 Status: FOUNDATION COMPLETE
 
-- provider registry and live model catalogs
-- dynamic bindings
-- Gemini live cognition
-- no hard-coded character model ids
+Dynamic provider/model catalogs and bindings are established; current Darian cognition uses the configured Gemini binding.
 
 ## P1 — Living Darian Minimum
 
-Status: CONTINUOUS AUTONOMY LIVE / ENGINE HARDENING CHECKPOINT PASSED
+Status: CONTINUOUS AUTONOMY LIVE / ENGINE HARDENING PASSED
 
-- persistent character state and world graph
-- validated action contract
-- cognition context and recovery-aware policy
-- scheduler / lease / crash recovery
-- wake-on-demand LLM cognition and call telemetry
-- 1x continuous production autonomy
-- all five current basic physiology stats have restoration paths
-- generic world-object `game.effects` contract
-- bounded accelerated production-copy recovery acceptance lane
-- graph-derived deterministic routing after scoped identity reset
+Includes wake-on-demand scheduler, validated actions, persistent state, five-stat recovery, authored item/resource effects, graph routing, accelerated disposable acceptance and schema-v4 composable runtime foundation.
 
 ## P2 — Telegram Observer
 
@@ -127,93 +69,58 @@ Status: ACTIVE
 
 Status: LIVE
 
-- private bot transport
-- Owner / Allowed User authorization split
-- `/status`, `/watch`, `/history`, `/darian`, `/home`
-- pause/resume/speed controls
-- `Universe is alive!` boot notification
-- human-friendly presentation contract
-- persistent per-user notification preference, default ON
-- successful action-completion proactive push implementation deployed
+Private role-aware bot, status/watch/history/character/home/control commands, polished presentation, persistent default-ON notification preferences and successful action-completion push implementation.
 
 ### P2.2 — Browse the Sandbox
 
 Status: IN PROGRESS
 
-Goal: move from command-driven status checks to hierarchical Creator observation.
+1. **P2.2.1 Observer Home + inline navigation — COMPLETE / DEPLOYED**
 
-1. **Observer Home Menu + inline navigation — IMPLEMENTED / DEPLOYED**
-   - `/start` opens a compact Observer Home dashboard.
-   - inline buttons: Universe, Characters, Runtime, History.
-   - callback routing uses stable ids/action keys.
-   - reusable Back/Home navigation established.
+2. **P2.2.2 Location hierarchy / Thorne Estate**
+   - **P2.2.2A Interior node foundation + scoped identity reset — COMPLETE / LIVE VERIFIED**
+   - **P2.2.2B Telegram Estate Browser — NEXT**
+     - Universe -> Thorne Estate -> floor/zone -> room
+     - room detail: occupants, objects, exits, current activity
+     - Back follows actual parent-node data
+     - locked exterior visible as unavailable, never a movement affordance
 
-2. **Location hierarchy / Thorne Estate**
-
-   **P2.2.2A — Interior node foundation + clean spatial identity reset — COMPLETE / LIVE VERIFIED**
-   - flat prototype Home model replaced by recursive mansion location graph;
-   - scoped identity revision `thorne-estate-v3.0-scoped-ids`;
-   - canonical root `world_observer_universe`, estate `loc_thorne_estate`;
-   - rooms/objects use place-scoped ids such as `loc_thorne_estate_kitchen` and `obj_thorne_estate_kitchen_refrigerator`;
-   - legacy spatial ids removed through a transactional migration;
-   - Darian's current location is remapped while profile/physiology/AI/Telegram preferences remain durable;
-   - stale pending/lease/retry state is safely cleared during the identity cutover;
-   - exterior boundary remains locked/non-traversable;
-   - query layer exposes parent, children, objects, occupants, residents, exits and metadata;
-   - deterministic baseline routing now derives from `connected_to` graph relations.
-
-   **P2.2.2B — Telegram Estate Browser — READY AFTER ARCHITECTURE-GATE DECISION**
-   - Universe -> Thorne Estate -> floor/zone -> room;
-   - room detail shows occupants, objects, exits and current activity;
-   - Back follows actual parent node rather than hard-coded Home assumptions;
-   - locked exterior is visible as unavailable, never as a legal movement affordance.
-
-3. **Item browsing — AFTER P2.2.2B**
-   - room contents -> item list -> item detail;
-   - show capabilities plus authored effects using human-readable labels;
-   - later expose quantity/temporary modifiers only after those systems exist.
+3. **P2.2.3 Item browsing — AFTER ESTATE BROWSER**
+   - room contents -> item detail
+   - capabilities + authored effects
+   - definition/instance-aware presentation
+   - quantity/durability only after inventory mechanics exist
 
 4. **Character selection**
-   - generic character list exists;
-   - add selected-character session state so future views follow the selected character;
-   - no Telegram handler may assume `char_darian` forever.
+   - generic list/select flow
+   - no Telegram handler assumes Darian forever
 
 5. **Profile section browsing**
-   - character -> Profile -> section menu;
-   - identity/appearance/body/traits/skills/preferences/physiology and later additional sections;
-   - paginate large sections.
+   - identity/appearance/body/traits/skills/preferences/physiology/etc.
+   - section/paginate large profiles
 
-P2.2 acceptance: the Creator can navigate from Universe to a location/estate, descend through sublocations to a room, inspect contents, open an item, select a character, and browse profile sections without typing internal ids or receiving raw dumps.
+P2.2 acceptance: Creator can navigate Universe -> location -> sublocation -> room -> contents/item and character/profile surfaces without internal ids or raw dumps.
 
 ### P2.3 — Creator Control Expansion
 
 Status: LATER
 
-- owner-only user management
-- provider/model catalog browsing and refresh
-- live model binding changes
-- richer runtime controls
-- scoped history/event filters
-- notification/watch-category preferences
+Owner user management, provider/model browsing/rebinding, richer runtime/history controls and notification categories.
 
 ## P3 — Rich State & Memory
 
 Status: LATER
 
-Add richer durable state and memory only after the Creator-facing observer surface is mature enough to inspect it.
-
-## P4 — First Simulation Module
+## P4 — First Richer Simulation Module
 
 Status: LATER
-
-Introduce the first richer autonomous simulation module without expanding into EIDOLON-scale orchestration.
 
 ## P5 — Second Character
 
 Status: LATER
 
-Add Quasi after generic character selection/profile/navigation is already proven through P2.2 and after singleton-character runtime assumptions are removed.
+Quasi becomes the second full autonomous character after P2.2 navigation/selection is proven. The schema/runtime no longer requires a Darian-only scheduler rewrite when that slice arrives.
 
 ## Current resume point
 
-The clean spatial identity reset is complete and live. A one-time composable-runtime audit is now complete and proposes a bounded pre-expansion hardening gate. **Creator decision is next:** either approve that hardening pass before P2.2.2B, or deliberately defer it and continue Telegram Estate Browser first. Do not begin broader South Lake Tahoe/world expansion or a second autonomous character while singleton runtime assumptions remain. Preserve continuous 1x wake-on-demand cognition, scoped ids, the locked exterior boundary, Telegram presentation rules, and the shared per-user notification gate.
+**Pre-expansion composable runtime hardening is complete. Resume P2.2.2B Telegram Estate Browser on schema v4.** Do not broaden into South Lake Tahoe yet; first prove recursive estate observation cleanly. Preserve 1x wake-on-demand production autonomy, globally scoped ids, locked unfinished boundaries, actor-scoped scheduler state, Telegram presentation rules and per-user notification preferences.
