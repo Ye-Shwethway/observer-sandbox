@@ -58,7 +58,7 @@
     {"id": "obj_thorne_estate_food_storage_supply_shelves", "name": "Supply Shelves", "room": "loc_thorne_estate_food_storage", "capabilities": ["inspect"]},
     {"id": "obj_thorne_estate_food_storage_provisions", "name": "Stored Food Provisions", "room": "loc_thorne_estate_food_storage", "capabilities": ["inspect", "eat"], "effects": {"eat": {"needs.hunger": -50.0, "needs.energy": 8.0, "needs.thirst": 2.0}}},
     {"id": "obj_thorne_estate_bunker_emergency_console", "name": "Emergency Console", "room": "loc_thorne_estate_bunker", "capabilities": ["inspect", "use", "monitor"]},
-    {"id": "obj_thorne_estate_kitchen_drinking_water", "name": "Drinking Water", "room": "loc_thorne_estate_kitchen", "capabilities": ["drink"]},
+    {"id": "obj_thorne_estate_kitchen_drinking_water", "name": "Drinking Water", "room": "loc_thorne_estate_kitchen", "capabilities": ["drink"], "effects": {"drink": {"needs.thirst": -55.0}}},
     {"id": "obj_thorne_estate_kitchen_meal_ingredients", "name": "Meal Ingredients", "room": "loc_thorne_estate_kitchen", "capabilities": ["cook", "eat"], "effects": {"eat": {"needs.hunger": -50.0, "needs.energy": 8.0, "needs.thirst": 2.0}}},
     {"id": "obj_thorne_estate_gym_free_weights", "name": "Free Weights", "room": "loc_thorne_estate_home_gym", "capabilities": ["train", "inspect"]},
     {"id": "obj_thorne_estate_gym_heavy_bag", "name": "Heavy Bag", "room": "loc_thorne_estate_home_gym", "capabilities": ["train", "inspect"]},
