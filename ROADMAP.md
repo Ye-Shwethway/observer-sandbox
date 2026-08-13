@@ -77,7 +77,7 @@ Current decision:
 - exact tier vocabulary, thresholds, caps and unlock rules are intentionally deferred until the first concrete grading use case;
 - first implementation must be a minimum-runnable grading slice in one domain, then expand domain-by-domain only after acceptance.
 
-P2.2.4 Profile Browser intentionally shows authoritative raw profile values without speculative grade badges. Future grading should attach without restructuring that browser.
+The current Profile Browser shows authoritative raw values without speculative grade badges. Future grading should attach without restructuring that browser.
 
 Canonical note: `docs/FUTURE_GRADING_SYSTEM.md`.
 
@@ -104,7 +104,7 @@ Includes wake-on-demand scheduler, validated actions, persistent state, five-sta
 
 ## P2 — Telegram Observer
 
-Status: ACTIVE
+Status: CORE OBSERVER/BROWSING PATH LIVE / P2.3 DEFERRED
 
 ### P2.1 — Mobile Observer MVP
 
@@ -114,9 +114,9 @@ Private role-aware bot, status/watch/history/character/home/control commands, po
 
 ### P2.2 — Browse the Sandbox
 
-Status: IN PROGRESS
+Status: COMPLETE / LIVE UX VERIFIED
 
-P2.2 is a sequence of **independent runnable checkpoints**, not one large acceptance bundle.
+P2.2 was delivered as a sequence of independent runnable checkpoints.
 
 #### P2.2.1 — Observer Home + inline navigation
 
@@ -166,12 +166,12 @@ Acceptance evidence:
 
 #### P2.2.4 — Character Profile Browser (single-character minimum)
 
-Status: IMPLEMENTED / CI-VALIDATED / DEPLOYED — CREATOR UI ACCEPTANCE PENDING
+Status: COMPLETE / LIVE UX VERIFIED
 
 Implemented minimum scope:
-- Characters -> Darian current-state view now exposes a separate Profile entry;
+- Characters -> Darian current-state view exposes a separate Profile entry;
 - Profile opens a read-only section menu generated from represented profile data;
-- first sections: Identity, Appearance, Body, Attributes, Personality, Skills, Preferences & Habits, Background;
+- initial sections: Identity, Appearance, Body, Attributes, Personality, Skills, Preferences & Habits, Background;
 - scalar profile values come from `character_profile_values` joined to `profile_field_definitions`;
 - skills/preferences/hobbies/habits come from their normalized profile collection tables;
 - `private` and `intimate` sensitivity fields are excluded from this ordinary profile browser at the query layer;
@@ -181,18 +181,15 @@ Implemented minimum scope:
 - no second-character selection/session persistence is added while Darian remains the only production autonomous character.
 
 Acceptance evidence:
-- future grading direction doc commit `f3cf9438aa84b68bfca230ca0392b5dd4ff3604f`;
 - profile read-query contract commit `2d9c43ad5d66cae0d9ff0e6d4f6c474599afa012`;
 - Telegram profile presentation commit `db9f8702fc812a81f447f74d6e9e21d91b8419d5`;
 - Telegram integration commit `0fd68b22a7d5a8b7d360dc8a617124753b5b3847`;
 - focused browser tests commit `d926687d443bc6e5e841ef3c06d1a293d82ca71a`;
 - CI #272 / run `31668499392` SUCCESS;
-- Deploy #119 / run `31668483842` SUCCESS for the Telegram integration.
+- Deploy #119 / run `31668483842` SUCCESS;
+- Creator browsed the deployed profile sections and confirmed the UI/navigation was good.
 
-Acceptance remaining for **P2.2.4 only**:
-- Creator opens Darian -> Profile in Telegram;
-- Creator browses several sections and confirms values/layout/back navigation are readable;
-- sensitive/private fields remain absent from the normal profile browser.
+P3 may extend this proven browser with narrow live-state sections when a concrete behavior needs them. Such an extension does not reopen the base P2.2 acceptance.
 
 ### P2.3 — Creator Control Expansion
 
@@ -204,21 +201,50 @@ Each must be independently runnable and useful. Do not implement the full P2.3 l
 
 ## P3 — First Richer Simulation Vertical Slice
 
-Status: LATER
+Status: FIRST SLICE IMPLEMENTED / CI-VALIDATED / DEPLOYED / BOUNDED ACCEPTANCE PASSED — CREATOR UI CHECK PENDING
 
-This now comes **before** broad Rich State & Memory work.
+### P3.1 — Minimum Systemic Training Fatigue / Recovery
 
-Choose exactly one bounded simulation capability when ready (for example a small training-adaptation, sleep/recovery refinement, or another concrete domain selected at that time).
+This is the first post-v4 proof of the minimum-runnable expansion pattern. It activates one already-reserved profile-domain field rather than building a broad training subsystem.
 
-Required shape:
-- add only the state/definitions the chosen behavior needs;
-- use existing action/event/modifier/field-authority contracts;
-- make the deterministic behavior runnable;
-- expose enough state/history in Telegram to observe it;
-- run focused accelerated/bounded acceptance;
-- keep all unrelated future-domain work deferred.
+Implemented behavior:
+- `physiology.fatigue` is live simulated state on `0..100`, higher is worse;
+- passive time reduces fatigue by `1.5/hour`;
+- training adds `20/hour` before passive drift (net `+18.5` for a one-hour training action);
+- rest reduces fatigue by `7/hour` before passive drift (net `-8.5` for a one-hour rest action);
+- sleep, idle and read also provide small/strong recovery according to `docs/PHYSIOLOGY_AND_ITEM_EFFECTS.md`;
+- `train` is removed from action options and rejected by deterministic validation at fatigue `>=70`;
+- baseline morning training is not elected at fatigue `>=55`, and high fatigue prioritizes recovery;
+- fatigue changes are included in first-class action/event state changes;
+- the Telegram Profile gains a read-only `Recovery` section showing current `Systemic fatigue` without copying the live value into canonical profile tables.
 
-Do not create a general-purpose rich-state framework merely because schema v4 has extension sockets.
+Explicitly deferred:
+- strength/proficiency gains;
+- hypertrophy/body progression;
+- muscle-group soreness;
+- workout programming/exercise taxonomy;
+- injury probability;
+- grading/tier progression;
+- a general training-adaptation framework.
+
+Implementation/evidence:
+- core simulation commit `cd126b42833802c0f9dba9b8169d389b98464172`;
+- Recovery observer commit `5a424fe23ccb83552dcde2cca02d23050736b51f`;
+- default-zero Recovery refinement `a114a396112feeed6c5da37c03dfec13ba493df4`;
+- focused training/recovery tests `86b36a722da19460fe7d09d38911b36de103eb6e` plus follow-up coverage;
+- Profile Browser Recovery integration regression `1fb5e4a270a753a1940dc1cc2fa75c030948125e`;
+- CI #282 / run `31669206182` SUCCESS after aligning the Profile Browser contract;
+- CI #284 / run `31669332087` SUCCESS for the final acceptance-workflow revision;
+- Deploy #120 delivered the fatigue engine; Deploy #122 / run `31669140421` delivered the latest Recovery observer source and completed successfully;
+- P3 Training Recovery Acceptance #2 / run `31669332118` SUCCESS on a disposable production DB copy with **zero model calls**;
+- bounded acceptance proved fatigue `0.0 -> 18.5` after 60m training, then `18.5 -> 10.0` after 60m rest, and proved fatigue `75` blocks training in both option generation and validation;
+- the acceptance copy did not mutate production. Its production readback remained schema v4, autonomy enabled/normal, unpaused, `1x`, with a valid pending action.
+
+Creator acceptance remaining for **P3.1 only**:
+- open `Characters -> Darian -> Profile -> Recovery` in Telegram;
+- confirm `Systemic fatigue` is readable and Back navigation remains correct.
+
+Do not automatically expand P3.1 into a full training system after this check. Select the next minimum runnable slice separately.
 
 ## P4 — Context / Memory / Relationship Slice When Behavior Requires It
 
@@ -264,6 +290,6 @@ Expand destination-by-destination afterward.
 
 ## Current resume point
 
-**Creator should exercise P2.2.4 Character Profile Browser in Telegram: Characters -> Darian -> Profile -> several sections -> back. If the deployed read-only profile surfaces are good, close P2.2.4 before selecting the next independently runnable slice.**
+**P2.2 browsing is live-verified and P3.1 systemic training fatigue/recovery is implemented, deployed and bounded-accepted. Creator should now check `Characters -> Darian -> Profile -> Recovery` in Telegram. If that one live view is good, close P3.1 as LIVE UX VERIFIED and select the next independently runnable slice rather than expanding the training subsystem automatically.**
 
-No additional core/schema work is required for the current browser path. Universal grading is documented as a future additive capability, not a reason for another broad foundation pass now. Preserve 1x wake-on-demand production autonomy, globally scoped ids, locked unfinished boundaries, actor-scoped scheduler state, first-class actions/events, Telegram presentation rules and per-user notification preferences.
+No additional core/schema refinement is required. Preserve 1x wake-on-demand production autonomy, globally scoped ids, locked unfinished boundaries, actor-scoped scheduler state, first-class actions/events, Telegram presentation rules, profile/runtime separation, grading-as-future-derived-capability and per-user notification preferences.
