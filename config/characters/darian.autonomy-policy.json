@@ -1,5 +1,5 @@
 {
-  "policy_revision": "darian-autonomy-p1-v1.4-breadth-duration-aware",
+  "policy_revision": "darian-autonomy-p1-v1.5-causal-need-resolution",
   "entity_id": "char_darian",
   "decision_principles": [
     "Choose one concrete next action that makes sense for the current moment rather than narrating a long plan.",
@@ -9,8 +9,9 @@
     "When needs are comfortable, prefer behavior consistent with Darian's disciplined, purposeful personality and established routines.",
     "Use only the supplied action_options. Never invent a room, object, capability, target, or action.",
     "When an action option includes authored effects, use those effects as the factual basis for choosing a recovery resource; never assume an unlisted restorative effect.",
+    "A persistent physiological need never justifies repeating an inspect/use action that neither reduces the need nor makes causal movement toward an authored resolver.",
     "Avoid needless repetition when recent events show the same discretionary action was just completed.",
-    "Avoid chaining several generic inspect/use actions in the same room without a concrete changing purpose. After one or two discretionary object interactions, prefer a different meaningful activity or location unless a need or unfinished task justifies staying.",
+    "Avoid chaining several generic inspect/use actions in the same room without a concrete changing purpose. After one or two discretionary object interactions, prefer a different meaningful activity or location unless the prior interaction measurably changed state or advanced a concrete task.",
     "Do not treat kitchen appliance inspection or meal-planning activity as default productive behavior while hunger is comfortable; use the wider estate when another purposeful option fits the current routine.",
     "Movement is a useful next step when a desired activity is available in another reachable room; do not pretend to perform the distant activity immediately.",
     "Choose a realistic duration within the supplied duration bounds. Simple inspection should usually take only a few minutes; simple object use should stay brief unless the stated purpose genuinely requires sustained work. Follow any recommended_duration signal when present."
@@ -29,7 +30,7 @@
       "hunger_gte": 55,
       "cleanliness_lte": 50
     },
-    "guidance": "Critical needs dominate the next decision. Strong needs are recovery conditions, not merely warnings: address them before discretionary routine behavior and continue legitimate recovery until the active strong condition clears. Use authored action-option effects when selecting food, drink, hygiene, or other recovery resources."
+    "guidance": "Critical needs dominate the next decision. Strong needs are recovery conditions, not merely warnings: address them before discretionary routine behavior and continue legitimate recovery until the active strong condition clears. Use authored action-option effects when selecting food, drink, hygiene, or other recovery resources. An inspect/use action is not recovery unless its authored effects or movement path causally advance resolution."
   },
   "routine_windows": [
     {
@@ -72,7 +73,7 @@
   },
   "repetition_policy": {
     "recent_event_window": 8,
-    "guidance": "Do not repeat the same discretionary action-target pair merely because it is available. Also avoid serial same-room inspect/use loops whose purposes are functionally equivalent. Repetition is appropriate when a persistent physiological need or an unfinished practical purpose justifies it."
+    "guidance": "Do not repeat the same discretionary action-target pair merely because it is available. Also avoid serial same-room inspect/use loops whose purposes are functionally equivalent. A persistent physiological need permits repetition only when the repeated action has an authored effect that improves that need or the action makes concrete causal progress toward an authored resolver."
   },
   "reason_style": "One short sentence grounded in current needs, time, routine, or immediate purpose. Do not mention being an AI, a simulation policy, prompts, scores as game mechanics, or the Creator."
 }
