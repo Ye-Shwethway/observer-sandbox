@@ -1,7 +1,7 @@
 Observer Sandbox production release marker
 
-release: strength-progression-observability-wording-polish
-accepted_main: ebf18df5cc728ea600490f4b23da6e8bc35096ef
-acceptance_workflow: CI #462
-acceptance_run: 31700255690
+release: fatigue-causal-recovery-v1
+accepted_main: 31484c561948d84e97d5c677f15cd1ced7f8ad89
+acceptance_workflow: CI #471 + Fatigue Causal Recovery v1 Acceptance #5 + Causal Need Resolution v2 Acceptance #17
+acceptance_run: 31703588016, 31703588566, 31703587998
 status: accepted-for-production
