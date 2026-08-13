@@ -13,6 +13,7 @@ Roadmap synchronized: 2026-08-13
   `Actor(s) + Action + Place + Simulation Time + Conditions/Modifiers + Resources/Targets -> Validation -> State Changes + Events`.
 - Schema v4 remains the current composable foundation. Do not introduce schema v5 without a concrete missing invariant.
 - Development proceeds by minimum runnable vertical slices.
+- Repeated expansion follows **exemplar-first, then batch-by-pattern**: prove one new structural pattern, then batch equivalent follow-ons into one PR, one pre-merge disposable production-copy dry-run, and one deploy/readback.
 
 ## Foundation / P0 / P1
 
@@ -35,63 +36,67 @@ Roadmap synchronized: 2026-08-13
 - P3.4 Training Effectiveness Outcome — COMPLETE / ACCEPTANCE VERIFIED / DEPLOYED.
 - P3.5 Effective Training Load — COMPLETE / ACCEPTANCE VERIFIED / DEPLOYED.
 
-P3.5 completes the current short-term training loop:
+P3.5 short-term training loop:
 `target -> readiness -> fatigue inefficiency -> effectiveness -> effective workload -> immediate physiology`.
 No accumulated stimulus, strength/skill progression, hypertrophy/body measurements, grading, or tiers are implemented.
 
 ## Post-P3.5 stabilization
 
-### Autonomy Breadth + Time Observability v1
-Status: DEPLOYED / ACCEPTANCE VERIFIED / LIVE OBSERVATION POSITIVE.
-World object breadth expanded 15→27 and broader estate use has been observed live.
-
-### Current Action ETA Observability v1
-Status: COMPLETE / ACCEPTANCE VERIFIED / DEPLOYED / LIVE UX VERIFIED.
-Character and Runtime surfaces expose pending target, duration, expected simulated completion and approximate remaining real time.
-
-### Runtime Speed Control v1
-Status: COMPLETE / ACCEPTANCE VERIFIED / DEPLOYED / LIVE UX VERIFIED.
-Global speed may change while actions are running; remaining wall time is rescheduled without cancelling/replanning. Creator verified a 60-sim-minute action at 30x. Speed is not a fixed baseline and must be read live; Deploy #136 later observed 5x.
-
-### Deterministic Action Duration Planning Profiles v1
-Status: COMPLETE / ACCEPTANCE VERIFIED / DEPLOYED.
-Broad persisted legality ranges stay compatible while newly model-planned actions use narrower deterministic preferred ranges. Sleep remains intentionally unclamped until nap/night-sleep semantics are separated.
-
-### Minimum action timing invariant
-Status: CI VERIFIED.
-Action duration remains integer simulated minutes with minimum 1 minute. `1 sim min @ 3600x` yields a positive `1/60` real-second due-time delta and safely transitions from in-progress before due to complete after due. No extra wall-delay clamp or sub-minute time unit is needed now.
+- Autonomy Breadth + Time Observability v1 — DEPLOYED / ACCEPTANCE VERIFIED.
+- Current Action ETA Observability v1 — COMPLETE / ACCEPTANCE VERIFIED / DEPLOYED / LIVE UX VERIFIED.
+- Runtime Speed Control v1 — COMPLETE / ACCEPTANCE VERIFIED / DEPLOYED / LIVE UX VERIFIED.
+- Deterministic Action Duration Planning Profiles v1 — COMPLETE / ACCEPTANCE VERIFIED / DEPLOYED.
+- Minimum action timing invariant — CI VERIFIED: `1 sim min @ 3600x` remains a positive `1/60` real-second due interval.
 
 ## Selective Activity/Action Semantics
 
-### Research v1
+### Research v1 — exemplar
 Status: COMPLETE / ACCEPTANCE VERIFIED / DEPLOYED.
 
-Canonical detail: `docs/RESEARCH_ACTION_SEMANTICS.md`.
+- first-class `research` action, legal 10–180m;
+- Research Desk only;
+- preferred 30–90m;
+- existing capability/colocation validation and first-class action/event persistence reused;
+- model vocabulary can now pick semantic verbs exposed by authoritative action options;
+- no knowledge, XP, memory or progression subsystem.
 
-Delivered:
-- first-class `research` action, legal duration 10–180m;
-- Research Desk is the only authored research target;
-- preferred Research Desk planning duration 30–90m;
-- generic capability/colocation validation and first-class action/event persistence reused;
-- model vocabulary now includes semantic verbs currently exposed by authoritative action options;
-- ordinary passive physiology/time only; no knowledge, XP, memory or progression subsystem.
+Evidence: PR #10 merge `c50f4cf9a87b15589be3b3ea4878990da7e69d02`; Research Action Semantics Acceptance #1 / `31681716339` SUCCESS; Deploy #136 / `31681760620` SUCCESS.
 
-Evidence: PR #10 merge `c50f4cf9a87b15589be3b3ea4878990da7e69d02`; PR CI #365 / `31681648655` SUCCESS; main CI #366 / `31681716298` SUCCESS; Research Action Semantics Acceptance #1 / `31681716339` SUCCESS; release `8f3487feccc84ef10b045dff960097bc0c44ceb6`; Deploy #136 / `31681760620` SUCCESS.
+### Activity Semantics Batch 1 — Monitor
+Status: COMPLETE / PRE-MERGE PRODUCTION-COPY ACCEPTANCE VERIFIED / DEPLOYED.
 
-### Next semantic candidate — Monitor
+Research v1 established the structural pattern. Batch 1 then applied the same pattern across three equivalent console affordances in one development cycle:
+- Surveillance Console;
+- Secure Communications Terminal;
+- Emergency Console.
 
-The next bounded semantic slice should add `monitor` to the existing Surveillance Console only. It should reuse schema-v4 action definitions/capabilities, duration planning, model option-derived vocabulary, validation and first-class events. It may represent purposeful surveillance observation but must not invent a full intelligence findings, alert, environment, or world-event subsystem.
+`monitor` contract:
+- first-class action;
+- legal duration 5–120m;
+- preferred planning 15–45m;
+- local object + `monitor` capability + colocation;
+- passive physiology/time plus ordinary first-class action/event evidence only;
+- no findings, alerts, communications payload, intelligence engine or environment engine.
 
-After `monitor`, decide whether another semantic verb is actually useful before adding one. `maintain` is a safer later candidate than `repair`, because repair would require a concrete damaged-state invariant.
+Batch execution evidence:
+- one branch/PR (#11);
+- PR CI #374 / `31682656794` SUCCESS;
+- **pre-merge** Activity Semantics Batch 1 Acceptance #1 / `31682656839` SUCCESS on one disposable copy of live production DB, covering all three targets, zero model calls, unsupported Media Console rejected;
+- PR #11 merged at `8a8f14b7da13ac0ab0ecbb461fefcdfc3639d7f8` only after the batch was green;
+- release `5e650c11ef6c144f4816f3d77704562cba3156d6`;
+- Deploy #137 / `31682743508` SUCCESS;
+- production readback healthy: schema v4, autonomy enabled/normal/unpaused, Gemini preserved, Telegram connected, speed 5x at that snapshot.
 
-## Later sequence
+This validates the new expansion policy. Do not return to one-PR/one-deploy-per-equivalent-item expansion unless rollback/risk boundaries require it.
 
-After bounded activity semantics, unless Creator redirects:
-1. first read-only grading slice on one existing raw value;
+## Next planned sequence
+
+Do not add more verbs just for breadth. `maintain/repair/diagnose/practice` may require distinct state or consequences and should become new exemplars only when a concrete runnable need appears.
+
+Unless Creator redirects:
+1. first read-only grading proof on one existing raw value;
 2. minimum training stimulus evidence on one target/domain;
 3. minimum adaptation/progression only after stimulus + recovery semantics are explicit.
-
-Later/demand-driven: inventory/depletion, soreness/injury, detailed exercise programming, rich memory/relationships, environment, P5 second character, Tahoe traversal.
 
 ## Deferred boundaries
 
@@ -106,4 +111,4 @@ Not implemented:
 
 ## Current resume point
 
-Research v1 is deployed. Continue with **Minimum Monitor Action Semantics** as the next bounded activity slice. Do not broaden it into an intelligence/environment subsystem.
+The exemplar-first/batch expansion workflow is proven and Monitor Batch 1 is live. The next proposed bounded feature is the **first read-only grading proof on one existing raw value**; no implementation should begin until Creator direction confirms that next slice.
