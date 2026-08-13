@@ -15,6 +15,8 @@ jobs:
     if: ${{ vars.VPS_DEPLOY_ENABLED == 'true' }}
     runs-on: ubuntu-latest
     steps:
+      - uses: actions/checkout@v4
+
       - name: Configure SSH
         env:
           VPS_SSH_KEY: ${{ secrets.VPS_SSH_KEY }}
@@ -28,20 +30,32 @@ jobs:
           chmod 600 ~/.ssh/id_ed25519
           ssh-keyscan -p "$VPS_PORT" -H "$VPS_HOST" >> ~/.ssh/known_hosts
 
+      - name: Stage candidate source on VPS
+        env:
+          VPS_HOST: ${{ secrets.VPS_HOST }}
+          VPS_USER: ${{ secrets.VPS_USER }}
+          VPS_PORT: ${{ secrets.VPS_PORT || '22' }}
+        run: |
+          CANDIDATE_DIR="/tmp/observer-p3-readiness-${GITHUB_SHA}"
+          ssh -p "$VPS_PORT" "$VPS_USER@$VPS_HOST" "rm -rf '$CANDIDATE_DIR' && mkdir -p '$CANDIDATE_DIR'"
+          rsync -az -e "ssh -p $VPS_PORT" src/ "$VPS_USER@$VPS_HOST:$CANDIDATE_DIR/src/"
+
       - name: Prove readiness modifier on disposable production copy
         env:
           VPS_HOST: ${{ secrets.VPS_HOST }}
           VPS_USER: ${{ secrets.VPS_USER }}
           VPS_PORT: ${{ secrets.VPS_PORT || '22' }}
         run: |
-          ssh -p "$VPS_PORT" "$VPS_USER@$VPS_HOST" '
+          ssh -p "$VPS_PORT" "$VPS_USER@$VPS_HOST" "
             set -euo pipefail
             cd /opt/observer-sandbox
-            TMP_DB=$(mktemp /tmp/observer-p3-readiness.XXXXXX.sqlite3)
-            trap "rm -f $TMP_DB $TMP_DB-wal $TMP_DB-shm" EXIT
-            cp /var/lib/observer-sandbox/observer.sqlite3 "$TMP_DB"
-            export OBSERVER_SANDBOX_DB="$TMP_DB"
-            .venv/bin/python - <<"PY"
+            CANDIDATE_DIR=/tmp/observer-p3-readiness-${GITHUB_SHA}
+            TMP_DB=\$(mktemp /tmp/observer-p3-readiness.XXXXXX.sqlite3)
+            trap 'rm -f \$TMP_DB \$TMP_DB-wal \$TMP_DB-shm; rm -rf \$CANDIDATE_DIR' EXIT
+            cp /var/lib/observer-sandbox/observer.sqlite3 \"\$TMP_DB\"
+            export OBSERVER_SANDBOX_DB=\"\$TMP_DB\"
+            export PYTHONPATH=\"\$CANDIDATE_DIR/src\"
+            .venv/bin/python - <<'PY'
           import json
           import os
           from observer_sandbox.actor_runtime import actor_runtime, set_actor_runtime, set_retry
@@ -131,6 +145,7 @@ jobs:
               print(json.dumps({
                   "ok": True,
                   "disposable": True,
+                  "candidate_source": True,
                   "model_calls": 0,
                   "healthy_after_fatigue": healthy["fatigue"],
                   "healthy_modifier": healthy_mod,
@@ -141,7 +156,8 @@ jobs:
               }, indent=2, sort_keys=True))
           PY
             export OBSERVER_SANDBOX_DB=/var/lib/observer-sandbox/observer.sqlite3
-            echo "--- PRODUCTION READBACK (UNCHANGED BY P3.3 ACCEPTANCE COPY) ---"
+            unset PYTHONPATH
+            echo '--- PRODUCTION READBACK (UNCHANGED BY P3.3 ACCEPTANCE COPY) ---'
             .venv/bin/sandboxctl status
             .venv/bin/sandboxctl living-status
-          '
+          "
