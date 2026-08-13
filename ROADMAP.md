@@ -34,10 +34,22 @@ Roadmap synchronized: 2026-08-13
 - P3.3 Training Readiness Modifier — COMPLETE / DEPLOYED / LIVE UX VERIFIED.
 - P3.4 Training Effectiveness Outcome — COMPLETE / ACCEPTANCE VERIFIED / DEPLOYED.
 - P3.5 Effective Training Load — COMPLETE / ACCEPTANCE VERIFIED / DEPLOYED.
+- Minimum Training Stimulus v1 — COMPLETE / PRE-MERGE PRODUCTION-COPY ACCEPTANCE VERIFIED / DEPLOYED.
 
-P3.5 short-term training loop:
-`target -> readiness -> fatigue inefficiency -> effectiveness -> effective workload -> immediate physiology`.
-No accumulated stimulus, strength/skill progression, hypertrophy/body measurements, or adaptation yet.
+Current short-term training chain:
+`target -> readiness -> fatigue inefficiency -> effectiveness -> effective workload -> immediate physiology -> session stimulus evidence`.
+
+Minimum Training Stimulus v1 is deliberately narrow:
+- action: `train`;
+- target: Free Weights only;
+- domain: Strength only;
+- `stimulus_units = effective_minutes / 60`;
+- evidence persists in action outcome + completion event;
+- Heavy Bag and other targets emit no Strength stimulus in v1;
+- raw Strength and derived grade do not change;
+- no accumulated stimulus, adaptation, hypertrophy/body change, or schema v5.
+
+Evidence: PR #14 merge `3578de12ebc750aca397b16f01f8bd368e1af11a`; CI #393 SUCCESS; Minimum Training Stimulus Acceptance #2 `31685799302` SUCCESS on a disposable copy of the live production DB; release `22f8a3d7776137cb72d2926caac37d1002e6d8ed`; Deploy #140 `31685928444` SUCCESS.
 
 ## Post-P3.5 stabilization
 
@@ -49,64 +61,58 @@ No accumulated stimulus, strength/skill progression, hypertrophy/body measuremen
 
 ## Selective Activity/Action Semantics
 
-### Research v1 — exemplar
-Status: COMPLETE / ACCEPTANCE VERIFIED / DEPLOYED.
+- Research v1 exemplar — COMPLETE / ACCEPTANCE VERIFIED / DEPLOYED.
+- Activity Semantics Batch 1 (`monitor`) — COMPLETE / PRE-MERGE PRODUCTION-COPY ACCEPTANCE VERIFIED / DEPLOYED.
 
-### Activity Semantics Batch 1 — Monitor
-Status: COMPLETE / PRE-MERGE PRODUCTION-COPY ACCEPTANCE VERIFIED / DEPLOYED.
-
-`monitor` is authored on Surveillance Console, Secure Communications Terminal and Emergency Console with the same capability/colocation/action-event invariant. No findings/intelligence/environment subsystem was added.
-
-Evidence: PR #11 merge `8a8f14b7da13ac0ab0ecbb461fefcdfc3639d7f8`; acceptance `31682656839`; Deploy #137 `31682743508` SUCCESS.
+Do not add more verbs merely for breadth. A verb requiring new state/consequences becomes a new exemplar.
 
 ## Read-only grading
 
-### Grading exemplar — Strength
+### Strength exemplar
 Status: COMPLETE / PRE-MERGE ACCEPTANCE VERIFIED / DEPLOYED.
 
-- raw `raps_pa.strength = 90` remains authoritative and unchanged;
-- named proof scheme `raps-100-proof-v1` derives `Grade S`;
-- grade is query/presentation metadata, not a second source of truth;
-- Telegram Attributes displays raw value plus derived grade;
+- raw `raps_pa.strength = 90` remains authoritative;
+- named proof scheme `raps-100-proof-v1` derives Grade S;
+- grade is query/presentation metadata only;
 - no schema change.
-
-Evidence: PR #12 merge `d0bdabc1faaede8adb6c3e8dd29a9b5ff9ba3cb3`; Read-Only Grading Proof Acceptance #1 `31683547092`; Deploy #138 `31683632205` SUCCESS.
 
 ### Attribute Grading Batch 1
 Status: COMPLETE / PRE-MERGE PRODUCTION-COPY ACCEPTANCE VERIFIED / DEPLOYED.
 
-The Strength exemplar pattern is expanded to **36 explicitly opted-in compatible 0..100 Attributes-section fields**.
-
-Boundaries:
-- `raps_ia.iq` is excluded because it uses a different scale;
-- `Skills` collection is excluded and requires its own grading family;
-- `Body` measurements/composition are excluded and require a **separate exemplar + batch** because units, normalization and calculation semantics differ materially;
-- explicit field membership prevents future numeric fields from silently inheriting this scheme;
+- 36 explicitly opted-in compatible 0..100 Attributes fields are graded;
+- IQ is excluded because it uses a different scale;
+- Skills require their own family;
+- Body measurements/composition require a **separate exemplar + batch** because their normalization/calculation semantics differ materially;
 - raw profile values remain unchanged.
 
-Evidence: PR #13 merge `76bcf7fe7225a9504909f9d939bbcdd673bac7c6`; CI #386 SUCCESS; Attribute Grading Batch 1 Acceptance #3 `31683936844` SUCCESS; release `d14cae7ef88fc9e157caa5fa0b930f36aba3cf77`; Deploy #139 `31684009154` SUCCESS.
+Evidence: Strength PR #12 / Deploy #138; Attribute Batch PR #13 / Deploy #139.
 
 ## Grading family rule
 
 Do not use one numeric evaluator merely because multiple domains contain numbers.
 
 - 0..100 compatible Attributes: current `raps-100-proof-v1` family.
-- IQ: separate scale/evaluator if grading becomes useful.
+- IQ: separate scale/evaluator if useful.
 - Skills: separate family because progression/experience semantics may differ.
 - Body measurements/composition: separate exemplar and batch; evaluator may need units, body composition, stature/proportion context and/or genetic ceilings rather than flat thresholds.
 
 ## Next planned sequence
 
-The current grading architecture is proven without schema v5. Before long-term training progression:
-1. define/prove the separate **Body grading family** only if Creator wants body grades now; do not reuse attribute thresholds by default;
-2. otherwise proceed to **minimum training stimulus evidence** on one target/domain;
-3. minimum adaptation/progression only after stimulus + recovery semantics are explicit.
+Minimum Training Stimulus is now proven. The next progression work must not jump straight to attribute mutation.
+
+1. Define/prove **Minimum Adaptation/Progression v1** only after explicitly specifying how session stimulus and recovery/time convert into adaptation.
+2. Keep the first adaptation exemplar to Free Weights + Strength only.
+3. Preserve raw-value authority, tiny deterministic changes, diminishing-return semantics, and auditable evidence.
+4. Only after one adaptation exemplar is proven should equivalent progression expansion be batched by pattern.
+5. Body grading remains a separate deferred family unless Creator explicitly prioritizes it.
 
 ## Deferred boundaries
 
 Not implemented:
-- accumulated stimulus/adaptation;
-- attribute/skill/body-measurement progression;
+- accumulated stimulus store/history beyond action/event evidence;
+- adaptation/progression mutation;
+- skill/body-measurement progression;
+- hypertrophy/body composition progression;
 - body-measurement grading evaluator;
 - IQ/skills grading evaluators;
 - inventory/resource depletion;
@@ -116,4 +122,4 @@ Not implemented:
 
 ## Current resume point
 
-Attribute Grading Batch 1 is live. Body measurements are explicitly a separate grading family. The next implementation decision is **Body grading exemplar** versus **Minimum Training Stimulus**, with body grading requiring its own calculation design rather than inheriting the attribute evaluator.
+**Minimum Training Stimulus v1 is live.** Free Weights sessions can now produce auditable Strength stimulus evidence without changing Strength itself. The next bounded design/implementation candidate is **Minimum Adaptation/Progression v1 — Free Weights + Strength only**, but adaptation semantics must be defined before mutation is allowed.
