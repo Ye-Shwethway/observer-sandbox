@@ -1,11 +1,11 @@
 # Physiology and Item Effects
 
 Status: ACTIVE LIVING ENGINE CONTRACT
-Scope: Basic living needs, recovery actions, target/item effects, first P3 systemic-fatigue behavior, and schema-v4 modifier sockets.
+Scope: basic living needs, recovery actions, target/item effects, P3 systemic fatigue/readiness/effectiveness/effective-load behavior, and schema-v4 modifier sockets.
 
 ## Purpose
 
-The living runtime must remain recoverable. A character may become tired, hungry, thirsty, dirty, low on energy or temporarily fatigued, but authored actions/resources must provide legitimate paths back toward a healthy operating range. The LLM chooses a structured action; deterministic runtime owns state changes.
+The living runtime must remain recoverable. LLM cognition chooses structured actions; deterministic runtime owns validation and state changes.
 
 ## Basic physiological state
 
@@ -15,23 +15,15 @@ Values clamp to `0..100`:
 - `needs.thirst`: higher is worse
 - `needs.sleepiness`: higher is worse
 - `physiology.cleanliness`: higher is better
-- `physiology.fatigue`: higher is worse; current first richer-simulation metric for accumulated systemic training/recovery load.
+- `physiology.fatigue`: higher is worse
 
-`physiology.fatigue` was already reserved by the character profile ontology. P3 activates it as live simulated state in the generic `fields` store rather than creating another schema revision or copying scheduler state into the canonical profile tables.
+Live physiology remains generic simulated field state rather than canonical profile truth.
 
 ## Recovery invariant
 
-Reachable recovery paths must exist:
-- energy -> rest/sleep; food may add a secondary boost
-- hunger -> authored food/eat targets
-- thirst -> authored drink targets
-- sleepiness -> sleep; rest mild relief
-- cleanliness -> authored shower/wash targets
-- systemic fatigue -> rest/sleep and ordinary low-load time.
+Reachable restoration paths must exist for energy, hunger, thirst, sleepiness, cleanliness, and systemic fatigue. A recovery-labelled action must improve its intended need after passive drift; cognition must not be offered fake recovery whose deterministic result contradicts its purpose.
 
-A recovery-labelled action must improve its primary need after passive drift. Cognition must never be offered a fake recovery whose deterministic result contradicts its reason.
-
-## Baseline drift and intrinsic effects
+## Passive drift and intrinsic effects
 
 Passive per simulated hour:
 - energy `-2.0`
@@ -41,109 +33,61 @@ Passive per simulated hour:
 - cleanliness `-0.8`
 - systemic fatigue `-1.5`
 
-Intrinsic per-hour action effects are currently:
+Base intrinsic per-hour action effects:
 - sleep: energy `+11`, sleepiness `-15`, hunger `+0.5`, thirst `+0.75`, fatigue `-10`
 - rest: energy `+10`, sleepiness `-4`, fatigue `-7`
 - idle: energy `+3`, fatigue `-2`
 - train: energy `-10`, hunger `+4`, thirst `+6`, cleanliness `-6`, fatigue `+20`
 - read: energy `-0.5`, fatigue `-1`
 
-Passive drift and intrinsic action effects combine. For example, one simulated hour of training currently produces a net systemic-fatigue increase of `+18.5`, while one hour of rest produces a net decrease of `-8.5`.
-
 These are simulation tuning values, not medical claims.
 
-## Minimum training/recovery guard
+## Training condition / modifier / workload contract
 
-P3's first richer vertical slice intentionally adds only one deterministic behavioral consequence:
-- `train` options are withheld when systemic fatigue is `>= 70`;
-- direct validation also rejects a `train` action at that threshold, so a model cannot bypass the guard;
-- the baseline deterministic living policy stops electing a normal morning training block at fatigue `>= 55` and prioritizes recovery once fatigue is high.
+Training now has deliberately separated semantics:
 
-This is deliberately not a full training-adaptation engine. No strength gain, hypertrophy, muscle-group soreness model, workout programming, exercise taxonomy, injury probability or grading progression is implemented by this slice.
+1. **Condition:** systemic fatigue `>=70` blocks training in both action option generation and direct validation. Baseline living policy avoids normal morning training at fatigue `>=55`.
+2. **Readiness:** P3.3 derives pre-action readiness from energy, thirst, sleepiness, and systemic fatigue.
+3. **Physiological inefficiency:** P3.3 derives `fatigue_cost_multiplier`; training fatigue uses this multiplier.
+4. **Effectiveness:** P3.4 records a useful-work fraction. In the current v1 formula `effectiveness = readiness`.
+5. **Effective workload:** P3.5 records `effective_minutes = planned_minutes × effectiveness` and scales the intrinsic training-specific energy/hunger/thirst/cleanliness effects by effectiveness.
+
+Passive drift always applies across the full planned duration. Sleepiness has no current intrinsic train-specific effect, so training changes it only through passive drift. Systemic fatigue deliberately does **not** scale down with effectiveness; it uses the separate fatigue-cost multiplier so poor readiness can mean less useful work but disproportionately higher fatigue.
+
+Healthy one-hour reference at effectiveness `1.0` retains the old full training load and net fatigue `+18.5`.
+
+Degraded reference (`energy 50`, `thirst 45`, `sleepiness 45`, `fatigue 40`) yields readiness/effectiveness `0.595`, fatigue multiplier `1.202x`, `35.7` effective minutes from a 60-minute session, and resulting state energy `42.05`, hunger `24.88`, thirst `51.57`, sleepiness `48.0`, cleanliness `75.63`, fatigue `62.54`.
+
+The effective-load evidence is persisted in the first-class action outcome and completion event. It is not a new physiology field.
+
+## Current non-progression boundary
+
+Training currently does **not** mutate:
+- strength or other attributes;
+- skill score/tier/experience;
+- muscle/body measurements;
+- accumulated adaptation stimulus;
+- soreness/injury;
+- grading/tier progression.
+
+Do not infer long-term progression merely from the existence of `effectiveness` or `effective_minutes`.
 
 ## Observer surface
 
-The ordinary Telegram character Profile now gains a read-only `Recovery` section once live fatigue exists. It reads `physiology.fatigue` from generic simulated fields and resolves its human label through the profile field definition.
-
-This keeps the architecture separation intact:
-- canonical/static profile truth remains in character profile storage;
-- live physiology remains simulated state owned by its engine;
-- actor scheduler state remains in `actor_runtime`;
-- action history remains in first-class actions/events.
+Telegram Profile -> Recovery exposes live systemic fatigue and derived training readiness. P3.4/P3.5 add action/outcome evidence but no new standalone Telegram field.
 
 ## Shared effect operation contract
 
-Schema v4 generalizes effect specs so future systems do not invent incompatible formats. A physiological field may use:
-
-```json
-{"needs.energy": {"add": 10}}
-```
-
-Supported immediate operations:
-- `add`
-- `multiply`
-- `set`
-- `clamp_min`
-- `clamp_max`
-
-Legacy flat numeric values remain additive for current authored resources.
-
-Example:
-
-```json
-{
-  "drink": {
-    "needs.energy": {"add": 10},
-    "needs.thirst": {"add": -12},
-    "needs.sleepiness": {"add": -8}
-  }
-}
-```
-
-## Target/resource effects
-
-Current Thorne Estate recovery abstractions include drinking water, sink water, meal ingredients, pantry ready food, shower and bed/rest resources. Food/drink/shower capabilities must have matching deterministic effects. Facilities must not expose fake recovery capabilities merely because they are near a resource.
-
-`action_options()` exposes relevant authored effects to cognition; validation/application remain deterministic.
-
-## Definitions versus instances
-
-Schema v4 establishes `entity_definitions` plus `entities.definition_id`.
-
-A future Energy Drink should therefore be modeled conceptually as:
-- reusable definition: name, capabilities, base effects, metadata
-- concrete instance/stack: identity, current location/container, quantity/state when inventory exists.
-
-Do not duplicate immutable product semantics into every physical instance. Quantity, stack depletion and durability remain deferred inventory features.
+Schema v4 immediate effect specs support `add`, `multiply`, `set`, `clamp_min`, and `clamp_max`; legacy flat numerics remain additive. Authored resource effects remain deterministic and must match exposed recovery capabilities.
 
 ## Temporary/sourced modifiers
 
-`active_modifiers` is the persistence contract for future temporary effects such as stimulant, injury, illness, environmental exposure or more detailed training fatigue. It records:
-- subject
-- source entity/action
-- field
-- operation/value
-- start/end sim time
-- stack key/policy
-- conditions/metadata.
+`active_modifiers` is the durable socket for future sourced/time-bounded effects. Its existence is not permission to pre-build a universal modifier evaluator. New modifier sources must arrive only through concrete runnable needs.
 
-The current systemic-fatigue value does not require a temporary modifier row: it is a directly simulated accumulated state. The existence of `active_modifiers` remains a schema socket, not a claim that all modifiers are currently evaluated by every engine.
+## Migration / testing safety
 
-## Migration safety
+First-class pending actions must be preserved, revalidated, cancelled, or explicitly migrated when world/effect semantics change.
 
-Pending actions are first-class `action_instances` referenced by actor-scoped runtime. World/effect migrations must preserve, revalidate, cancel or explicitly migrate outstanding action instances; never silently invalidate them.
+Regression coverage must prove recovery direction, authored effects, action legality, systemic-fatigue behavior, readiness/effectiveness persistence, P3.5 immediate-load scaling, effective-minute evidence, and the absence of unintended long-term progression mutations.
 
-## Future consumables
-
-Finite consumables should not be modeled as infinitely reusable. Energy drinks, medication, finite food, supplements and similar resources require inventory quantity/depletion before becoming finite production items. Temporary effects should use `active_modifiers`, not ad-hoc prompt memory.
-
-## Testing contract
-
-Regression tests must prove recovery direction, authored effects, option visibility, invalid restorative targets, bounded living behavior and safe pending-action migration.
-
-For the P3 systemic-fatigue slice, focused tests additionally prove:
-- training raises fatigue deterministically;
-- recovery lowers it;
-- high fatigue blocks further training in both option generation and validation;
-- fatigue is captured in action/event state changes;
-- the Telegram profile observer can read the live Recovery value without copying it into canonical profile values.
+**Post-P3.5 stop gate:** no further training/progression/grading slice is authorized until Creator discussion explicitly selects it.
