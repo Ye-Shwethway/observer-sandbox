@@ -1,0 +1,159 @@
+name: P3 Targeted Training Acceptance
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths:
+      - '.github/workflows/p3-targeted-training-acceptance.yml'
+
+jobs:
+  acceptance:
+    if: ${{ vars.VPS_DEPLOY_ENABLED == 'true' }}
+    runs-on: ubuntu-latest
+    steps:
+      - name: Configure SSH
+        env:
+          VPS_SSH_KEY: ${{ secrets.VPS_SSH_KEY }}
+          VPS_HOST: ${{ secrets.VPS_HOST }}
+          VPS_PORT: ${{ secrets.VPS_PORT || '22' }}
+        run: |
+          test -n "$VPS_HOST"
+          test -n "$VPS_SSH_KEY"
+          install -m 700 -d ~/.ssh
+          printf '%s\n' "$VPS_SSH_KEY" > ~/.ssh/id_ed25519
+          chmod 600 ~/.ssh/id_ed25519
+          ssh-keyscan -p "$VPS_PORT" -H "$VPS_HOST" >> ~/.ssh/known_hosts
+
+      - name: Prove targeted training on disposable production copy
+        env:
+          VPS_HOST: ${{ secrets.VPS_HOST }}
+          VPS_USER: ${{ secrets.VPS_USER }}
+          VPS_PORT: ${{ secrets.VPS_PORT || '22' }}
+        run: |
+          ssh -p "$VPS_PORT" "$VPS_USER@$VPS_HOST" '
+            set -euo pipefail
+            cd /opt/observer-sandbox
+            TMP_DB=$(mktemp /tmp/observer-p3-targeted-training.XXXXXX.sqlite3)
+            trap "rm -f $TMP_DB $TMP_DB-wal $TMP_DB-shm" EXIT
+            cp /var/lib/observer-sandbox/observer.sqlite3 "$TMP_DB"
+            export OBSERVER_SANDBOX_DB="$TMP_DB"
+            .venv/bin/python - <<"PY"
+          import json
+          import os
+
+          from observer_sandbox.actor_runtime import actor_runtime, pending_action, set_actor_runtime, set_retry
+          from observer_sandbox.autonomy import autonomy_tick
+          from observer_sandbox.db import connect
+          from observer_sandbox.observer_query import observer_status, recent_history
+          from observer_sandbox.runtime import initialize
+          from observer_sandbox.simulation import Action, action_options
+          from observer_sandbox.world import set_field
+
+          HOME_GYM = "loc_thorne_estate_home_gym"
+          HEAVY_BAG = "obj_thorne_estate_gym_heavy_bag"
+          FREE_WEIGHTS = "obj_thorne_estate_gym_free_weights"
+
+          class FixedProvider:
+              def choose(self, snapshot, available_actions):
+                  assert "train" in available_actions
+                  return Action(
+                      "train",
+                      60,
+                      HEAVY_BAG,
+                      "A focused heavy-bag session fits the current training window.",
+                  )
+
+          db = os.environ["OBSERVER_SANDBOX_DB"]
+          initialize(db)
+          with connect(db) as conn:
+              actor_id = "char_darian"
+              runtime = actor_runtime(conn, actor_id)
+              if runtime["pending_action_id"]:
+                  conn.execute(
+                      "UPDATE action_instances SET status=?,updated_at=CURRENT_TIMESTAMP WHERE id=? AND status IN (?,?)",
+                      ("cancelled", runtime["pending_action_id"], "planned", "in_progress"),
+                  )
+              set_actor_runtime(
+                  conn,
+                  actor_id,
+                  pending_action_id=None,
+                  autonomy_enabled=True,
+                  autonomy_mode="normal",
+                  wake_reason="p3_2_acceptance",
+              )
+              conn.execute(
+                  "UPDATE actor_runtime SET lease_owner=NULL,lease_expires_at=NULL WHERE actor_id=?",
+                  (actor_id,),
+              )
+              set_retry(conn, actor_id, None)
+              set_field(conn, actor_id, "runtime.location", HOME_GYM)
+              set_field(conn, actor_id, "runtime.current_action", "idle")
+              set_field(conn, actor_id, "needs.energy", 80.0)
+              set_field(conn, actor_id, "physiology.fatigue", 0.0, authority="physiology_engine", source="p3.2-acceptance")
+              conn.commit()
+
+              training_options = [row for row in action_options(conn, actor_id) if row["action"] == "train"]
+              targets = {(row["target"], row["target_name"]) for row in training_options}
+              assert targets == {
+                  (FREE_WEIGHTS, "Free Weights"),
+                  (HEAVY_BAG, "Heavy Bag"),
+              }, training_options
+
+              provider = FixedProvider()
+              planned = autonomy_tick(conn, actor_id=actor_id, provider=provider, now_wall=1000.0)
+              assert planned["state"] == "planned", planned
+              pending = pending_action(conn, actor_id)
+              assert pending and pending["action"] == "train" and pending["target"] == HEAVY_BAG, pending
+
+              instance = conn.execute(
+                  "SELECT action_type,place_id,target_id,status FROM action_instances WHERE id=?",
+                  (pending["action_id"],),
+              ).fetchone()
+              assert instance["action_type"] == "train"
+              assert instance["place_id"] == HOME_GYM
+              assert instance["target_id"] == HEAVY_BAG
+              assert instance["status"] == "in_progress"
+
+              status = observer_status(conn, actor_id)
+              assert status["pending_target_name"] == "Heavy Bag", status
+
+              completed = autonomy_tick(
+                  conn,
+                  actor_id=actor_id,
+                  provider=provider,
+                  now_wall=float(pending["due_wall_time"]) + 0.001,
+              )
+              assert completed["state"] == "completed", completed
+              assert completed["after"]["fatigue"] == 18.5, completed
+
+              event = conn.execute(
+                  "SELECT action_id,location_id,payload_json FROM events WHERE event_type=? ORDER BY id DESC LIMIT 1",
+                  ("action_completed",),
+              ).fetchone()
+              payload = json.loads(event["payload_json"])
+              assert event["action_id"] == pending["action_id"]
+              assert event["location_id"] == HOME_GYM
+              assert payload["action"] == "train"
+              assert payload["target"] == HEAVY_BAG
+
+              history = recent_history(conn, character_id=actor_id, limit=5)
+              targeted = next(row for row in history if row.get("action") == "train")
+              assert targeted["target_name"] == "Heavy Bag", targeted
+
+              print(json.dumps({
+                  "ok": True,
+                  "disposable": True,
+                  "model_calls": 0,
+                  "legal_training_targets": sorted(name for _, name in targets),
+                  "planned_target": pending["target"],
+                  "persisted_target": instance["target_id"],
+                  "history_target_name": targeted["target_name"],
+                  "fatigue_after_60m": completed["after"]["fatigue"],
+              }, indent=2, sort_keys=True))
+          PY
+            export OBSERVER_SANDBOX_DB=/var/lib/observer-sandbox/observer.sqlite3
+            echo "--- PRODUCTION READBACK (UNCHANGED BY P3.2 ACCEPTANCE COPY) ---"
+            .venv/bin/sandboxctl status
+            .venv/bin/sandboxctl living-status
+          '
