@@ -1,0 +1,112 @@
+name: P3 Training Recovery Acceptance
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths:
+      - '.github/workflows/p3-training-recovery-acceptance.yml'
+
+jobs:
+  acceptance:
+    if: ${{ vars.VPS_DEPLOY_ENABLED == 'true' }}
+    runs-on: ubuntu-latest
+    steps:
+      - name: Configure SSH
+        env:
+          VPS_SSH_KEY: ${{ secrets.VPS_SSH_KEY }}
+          VPS_HOST: ${{ secrets.VPS_HOST }}
+          VPS_PORT: ${{ secrets.VPS_PORT || '22' }}
+        run: |
+          test -n "$VPS_HOST"
+          test -n "$VPS_SSH_KEY"
+          install -m 700 -d ~/.ssh
+          printf '%s\n' "$VPS_SSH_KEY" > ~/.ssh/id_ed25519
+          chmod 600 ~/.ssh/id_ed25519
+          ssh-keyscan -p "$VPS_PORT" -H "$VPS_HOST" >> ~/.ssh/known_hosts
+
+      - name: Probe training and recovery on disposable production copy
+        env:
+          VPS_HOST: ${{ secrets.VPS_HOST }}
+          VPS_USER: ${{ secrets.VPS_USER }}
+          VPS_PORT: ${{ secrets.VPS_PORT || '22' }}
+        run: |
+          ssh -p "$VPS_PORT" "$VPS_USER@$VPS_HOST" '
+            set -euo pipefail
+            cd /opt/observer-sandbox
+            TMP_DB=$(mktemp /tmp/observer-p3-training.XXXXXX.sqlite3)
+            trap "rm -f $TMP_DB $TMP_DB-wal $TMP_DB-shm" EXIT
+            cp /var/lib/observer-sandbox/observer.sqlite3 "$TMP_DB"
+            export OBSERVER_SANDBOX_DB="$TMP_DB"
+            .venv/bin/python - <<"PY"
+          import json
+          import os
+          from observer_sandbox.actor_runtime import actor_runtime, set_actor_runtime, set_retry
+          from observer_sandbox.db import connect
+          from observer_sandbox.runtime import initialize
+          from observer_sandbox.simulation import Action, action_options, apply_action, snapshot, validate_action
+          from observer_sandbox.world import set_field
+
+          db = os.environ["OBSERVER_SANDBOX_DB"]
+          initialize(db)
+          with connect(db) as conn:
+              actor_id = "char_darian"
+              runtime = actor_runtime(conn, actor_id)
+              if runtime["pending_action_id"]:
+                  conn.execute(
+                      "UPDATE action_instances SET status='cancelled',updated_at=CURRENT_TIMESTAMP WHERE id=? AND status IN ('planned','in_progress')",
+                      (runtime["pending_action_id"],),
+                  )
+              set_actor_runtime(conn, actor_id, pending_action_id=None)
+              conn.execute(
+                  "UPDATE actor_runtime SET lease_owner=NULL,lease_expires_at=NULL WHERE actor_id=?",
+                  (actor_id,),
+              )
+              set_retry(conn, actor_id, None)
+              set_field(conn, actor_id, "runtime.location", "loc_thorne_estate_home_gym")
+              set_field(conn, actor_id, "runtime.current_action", "idle")
+              set_field(conn, actor_id, "needs.energy", 80.0)
+              set_field(conn, actor_id, "physiology.fatigue", 0.0, authority="physiology_engine", source="p3-acceptance")
+              conn.commit()
+
+              before = snapshot(conn, actor_id)
+              trained = apply_action(
+                  conn,
+                  Action("train", 60, "obj_thorne_estate_gym_free_weights", "P3 acceptance training block"),
+                  actor_id,
+              )
+              rested = apply_action(conn, Action("rest", 60, None, "P3 acceptance recovery block"), actor_id)
+
+              assert trained["fatigue"] > before["fatigue"], (before, trained)
+              assert rested["fatigue"] < trained["fatigue"], (trained, rested)
+
+              set_field(conn, actor_id, "physiology.fatigue", 75.0, authority="physiology_engine", source="p3-acceptance")
+              conn.commit()
+              options = action_options(conn, actor_id)
+              assert not any(option["action"] == "train" for option in options), options
+              blocked = False
+              try:
+                  validate_action(
+                      conn,
+                      actor_id,
+                      Action("train", 60, "obj_thorne_estate_gym_free_weights", "must be blocked"),
+                  )
+              except ValueError as exc:
+                  blocked = "fatigue" in str(exc).lower()
+              assert blocked
+
+              print(json.dumps({
+                  "ok": True,
+                  "disposable": True,
+                  "model_calls": 0,
+                  "before": before,
+                  "after_train": trained,
+                  "after_rest": rested,
+                  "high_fatigue_train_blocked": True,
+              }, indent=2, sort_keys=True))
+          PY
+            export OBSERVER_SANDBOX_DB=/var/lib/observer-sandbox/observer.sqlite3
+            echo "--- PRODUCTION READBACK (UNCHANGED BY P3 ACCEPTANCE COPY) ---"
+            .venv/bin/sandboxctl status
+            .venv/bin/sandboxctl living-status
+          '
