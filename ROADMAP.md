@@ -1,404 +1,205 @@
 # Observer Sandbox Roadmap
 
 Status: ACTIVE
-Roadmap audit: 2026-08-13 — aligned to schema v4 and minimum-runnable expansion.
+Roadmap synchronized: 2026-08-13
 
-## Global product principles
+## Product principles
 
 - Python/SQLite runtime/world state is authoritative.
 - AI proposes structured cognition; it never directly mutates arbitrary world state.
 - Telegram is a Creator-facing observer/control adapter, not a simulation engine.
 - Cognition remains wake-on-demand; no periodic LLM heartbeat by default.
-- Core simulation follows `docs/ARCHITECTURE.md` and the LEGO rule:
+- Canonical runtime composition:
   `Actor(s) + Action + Place + Simulation Time + Conditions/Modifiers + Resources/Targets -> Validation -> State Changes + Events`.
-- World identity/topology follows `docs/WORLD_LOCATION_NODE_MODEL.md`.
-- Physiology/effects follow `docs/PHYSIOLOGY_AND_ITEM_EFFECTS.md`.
-- Telegram presentation follows `docs/TELEGRAM_OBSERVER_ARCHITECTURE.md`.
-- Privileged direct interventions follow `docs/CREATOR_CONTROL_POLICY.md`.
-- Future cross-domain grading/progression follows `docs/FUTURE_GRADING_SYSTEM.md` when a concrete grading slice is authorized.
+- Schema v4 is the current composable foundation. Do not introduce schema v5 without a concrete missing invariant.
+- Development proceeds by minimum runnable vertical slices, not subsystem-first expansion.
 
-## Development policy — MINIMUM RUNNABLE EXPANSION
+## Development policy — minimum runnable expansion
 
-Schema v4 is the one-time broad foundation refinement. From this point forward, normal development must expand through the smallest useful runnable vertical slice.
-
-Each new slice should normally contain only:
-1. the minimum new canonical data/state required by the feature;
-2. the minimum deterministic/query/runtime behavior required to make it work;
-3. the minimum Creator-facing observation/control surface needed to use or inspect it;
-4. focused tests and a bounded acceptance path;
-5. deployment/readback when the slice affects production.
-
-A slice is complete when that narrow feature is independently runnable/observable. Do **not** wait for a whole phase containing several future features before declaring a usable checkpoint.
-
-Avoid speculative subsystem construction. Existing schema-v4 sockets are extension points, not instructions to pre-build inventory, memory, relationships, weather, combat, grading, Creator-control or other engines before a concrete runnable slice needs them.
+Each feature should normally contain only:
+1. minimum new canonical/runtime state required;
+2. minimum deterministic/query behavior;
+3. minimum Creator-facing observation/control surface if needed;
+4. focused tests;
+5. disposable production-copy acceptance when runtime behavior matters;
+6. deploy/readback;
+7. Creator UX acceptance when a Creator-facing surface changes.
 
 Prefer:
 `one small feature -> run -> observe -> validate -> keep -> next feature`
 
-over:
-`large documentation/schema subsystem -> many dependent features -> eventual runnable state`.
+over broad speculative subsystem construction.
 
-Do not repeat the schema-v4 broad-foundation pass unless a future concrete feature proves that a core invariant is actually missing.
+## Foundation — COMPLETE
 
-## Core composition / schema v4 — PRE-EXPANSION GATE COMPLETE
+Schema v4 provides:
+- universe-global runtime state separated from actor-scoped runtime;
+- actor autonomy/pending/lease/retry/cognition state;
+- data-driven action definitions;
+- first-class action instances with place/target/participants/resources/conditions/modifiers/outcome;
+- concurrency-safe one-universe simulation time;
+- linked events/state changes/participants;
+- entity definition -> instance sockets;
+- generic immediate effects and durable active-modifier sockets;
+- globally scoped spatial/resource ids and generic `located_at` semantics.
 
-Canonical audit: `docs/COMPOSABLE_RUNTIME_ARCHITECTURE_AUDIT.md`.
-
-Implemented foundation:
-- SQLite schema v4;
-- actor-scoped autonomy/pending/lease/retry/cognition in `actor_runtime`;
-- universe-global pause/speed/time/world kept separate;
-- data-driven `action_definitions`;
-- first-class `action_instances` with actor/place/target/participants/resources/conditions/modifiers/time/status/outcome;
-- concurrent actions do not double-advance the one universe clock;
-- richer event linkage with action/location/state changes/participants/causal socket;
-- reusable `entity_definitions` -> concrete `entities` instance path;
-- immediate effect operations add/multiply/set/clamp;
-- `active_modifiers` persistence socket with timing/source/stack policy;
-- generic dynamic `located_at` contract plus distinct ownership/possession semantics;
-- service enumerates active actor runtimes instead of assuming Darian-only scheduling;
-- action notifications resolve actual actor identity rather than hard-coding Darian.
-
-Deferred intentionally until their feature slices: inventory quantity/depletion/durability, full active-modifier evaluation across domains, rich relationship/memory/environment engines, complex multi-party synchronization/combat and universal grading evaluation.
-
-Acceptance evidence:
-- multi-actor/concurrency/definition-instance/modifier/event tests included in CI;
-- bounded schema-v4 accelerated production-copy recovery acceptance run #5 succeeded with `needs_acceptable=true` without mutating production;
-- production readback showed schema 4, autonomy ON/normal, 1x and a valid actor-scoped pending action.
-
-## Future grading / progression — RESERVED, NO SCHEMA CHANGE NOW
-
-Observer Sandbox is expected to gain a reusable grading/progression language later for character attributes, skills, items, locations/facilities, quests/challenges, unlock requirements and other gradeable subjects.
-
-Current decision:
-- schema v4 remains sufficient; do not introduce schema v5 merely to pre-build grading;
-- preserve the authoritative underlying raw value/state;
-- a grade is normally a derived evaluation under a named grading scheme unless a concrete domain explicitly defines grade itself as canonical state;
-- grading must remain cross-domain and presentation-independent rather than being hard-coded independently into profile, skill, item, location, quest or Telegram code;
-- exact tier vocabulary, thresholds, caps and unlock rules are intentionally deferred until the first concrete grading use case;
-- first implementation must be a minimum-runnable grading slice in one domain, then expand domain-by-domain only after acceptance.
-
-The current Profile Browser shows authoritative raw values without speculative grade badges. Future grading should attach without restructuring that browser.
-
-Canonical note: `docs/FUTURE_GRADING_SYSTEM.md`.
-
-## World / location graph
-
-Current root: `world_observer_universe`; estate: `loc_thorne_estate`.
-Spatial/resource ids are globally scoped and path-independent. `contains` is structural hierarchy, `connected_to` traversal, `located_at` dynamic presence. Future `loc_south_lake_tahoe` can be inserted above the estate; future `loc_quasi_home` can be a sibling. Estate exterior remains locked/non-traversable.
+No broad foundation rewrite is currently required.
 
 ## P0 — Foundation & Remote Control
 
-Status: COMPLETE / LIVE VERIFIED
+Status: COMPLETE / LIVE VERIFIED.
 
 ## P0.5 — AI Provider Layer
 
-Status: FOUNDATION COMPLETE
+Status: FOUNDATION COMPLETE.
 
-Dynamic provider/model catalogs and bindings are established; current Darian cognition uses the configured Gemini binding.
+Dynamic provider/model catalogs and bindings exist. Darian currently preserves the configured Gemini cognition binding through production deploys.
 
 ## P1 — Living Darian Minimum
 
-Status: CONTINUOUS AUTONOMY LIVE / ENGINE HARDENING PASSED
+Status: CONTINUOUS AUTONOMY LIVE / ENGINE HARDENING PASSED.
 
-Includes wake-on-demand scheduler, validated actions, persistent state, five-stat recovery, authored item/resource effects, graph routing, accelerated disposable acceptance and schema-v4 composable runtime foundation.
+Wake-on-demand scheduling, validated living actions, deterministic needs/effects, graph routing, first-class actions/events, and schema-v4 actor-scoped runtime are live.
 
 ## P2 — Telegram Observer
 
-Status: CORE OBSERVER/BROWSING PATH LIVE / P2.3 EXPANDS SLICE-BY-SLICE
-
 ### P2.1 — Mobile Observer MVP
+Status: LIVE.
 
-Status: LIVE
-
-Private role-aware bot, status/watch/history/character/home/control commands, polished presentation, persistent default-ON notification preferences and successful action-completion push implementation.
+Private role-aware observer/control bot, history/status/watch/control commands, and proactive action notifications are established.
 
 ### P2.2 — Browse the Sandbox
+Status: COMPLETE / LIVE UX VERIFIED.
 
-Status: COMPLETE / LIVE UX VERIFIED
-
-P2.2 was delivered as a sequence of independent runnable checkpoints.
-
-#### P2.2.1 — Observer Home + inline navigation
-
-Status: COMPLETE / DEPLOYED
-
-#### P2.2.2 — Location hierarchy / Thorne Estate
-
-**P2.2.2A — Interior node foundation + scoped identity reset**
-Status: COMPLETE / LIVE VERIFIED
-
-**P2.2.2B — Minimum Telegram Estate Browser**
-Status: COMPLETE / LIVE UX VERIFIED
-
-Implemented minimum scope:
-- Universe -> Thorne Estate -> floor/zone -> room through stable `loc:*` callbacks;
-- room/location detail renders occupants with current action, objects, exits and recent location activity when available;
-- Back follows the canonical `contains` parent and Home remains globally available;
-- locked exterior is shown with a lock/unavailable presentation but is not a movement affordance;
-- observer queries use the generic `located_at` resolver for current occupants and query schema-v4 event `location_id` for recent location activity;
-- Telegram remains a formatting/navigation adapter; no world logic moved into handlers.
-
-Acceptance evidence:
-- CI #260 / run `31666982672` SUCCESS;
-- Deploy #114 / run `31666950518` SUCCESS;
-- Creator exercised the deployed Telegram navigation and confirmed it worked, including observing Darian in the Kitchen through the Estate browser.
-
-#### P2.2.3 — Minimum Item/Object Browser
-
-Status: COMPLETE / LIVE UX VERIFIED
-
-Implemented minimum scope:
-- room object rows are actionable `obj:*` callbacks;
-- object detail shows human-readable name, concrete-instance/definition status, current location, effective capabilities and authored effects;
-- definition-backed entities use `entities.definition_id -> entity_definitions` when present, while current instance-only fixtures remain valid;
-- current location resolves through the generic dynamic/static location contract;
-- authored effect values are rendered by action and stat, including schema-v4 add/multiply/set/clamp forms;
-- Back returns to the actual containing/current room and Home remains globally available;
-- no quantity, stacks, depletion, durability, inventory mutation or ownership mutation was added.
-
-Acceptance evidence:
-- object query contract commit `715a575642012c7aaef92cc26d27e8d8ba69ce8a`;
-- Telegram object browser commit `b26423aa1bc67ad239eb9059042e3efe5479d41c`;
-- focused browser tests commit `835f90a3bfbe13e165fa90187712ddc4da564dd7`;
-- CI #265 / run `31667412478` SUCCESS;
-- Deploy #116 / run `31667377479` SUCCESS;
-- Creator exercised the deployed object detail/back flow in Telegram and confirmed it worked.
-
-#### P2.2.4 — Character Profile Browser (single-character minimum)
-
-Status: COMPLETE / LIVE UX VERIFIED
-
-Implemented minimum scope:
-- Characters -> Darian current-state view exposes a separate Profile entry;
-- Profile opens a read-only section menu generated from represented profile data;
-- initial sections: Identity, Appearance, Body, Attributes, Personality, Skills, Preferences & Habits, Background;
-- scalar profile values come from `character_profile_values` joined to `profile_field_definitions`;
-- skills/preferences/hobbies/habits come from their normalized profile collection tables;
-- `private` and `intimate` sensitivity fields are excluded from this ordinary profile browser at the query layer;
-- current runtime state remains distinct from profile truth;
-- values are rendered human-readably, including height and common units;
-- no grade badges are shown yet; future grading remains a separate derived layer;
-- no second-character selection/session persistence is added while Darian remains the only production autonomous character.
-
-Acceptance evidence:
-- profile read-query contract commit `2d9c43ad5d66cae0d9ff0e6d4f6c474599afa012`;
-- Telegram profile presentation commit `db9f8702fc812a81f447f74d6e9e21d91b8419d5`;
-- Telegram integration commit `0fd68b22a7d5a8b7d360dc8a617124753b5b3847`;
-- focused browser tests commit `d926687d443bc6e5e841ef3c06d1a293d82ca71a`;
-- CI #272 / run `31668499392` SUCCESS;
-- Deploy #119 / run `31668483842` SUCCESS;
-- Creator browsed the deployed profile sections and confirmed the UI/navigation was good.
-
-P3 may extend this proven browser with narrow live-state sections when a concrete behavior needs them. Such an extension does not reopen the base P2.2 acceptance.
+Proven live surfaces:
+- Estate/location hierarchy browsing;
+- room occupant/object/recent-activity observation;
+- object detail browsing with definition/instance awareness and authored effects;
+- Character Profile browser with canonical/static profile data separated from live runtime state.
 
 ### P2.3 — Creator Control Expansion
-
-Status: FIRST SLICE COMPLETE / LIVE UX VERIFIED
-
-P2.3 remains slice-by-slice only. Do not implement a broad admin console.
+Status: FIRST SLICE COMPLETE / LIVE UX VERIFIED.
 
 #### P2.3.1 — Restore Basic Stats
+Status: COMPLETE / LIVE UX VERIFIED.
 
-Status: COMPLETE / LIVE UX VERIFIED
+Typed/audited restore control resets basic living state while preserving profile canon, simulation time, location, autonomy enabled state/mode, and domain ownership. It cancels stale pending actions, clears lease/retry state, writes an audit event, and reuses the same backend from CLI, owner-only Telegram confirmation flow, and guarded Actions workflow.
 
-Purpose: provide one safe Creator-authority intervention when slow real-time recovery makes live observation/development impractical.
+Do not expand this into arbitrary field editing or a generic admin console.
 
-Implemented minimum scope:
-- reusable actor-scoped `restore_basic_stats()` backend;
-- restores Energy `75`, Hunger `20`, Thirst `15`, Sleepiness `15`, Cleanliness `80`, Fatigue `0`;
-- preserves simulation time, location, profile canon, autonomy enabled state and autonomy mode;
-- cancels stale pending action, clears lease/retry and sets wake reason `creator_basic_stats_restored` so cognition can re-evaluate;
-- normal field ownership remains with the needs/physiology/living engines; Creator authority authorizes the intervention rather than becoming permanent field authority;
-- appends a `creator_basic_stats_restored` audit event with before/after/state changes/request source;
-- CLI: `sandboxctl creator restore-basic-stats --character <id>`;
-- Telegram owner-only `/restorestats [character_id]`;
-- Telegram owner-only `🩺 Restore Basic Stats` button with explicit confirmation screen;
-- allowed users neither receive the button nor pass server-side mutation authorization;
-- guarded `.github/workflows/creator-control.yml` uses the same backend; its initial push automatically restored production once and persisted a marker so later workflow edits do not accidentally reapply it.
+## P3 — Richer Simulation Vertical Slices
 
-Evidence:
-- backend `89cb9f4b37726a7a6bdda9770ec252fbaa3e12ca`;
-- CLI `e35fb37fd45f9bc81af6943c59da5c64153a256c`;
-- Telegram `583141d9f20849dac69671de5972960eed27e9c3`;
-- focused tests `a4f825838ce93ed28ac5b95794d630dccc29854b`;
-- engine-ownership/lease refinement `ceae7247abcbe0a40fe65602e1bb3f970028a73c`;
-- CI #292 / run `31670662395` SUCCESS;
-- Deploy #126 / run `31670662394` SUCCESS;
-- workflow `d6ce3328f2a3b5b8314dd9e74054ab9681a6ff0f`;
-- Creator Control #1 / run `31670700838` SUCCESS;
-- Creator inspected the deployed Telegram owner confirmation flow and confirmed it was good without needing to reapply the restore.
-
-Live production restore evidence from `2026-08-13T05:33:26Z`:
-- before: Energy `39.498`, Hunger `29.081`, Thirst `35.835`, Sleepiness `35.335`, Cleanliness `100.0`, Fatigue `0.0`, action `rest`;
-- after: Energy `75.0`, Hunger `20.0`, Thirst `15.0`, Sleepiness `15.0`, Cleanliness `80.0`, Fatigue `0.0`, action `idle`;
-- location remained Master Bathroom;
-- sim time remained `2025-05-01T14:50:00+00:00`;
-- pending rest action `9d11373e-b3cd-4425-b3e2-3152687ca1bb` was cancelled;
-- autonomy remained enabled/normal, unpaused, `1x`.
-
-Canonical contract: `docs/CREATOR_CONTROL_POLICY.md`.
-
-Future potential slices remain owner user management, provider/model browsing/rebinding, richer runtime/history controls and notification categories. Each must be independently runnable and useful.
-
-## P3 — First Richer Simulation Vertical Slice
-
-Status: P3.1 + P3.2 COMPLETE AT STATED EVIDENCE LEVELS
+Status: P3.1–P3.4 delivered at the evidence levels below.
 
 ### P3.1 — Minimum Systemic Training Fatigue / Recovery
+Status: COMPLETE / LIVE UX VERIFIED.
 
-This is the first post-v4 proof of the minimum-runnable expansion pattern. It activates one already-reserved profile-domain field rather than building a broad training subsystem.
+- activates live `physiology.fatigue` on `0..100`;
+- training raises fatigue; rest/sleep/ordinary time recover it;
+- fatigue `>=70` blocks training deterministically;
+- normal baseline training stops being elected at fatigue `>=55`;
+- Telegram Profile -> Recovery exposes live systemic fatigue.
 
-Implemented behavior:
-- `physiology.fatigue` is live simulated state on `0..100`, higher is worse;
-- passive time reduces fatigue by `1.5/hour`;
-- training adds `20/hour` before passive drift (net `+18.5` for a one-hour training action);
-- rest reduces fatigue by `7/hour` before passive drift (net `-8.5` for a one-hour rest action);
-- sleep, idle and read also provide small/strong recovery according to `docs/PHYSIOLOGY_AND_ITEM_EFFECTS.md`;
-- `train` is removed from action options and rejected by deterministic validation at fatigue `>=70`;
-- baseline morning training is not elected at fatigue `>=55`, and high fatigue prioritizes recovery;
-- fatigue changes are included in first-class action/event state changes;
-- the Telegram Profile gains a read-only `Recovery` section showing current `Systemic fatigue` without copying the live value into canonical profile tables.
-
-Explicitly deferred:
-- strength/proficiency gains;
-- hypertrophy/body progression;
-- muscle-group soreness;
-- workout programming/exercise taxonomy;
-- injury probability;
-- grading/tier progression;
-- a general training-adaptation framework.
-
-Implementation/evidence:
-- core simulation commit `cd126b42833802c0f9dba9b8169d389b98464172`;
-- Recovery observer commit `5a424fe23ccb83552dcde2cca02d23050736b51f`;
-- default-zero Recovery refinement `a114a396112feeed6c5da37c03dfec13ba493df4`;
-- focused training/recovery tests `86b36a722da19460fe7d09d38911b36de103eb6e` plus follow-up coverage;
-- Profile Browser Recovery integration regression `1fb5e4a270a753a1940dc1cc2fa75c030948125e`;
-- CI #282 / run `31669206182` SUCCESS after aligning the Profile Browser contract;
-- CI #284 / run `31669332087` SUCCESS for the final acceptance-workflow revision;
-- Deploy #120 delivered the fatigue engine; Deploy #122 / run `31669140421` delivered the Recovery observer source and completed successfully;
-- P3 Training Recovery Acceptance #2 / run `31669332118` SUCCESS on a disposable production DB copy with **zero model calls**;
-- bounded acceptance proved fatigue `0.0 -> 18.5` after 60m training, then `18.5 -> 10.0` after 60m rest, and proved fatigue `75` blocks training in both option generation and validation;
-- the acceptance copy did not mutate production;
-- Creator opened the deployed Recovery section and confirmed `Systemic fatigue` and navigation were good.
-
-Do not automatically expand P3.1 into a full training system. Select the next minimum runnable slice separately.
+No strength gain, hypertrophy, soreness/injury, exercise programming, or grading was added.
 
 ### P3.2 — Minimum Targeted Training Session
+Status: COMPLETE / ACCEPTANCE VERIFIED.
 
-Status: COMPLETE / ACCEPTANCE VERIFIED
+- Home Gym Heavy Bag and Free Weights are real legal `train` targets when co-located and capability-valid;
+- cognition receives legal target/action pairs from generic options;
+- target persists through pending action, `action_instances.target_id`, and completion event evidence;
+- Telegram/history resolves friendly target names.
 
-Purpose: prove the schema-v4 LEGO composition path in normal autonomous behavior by binding the existing `train` action to a real nearby training object without creating a separate training subsystem.
+Evidence includes merge `9d4b7995f9213638641db5b0cedf062b438e8b43`, main CI #302, and P3 Targeted Training Acceptance #1.
 
-Verified behavior:
-- Home Gym `Heavy Bag` and `Free Weights` are legal `train` targets when Darian is co-located with them;
-- moving Darian away removes those targeted-training options;
-- target capability and co-location are enforced by the existing generic action-definition/validation path;
-- cognition receives the legal action/target pairs through `action_options()` and the normal wake-on-demand path;
-- autonomous scheduling persists the chosen target through pending actor state and `action_instances.target_id`;
-- completion preserves action/location/target linkage in the resulting event;
-- a 60-minute targeted training session retains P3.1's net systemic-fatigue result of `+18.5`;
-- Telegram runtime/history/action-completion formatting resolves friendly target names rather than exposing internal ids.
+### P3.3 — Minimum Training Readiness Modifier
+Status: COMPLETE / DEPLOYED / LIVE UX VERIFIED.
 
-Implementation deliberately reused the already-present schema-v4 target plumbing instead of adding duplicate training-target code.
+Canonical detail: `docs/P3_3_TRAINING_READINESS_MODIFIER.md`.
+
+Readiness derives from existing energy, thirst, sleepiness, and systemic fatigue. It changes training fatigue cost without replacing the existing hard fatigue condition.
+
+Reference degraded state:
+- energy `50`, thirst `45`, sleepiness `45`, fatigue `40`;
+- readiness `0.595`;
+- fatigue-cost multiplier `1.202x`;
+- resulting one-hour fatigue `62.54`.
 
 Evidence:
-- merge commit `9d4b7995f9213638641db5b0cedf062b438e8b43`;
-- focused tests `tests/test_p3_targeted_training.py`;
-- PR CI #301 / run `31672106003` SUCCESS;
-- main CI #302 / run `31672141174` SUCCESS;
-- P3 Targeted Training Acceptance #1 / run `31672141154` SUCCESS on a disposable production DB copy with zero model calls;
-- acceptance read back production after the disposable probe and did not mutate the live DB.
+- P3 Training Readiness Acceptance #5 / run `31673341881` SUCCESS, zero model calls;
+- Deploy #129 / run `31673382889` SUCCESS;
+- Creator tested Telegram Recovery readiness and confirmed it works.
 
-Explicitly deferred:
-- exercise taxonomy/workout programming;
-- reps/sets/load calculation;
-- strength or skill gain;
-- hypertrophy/body progression;
-- per-muscle soreness/injury;
-- grading/tier progression;
-- broad modifier evaluation;
-- schema v5.
+### P3.4 — Minimum Training Effectiveness Outcome
+Status: COMPLETE / ACCEPTANCE VERIFIED / DEPLOYED.
 
-### P3.3 — Minimum Training Readiness Modifier — PROPOSAL ONLY / CREATOR APPROVAL REQUIRED
+Canonical detail: `docs/P3_4_TRAINING_EFFECTIVENESS.md`.
 
-Purpose: begin activating the schema-v4 modifier layer through one real training consequence, following the Creator's direction that realistic action outcomes need pre-action and post-action factors without building a universal modifier mega-system.
+P3.4 adds a positive training outcome signal without mutating progression:
+- `readiness` = pre-action state summary;
+- `fatigue_cost_multiplier` = physiological cost;
+- `effectiveness` = useful training-stimulus fraction recorded in action/outcome evidence.
 
-Proposed minimum scope, if approved:
-- reuse only existing authoritative live state for the first slice, with a very small candidate input set such as systemic fatigue, energy, thirst and sleepiness;
-- derive one deterministic training-readiness/effectiveness factor rather than adding a new broad physiology schema;
-- preserve the distinction that **conditions** determine whether/how an action may proceed, while **modifiers** change magnitude/quality/cost/risk of an otherwise valid action;
-- apply the derived factor to one bounded training effect/cost so it has a real deterministic consequence rather than remaining display-only metadata;
-- preserve underlying raw state values rather than overwriting them with the derived modifier;
-- expose only the minimum observer surface needed to inspect the derived result;
-- add focused tests and a bounded disposable acceptance before expanding modifier sources.
+For v1:
+`effectiveness = readiness`.
 
-Explicit non-goals for the first modifier slice:
-- no universal modifier resolver across every domain;
-- no injury/soreness engine;
-- no stimulant or supplement system;
-- no nutrition adaptation engine;
-- no equipment/facility grading;
-- no skill/proficiency progression;
-- no environmental or psychological simulation expansion;
-- no grading/tier implementation;
-- no schema v5 unless this concrete slice proves a missing invariant.
+Persistence uses existing schema-v4 paths:
+- `action_instances.modifiers_json`;
+- completion `outcome_json.modifiers`;
+- `action_completed` event payload modifiers.
 
-Future modifier sources may include injury, soreness, stimulants, nutrition, equipment/facility quality, skill/proficiency, environment and psychological state, but each must arrive only through a later concrete runnable need.
+Regression coverage proves no skill score/tier/experience mutation.
 
-Conceptual rule:
+Evidence:
+- PR #3 merged at `ea69d5c0f81bf5500fca9b4d6ea62a251fbdcd9f`;
+- PR CI #317 SUCCESS;
+- main CI #318 / run `31673822574` SUCCESS;
+- P3 Training Effectiveness Acceptance #1 / run `31673822547` SUCCESS, zero model calls, disposable production copy unchanged;
+- release commit `818752a5976d988fcd3445ed3f0cc984f637d1cb`;
+- Deploy #130 / run `31673858850` SUCCESS.
 
-`conditions -> action legality / allowed execution shape`
+P3.4 adds no new standalone Telegram row. Effectiveness is now a reusable first-class outcome socket for a future bounded consumer.
 
-`modifiers -> magnitude / quality / cost / risk of an otherwise valid action and its effects`
+## Next P3 slice — SELECT SEPARATELY
 
-**Approval gate:** P3.3 remains proposal-only. Do not implement it until the Creator explicitly approves the slice after reconciling the current repository state.
+Do not automatically turn effectiveness into a broad progression engine.
 
-## P4 — Context / Memory / Relationship Slice When Behavior Requires It
+Good next minimum-runnable candidates include:
+- one small Creator-facing session/history readout that exposes effectiveness evidence; or
+- one tightly bounded progression proof consuming effectiveness in exactly one domain.
 
-Status: LATER
+Whichever is chosen must remain independently testable and must not silently expand into universal training, grading, or adaptation.
 
-Memory, richer relationships or other contextual state are **demand-driven**, not a prerequisite mega-phase.
+## P4 — Context / Memory / Relationship Slice
 
-Implement the smallest one only when a concrete autonomous behavior or observer use case cannot be expressed well without it. A first slice may be very small (for example one event-derived memory/context mechanism or one relationship state transition) and must be runnable/observable before expansion.
+Status: LATER / DEMAND-DRIVEN.
 
-No bulk memory ontology, relationship engine or background reflection loop is authorized by this roadmap entry.
+Implement only when a concrete autonomous behavior or observer use case cannot be expressed without it. No bulk memory ontology, relationship engine, or background reflection loop is authorized by roadmap status alone.
 
 ## P5 — Second Production Character
 
-Status: LATER
+Status: LATER.
 
-Quasi becomes the second full autonomous character after the single-character observer/profile surfaces are proven and after at least one post-v4 vertical feature has validated the incremental-development pattern.
+Quasi is the intended second full autonomous production character after the single-character observer/runtime foundation and post-v4 vertical-slice pattern are sufficiently proven.
 
-Schema v4 already removes the old Darian-only scheduler blocker; therefore P5 should be a **character onboarding slice**, not another core-runtime rewrite.
-
-Minimum runnable P5 should initially include only:
-- canonical Quasi entity/profile seed required for runtime;
-- actor runtime row and cognition binding/policy;
+Minimum P5 should initially reuse existing runtime contracts for:
+- canonical Quasi entity/profile seed;
+- actor runtime row and cognition binding;
 - valid initial location/state;
-- independent wake-on-demand autonomy using existing scheduler/action contracts;
-- Telegram Characters list gains actual selection only now that a second production character exists;
-- bounded two-actor concurrency/behavior acceptance.
+- independent wake-on-demand autonomy;
+- Telegram character selection;
+- bounded two-actor concurrency acceptance.
 
-Defer advanced Darian–Quasi relationship simulation, synchronized group actions and shared memory until separate later slices prove they are needed.
+Advanced Darian–Quasi relationship simulation, synchronized group actions, and shared memory remain separate later slices.
 
 ## Later world expansion — South Lake Tahoe
 
-Status: AFTER ESTATE/CHARACTER FOUNDATION IS PROVEN
+Status: AFTER ESTATE/CHARACTER FOUNDATION IS PROVEN.
 
-Do not turn regional expansion into a giant world-authoring phase.
-
-When opened, first runnable slice should only:
-- add `loc_south_lake_tahoe` above/relevant to the existing estate graph;
-- unlock one small external traversal path/destination;
-- prove movement, location observation and return path;
-- keep the rest of Tahoe frozen/unimplemented behind non-traversable boundaries.
-
-Expand destination-by-destination afterward.
+First regional slice should add only one small external traversal path/destination and prove movement/observation/return. Keep the rest of Tahoe frozen behind non-traversable boundaries until subsequent slices.
 
 ## Current resume point
 
-**Handoff-ready checkpoint. P2.2 browsing and P2.3.1 Creator Restore Control are COMPLETE / LIVE UX VERIFIED. P3.1 systemic fatigue/recovery is COMPLETE / LIVE UX VERIFIED. P3.2 Minimum Targeted Training Session is COMPLETE / ACCEPTANCE VERIFIED at merge `9d4b7995f9213638641db5b0cedf062b438e8b43`, with main CI #302 and P3 Targeted Training Acceptance #1 successful. The proposed next minimum-runnable slice is P3.3 Minimum Training Readiness Modifier, but it is NOT authorized. On the next chat, first reconcile `AGENTS.md` + `NEW_CHAT_BOOTSTRAP.md` + this roadmap and relevant contracts, summarize the proposal/current evidence, and WAIT for explicit Creator approval before P3.3 implementation or production mutation.**
+P2.2 browsing and P2.3.1 Creator Restore Control are LIVE UX VERIFIED. P3.1 fatigue/recovery and P3.3 readiness are LIVE UX VERIFIED. P3.2 targeted training is acceptance verified. P3.4 training effectiveness is merged, main-CI verified, disposable-acceptance verified, and deployed successfully.
 
-No additional broad core/schema refinement is currently required. Preserve 1x wake-on-demand production autonomy, globally scoped ids, locked unfinished boundaries, actor-scoped scheduler state, first-class actions/events, Telegram presentation rules, profile/runtime separation, grading-as-future-derived capability, typed/audited Creator-control authority, per-user notification preferences and modifier expansion only through concrete minimum-runnable needs.
+The next task is to choose one new minimum runnable slice. Preserve schema v4, 1x wake-on-demand autonomy, globally scoped ids, actor-scoped scheduler state, first-class actions/events, Telegram presentation rules, profile/runtime separation, typed/audited Creator control, and incremental modifier/progression expansion only through concrete runnable needs.
