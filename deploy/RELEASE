@@ -1,7 +1,7 @@
 Observer Sandbox production release marker
 
-release: adaptation-curve-v1-read-only
-accepted_main: 52644bfcbb8b7b9cb4196d8b5f253a32e053aaf2
-acceptance_workflow: Adaptation Curve v1 Acceptance #1
-acceptance_run: 31686888383
+release: stimulus-saturation-v1-read-only
+accepted_main: f02f2407957872dad192701b3726c3f2d8ff096d
+acceptance_workflow: Stimulus Saturation v1 Acceptance #2
+acceptance_run: 31687327606
 status: accepted-for-production
