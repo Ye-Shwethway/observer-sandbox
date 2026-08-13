@@ -23,7 +23,13 @@ All dry-run/regression/acceptance/tuning/accelerated simulation uses a disposabl
 
 ## Validation & Release Workflow Standardization v1
 
-Status on this branch: **IMPLEMENTED / ACCEPTANCE VERIFIED; merge PR #35 to make canonical**.
+Status: **COMPLETE / CANONICAL / SYSTEM-LEVEL CONTRACT / ACCEPTANCE VERIFIED**.
+
+Canonical merge:
+- PR #35;
+- main merge `98844eede24ceb30eaf478f79d1bee872ad180eb`;
+- post-merge CI #504 run `31711704581` SUCCESS;
+- no production deploy triggered because the merged scope is docs/validation/test infrastructure only.
 
 Canonical mechanism:
 - `docs/PRODUCTION_VALIDATION_AND_RELEASE_PROTOCOL.md`;
@@ -37,18 +43,18 @@ Standard path:
 `candidate -> CI -> reusable disposable production-copy acceptance -> all green -> merge -> canonical deploy only if runtime-affecting -> read-only production verification`.
 
 Safety uses capability isolation:
-- live SQLite opened with `mode=ro` + `PRAGMA query_only=ON`;
+- live SQLite opens with `mode=ro` + `PRAGMA query_only=ON`;
 - SQLite backup API creates a writable disposable copy;
 - feature validator receives only the copy through `OBSERVER_SANDBOX_DB`;
 - model/Telegram credentials are omitted;
 - production may continue normal autonomy during acceptance, so whole-file before/after equality is not a safety requirement.
 
-Verified branch evidence:
-- CI #498 run `31711075396` SUCCESS;
+Acceptance evidence:
 - Production Copy Protocol Acceptance #4 run `31711075572` SUCCESS;
-- Validation Release Standardization Acceptance #4 run `31711075579` SUCCESS.
+- Validation Release Standardization Acceptance #9 run `31711517912` SUCCESS;
+- final branch CI #503 run `31711517692` SUCCESS.
 
-The earlier Strength-specific acceptance workflow is historical evidence only, not the template for new work. If the shared mechanism becomes insufficient, update the protocol/helper/workflow + self-test first rather than creating a feature-local fork.
+The earlier Strength-specific acceptance workflow is historical evidence only, not the template for new work. If the shared mechanism becomes insufficient, update the protocol/helper/workflow + focused tests first rather than creating a feature-local fork.
 
 Docs/test/validation-tooling-only changes do not need ceremonial production deployment. Runtime-affecting accepted changes deploy only through `.github/workflows/deploy.yml` by workflow dispatch or `deploy/RELEASE` marker.
 
@@ -115,10 +121,10 @@ Equipment/training methods provide workload evidence; they do not own progressio
 
 ## Exact resume point
 
-After PR #35 merges, resume **Thorne Estate Interior / Training Environment Expansion**.
+Resume **Thorne Estate Interior / Training Environment Expansion**.
 
 Use the mansion canon + schema-v4 world/object contract. Prove one equipment/content exemplar, then batch structurally equivalent Training Hall / Top-Class Home Gym items in one bounded slice. Preserve interior-only traversal. Do not add Stamina/non-Strength mutation yet.
 
-For its production-copy acceptance, use the new reusable validation protocol rather than creating another custom SSH/DB-copy workflow.
+All production-copy acceptance for that slice must use the reusable validation protocol rather than creating another custom SSH/DB-copy workflow.
 
 Then proceed to **Training Methods / Semantics Expansion**, followed by **Stamina Progression Exemplar**.
