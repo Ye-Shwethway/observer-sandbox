@@ -15,6 +15,15 @@ Roadmap synchronized: 2026-08-13
 - Repeated expansion follows **exemplar-first, then batch-by-pattern**: prove one genuinely new structural pattern, then batch equivalent follow-ons into one PR, one focused regression suite, one pre-merge disposable production-copy dry-run covering every batched item, and one deploy/readback.
 - Dry-run, acceptance, tuning, and accelerated simulation use a disposable copy of the production DB. Production is reserved for all-green merge/deploy and read-only post-deploy verification; validation must not accelerate or otherwise mutate the live runtime.
 
+## Canonical Thorne Estate reference
+
+`docs/DARIAN_MANSION_REFERENCE.md` is the canonical Creator-provided source for Darian's Mansion / Thorne Estate. The current Observer Sandbox estate is an interior-first implementation derived from that source.
+
+Current implementation boundary:
+- enrich interior rooms, facilities, equipment and training methods against the canonical mansion reference;
+- preserve currently unimplemented canonical exterior facts without creating traversable exterior surfaces yet;
+- private lake access, outdoor tactical obstacle course, exterior escape-route traversal and broader Tahoe traversal remain deferred runnable surfaces.
+
 ## Foundation / P0 / P1
 
 - Foundation schema v4 — COMPLETE.
@@ -130,7 +139,7 @@ Evidence:
 - Hunger resolver v1 — DEPLOYED / CREATOR LIVE VERIFIED.
 - Thirst/hunger causal resolver v2 — DEPLOYED / CREATOR LIVE VERIFIED.
 - Complete five-need causal resolver v3 — COMPLETE / CI VERIFIED / PRODUCTION-COPY COMPATIBILITY VERIFIED / DEPLOYED.
-- Fatigue Causal Recovery + Inspect Loop Guard v1 — COMPLETE / CI VERIFIED / PRODUCTION-COPY ACCEPTANCE VERIFIED / DEPLOYED / LIVE HEALTH VERIFIED.
+- Fatigue Causal Recovery + Inspect Loop Guard v1 — COMPLETE / CI VERIFIED / PRODUCTION-COPY ACCEPTANCE VERIFIED / DEPLOYED / CREATOR LIVE VERIFIED.
 
 v3 used the accelerated development rule correctly:
 - Energy was the directionality exemplar;
@@ -162,9 +171,10 @@ Evidence for Fatigue Causal Recovery + Inspect Loop Guard v1:
 - release `9121904f3db9009af32e30dbb925c5c60cd837cb`;
 - post-release CI #473 run `31703753642` SUCCESS;
 - Deploy #153 run `31703753498` SUCCESS;
-- post-deploy service active/healthy, schema v4, Gemini binding preserved, Telegram connected.
+- post-deploy service active/healthy, schema v4, Gemini binding preserved, Telegram connected;
+- subsequent Creator live observation confirmed Darian selected `Rest`, and fatigue decreased from `70.8` to `66.5` over the completed 30-sim-minute recovery action.
 
-Post-deploy readback also reported speed `2.0x`, fatigue `70.91`, and a pre-existing pending `inspect` action at sim `2025-05-02T15:14:00+00:00`. Deployment preserves already-planned actions, so that pending inspect is not evidence against the new next-boundary selection guard. The live `2.0x` speed was not changed by this slice and must not be silently altered by validation tooling.
+Telegram `CHARACTER UPDATE -> Changes` now also displays Fatigue deltas as part of the Creator-facing physiology change surface.
 
 ## Post-P3.5 stabilization
 
@@ -200,9 +210,24 @@ Not implemented:
 - exterior/Tahoe traversal;
 - schema v5.
 
-## Next proposed slice — Strength Progression Live Cycle Validation & Tuning v1
+## Approved near-term expansion sequence
 
-Before adding another progression domain, validate one complete real Strength cycle while preserving production safety.
+The Creator approved this sequence before broader universe-feature growth:
+
+1. **Strength Progression Live Cycle Validation & Tuning v1** — validate the full Strength exemplar end to end on a disposable production-copy database.
+2. **Thorne Estate Interior / Training Environment Expansion** — enrich the current sparse Training Hall and Top-Class Home Gym against `docs/DARIAN_MANSION_REFERENCE.md`; also enrich directly relevant interior support surfaces where they reuse the same proven world/object pattern.
+3. **Training Methods / Semantics Expansion** — expand beyond a flat generic `train` surface so equipment/method completions provide richer composable training evidence without yet adding new non-Strength attribute mutation.
+4. **Character Simulation Unlock Expansion** — start with a Stamina progression exemplar, then batch only structurally equivalent physical attributes; progress next to skills, body composition/measurements, and later cognitive/social/emotional families.
+
+Expansion invariants:
+- use exemplar-first, then batch-by-pattern;
+- equipment and methods describe capabilities/workload evidence and do not own progression formulas;
+- each new progression family must prove its own stimulus mapping, recovery/realization and decay semantics before batch expansion;
+- body measurements/composition remain a separate architecture line rather than inheriting Strength formulas by default.
+
+## Next slice — Strength Progression Live Cycle Validation & Tuning v1
+
+Before environment/progression expansion, validate one complete real Strength cycle while preserving production safety.
 
 Required validation:
 1. read live production baseline evidence for Strength, fatigue/readiness, recent stimulus, speed and pending action without mutation;
@@ -221,6 +246,8 @@ This slice is validation/tuning, not a new progression-domain implementation. Pr
 
 ## Current resume point
 
-Resume **Strength Progression Live Cycle Validation & Tuning v1** under the disposable production-copy validation policy. First treat live production only as a read-only source of baseline/evidence and reconcile the observed live speed `2.0x` before assuming any wall-time cadence. After the Strength cycle is validated, propose the next physical progression domain and first prove its domain-specific stimulus/recovery/decay semantics before any batch expansion.
+Resume **Strength Progression Live Cycle Validation & Tuning v1** under the disposable production-copy validation policy. Treat live production only as a read-only evidence source and re-read its current speed instead of assuming cadence.
+
+After the Strength cycle closes, proceed directly to **Thorne Estate Interior / Training Environment Expansion**, then **Training Methods / Semantics Expansion**, then **Stamina Progression Exemplar** and physical-attribute batch expansion.
 
 Body measurements/composition remain a separate architecture line.
