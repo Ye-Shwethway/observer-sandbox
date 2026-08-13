@@ -54,7 +54,7 @@ jobs:
             export PYTHONPATH=/tmp/observer-strength-settlement-v1/src
             .venv/bin/python - <<"PY"
           import json, os
-          from datetime import datetime, timedelta
+          from datetime import timedelta
           from observer_sandbox.db import connect
           from observer_sandbox.event_log import record_event
           from observer_sandbox.simulation import ensure_sim_clock, snapshot
@@ -114,8 +114,14 @@ jobs:
               assert negative_replay["status"] == "no_change"
               assert negative_replay["new_strength"] == negative["new_strength"]
 
-              settlement_count = conn.execute("SELECT COUNT(*) FROM events WHERE actor_id=? AND event_type='strength_progression_settled'", ("char_darian",)).fetchone()[0]
-              history_count = conn.execute("SELECT COUNT(*) FROM character_profile_history WHERE entity_id=? AND field_key=?", ("char_darian", "raps_pa.strength")).fetchone()[0]
+              settlement_count = conn.execute(
+                  "SELECT COUNT(*) FROM events WHERE actor_id=? AND event_type=?",
+                  ("char_darian", "strength_progression_settled"),
+              ).fetchone()[0]
+              history_count = conn.execute(
+                  "SELECT COUNT(*) FROM character_profile_history WHERE entity_id=? AND field_key=?",
+                  ("char_darian", "raps_pa.strength"),
+              ).fetchone()[0]
               assert settlement_count >= 3
               assert history_count >= 2
               print(json.dumps({
