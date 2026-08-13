@@ -5,6 +5,7 @@ import sqlite3
 from typing import Any
 
 from .autonomy import autonomy_status
+from .location_runtime import current_location
 from .simulation import snapshot
 from .world import get_field
 
@@ -115,6 +116,38 @@ def character_summary(conn: sqlite3.Connection, character_id: str = "char_darian
     return {"character": entity, "state": state}
 
 
+def recent_location_activity(conn: sqlite3.Connection, *, location_id: str, limit: int = 3) -> list[dict[str, Any]]:
+    limit = max(1, min(int(limit), 20))
+    rows = conn.execute(
+        """
+        SELECT id, sim_time, actor_id, event_type, payload_json
+        FROM events
+        WHERE location_id=? AND event_type='action_completed'
+        ORDER BY id DESC
+        LIMIT ?
+        """,
+        (location_id, limit),
+    ).fetchall()
+    result: list[dict[str, Any]] = []
+    for row in rows:
+        payload = json.loads(row["payload_json"])
+        target = payload.get("target")
+        result.append(
+            {
+                "id": row["id"],
+                "sim_time": row["sim_time"],
+                "event_type": row["event_type"],
+                "actor_id": row["actor_id"],
+                "actor_name": _entity_name(conn, row["actor_id"]),
+                "action": payload.get("action"),
+                "target": target,
+                "target_name": _entity_name(conn, target),
+                "reason": payload.get("reason"),
+            }
+        )
+    return result
+
+
 def location_summary(conn: sqlite3.Connection, location_id: str = "loc_thorne_estate") -> dict[str, Any]:
     entity = _entity(conn, location_id)
     if entity is None:
@@ -180,16 +213,18 @@ def location_summary(conn: sqlite3.Connection, location_id: str = "loc_thorne_es
     occupants: list[dict[str, Any]] = []
     if entity["type"] == "location":
         rows = conn.execute(
-            """
-            SELECT e.id, e.name, f.value_json
-            FROM entities e
-            JOIN fields f ON f.entity_id=e.id AND f.field_key='runtime.location'
-            WHERE e.entity_type='character'
-            """
+            "SELECT id, name FROM entities WHERE entity_type='character' ORDER BY name"
         ).fetchall()
         for row in rows:
-            if json.loads(row["value_json"]) == location_id:
-                occupants.append({"id": row["id"], "name": row["name"]})
+            if current_location(conn, row["id"]) == location_id:
+                state = snapshot(conn, row["id"])
+                occupants.append(
+                    {
+                        "id": row["id"],
+                        "name": row["name"],
+                        "current_action": state["current_action"],
+                    }
+                )
 
     exits = conn.execute(
         """
@@ -210,6 +245,7 @@ def location_summary(conn: sqlite3.Connection, location_id: str = "loc_thorne_es
         "residents": [dict(row) for row in residents],
         "occupants": occupants,
         "exits": [dict(row) for row in exits],
+        "recent_activity": recent_location_activity(conn, location_id=location_id, limit=3),
     }
 
 
