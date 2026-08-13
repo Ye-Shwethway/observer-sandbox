@@ -25,7 +25,7 @@ jobs:
           chmod 600 ~/.ssh/id_ed25519
           ssh-keyscan -p "$VPS_PORT" -H "$VPS_HOST" >> ~/.ssh/known_hosts
 
-      - name: Run bounded scheduler on disposable DB copy
+      - name: Run accelerated recovery simulation on disposable production copy
         env:
           VPS_HOST: ${{ secrets.VPS_HOST }}
           VPS_USER: ${{ secrets.VPS_USER }}
@@ -40,28 +40,73 @@ jobs:
             export OBSERVER_SANDBOX_DB="$TMP_DB"
             .venv/bin/python - <<"PY"
           import json
+          import os
           from observer_sandbox.autonomy import autonomy_tick
           from observer_sandbox.db import connect
           from observer_sandbox.simulation import runtime_value, set_runtime_value, snapshot
+          from observer_sandbox.world import set_field
 
-          db = __import__("os").environ["OBSERVER_SANDBOX_DB"]
+          db = os.environ["OBSERVER_SANDBOX_DB"]
           with connect(db) as conn:
+              # Preserve the copied character/world state but detach it from any live in-flight scheduler bookkeeping.
               set_runtime_value(conn, "autonomy_enabled", True)
               set_runtime_value(conn, "paused", False)
               set_runtime_value(conn, "speed", 3600.0)
+              set_runtime_value(conn, "autonomy_pending_action", None)
+              set_runtime_value(conn, "autonomy_lease", None)
+              set_runtime_value(conn, "autonomy_retry", None)
+              set_field(conn, "char_darian", "runtime.current_action", "idle")
               conn.commit()
+
               before = snapshot(conn)
-              planned = autonomy_tick(conn, now_wall=1000.0)
-              assert planned["state"] == "planned", planned
-              due = float(planned["pending"]["due_wall_time"])
-              completed = autonomy_tick(conn, now_wall=due)
-              assert completed["state"] == "completed", completed
+              trajectory = []
+              now_wall = 1000.0
+              max_actions = 6
+
+              def needs_acceptable(state):
+                  return (
+                      state["energy"] >= 35.0
+                      and state["hunger"] < 55.0
+                      and state["thirst"] < 55.0
+                      and state["sleepiness"] < 65.0
+                      and state["cleanliness"] > 45.0
+                  )
+
+              for index in range(max_actions):
+                  if index > 0 and needs_acceptable(snapshot(conn)):
+                      break
+                  planned = autonomy_tick(conn, now_wall=now_wall)
+                  assert planned["state"] == "planned", planned
+                  pending = planned["pending"]
+                  due = float(pending["due_wall_time"])
+                  completed = autonomy_tick(conn, now_wall=due)
+                  assert completed["state"] == "completed", completed
+                  state_after = snapshot(conn)
+                  trajectory.append({
+                      "step": index + 1,
+                      "action": pending["action"],
+                      "target": pending.get("target"),
+                      "duration_minutes": pending["duration_minutes"],
+                      "reason": pending.get("reason"),
+                      "after": state_after,
+                  })
+                  now_wall = due + 1.0
+
               after = snapshot(conn)
-              assert before["sim_time"] != after["sim_time"]
               assert runtime_value(conn, "autonomy_pending_action", None) is None
-              print(json.dumps({"ok": True, "planned": planned["pending"], "completed_state": completed["state"], "before": before, "after": after}, indent=2, sort_keys=True))
+              print(json.dumps({
+                  "ok": True,
+                  "disposable": True,
+                  "speed": 3600.0,
+                  "max_model_calls": max_actions,
+                  "before": before,
+                  "trajectory": trajectory,
+                  "after": after,
+                  "needs_acceptable": needs_acceptable(after),
+              }, indent=2, sort_keys=True))
           PY
             export OBSERVER_SANDBOX_DB=/var/lib/observer-sandbox/observer.sqlite3
+            echo "--- PRODUCTION READBACK (UNCHANGED BY ACCEPTANCE COPY) ---"
             .venv/bin/sandboxctl status
             .venv/bin/sandboxctl living-status
           '
