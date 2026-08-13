@@ -243,7 +243,7 @@ Future potential slices remain owner user management, provider/model browsing/re
 
 ## P3 — First Richer Simulation Vertical Slice
 
-Status: FIRST SLICE COMPLETE / LIVE UX VERIFIED
+Status: P3.1 + P3.2 COMPLETE AT STATED EVIDENCE LEVELS
 
 ### P3.1 — Minimum Systemic Training Fatigue / Recovery
 
@@ -285,35 +285,75 @@ Implementation/evidence:
 
 Do not automatically expand P3.1 into a full training system. Select the next minimum runnable slice separately.
 
-### P3.2 — Minimum Targeted Training Session — PROPOSAL ONLY / CREATOR APPROVAL REQUIRED
+### P3.2 — Minimum Targeted Training Session
 
-Purpose: prove the schema-v4 LEGO composition path in normal autonomous production behavior by making the existing `train` action bind to a real nearby training object instead of remaining a generic targetless activity.
+Status: COMPLETE / ACCEPTANCE VERIFIED
+
+Purpose: prove the schema-v4 LEGO composition path in normal autonomous behavior by binding the existing `train` action to a real nearby training object without creating a separate training subsystem.
+
+Verified behavior:
+- Home Gym `Heavy Bag` and `Free Weights` are legal `train` targets when Darian is co-located with them;
+- moving Darian away removes those targeted-training options;
+- target capability and co-location are enforced by the existing generic action-definition/validation path;
+- cognition receives the legal action/target pairs through `action_options()` and the normal wake-on-demand path;
+- autonomous scheduling persists the chosen target through pending actor state and `action_instances.target_id`;
+- completion preserves action/location/target linkage in the resulting event;
+- a 60-minute targeted training session retains P3.1's net systemic-fatigue result of `+18.5`;
+- Telegram runtime/history/action-completion formatting resolves friendly target names rather than exposing internal ids.
+
+Implementation deliberately reused the already-present schema-v4 target plumbing instead of adding duplicate training-target code.
+
+Evidence:
+- merge commit `9d4b7995f9213638641db5b0cedf062b438e8b43`;
+- focused tests `tests/test_p3_targeted_training.py`;
+- PR CI #301 / run `31672106003` SUCCESS;
+- main CI #302 / run `31672141174` SUCCESS;
+- P3 Targeted Training Acceptance #1 / run `31672141154` SUCCESS on a disposable production DB copy with zero model calls;
+- acceptance read back production after the disposable probe and did not mutate the live DB.
+
+Explicitly deferred:
+- exercise taxonomy/workout programming;
+- reps/sets/load calculation;
+- strength or skill gain;
+- hypertrophy/body progression;
+- per-muscle soreness/injury;
+- grading/tier progression;
+- broad modifier evaluation;
+- schema v5.
+
+### P3.3 — Minimum Training Readiness Modifier — PROPOSAL ONLY / CREATOR APPROVAL REQUIRED
+
+Purpose: begin activating the schema-v4 modifier layer through one real training consequence, following the Creator's direction that realistic action outcomes need pre-action and post-action factors without building a universal modifier mega-system.
 
 Proposed minimum scope, if approved:
-- reuse current `train` action and existing fatigue behavior; do not create a broad training subsystem;
-- expose existing Home Gym training objects such as Heavy Bag and Free Weights as valid training targets/resources when Darian is co-located with them;
-- require deterministic target capability/co-location validation rather than prompt-only assumptions;
-- persist the selected target on the first-class `action_instance` and resulting event;
-- let cognition see only legal targeted training options and choose among them through the existing wake-on-demand decision path;
-- surface the friendly target in Telegram action/current-history/notification presentation using existing generic target resolution;
-- add focused tests plus a bounded disposable acceptance proving at least one targeted training action completes and fatigue still behaves correctly.
+- reuse only existing authoritative live state for the first slice, with a very small candidate input set such as systemic fatigue, energy, thirst and sleepiness;
+- derive one deterministic training-readiness/effectiveness factor rather than adding a new broad physiology schema;
+- preserve the distinction that **conditions** determine whether/how an action may proceed, while **modifiers** change magnitude/quality/cost/risk of an otherwise valid action;
+- apply the derived factor to one bounded training effect/cost so it has a real deterministic consequence rather than remaining display-only metadata;
+- preserve underlying raw state values rather than overwriting them with the derived modifier;
+- expose only the minimum observer surface needed to inspect the derived result;
+- add focused tests and a bounded disposable acceptance before expanding modifier sources.
 
-Explicit non-goals:
-- no exercise taxonomy or workout program;
-- no reps/sets/load calculation;
-- no strength or skill gain;
-- no hypertrophy/body change;
-- no per-muscle soreness/injury system;
-- no grading/tier progression;
-- no new schema version unless implementation proves a concrete missing invariant.
+Explicit non-goals for the first modifier slice:
+- no universal modifier resolver across every domain;
+- no injury/soreness engine;
+- no stimulant or supplement system;
+- no nutrition adaptation engine;
+- no equipment/facility grading;
+- no skill/proficiency progression;
+- no environmental or psychological simulation expansion;
+- no grading/tier implementation;
+- no schema v5 unless this concrete slice proves a missing invariant.
 
-Why this is the proposed next slice:
-- it is independently observable and runnable;
-- it directly exercises `Actor + Action + Place + Target/Resource` from the LEGO runtime contract;
-- it increases autonomous-world specificity without speculative subsystem growth;
-- it creates a clean later attachment point for skill progression or grading without implementing either early.
+Future modifier sources may include injury, soreness, stimulants, nutrition, equipment/facility quality, skill/proficiency, environment and psychological state, but each must arrive only through a later concrete runnable need.
 
-**Approval gate:** this section is a proposal only. A new chat must load/reconcile the canonical repository, present this proposal and wait for explicit Creator approval before any P3.2 code, config, workflow, schema or production mutation is performed.
+Conceptual rule:
+
+`conditions -> action legality / allowed execution shape`
+
+`modifiers -> magnitude / quality / cost / risk of an otherwise valid action and its effects`
+
+**Approval gate:** P3.3 remains proposal-only. Do not implement it until the Creator explicitly approves the slice after reconciling the current repository state.
 
 ## P4 — Context / Memory / Relationship Slice When Behavior Requires It
 
@@ -359,6 +399,6 @@ Expand destination-by-destination afterward.
 
 ## Current resume point
 
-**Handoff-ready checkpoint. P2.2 browsing, P2.3.1 Creator Restore Control and P3.1 systemic fatigue/recovery are COMPLETE / LIVE UX VERIFIED. The proposed next minimum-runnable slice is P3.2 Minimum Targeted Training Session, but it is NOT authorized yet. On the next chat, first reconcile `AGENTS.md` + `NEW_CHAT_BOOTSTRAP.md` + this roadmap and relevant contracts, summarize the proposal/current production evidence, and WAIT for explicit Creator approval before implementation or production mutation.**
+**Handoff-ready checkpoint. P2.2 browsing and P2.3.1 Creator Restore Control are COMPLETE / LIVE UX VERIFIED. P3.1 systemic fatigue/recovery is COMPLETE / LIVE UX VERIFIED. P3.2 Minimum Targeted Training Session is COMPLETE / ACCEPTANCE VERIFIED at merge `9d4b7995f9213638641db5b0cedf062b438e8b43`, with main CI #302 and P3 Targeted Training Acceptance #1 successful. The proposed next minimum-runnable slice is P3.3 Minimum Training Readiness Modifier, but it is NOT authorized. On the next chat, first reconcile `AGENTS.md` + `NEW_CHAT_BOOTSTRAP.md` + this roadmap and relevant contracts, summarize the proposal/current evidence, and WAIT for explicit Creator approval before P3.3 implementation or production mutation.**
 
-No additional core/schema refinement is currently required. Preserve 1x wake-on-demand production autonomy, globally scoped ids, locked unfinished boundaries, actor-scoped scheduler state, first-class actions/events, Telegram presentation rules, profile/runtime separation, grading-as-future-derived capability, typed/audited Creator-control authority and per-user notification preferences.
+No additional broad core/schema refinement is currently required. Preserve 1x wake-on-demand production autonomy, globally scoped ids, locked unfinished boundaries, actor-scoped scheduler state, first-class actions/events, Telegram presentation rules, profile/runtime separation, grading-as-future-derived capability, typed/audited Creator-control authority, per-user notification preferences and modifier expansion only through concrete minimum-runnable needs.
