@@ -94,6 +94,16 @@ Every Creator-facing Telegram message follows `docs/TELEGRAM_OBSERVER_ARCHITECTU
 - presentation stays downstream of generic query/control services;
 - proactive character-action notifications must resolve the actual actor name, not assume Darian forever.
 
+## Expansion execution policy
+
+Use **exemplar-first, then batch-by-pattern** for repeated world/action/content expansion.
+
+- The first item in a new structural pattern is a small standalone exemplar used to prove schema shape, validation, persistence, observability and acceptance behavior.
+- Once that pattern is green and deployed, structurally equivalent follow-on items should normally be implemented as one bounded batch rather than one PR/deploy per item.
+- A batch should use one branch/PR, one focused regression suite, one disposable production-copy dry-run covering every item, iterative fixes on that copy as needed, then merge only when the entire batch is green, followed by one production deploy/readback.
+- Batch only items that reuse the same proven invariant and validation path. If an item requires a new state model, new authority rule, new mutation invariant or materially different runtime semantics, remove it from the batch and treat it as a new exemplar.
+- Do not batch merely to maximize item count. Keep batches reviewable and rollback-friendly.
+
 ## Scope discipline
 
 Observer Sandbox is intentionally small and modular. Do not recreate EIDOLON/Simiverse-scale subsystem sprawl. Build bounded, tested vertical slices on the generic contracts above.
