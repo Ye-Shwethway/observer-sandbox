@@ -1,0 +1,112 @@
+name: Adaptation Preview v1 Acceptance
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - 'src/observer_sandbox/adaptation_preview.py'
+      - 'tests/test_adaptation_preview_v1.py'
+      - 'docs/ADAPTATION_PREVIEW_V1.md'
+      - '.github/workflows/adaptation-preview-v1-acceptance.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  acceptance:
+    if: ${{ vars.VPS_DEPLOY_ENABLED == 'true' }}
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Configure SSH
+        env:
+          VPS_SSH_KEY: ${{ secrets.VPS_SSH_KEY }}
+          VPS_HOST: ${{ secrets.VPS_HOST }}
+          VPS_PORT: ${{ secrets.VPS_PORT || '22' }}
+        run: |
+          test -n "$VPS_HOST"
+          test -n "$VPS_SSH_KEY"
+          install -m 700 -d ~/.ssh
+          printf '%s\n' "$VPS_SSH_KEY" > ~/.ssh/id_ed25519
+          chmod 600 ~/.ssh/id_ed25519
+          ssh-keyscan -p "$VPS_PORT" -H "$VPS_HOST" >> ~/.ssh/known_hosts
+      - name: Stage candidate
+        env:
+          VPS_HOST: ${{ secrets.VPS_HOST }}
+          VPS_USER: ${{ secrets.VPS_USER }}
+          VPS_PORT: ${{ secrets.VPS_PORT || '22' }}
+        run: |
+          ssh -p "$VPS_PORT" "$VPS_USER@$VPS_HOST" 'rm -rf /tmp/observer-adaptation-preview-v1 && mkdir -p /tmp/observer-adaptation-preview-v1'
+          rsync -az -e "ssh -p $VPS_PORT" src/ "$VPS_USER@$VPS_HOST:/tmp/observer-adaptation-preview-v1/src/"
+      - name: Dry-run read-only adaptation preview on production copy
+        env:
+          VPS_HOST: ${{ secrets.VPS_HOST }}
+          VPS_USER: ${{ secrets.VPS_USER }}
+          VPS_PORT: ${{ secrets.VPS_PORT || '22' }}
+        run: |
+          ssh -p "$VPS_PORT" "$VPS_USER@$VPS_HOST" '
+            set -euo pipefail
+            cd /opt/observer-sandbox
+            TMP_DB=$(mktemp /tmp/observer-adaptation-preview-v1.XXXXXX.sqlite3)
+            trap "rm -f $TMP_DB $TMP_DB-wal $TMP_DB-shm; rm -rf /tmp/observer-adaptation-preview-v1" EXIT
+            cp /var/lib/observer-sandbox/observer.sqlite3 "$TMP_DB"
+            export OBSERVER_SANDBOX_DB="$TMP_DB"
+            export PYTHONPATH=/tmp/observer-adaptation-preview-v1/src
+            .venv/bin/python - <<"PY"
+          import json, os
+          from observer_sandbox.adaptation_preview import strength_adaptation_preview
+          from observer_sandbox.db import connect
+          from observer_sandbox.simulation import ensure_sim_clock, snapshot
+
+          db = os.environ["OBSERVER_SANDBOX_DB"]
+          with connect(db) as conn:
+              before_strength = conn.execute(
+                  "SELECT value_json,mode FROM character_profile_values WHERE entity_id=? AND field_key=?",
+                  ("char_darian", "raps_pa.strength"),
+              ).fetchone()
+              before_events = conn.execute("SELECT COUNT(*) FROM events").fetchone()[0]
+              sim_time = ensure_sim_clock(conn).isoformat()
+              strength = float(json.loads(before_strength["value_json"]))
+              state = snapshot(conn, "char_darian")
+              preview = strength_adaptation_preview(
+                  conn,
+                  "char_darian",
+                  as_of_sim_time=sim_time,
+                  current_strength=strength,
+                  state=state,
+              )
+              assert 0.0 <= preview.level_factor <= 1.0
+              assert 0.0 < preview.saturation_factor <= 1.0
+              assert 0.0 <= preview.recovery_factor <= 1.0
+              assert 0.0 <= preview.decay_pressure <= 1.0
+              after_strength = conn.execute(
+                  "SELECT value_json,mode FROM character_profile_values WHERE entity_id=? AND field_key=?",
+                  ("char_darian", "raps_pa.strength"),
+              ).fetchone()
+              after_events = conn.execute("SELECT COUNT(*) FROM events").fetchone()[0]
+              assert dict(after_strength) == dict(before_strength)
+              assert after_events == before_events
+              print(json.dumps({
+                  "ok": True,
+                  "disposable": True,
+                  "candidate_source": True,
+                  "model_calls": 0,
+                  "current_strength": preview.current_strength,
+                  "positive_delta": preview.positive_delta,
+                  "negative_delta": preview.negative_delta,
+                  "net_delta": preview.net_delta,
+                  "recent_stimulus_units": preview.recent_stimulus_units,
+                  "level_factor": preview.level_factor,
+                  "saturation_factor": preview.saturation_factor,
+                  "recovery_factor": preview.recovery_factor,
+                  "decay_pressure": preview.decay_pressure,
+                  "raw_strength_unchanged": True,
+                  "events_unchanged": True,
+                  "stat_mutation": False
+              }, indent=2, sort_keys=True))
+          PY
+            unset PYTHONPATH
+            export OBSERVER_SANDBOX_DB=/var/lib/observer-sandbox/observer.sqlite3
+            echo "--- PRODUCTION READBACK (UNCHANGED) ---"
+            .venv/bin/sandboxctl status
+          '
