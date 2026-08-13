@@ -43,7 +43,7 @@
     {"id": "obj_thorne_estate_living_sofa", "name": "Sofa", "room": "loc_thorne_estate_living_room", "capabilities": ["rest", "read"]},
     {"id": "obj_thorne_estate_living_media_console", "name": "Media Console", "room": "loc_thorne_estate_living_room", "capabilities": ["inspect", "use"]},
     {"id": "obj_thorne_estate_library_bookshelf", "name": "Bookshelf", "room": "loc_thorne_estate_library", "capabilities": ["inspect", "read"]},
-    {"id": "obj_thorne_estate_library_research_desk", "name": "Research Desk", "room": "loc_thorne_estate_library", "capabilities": ["inspect", "use", "read"]},
+    {"id": "obj_thorne_estate_library_research_desk", "name": "Research Desk", "room": "loc_thorne_estate_library", "capabilities": ["inspect", "use", "read", "research"]},
     {"id": "obj_thorne_estate_garage_workbench", "name": "Workshop Bench", "room": "loc_thorne_estate_garage", "capabilities": ["inspect", "use"]},
     {"id": "obj_thorne_estate_intel_surveillance_console", "name": "Surveillance Console", "room": "loc_thorne_estate_intelligence_hub", "capabilities": ["inspect", "use"]},
     {"id": "obj_thorne_estate_comms_secure_terminal", "name": "Secure Communications Terminal", "room": "loc_thorne_estate_comms", "capabilities": ["inspect", "use"]},
