@@ -10,7 +10,9 @@ from .autonomy import autonomy_tick
 from .db import connect
 from .runtime import initialize
 from .secrets import load_runtime_secrets
+from .simulation import runtime_value, snapshot
 from .telegram_bot import run_polling
+from .telegram_notifications import dispatch_action_completion
 
 DB_PATH = Path(os.environ.get("OBSERVER_SANDBOX_DB", "/var/lib/observer-sandbox/observer.sqlite3"))
 RUNNING = True
@@ -35,10 +37,21 @@ def main() -> None:
     while RUNNING:
         try:
             with connect(DB_PATH) as conn:
-                autonomy_tick(conn)
+                pending_before = runtime_value(conn, "autonomy_pending_action", None)
+                before = snapshot(conn) if pending_before else None
+                result = autonomy_tick(conn)
+                if result.get("state") == "completed" and pending_before and before:
+                    dispatch_action_completion(
+                        conn,
+                        action_id=str(result["action_id"]),
+                        action=pending_before,
+                        before=before,
+                        after=result["after"],
+                    )
         except Exception:
             # The scheduler records expected decision/completion failures itself.
-            # An unexpected outer-loop failure must not kill the long-running service.
+            # Notification delivery is best-effort and must never kill or roll back
+            # the long-running universe runtime.
             pass
         time.sleep(2)
 
