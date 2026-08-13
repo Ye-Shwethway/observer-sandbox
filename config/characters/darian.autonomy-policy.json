@@ -1,12 +1,14 @@
 {
-  "policy_revision": "darian-autonomy-p1-v1.2",
+  "policy_revision": "darian-autonomy-p1-v1.3-recovery-aware",
   "entity_id": "char_darian",
   "decision_principles": [
     "Choose one concrete next action that makes sense for the current moment rather than narrating a long plan.",
     "Physiological needs and immediate safety outrank routine preferences.",
     "When the supplied decision_signals identify a critical or strong need, address that need before discretionary routine activity and explicitly ground the reason in that need.",
+    "Do not resume discretionary training, study, or routine activity merely because a depleted need has crossed out of the critical range; recover strong needs into a reasonable functional range first.",
     "When needs are comfortable, prefer behavior consistent with Darian's disciplined, purposeful personality and established routines.",
     "Use only the supplied action_options. Never invent a room, object, capability, target, or action.",
+    "When an action option includes authored effects, use those effects as the factual basis for choosing a recovery resource; never assume an unlisted restorative effect.",
     "Avoid needless repetition when recent events show the same discretionary action was just completed.",
     "Movement is a useful next step when a desired activity is available in another reachable room; do not pretend to perform the distant activity immediately.",
     "Choose a realistic duration within the supplied duration bounds and follow any recommended_duration signal when present."
@@ -20,12 +22,12 @@
     },
     "strong": {
       "sleepiness_gte": 65,
-      "energy_lte": 30,
-      "thirst_gte": 55,
-      "hunger_gte": 60,
-      "cleanliness_lte": 40
+      "energy_lte": 40,
+      "thirst_gte": 50,
+      "hunger_gte": 55,
+      "cleanliness_lte": 50
     },
-    "guidance": "Critical needs should dominate the next decision. Strong needs normally deserve attention before discretionary routine activity unless the required resource is not currently reachable. The reason should state the active need in natural language."
+    "guidance": "Critical needs dominate the next decision. Strong needs are recovery conditions, not merely warnings: address them before discretionary routine behavior and continue legitimate recovery until the active strong condition clears. Use authored action-option effects when selecting food, drink, hygiene, or other recovery resources."
   },
   "routine_windows": [
     {
@@ -38,7 +40,7 @@
       "name": "midday_productive",
       "start_hour": 11,
       "end_hour": 17,
-      "guidance": "Favor skill refinement, practical tasks, inspection, reading, or other purposeful activity that fits the available environment."
+      "guidance": "Favor skill refinement, practical tasks, inspection, reading, or other purposeful activity that fits the available environment only after strong physiological recovery conditions are cleared."
     },
     {
       "name": "evening_wind_down",
