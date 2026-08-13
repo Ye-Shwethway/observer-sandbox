@@ -35,21 +35,53 @@ Roadmap synchronized: 2026-08-13
 - P3.4 Training Effectiveness Outcome — COMPLETE / ACCEPTANCE VERIFIED / DEPLOYED.
 - P3.5 Effective Training Load — COMPLETE / ACCEPTANCE VERIFIED / DEPLOYED.
 - Minimum Training Stimulus v1 — COMPLETE / PRE-MERGE PRODUCTION-COPY ACCEPTANCE VERIFIED / DEPLOYED.
+- Adaptation Curve v1 — COMPLETE / PRE-MERGE PRODUCTION-COPY ACCEPTANCE VERIFIED / DEPLOYED / READ-ONLY.
 
-Current short-term training chain:
-`target -> readiness -> fatigue inefficiency -> effectiveness -> effective workload -> immediate physiology -> session stimulus evidence`.
+Current progression evidence chain:
+`target -> readiness -> fatigue inefficiency -> effectiveness -> effective workload -> immediate physiology -> session stimulus evidence -> read-only level/ceiling adaptation factor`.
 
-Minimum Training Stimulus v1 is deliberately narrow:
+Minimum Training Stimulus v1 remains deliberately narrow:
 - action: `train`;
 - target: Free Weights only;
 - domain: Strength only;
 - `stimulus_units = effective_minutes / 60`;
 - evidence persists in action outcome + completion event;
 - Heavy Bag and other targets emit no Strength stimulus in v1;
-- raw Strength and derived grade do not change;
-- no accumulated stimulus, adaptation, hypertrophy/body change, or schema v5.
+- raw Strength and derived grade do not change.
 
-Evidence: PR #14 merge `3578de12ebc750aca397b16f01f8bd368e1af11a`; CI #393 SUCCESS; Minimum Training Stimulus Acceptance #2 `31685799302` SUCCESS on a disposable copy of the live production DB; release `22f8a3d7776137cb72d2926caac37d1002e6d8ed`; Deploy #140 `31685928444` SUCCESS.
+Adaptation Curve v1 is also read-only:
+- curve id `strength-level-curve-v1`;
+- `effective_ceiling = natural_ceiling * ceiling_multiplier`;
+- `remaining_fraction = clamp((effective_ceiling - current) / effective_ceiling, 0, 1)`;
+- `level_factor = remaining_fraction ^ 2` by default;
+- default natural ceiling `100`, default ceiling multiplier `1.0`;
+- Strength 90 -> factor `0.01`; 95 -> `0.0025`; 99 -> `0.0001`;
+- an abstract ceiling modifier changes effective headroom without mutating raw Strength;
+- no accumulated stimulus, recovery realization, detraining, adaptation mutation, hypertrophy/body change, or schema v5.
+
+Evidence: Minimum Training Stimulus PR #14 merge `3578de12ebc750aca397b16f01f8bd368e1af11a`, acceptance `31685799302`, Deploy #140 `31685928444`; Adaptation Curve PR #15 merge `52644bfcbb8b7b9cb4196d8b5f253a32e053aaf2`, acceptance `31686888383`, release `abfe82d279fb1c85a027109185b1d28ae859fbd1`, Deploy #141 `31686957768` SUCCESS.
+
+## Progression mutation gates
+
+Raw Strength/stat mutation is **not authorized** yet.
+
+Required order before Stat Mutation Gate v1:
+1. Adaptation Curve v1 — COMPLETE / read-only.
+2. Stimulus Saturation / Diminishing Returns v1 — pending.
+3. Recovery Realization v1 — pending.
+4. Detraining / Prolonged-Untrained Decay v1 — pending and mandatory before mutation.
+5. Adaptation Preview v1 — pending; compose positive and negative projected deltas without mutation.
+6. Stat Mutation Gate v1 — only after all prior gates are accepted; tiny audited decimal raw-stat updates only.
+
+Positive path:
+`eligible stimulus -> level/ceiling difficulty -> saturation/diminishing return -> recovery realization -> previewed positive delta`.
+
+Regression path:
+`elapsed relevant untrained time -> detraining eligibility -> decay curve -> previewed negative delta`.
+
+Special modifiers stay abstract and factorized (for example effective-ceiling, adaptation-rate, or recovery multipliers). Do not implement real-world drug dosing/medical guidance.
+
+Canonical contract: `docs/TRAINING_PROGRESSION_GATES.md`.
 
 ## Post-P3.5 stabilization
 
@@ -85,8 +117,6 @@ Status: COMPLETE / PRE-MERGE PRODUCTION-COPY ACCEPTANCE VERIFIED / DEPLOYED.
 - Body measurements/composition require a **separate exemplar + batch** because their normalization/calculation semantics differ materially;
 - raw profile values remain unchanged.
 
-Evidence: Strength PR #12 / Deploy #138; Attribute Batch PR #13 / Deploy #139.
-
 ## Grading family rule
 
 Do not use one numeric evaluator merely because multiple domains contain numbers.
@@ -96,22 +126,14 @@ Do not use one numeric evaluator merely because multiple domains contain numbers
 - Skills: separate family because progression/experience semantics may differ.
 - Body measurements/composition: separate exemplar and batch; evaluator may need units, body composition, stature/proportion context and/or genetic ceilings rather than flat thresholds.
 
-## Next planned sequence
-
-Minimum Training Stimulus is now proven. The next progression work must not jump straight to attribute mutation.
-
-1. Define/prove **Minimum Adaptation/Progression v1** only after explicitly specifying how session stimulus and recovery/time convert into adaptation.
-2. Keep the first adaptation exemplar to Free Weights + Strength only.
-3. Preserve raw-value authority, tiny deterministic changes, diminishing-return semantics, and auditable evidence.
-4. Only after one adaptation exemplar is proven should equivalent progression expansion be batched by pattern.
-5. Body grading remains a separate deferred family unless Creator explicitly prioritizes it.
-
 ## Deferred boundaries
 
 Not implemented:
-- accumulated stimulus store/history beyond action/event evidence;
-- adaptation/progression mutation;
-- skill/body-measurement progression;
+- accumulated/recent stimulus state beyond current action/event evidence;
+- stimulus saturation/diminishing-return state;
+- recovery realization state;
+- detraining/prolonged-untrained decay;
+- raw attribute/skill/body-measurement progression mutation;
 - hypertrophy/body composition progression;
 - body-measurement grading evaluator;
 - IQ/skills grading evaluators;
@@ -122,4 +144,4 @@ Not implemented:
 
 ## Current resume point
 
-**Minimum Training Stimulus v1 is live.** Free Weights sessions can now produce auditable Strength stimulus evidence without changing Strength itself. The next bounded design/implementation candidate is **Minimum Adaptation/Progression v1 — Free Weights + Strength only**, but adaptation semantics must be defined before mutation is allowed.
+**Adaptation Curve v1 is live and read-only.** The next bounded implementation slice is **Stimulus Saturation / Diminishing Returns v1 — Free Weights + Strength only**. Do not mutate Strength. After saturation, implement Recovery Realization, then mandatory Detraining/Prolonged-Untrained Decay, then a composed Adaptation Preview. Only after all are accepted may Stat Mutation Gate v1 be considered.
