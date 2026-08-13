@@ -1,7 +1,7 @@
 Observer Sandbox production release marker
 
-release: fatigue-causal-recovery-v1
-accepted_main: 31484c561948d84e97d5c677f15cd1ced7f8ad89
-acceptance_workflow: CI #471 + Fatigue Causal Recovery v1 Acceptance #5 + Causal Need Resolution v2 Acceptance #17
-acceptance_run: 31703588016, 31703588566, 31703587998
+release: telegram-fatigue-change-row
+accepted_main: 501d465a5e8ead3be0987f59e2695c99495b32c6
+acceptance_workflow: CI #477
+acceptance_run: 31704622366
 status: accepted-for-production
