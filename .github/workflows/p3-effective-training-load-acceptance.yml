@@ -1,0 +1,174 @@
+name: P3 Effective Training Load Acceptance
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths:
+      - '.github/workflows/p3-effective-training-load-acceptance.yml'
+      - 'src/observer_sandbox/simulation.py'
+      - 'src/observer_sandbox/training_modifiers.py'
+
+jobs:
+  acceptance:
+    if: ${{ vars.VPS_DEPLOY_ENABLED == 'true' }}
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Configure SSH
+        env:
+          VPS_SSH_KEY: ${{ secrets.VPS_SSH_KEY }}
+          VPS_HOST: ${{ secrets.VPS_HOST }}
+          VPS_PORT: ${{ secrets.VPS_PORT || '22' }}
+        run: |
+          test -n "$VPS_HOST"
+          test -n "$VPS_SSH_KEY"
+          install -m 700 -d ~/.ssh
+          printf '%s\n' "$VPS_SSH_KEY" > ~/.ssh/id_ed25519
+          chmod 600 ~/.ssh/id_ed25519
+          ssh-keyscan -p "$VPS_PORT" -H "$VPS_HOST" >> ~/.ssh/known_hosts
+
+      - name: Stage candidate source on VPS
+        env:
+          VPS_HOST: ${{ secrets.VPS_HOST }}
+          VPS_USER: ${{ secrets.VPS_USER }}
+          VPS_PORT: ${{ secrets.VPS_PORT || '22' }}
+        run: |
+          ssh -p "$VPS_PORT" "$VPS_USER@$VPS_HOST" 'rm -rf /tmp/observer-p3-effective-load-candidate && mkdir -p /tmp/observer-p3-effective-load-candidate'
+          rsync -az -e "ssh -p $VPS_PORT" src/ "$VPS_USER@$VPS_HOST:/tmp/observer-p3-effective-load-candidate/src/"
+
+      - name: Prove effective load on disposable production copy
+        env:
+          VPS_HOST: ${{ secrets.VPS_HOST }}
+          VPS_USER: ${{ secrets.VPS_USER }}
+          VPS_PORT: ${{ secrets.VPS_PORT || '22' }}
+        run: |
+          ssh -p "$VPS_PORT" "$VPS_USER@$VPS_HOST" '
+            set -euo pipefail
+            cd /opt/observer-sandbox
+            TMP_DB=$(mktemp /tmp/observer-p3-effective-load.XXXXXX.sqlite3)
+            trap "rm -f $TMP_DB $TMP_DB-wal $TMP_DB-shm; rm -rf /tmp/observer-p3-effective-load-candidate" EXIT
+            cp /var/lib/observer-sandbox/observer.sqlite3 "$TMP_DB"
+            export OBSERVER_SANDBOX_DB="$TMP_DB"
+            export PYTHONPATH=/tmp/observer-p3-effective-load-candidate/src
+            .venv/bin/python - <<"PY"
+          import json
+          import os
+          from observer_sandbox.actor_runtime import actor_runtime, set_actor_runtime, set_retry
+          from observer_sandbox.db import connect
+          from observer_sandbox.simulation import Action, apply_action
+          from observer_sandbox.world import set_field
+
+          db = os.environ["OBSERVER_SANDBOX_DB"]
+          actor_id = "char_darian"
+          gym = "loc_thorne_estate_home_gym"
+          weights = "obj_thorne_estate_gym_free_weights"
+
+          def reset_runtime(conn):
+              runtime = actor_runtime(conn, actor_id)
+              if runtime["pending_action_id"]:
+                  conn.execute(
+                      "UPDATE action_instances SET status=?,updated_at=CURRENT_TIMESTAMP WHERE id=? AND status IN (?,?)",
+                      ("cancelled", runtime["pending_action_id"], "planned", "in_progress"),
+                  )
+              set_actor_runtime(conn, actor_id, pending_action_id=None)
+              conn.execute(
+                  "UPDATE actor_runtime SET lease_owner=NULL,lease_expires_at=NULL WHERE actor_id=?",
+                  (actor_id,),
+              )
+              set_retry(conn, actor_id, None)
+              set_field(conn, actor_id, "runtime.location", gym)
+              set_field(conn, actor_id, "runtime.current_action", "idle")
+              conn.commit()
+
+          def set_state(conn, energy, hunger, thirst, sleepiness, cleanliness, fatigue):
+              set_field(conn, actor_id, "needs.energy", energy)
+              set_field(conn, actor_id, "needs.hunger", hunger)
+              set_field(conn, actor_id, "needs.thirst", thirst)
+              set_field(conn, actor_id, "needs.sleepiness", sleepiness)
+              set_field(conn, actor_id, "physiology.cleanliness", cleanliness)
+              set_field(conn, actor_id, "physiology.fatigue", fatigue, authority="physiology_engine", source="p3.5-acceptance")
+              conn.commit()
+
+          with connect(db) as conn:
+              reset_runtime(conn)
+              before_skills = [tuple(row) for row in conn.execute(
+                  "SELECT skill_key,score,tier,experience FROM character_skills WHERE entity_id=? ORDER BY skill_key",
+                  (actor_id,),
+              ).fetchall()]
+
+              healthy_reason = "P3.5 healthy effective load acceptance"
+              set_state(conn, 80.0, 20.0, 15.0, 15.0, 80.0, 0.0)
+              healthy = apply_action(conn, Action("train", 60, weights, healthy_reason))
+              healthy_row = conn.execute(
+                  "SELECT outcome_json FROM action_instances WHERE actor_id=? AND intent=? ORDER BY rowid DESC LIMIT 1",
+                  (actor_id, healthy_reason),
+              ).fetchone()
+              healthy_outcome = json.loads(healthy_row["outcome_json"])
+              assert healthy == {
+                  **healthy,
+                  "energy": 68.0,
+                  "hunger": 26.5,
+                  "thirst": 24.0,
+                  "sleepiness": 18.0,
+                  "cleanliness": 73.2,
+                  "fatigue": 18.5,
+              }
+              assert healthy_outcome["training_load"]["effective_minutes"] == 60.0
+              assert healthy_outcome["training_load"]["effectiveness"] == 1.0
+
+              degraded_reason = "P3.5 degraded effective load acceptance"
+              set_state(conn, 50.0, 20.0, 45.0, 45.0, 80.0, 40.0)
+              degraded = apply_action(conn, Action("train", 60, weights, degraded_reason))
+              degraded_row = conn.execute(
+                  "SELECT id,modifiers_json,outcome_json FROM action_instances WHERE actor_id=? AND intent=? ORDER BY rowid DESC LIMIT 1",
+                  (actor_id, degraded_reason),
+              ).fetchone()
+              degraded_mod = json.loads(degraded_row["modifiers_json"])["training_readiness"]
+              degraded_outcome = json.loads(degraded_row["outcome_json"])
+              assert degraded_mod["effectiveness"] == 0.595, degraded_mod
+              assert degraded_mod["fatigue_cost_multiplier"] == 1.202, degraded_mod
+              assert degraded["energy"] == 42.05, degraded
+              assert degraded["hunger"] == 24.88, degraded
+              assert degraded["thirst"] == 51.57, degraded
+              assert degraded["sleepiness"] == 48.0, degraded
+              assert degraded["cleanliness"] == 75.63, degraded
+              assert degraded["fatigue"] == 62.54, degraded
+              assert degraded_outcome["training_load"]["planned_minutes"] == 60
+              assert degraded_outcome["training_load"]["effectiveness"] == 0.595
+              assert degraded_outcome["training_load"]["effective_minutes"] == 35.7
+
+              event = conn.execute(
+                  "SELECT payload_json FROM events WHERE action_id=? AND event_type=? ORDER BY id DESC LIMIT 1",
+                  (degraded_row["id"], "action_completed"),
+              ).fetchone()
+              event_payload = json.loads(event["payload_json"])
+              assert event_payload["training_load"] == degraded_outcome["training_load"]
+
+              after_skills = [tuple(row) for row in conn.execute(
+                  "SELECT skill_key,score,tier,experience FROM character_skills WHERE entity_id=? ORDER BY skill_key",
+                  (actor_id,),
+              ).fetchall()]
+              assert after_skills == before_skills
+
+              print(json.dumps({
+                  "ok": True,
+                  "disposable": True,
+                  "candidate_source": True,
+                  "model_calls": 0,
+                  "healthy_effective_minutes": healthy_outcome["training_load"]["effective_minutes"],
+                  "degraded_effectiveness": degraded_mod["effectiveness"],
+                  "degraded_effective_minutes": degraded_outcome["training_load"]["effective_minutes"],
+                  "degraded_fatigue_multiplier": degraded_mod["fatigue_cost_multiplier"],
+                  "degraded_after": {key: degraded[key] for key in ("energy", "hunger", "thirst", "sleepiness", "cleanliness", "fatigue")},
+                  "long_term_progression_unchanged": True,
+                  "outcome_and_event_persisted": True,
+              }, indent=2, sort_keys=True))
+          PY
+            export OBSERVER_SANDBOX_DB=/var/lib/observer-sandbox/observer.sqlite3
+            unset PYTHONPATH
+            echo "--- PRODUCTION READBACK (UNCHANGED BY P3.5 ACCEPTANCE COPY) ---"
+            .venv/bin/sandboxctl status
+            .venv/bin/sandboxctl living-status
+          '
