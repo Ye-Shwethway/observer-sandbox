@@ -1,4 +1,5 @@
 from observer_sandbox.db import connect
+from observer_sandbox.model_decision import load_autonomy_policy
 from observer_sandbox.runtime import initialize
 from observer_sandbox.simulation import action_options
 from observer_sandbox.telegram_notifications import format_action_completion
@@ -25,22 +26,21 @@ def test_estate_breadth_exposes_purposeful_non_kitchen_targets(tmp_path):
             assert any(option["target"] == target_id for option in options)
 
 
-def test_generic_inspection_duration_is_bounded_for_cognition(tmp_path):
+def test_quick_duration_guidance_preserves_runtime_compatibility_bounds(tmp_path):
     db = tmp_path / "observer.sqlite3"
     initialize(db)
+    policy = load_autonomy_policy()
+    assert policy["duration_guidance"]["quick_discretionary"]["inspect_minutes"] == [2, 6]
+    assert policy["duration_guidance"]["quick_discretionary"]["simple_use_minutes"] == [2, 10]
     with connect(db) as conn:
-        row = conn.execute(
+        inspect_row = conn.execute(
             "SELECT min_duration_minutes,max_duration_minutes FROM action_definitions WHERE action_type='inspect'"
         ).fetchone()
-        assert tuple(row) == (1, 10)
-        set_field(conn, "char_darian", "runtime.location", "loc_thorne_estate_kitchen")
-        conn.commit()
-        pantry = next(
-            option
-            for option in action_options(conn)
-            if option["action"] == "inspect" and option["target"] == "obj_thorne_estate_kitchen_pantry"
-        )
-        assert pantry["duration"] == (1, 10)
+        use_row = conn.execute(
+            "SELECT min_duration_minutes,max_duration_minutes FROM action_definitions WHERE action_type='use'"
+        ).fetchone()
+        assert tuple(inspect_row) == (1, 60)
+        assert tuple(use_row) == (1, 120)
 
 
 def test_completion_notification_shows_elapsed_and_next_eta():
