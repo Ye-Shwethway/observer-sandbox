@@ -46,7 +46,7 @@ def test_authorized_mvp_commands_and_controls(tmp_path, monkeypatch):
     assert "OBSERVER SANDBOX" in status
     assert "01-05-2025 (Thursday) 07:00 AM" in status
     assert "Darian" in handle_command(db, user_id=12345, text="/darian")
-    assert "Darian Home" in handle_command(db, user_id=12345, text="/home")
+    assert "Thorne Estate" in handle_command(db, user_id=12345, text="/home")
     assert "Recent Activity" in handle_command(db, user_id=12345, text="/history")
     assert "Paused     Yes" in handle_command(db, user_id=12345, text="/pause")
     assert "Paused     No" in handle_command(db, user_id=12345, text="/resume")
@@ -79,7 +79,7 @@ def test_observer_home_uses_stable_inline_navigation(tmp_path, monkeypatch):
     with connect(db) as conn:
         text, universe_keyboard = _callback_view(conn, 111, "nav:universe")
         assert "UNIVERSE" in text
-        assert any(button[0]["callback_data"].startswith("loc:room_") for button in universe_keyboard[:-1])
+        assert any(button[0]["callback_data"] == "loc:home" for button in universe_keyboard[:-1])
         chars_text, chars_keyboard = _callback_view(conn, 111, "nav:characters")
         assert "Darian Thorne" in chars_text
         assert chars_keyboard[0][0]["callback_data"] == "char:char_darian"
