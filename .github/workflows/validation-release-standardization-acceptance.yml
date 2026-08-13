@@ -1,0 +1,21 @@
+name: Validation Release Standardization Acceptance
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - 'docs/PRODUCTION_VALIDATION_AND_RELEASE_PROTOCOL.md'
+      - 'scripts/validation/create_disposable_db_copy.py'
+      - 'scripts/validation/validate_protocol_selftest.py'
+      - '.github/workflows/reusable-production-copy-validation.yml'
+      - '.github/workflows/validation-release-standardization-acceptance.yml'
+      - 'AGENTS.md'
+      - 'NEW_CHAT_BOOTSTRAP.md'
+  workflow_dispatch:
+
+jobs:
+  acceptance:
+    uses: ./.github/workflows/reusable-production-copy-validation.yml
+    with:
+      validator_path: scripts/validation/validate_protocol_selftest.py
+    secrets: inherit
