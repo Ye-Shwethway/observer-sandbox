@@ -7,116 +7,118 @@ Last synchronized: 2026-08-13
 
 Read `AGENTS.md`, then this file, then `ROADMAP.md`, then task-relevant contracts.
 
-For Thorne Estate world/environment work, also read `docs/DARIAN_MANSION_REFERENCE.md`. It is the canonical Creator-provided mansion reference behind the current estate environment.
-
-For Strength progression validation evidence, read `docs/STRENGTH_LIVE_CYCLE_VALIDATION_V1.md`.
+Required task references:
+- validation/release/deployment: `docs/PRODUCTION_VALIDATION_AND_RELEASE_PROTOCOL.md`;
+- Thorne Estate environment: `docs/DARIAN_MANSION_REFERENCE.md` + `docs/WORLD_LOCATION_NODE_MODEL.md`;
+- character profile/progression: `docs/CHARACTER_PROFILE_SCHEMA.md`;
+- Strength live-cycle evidence: `docs/STRENGTH_LIVE_CYCLE_VALIDATION_V1.md`.
 
 Authority: current Creator instruction > canonical repo/contracts > verified live VPS/runtime/DB > deployed workflow evidence > CI/tests > this bootstrap > older chat/memory.
 
-## Development policy
+## Mandatory development policy
 
-Use minimum runnable expansion plus **exemplar-first, then batch-by-pattern**. Prove one genuinely new structural invariant with a bounded exemplar; once green, batch structurally equivalent follow-ons in the same branch/PR. Preferred closeout is one focused regression suite, one disposable production-copy dry-run covering every batched case, iterative fixes if needed, one merge, one deploy/readback.
+Use minimum runnable expansion plus **exemplar-first, then batch-by-pattern**. Prove one genuinely new invariant, then batch only structurally equivalent follow-ons.
 
-All dry-run, unit/regression/acceptance, tuning and accelerated simulation must use a disposable copy of the production DB. Production is reserved for all-green merge/deploy and read-only post-deploy verification. Never accelerate production for validation and never induce validation Telegram traffic from the live runtime.
+All dry-run/regression/acceptance/tuning/accelerated simulation uses a disposable production DB copy. Never accelerate production for validation. Never induce validation Telegram/model side effects. Production changes only after all-green merge/deploy; post-deploy verification is read-only unless the Creator separately authorizes a control mutation.
+
+## Validation & Release Workflow Standardization v1
+
+Status on this branch: **IMPLEMENTED / ACCEPTANCE VERIFIED; merge PR #35 to make canonical**.
+
+Canonical mechanism:
+- `docs/PRODUCTION_VALIDATION_AND_RELEASE_PROTOCOL.md`;
+- `.github/workflows/reusable-production-copy-validation.yml`;
+- `scripts/validation/production_copy.py`;
+- `scripts/validation/create_disposable_db_copy.py`;
+- feature validators under `scripts/validation/`;
+- `AGENTS.md` requires reuse instead of feature-local SSH/SQLite/deploy reinvention.
+
+Standard path:
+`candidate -> CI -> reusable disposable production-copy acceptance -> all green -> merge -> canonical deploy only if runtime-affecting -> read-only production verification`.
+
+Safety uses capability isolation:
+- live SQLite opened with `mode=ro` + `PRAGMA query_only=ON`;
+- SQLite backup API creates a writable disposable copy;
+- feature validator receives only the copy through `OBSERVER_SANDBOX_DB`;
+- model/Telegram credentials are omitted;
+- production may continue normal autonomy during acceptance, so whole-file before/after equality is not a safety requirement.
+
+Verified branch evidence:
+- CI #498 run `31711075396` SUCCESS;
+- Production Copy Protocol Acceptance #4 run `31711075572` SUCCESS;
+- Validation Release Standardization Acceptance #4 run `31711075579` SUCCESS.
+
+The earlier Strength-specific acceptance workflow is historical evidence only, not the template for new work. If the shared mechanism becomes insufficient, update the protocol/helper/workflow + self-test first rather than creating a feature-local fork.
+
+Docs/test/validation-tooling-only changes do not need ceremonial production deployment. Runtime-affecting accepted changes deploy only through `.github/workflows/deploy.yml` by workflow dispatch or `deploy/RELEASE` marker.
 
 ## Production baseline
 
 - repo `Ye-Shwethway/observer-sandbox`
 - VPS `/opt/observer-sandbox`
 - DB `/var/lib/observer-sandbox/observer.sqlite3`
-- systemd `observer-sandbox`
+- service `observer-sandbox`
 - SQLite schema v4
 - world revision `thorne-estate-v3.1-food-resolution`
 - Darian autonomy enabled / normal / wake-on-demand
-- global speed is Creator-controlled and must be re-read live
+- global speed Creator-controlled; always re-read live when exact cadence matters
 - Gemini cognition preserved
 - Telegram connected private Creator observer
 
-Production continues autonomously. Re-read live state whenever exact current action/stats/speed matter.
+Production continues autonomously.
 
-## Thorne Estate canonical environment reference
+## Thorne Estate canon
 
-`docs/DARIAN_MANSION_REFERENCE.md` preserves the finalized Creator-provided Darian's Mansion / Thorne Estate source that the current estate environment is based on.
+`docs/DARIAN_MANSION_REFERENCE.md` is the durable Creator-provided source behind the current estate environment.
 
-Current world policy is **interior-first**. The existing estate structure is valid but intentionally incomplete relative to the mansion reference. The approved next implementation phase is Training Hall / Top-Class Home Gym and directly related interior equipment enrichment. Exterior estate traversal, private lake access, outdoor tactical obstacle course and broader Tahoe traversal remain deferred runnable surfaces even though they are canonical mansion facts.
+Current policy is **interior-first**. Training Hall / Top-Class Home Gym enrichment is approved next. Exterior traversal, private lake access, outdoor tactical course and broader Tahoe traversal remain deferred runnable surfaces even though they are canonical mansion facts.
 
-## Strength progression v1 — active mutation exemplar
+## Strength progression checkpoint
 
-Chain:
-`Free Weights -> effective workload -> Strength stimulus -> level/ceiling difficulty -> saturation -> recovery -> detraining -> preview -> idempotent settlement -> automatic action-boundary activation`.
+Strength progression mutation flow is active and the complete live-cycle exemplar is closed.
 
-Key semantics:
-- Strength stimulus = `effective_minutes / 60` from Free Weights only;
-- level factor = `clamp((effective_ceiling-current)/effective_ceiling,0,1)^2`;
-- saturation = `1/(1+0.3*S)` over 72 simulated hours;
-- recovery: zero <=6h, ramp to full at 48h, state-quality gated, fatigue >=70 hard-block;
-- detraining: 14-day grace then slow asymptotic decay pressure;
-- six-decimal raw mutation, audited settlement events, consumed-stimulus replay protection;
-- first production settlement was bootstrap-only and preserved Strength 90.
+Key chain:
+`Free Weights -> effective workload -> Strength stimulus -> level/ceiling -> saturation -> recovery -> detraining -> preview -> idempotent settlement -> action-boundary activation`.
 
-### Strength Progression Live Cycle Validation v1
+Live-cycle validation status: **COMPLETE / PRODUCTION-COPY VALIDATED / NO TUNING REQUIRED**.
 
-Status: **COMPLETE / PRODUCTION-COPY VALIDATED / NO TUNING REQUIRED**.
-
-Clean validation evidence:
-- PR #33 merged as `02e7ddd640d727189b643092219fab95d7bb4ac0`;
-- Strength Live Cycle Validation v1 #9 run `31709316031` SUCCESS;
-- CI #491 run `31709315939` SUCCESS;
-- production opened read-only; SQLite backup API created the disposable validation copy;
-- real unconsumed Free Weights Strength stimulus event `202` at `2025-05-02T12:36:00+00:00`;
-- effective training `48.06` min -> stimulus `0.801`;
-- copied first eligible settlement at stimulus age `49.8h`;
+Evidence:
+- PR #33 merge `02e7ddd640d727189b643092219fab95d7bb4ac0`;
+- validation #9 `31709316031` SUCCESS;
+- CI #491 `31709315939` SUCCESS;
+- real Free Weights stimulus event `202`: `48.06` effective min -> `0.801` units;
+- first eligible copied settlement at `49.8h`;
 - level factor `0.01`, saturation `0.806256551`, recovery factor `1.0`;
-- expected gain about `0.0016145287433775`, recorded `+0.001614529`;
-- copied raw Strength `90.0 -> 90.001615`;
-- event `202` consumed once, same-boundary replay skipped, history authority correct;
-- `model_calls=0`, `telegram_calls=0`, `production_mutated=false`;
-- no progression constants or formulas changed.
+- expected gain `0.001614528743...`, recorded `+0.001614529`;
+- copied Strength `90.0 -> 90.001615`;
+- one-time consumption, correct history authority and same-boundary no-op verified;
+- no formula/constants tuning required.
 
-The validation runner and workflow are canonical at:
-- `scripts/strength_live_cycle_validation_v1.py`;
-- `.github/workflows/strength-live-cycle-validation-v1.yml`.
+`Profile -> Recovery` observability remains deployed/live verified.
 
-## Strength Progression Observability v1
+## Physiological autonomy checkpoint
 
-Status: **COMPLETE / DEPLOYED / CREATOR LIVE UX VERIFIED**.
+Hunger, thirst, energy, sleepiness, cleanliness and fatigue participate in causal resolution. Fatigue >=55 is strong; >=70 is critical and matches the hard training gate. `rest`/`sleep` resolve fatigue; deterministic inspect/use repetition guards are deployed.
 
-`Profile -> Recovery` exposes six-decimal raw Strength, recent qualifying stimulus, level adaptation factor, saturation yield, recovery realization/status, latest settlement, detraining/grace status and next boundary. Opening Recovery is read-only.
+Creator live evidence confirmed Rest reduced fatigue from `70.8` to `66.5`. Telegram Character Update changes include Fatigue.
 
-## Causal physiological need resolution
+## Profile expansion direction
 
-Hunger, thirst, energy, sleepiness, cleanliness and fatigue participate in causal resolution. Fatigue >=55 is strong, >=70 is critical and matches the hard training gate. `rest`/`sleep` resolve fatigue, and high-fatigue cognition cannot substitute training-adjacent inspect/use loops for recovery.
+Current profile remains intentionally static-heavy. Approved direction after environment/method enrichment:
+1. Stamina progression exemplar;
+2. physical attribute batches only where semantics are structurally equivalent;
+3. skills progression exemplar + batches;
+4. body composition/measurement progression as a separate architecture family;
+5. cognitive/social/emotional families later when meaningful action evidence exists.
 
-Current authored priority:
-`sleepiness -> energy -> fatigue -> thirst -> hunger -> cleanliness`, with critical needs ahead of strong needs.
-
-Creator live evidence confirmed Darian selected recovery and Rest reduced fatigue from `70.8` to `66.5`. Telegram `CHARACTER UPDATE -> Changes` includes Fatigue deltas.
-
-## Other proven state
-
-- Browse Sandbox/Profile — LIVE UX VERIFIED.
-- Runtime Speed Control + ETA — LIVE UX VERIFIED.
-- deterministic duration planning — DEPLOYED.
-- Research exemplar + Monitor semantics batch — DEPLOYED.
-- Attribute grading — Strength exemplar + 36 compatible 0..100 fields DEPLOYED.
-- IQ, Skills, and Body remain separate grading/progression families.
-- Body measurements/composition must not inherit flat Attribute or Strength-progression logic by default.
-
-## Approved expansion sequence
-
-The Creator approved this order:
-
-1. **Strength Progression Live Cycle Validation & Tuning v1** — COMPLETE; no tuning required.
-2. **Thorne Estate Interior / Training Environment Expansion** — NEXT; enrich the mansion interior, especially Training Hall and Top-Class Home Gym, against `docs/DARIAN_MANSION_REFERENCE.md`; use exemplar-first then batch-by-pattern.
-3. **Training Methods / Semantics Expansion** — expand beyond a flat generic `train` surface into richer method evidence while still avoiding new non-Strength stat mutation.
-4. **Character Simulation Unlock Expansion** — begin with a Stamina progression exemplar, then batch only structurally equivalent physical attributes; follow with skills, body composition/measurements, and later cognitive/social/emotional families.
-
-Environment/equipment expansion must not own attribute progression formulas. Equipment and training methods provide composable action/workload evidence; domain engines decide domain-specific stimulus, recovery, decay and mutation.
+Equipment/training methods provide workload evidence; they do not own progression formulas.
 
 ## Exact resume point
 
-Start **Thorne Estate Interior / Training Environment Expansion** from the canonical mansion reference and current schema-v4 world/object contracts.
+After PR #35 merges, resume **Thorne Estate Interior / Training Environment Expansion**.
 
-First prove one equipment/content expansion exemplar, then batch structurally equivalent gym/training-hall objects in the same bounded slice. Preserve the interior-only traversal boundary. Do not add Stamina or other non-Strength attribute mutation during this environment slice.
+Use the mansion canon + schema-v4 world/object contract. Prove one equipment/content exemplar, then batch structurally equivalent Training Hall / Top-Class Home Gym items in one bounded slice. Preserve interior-only traversal. Do not add Stamina/non-Strength mutation yet.
 
-After environment enrichment, do **Training Methods / Semantics Expansion**, then begin **Stamina Progression Exemplar** before physical-attribute batch expansion.
+For its production-copy acceptance, use the new reusable validation protocol rather than creating another custom SSH/DB-copy workflow.
+
+Then proceed to **Training Methods / Semantics Expansion**, followed by **Stamina Progression Exemplar**.
