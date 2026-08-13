@@ -1,0 +1,92 @@
+name: Reusable Production-Copy Validation
+
+on:
+  workflow_call:
+    inputs:
+      validator_path:
+        description: Feature validator under scripts/validation/
+        required: true
+        type: string
+    secrets:
+      VPS_HOST:
+        required: true
+      VPS_USER:
+        required: true
+      VPS_PORT:
+        required: false
+      VPS_SSH_KEY:
+        required: true
+
+jobs:
+  validate-production-copy:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Validate caller contract
+        env:
+          VALIDATOR_PATH: ${{ inputs.validator_path }}
+        run: |
+          case "$VALIDATOR_PATH" in
+            scripts/validation/*.py) ;;
+            *) echo "validator_path must be under scripts/validation/" >&2; exit 2 ;;
+          esac
+          test -f "$VALIDATOR_PATH"
+
+      - name: Configure SSH
+        env:
+          VPS_SSH_KEY: ${{ secrets.VPS_SSH_KEY }}
+          VPS_HOST: ${{ secrets.VPS_HOST }}
+          VPS_PORT: ${{ secrets.VPS_PORT || '22' }}
+        run: |
+          install -m 700 -d ~/.ssh
+          printf '%s\n' "$VPS_SSH_KEY" > ~/.ssh/id_ed25519
+          chmod 600 ~/.ssh/id_ed25519
+          ssh-keyscan -p "$VPS_PORT" -H "$VPS_HOST" >> ~/.ssh/known_hosts
+
+      - name: Stage candidate validation surface
+        env:
+          VPS_HOST: ${{ secrets.VPS_HOST }}
+          VPS_USER: ${{ secrets.VPS_USER }}
+          VPS_PORT: ${{ secrets.VPS_PORT || '22' }}
+          RUN_ID: ${{ github.run_id }}
+          RUN_ATTEMPT: ${{ github.run_attempt }}
+        run: |
+          REMOTE_ROOT="/tmp/observer-validation-${RUN_ID}-${RUN_ATTEMPT}"
+          ssh -p "$VPS_PORT" "$VPS_USER@$VPS_HOST" "rm -rf '$REMOTE_ROOT' && mkdir -p '$REMOTE_ROOT'"
+          rsync -az -e "ssh -p $VPS_PORT" src/ "$VPS_USER@$VPS_HOST:$REMOTE_ROOT/src/"
+          rsync -az -e "ssh -p $VPS_PORT" config/ "$VPS_USER@$VPS_HOST:$REMOTE_ROOT/config/"
+          rsync -az -e "ssh -p $VPS_PORT" scripts/validation/ "$VPS_USER@$VPS_HOST:$REMOTE_ROOT/scripts/validation/"
+
+      - name: Run feature validator on disposable production copy
+        env:
+          VPS_HOST: ${{ secrets.VPS_HOST }}
+          VPS_USER: ${{ secrets.VPS_USER }}
+          VPS_PORT: ${{ secrets.VPS_PORT || '22' }}
+          VALIDATOR_PATH: ${{ inputs.validator_path }}
+          RUN_ID: ${{ github.run_id }}
+          RUN_ATTEMPT: ${{ github.run_attempt }}
+        run: |
+          ssh -p "$VPS_PORT" "$VPS_USER@$VPS_HOST" \
+            "VALIDATOR_PATH='$VALIDATOR_PATH' RUN_ID='$RUN_ID' RUN_ATTEMPT='$RUN_ATTEMPT' bash -s" <<'REMOTE'
+          set -euo pipefail
+          ROOT="/tmp/observer-validation-${RUN_ID}-${RUN_ATTEMPT}"
+          COPY_DB="$ROOT/observer-copy.sqlite3"
+          trap 'rm -rf "$ROOT"' EXIT
+
+          cd /opt/observer-sandbox
+          .venv/bin/python "$ROOT/scripts/validation/create_disposable_db_copy.py" \
+            --source /var/lib/observer-sandbox/observer.sqlite3 \
+            --destination "$COPY_DB"
+
+          export OBSERVER_SANDBOX_DB="$COPY_DB"
+          export OBSERVER_CONFIG_DIR="$ROOT/config"
+          export OBSERVER_VALIDATION_DISPOSABLE=1
+          export PYTHONPATH="$ROOT/src"
+
+          unset OBSERVER_GEMINI_API_KEY OBSERVER_NANOGPT_API_KEY OBSERVER_OPENAI_API_KEY OBSERVER_OPENROUTER_API_KEY
+          unset OBSERVER_TELEGRAM_BOT_TOKEN OBSERVER_TELEGRAM_OWNER_ID OBSERVER_TELEGRAM_ALLOWED_USER_IDS
+
+          .venv/bin/python "$ROOT/$VALIDATOR_PATH"
+          printf '%s\n' '{"ok":true,"production_mutated_by_validation":false,"validation_db":"disposable-copy","model_credentials_exposed":false,"telegram_credentials_exposed":false}'
+          REMOTE
