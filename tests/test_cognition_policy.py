@@ -5,7 +5,7 @@ from observer_sandbox.model_decision import load_autonomy_policy
 def test_darian_autonomy_policy_is_authored_and_bounded():
     policy = load_autonomy_policy()
     assert policy["entity_id"] == "char_darian"
-    assert policy["policy_revision"] == "darian-autonomy-p1-v1.4-breadth-duration-aware"
+    assert policy["policy_revision"] == "darian-autonomy-p1-v1.5-causal-need-resolution"
     assert policy["decision_principles"]
     assert policy["need_priorities"]["critical"]["sleepiness_gte"] > policy["need_priorities"]["strong"]["sleepiness_gte"]
     assert policy["need_priorities"]["strong"]["energy_lte"] == 40
@@ -14,6 +14,7 @@ def test_darian_autonomy_policy_is_authored_and_bounded():
     assert policy["duration_guidance"]["quick_discretionary"]["inspect_minutes"] == [2, 6]
     assert policy["duration_guidance"]["critical_night_sleep"]["min_minutes"] >= 360
     assert policy["repetition_policy"]["recent_event_window"] >= 4
+    assert "authored effect" in policy["repetition_policy"]["guidance"]
 
 
 def test_behavior_matrix_covers_core_p1_intents_and_reason_grounding():

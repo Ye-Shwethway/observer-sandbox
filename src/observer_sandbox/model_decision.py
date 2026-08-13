@@ -7,6 +7,7 @@ from pathlib import Path
 from typing import Any
 
 from .ai_runtime import generate_character_decision
+from .need_resolution import shape_action_options_for_needs
 from .secrets import load_runtime_secrets
 from .simulation import ACTION_NAMES, Action, action_options, snapshot, validate_action
 
@@ -177,17 +178,24 @@ class ModelDecisionProvider:
 
     def _enrich_state(self, state: dict[str, Any]) -> dict[str, Any]:
         enriched = dict(state)
-        enriched["action_options"] = action_options(self.conn, self.character_id)
+        decision_signals = self._decision_signals(state)
+        options = action_options(self.conn, self.character_id)
+        enriched["action_options"] = shape_action_options_for_needs(
+            self.conn,
+            state=state,
+            action_options=options,
+            decision_signals=decision_signals,
+        )
         enriched["character"] = self._character_context()
         enriched["autonomy_policy"] = self.policy
-        enriched["decision_signals"] = self._decision_signals(state)
+        enriched["decision_signals"] = decision_signals
         enriched["recent_events"] = self._recent_events()
         return enriched
 
     def choose(self, state: dict[str, Any], available_actions: list[str]) -> Action:
         enriched = self._enrich_state(state)
         option_actions = {str(option["action"]) for option in enriched["action_options"]}
-        known_actions = sorted(set(available_actions) | option_actions)
+        known_actions = sorted(option_actions) if option_actions else sorted(set(available_actions))
         decision = generate_character_decision(
             self.conn,
             character_id=self.character_id,
