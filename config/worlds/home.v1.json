@@ -1,6 +1,6 @@
 {
   "world_id": "world_observer_universe",
-  "revision": "thorne-estate-v3.0-scoped-ids",
+  "revision": "thorne-estate-v3.1-food-resolution",
   "name": "Observer Universe",
   "start_location": "loc_thorne_estate_master_suite",
   "locations": [
@@ -52,6 +52,7 @@
     {"id": "obj_thorne_estate_medical_diagnostic_station", "name": "Diagnostic Station", "room": "loc_thorne_estate_medical_bay", "capabilities": ["inspect", "use"]},
     {"id": "obj_thorne_estate_armory_equipment_bench", "name": "Equipment Bench", "room": "loc_thorne_estate_armory", "capabilities": ["inspect", "use"]},
     {"id": "obj_thorne_estate_food_storage_supply_shelves", "name": "Supply Shelves", "room": "loc_thorne_estate_food_storage", "capabilities": ["inspect"]},
+    {"id": "obj_thorne_estate_food_storage_provisions", "name": "Stored Food Provisions", "room": "loc_thorne_estate_food_storage", "capabilities": ["inspect", "eat"], "effects": {"eat": {"needs.hunger": -50.0, "needs.energy": 8.0, "needs.thirst": 2.0}}},
     {"id": "obj_thorne_estate_bunker_emergency_console", "name": "Emergency Console", "room": "loc_thorne_estate_bunker", "capabilities": ["inspect", "use", "monitor"]},
     {"id": "obj_thorne_estate_kitchen_drinking_water", "name": "Drinking Water", "room": "loc_thorne_estate_kitchen", "capabilities": ["drink"], "effects": {"drink": {"needs.thirst": -55.0}}},
     {"id": "obj_thorne_estate_kitchen_meal_ingredients", "name": "Meal Ingredients", "room": "loc_thorne_estate_kitchen", "capabilities": ["cook", "eat"], "effects": {"eat": {"needs.hunger": -50.0, "needs.energy": 8.0, "needs.thirst": 2.0}}},
