@@ -5,8 +5,10 @@ from observer_sandbox.model_decision import load_autonomy_policy
 def test_darian_autonomy_policy_is_authored_and_bounded():
     policy = load_autonomy_policy()
     assert policy["entity_id"] == "char_darian"
-    assert policy["policy_revision"] == "darian-autonomy-p1-v1.7-fatigue-causal-recovery-v1"
+    assert policy["policy_revision"] == "darian-autonomy-p1-v1.8-resource-awareness-v1"
     assert policy["decision_principles"]
+    assert any("resource_awareness" in principle for principle in policy["decision_principles"])
+    assert any("recent_usage" in principle for principle in policy["decision_principles"])
     assert policy["need_priorities"]["critical"]["sleepiness_gte"] > policy["need_priorities"]["strong"]["sleepiness_gte"]
     assert policy["need_priorities"]["strong"]["energy_lte"] == 40
     assert policy["need_priorities"]["strong"]["fatigue_gte"] == 55

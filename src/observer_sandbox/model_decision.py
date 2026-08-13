@@ -8,6 +8,7 @@ from typing import Any
 
 from .ai_runtime import generate_character_decision
 from .need_resolution import shape_action_options_for_needs
+from .resource_awareness import enrich_options_with_usage, reachable_location_awareness, recent_action_usage
 from .secrets import load_runtime_secrets
 from .simulation import ACTION_NAMES, Action, action_options, snapshot, validate_action
 from .training_methods import enrich_training_action_options
@@ -225,11 +226,28 @@ class ModelDecisionProvider:
             action_options=options,
             decision_signals=decision_signals,
         )
-        enriched["action_options"] = _shape_discretionary_repetition(
+        options = _shape_discretionary_repetition(
             options,
             recent_events,
             current_location=str(state["location"]),
         )
+        options = enrich_options_with_usage(
+            options,
+            recent_action_usage(self.conn, self.character_id),
+        )
+        enriched["action_options"] = options
+        enriched["resource_awareness"] = {
+            "current_location": {
+                "id": state["location"],
+                "name": state["location_name"],
+                "instruction": "Current-room action_options are directly actionable and authoritative.",
+            },
+            "reachable_locations": reachable_location_awareness(self.conn, str(state["location"])),
+            "guidance": (
+                "Use reachable-location previews to plan purposeful movement. Distant resources are visible for planning only; move to the destination before using them. "
+                "When several suitable options exist, recent_usage is context for reasonable variety, not a hard prohibition on repetition."
+            ),
+        }
         enriched["character"] = self._character_context()
         enriched["autonomy_policy"] = self.policy
         enriched["decision_signals"] = decision_signals
