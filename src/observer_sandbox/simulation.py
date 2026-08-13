@@ -187,7 +187,7 @@ def _advance_needs(conn: sqlite3.Connection, actor_id: str, action: Action) -> N
         cleanliness = 100.0
     elif action.name == "rest":
         energy += 12.0 * hours
-        sleepiness -= 3.0 * hours
+        sleepiness -= 6.0 * hours
     elif action.name == "train":
         energy -= 12.0 * hours
         hunger += 7.0 * hours
