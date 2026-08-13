@@ -110,7 +110,8 @@ def _inject_sleep_pressure(conn: sqlite3.Connection, state: dict[str, Any], deci
         item for item in (decision_signals.get("needs_attention") or [])
         if not (isinstance(item, dict) and item.get("need") == "sleepiness")
     ]
-    attention.append(
+    attention.insert(
+        0,
         {
             "need": "sleepiness",
             "level": pressure["level"],
@@ -118,7 +119,7 @@ def _inject_sleep_pressure(conn: sqlite3.Connection, state: dict[str, Any], deci
             "threshold": "derived_sleep_pressure",
             "hours_awake": pressure["hours_awake"],
             "reasons": pressure["reasons"],
-        }
+        },
     )
     attention.sort(key=lambda item: 0 if item.get("level") == "critical" else 1)
     decision_signals["needs_attention"] = attention
