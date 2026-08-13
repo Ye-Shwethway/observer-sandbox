@@ -89,6 +89,20 @@ def test_recovery_section_surfaces_live_fatigue_without_copying_it_into_canonica
         ).fetchone() is None
 
 
+def test_recovery_section_is_visible_at_zero_before_first_persisted_change(tmp_path):
+    db = tmp_path / "observer.sqlite3"
+    initialize(db)
+    with connect(db) as conn:
+        assert conn.execute(
+            "SELECT 1 FROM fields WHERE entity_id='char_darian' AND field_key='physiology.fatigue'"
+        ).fetchone() is None
+        menu = profile_menu(conn, "char_darian")
+        assert any(section["id"] == "recovery" for section in menu["sections"])
+        recovery = profile_section(conn, "char_darian", "recovery")
+        assert recovery["content"][0]["value"] == 0.0
+        assert recovery["content"][0]["mode"] == "simulated"
+
+
 def test_snapshot_exposes_fatigue_as_current_simulated_state(tmp_path):
     db = tmp_path / "observer.sqlite3"
     initialize(db)
