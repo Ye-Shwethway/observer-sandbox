@@ -1,7 +1,7 @@
 Observer Sandbox production release marker
 
-release: adaptation-preview-v1-read-only
-accepted_main: ccde419ff8d13d1d6ad15f45ea460cbe4c633ddb
-acceptance_workflow: Adaptation Preview v1 Acceptance #1
-acceptance_run: 31688313220
+release: strength-progression-settlement-v1-core
+accepted_main: d6c94c90aec354faedd42656c42d078cb5bd42a3
+acceptance_workflow: Strength Progression Settlement v1 Acceptance #2
+acceptance_run: 31688789743
 status: accepted-for-production
