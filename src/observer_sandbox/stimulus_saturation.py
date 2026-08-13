@@ -51,7 +51,8 @@ def recent_strength_stimulus_units(
     """Aggregate eligible Strength stimulus from existing completion events.
 
     No new persistence is introduced. Only completed-event payload evidence with
-    `training_stimulus.domain == strength` is counted.
+    `training_stimulus.domain == strength` is counted. Event row IDs are not
+    assumed to be ordered by simulated time, so all candidate rows are checked.
     """
     hours = float(window_hours)
     if hours <= 0.0:
@@ -72,10 +73,8 @@ def recent_strength_stimulus_units(
     total = 0.0
     for row in rows:
         event_time = datetime.fromisoformat(row["sim_time"])
-        if event_time > as_of:
+        if event_time > as_of or event_time < cutoff:
             continue
-        if event_time < cutoff:
-            break
         payload = json.loads(row["payload_json"] or "{}")
         evidence = payload.get("training_stimulus")
         if not isinstance(evidence, dict) or evidence.get("domain") != "strength":
