@@ -29,8 +29,8 @@ Roadmap synchronized: 2026-08-14
 - Autonomy: enabled / normal
 - Cognition: Gemini `gemini-3.5-flash-lite`
 - Telegram: connected
-- Latest verified speed: `5.0x` at Deploy #160 readback; speed is Creator-controlled and must be re-read whenever exact cadence matters.
-- Latest simplified-flow deployment: Deploy #160 `31730326878` SUCCESS from main merge `89482e609995d8af84f33096cbc40fdd69c3ecc9`.
+- Latest verified speed: `2.0x` at Deploy #161 readback; speed is Creator-controlled and must be re-read whenever exact cadence matters.
+- Latest deployment: Deploy #161 `31734036894` SUCCESS from main merge `7516f6c09a371803508f67a1575d6ce83a170de2`.
 
 ## Completed foundation and observer layers
 
@@ -64,9 +64,24 @@ Status: COMPLETE / DEPLOYED.
 
 Status: COMPLETE / DEPLOYED.
 
-`config/training_methods.v1.json` provides authored method metadata for current train-capable targets, including method id/name, family, workload channels and tags.
+`config/training_methods.v1.json` provides authored method metadata for current train-capable targets. It now also carries descriptive planning metadata for training methods without changing the canonical evidence source revision `training-method-semantics-v1`.
 
-Equipment/method metadata describes workload evidence only. It does not own attribute progression formulas, recovery, decay or settlement.
+Equipment/method metadata describes workload evidence and planning context only. It does not own attribute progression formulas, recovery, decay or settlement.
+
+## Dynamic Resource Awareness & Choice Breadth v1
+
+Status: COMPLETE / CI VERIFIED / DEPLOYED.
+
+PR #50 merged as `7516f6c09a371803508f67a1575d6ce83a170de2`; CI #557 succeeded; Deploy #161 succeeded.
+
+Current cognition surface now:
+- receives every legal current-room action/resource from the existing capability-driven action-option engine;
+- receives one-hop reachable-location resource and training-method previews for purposeful movement planning;
+- preserves move-first legality, so distant resources are visible for planning but not directly actionable;
+- receives recent action-target usage metadata (`recent_uses`, latest simulated use time, repeated flag) as context rather than a hard repetition block;
+- receives resource-aware autonomy guidance encouraging sensible variety when equivalent choices exist, without introducing a scoring/mind engine or forced rotation.
+
+Focused tests prove all 10 Home Gym training resources reach cognition, Home Gym resources are visible from the connected Living Room as planning-only affordances, and repeated Free Weights use remains legal while being explicitly signaled as recent repetition.
 
 ## Physical progression state
 
@@ -91,7 +106,7 @@ Mixed movement/combat methods are not silently credited to Stamina.
 
 Status: ACTIVE / DEPLOYED.
 
-Agility uses authored `speed_agility_drills` evidence from the Speed & Agility Station and has its own progression/recovery/saturation/detraining semantics. Agility Automatic Activation v1 is deployed via the simplified Deploy #160 path.
+Agility uses authored `speed_agility_drills` evidence from the Speed & Agility Station and has its own progression/recovery/saturation/detraining semantics. Agility Automatic Activation v1 is deployed.
 
 ## Grading state
 
@@ -129,8 +144,10 @@ For ordinary work, use focused tests + CI and the standard automatic deploy. Use
 
 ## Exact resume point
 
-Pause for Creator discussion before starting the next feature.
+Pause for Creator discussion and observe autonomous behavior after **Dynamic Resource Awareness & Choice Breadth v1**.
 
-The leading candidate is **Speed Progression Exemplar v1** because `speed_agility_drills` already provides an authored evidence surface shared with Agility. Do not assume Speed is mathematically identical to Agility; decide its adaptation/recovery/decay semantics explicitly before implementation.
+The immediate question is whether Darian now naturally broadens resource/method selection (for example rowing, treadmill, speed/agility station, altitude chamber, power rack, or Training Hall methods) when his needs/routine make them appropriate.
 
-No Speed implementation is authorized by this roadmap sync alone.
+Do not add forced rotation or a Mind Engine merely to manufacture variety. If broad perception is present but choices still collapse onto familiar targets, review the actual post-deploy decision history before proposing the next choice-policy layer.
+
+Speed progression remains a future candidate, but no Speed implementation is authorized by this roadmap state alone.
