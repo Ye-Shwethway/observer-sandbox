@@ -42,11 +42,15 @@ All spatial/world changes must preserve `docs/WORLD_LOCATION_NODE_MODEL.md`.
 
 - Locations are recursively nestable graph nodes, not hard-coded screen labels.
 - Containment (`contains`) and physical traversal (`connected_to`) are separate concepts.
-- `home` is the stable Thorne Estate **location node**, not the universe/world root.
-- The generic root is `observer_universe`; a future South Lake Tahoe regional node may be inserted above Thorne Estate without changing the estate id.
-- Existing stable room ids should be preserved during topology migrations whenever practical so runtime locations, pending actions, event history, notifications, and observer links remain valid.
+- Entity ids are technical identities, never display names.
+- World/spatial/resource ids must be globally unique, type-prefixed and place-scoped where names can repeat: `world_*`, `loc_*`, `obj_*`.
+- Keep ids path-independent: do not encode a mutable full containment path solely for uniqueness. Parent/floor/topology belongs in relations.
+- Canonical current root is `world_observer_universe`; Thorne Estate is `loc_thorne_estate`.
+- Prototype ids such as `home`, `observer_universe`, `zone_*`, `room_*`, and generic estate `obj_*` ids are obsolete and must not be reintroduced into new runtime/world definitions.
+- A future `loc_south_lake_tahoe` may become the parent of `loc_thorne_estate`; future residences such as `loc_quasi_home` may be siblings without identity collisions.
 - Locked/unimplemented boundaries must have no traversable edge; do not rely on prompt wording to keep characters inside an unfinished region.
 - Canonical source facts and provisional implementation layout must remain distinguishable through metadata/documentation.
+- Deterministic routing must derive from authored graph relations, not a hard-coded room-pair table.
 - Telegram and other UIs must consume generic location-query contracts rather than encode mansion-specific topology in handlers.
 
 ## Living physiology and item-effect contract
