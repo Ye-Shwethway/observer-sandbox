@@ -17,8 +17,8 @@ Validation never accelerates or mutates the live production runtime.
 The protocol is implemented by:
 
 - `.github/workflows/reusable-production-copy-validation.yml` — shared GitHub Actions transport/staging/SSH wrapper;
-- `scripts/validation/run_on_production_copy.py` — shared SQLite read-only backup/copy lifecycle, live fingerprint guard and validator launcher;
-- feature-specific validator scripts — only domain assertions and copied-DB simulation logic.
+- `scripts/validation/create_disposable_db_copy.py` — shared SQLite read-only backup primitive;
+- feature-specific validator scripts under `scripts/validation/` — domain assertions and copied-DB simulation logic only.
 
 `AGENTS.md` makes reuse mandatory. If this protocol needs to change, update the shared contract/helper/workflow first and then let feature wrappers inherit the change. Do not copy/paste and fork infrastructure logic unless a concrete invariant cannot be represented by the shared path.
 
@@ -40,23 +40,27 @@ The reusable workflow:
 
 1. checks out the candidate PR head;
 2. configures SSH from existing repository secrets;
-3. stages candidate `src/`, `config/`, and validation scripts under a unique `/tmp` directory on the VPS;
-4. runs `scripts/validation/run_on_production_copy.py` using the production SQLite path only as a read-only source;
-5. the helper opens production SQLite with `mode=ro`, records a deterministic live fingerprint, and uses SQLite's backup API to create a disposable temporary database;
-6. it exports only the disposable DB through `OBSERVER_SANDBOX_DB` to the feature validator;
-7. feature-specific simulation/mutation assertions execute against the copy;
-8. the helper re-reads the live DB and fails if its fingerprint changed during validation;
-9. temporary files are removed.
+3. validates that the requested validator lives under `scripts/validation/`;
+4. stages candidate `src/`, `config/`, and validation scripts under a unique `/tmp` directory on the VPS;
+5. runs `scripts/validation/create_disposable_db_copy.py` with the production SQLite path as source;
+6. the helper opens that source using SQLite URI `mode=ro` and uses SQLite's backup API to create a disposable database;
+7. the feature validator receives only the disposable path through `OBSERVER_SANDBOX_DB`, together with staged candidate source/config paths;
+8. model/API/Telegram credentials are not passed to the feature validator;
+9. feature-specific simulation/mutation assertions execute only against the copy;
+10. temporary validation files are removed automatically.
 
-The acceptance result must explicitly demonstrate `production_mutated=false` (or equivalent unchanged fingerprint evidence).
+This is a capability-isolation contract: the shared copy primitive has read-only access to production; the feature validator is given the disposable DB, not the live DB path.
+
+Do **not** require the entire live SQLite file to have an identical before/after checksum. Production autonomy may legitimately advance while acceptance runs. Safety comes from the read-only source connection and isolating the validator onto a disposable DB, not from freezing normal production activity.
 
 ### 4. Feature validator contract
 
 A feature validator must:
 
 - read its DB path from `OBSERVER_SANDBOX_DB`;
+- require `OBSERVER_VALIDATION_DISPOSABLE=1` when appropriate;
 - treat that DB as disposable;
-- use candidate source through `PYTHONPATH` rather than modifying `/opt/observer-sandbox`;
+- use candidate source through `PYTHONPATH` and staged config through `OBSERVER_CONFIG_DIR` rather than modifying `/opt/observer-sandbox`;
 - avoid model, Telegram, HTTP, email, or other network side effects;
 - avoid systemd/service operations;
 - never read/write the live production SQLite path directly;
@@ -73,7 +77,7 @@ A failed acceptance run is a development signal, not permission to alter product
 
 Classify failures before changing feature behavior:
 
-1. **shared infrastructure defect** — quoting, staging, backup, cleanup, SSH, helper contract;
+1. **shared infrastructure defect** — staging, backup, cleanup, SSH, reusable workflow/helper contract;
 2. **validator defect** — wrong evidence surface, fixture assumption, assertion bug;
 3. **candidate implementation defect** — actual runtime behavior mismatch;
 4. **production-data precondition absent** — required real evidence does not currently exist.
@@ -118,6 +122,21 @@ Verify only what is material to the release, commonly:
 - feature-specific read-only evidence.
 
 Do not accelerate production, fabricate actions, directly edit progression/profile state, or generate validation Telegram traffic.
+
+## Thin caller pattern
+
+A feature acceptance workflow should normally contain only its trigger plus one reusable-workflow call, for example:
+
+```yaml
+jobs:
+  acceptance:
+    uses: ./.github/workflows/reusable-production-copy-validation.yml
+    with:
+      validator_path: scripts/validation/validate_example.py
+    secrets: inherit
+```
+
+Do not repeat SSH setup, `/tmp` staging, SQLite-copy creation, credential stripping, or cleanup in feature workflows.
 
 ## Exemplar/batch integration
 
