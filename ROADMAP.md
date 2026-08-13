@@ -14,28 +14,16 @@ Roadmap synchronized: 2026-08-13
 - Schema v4 is the current composable foundation. Do not introduce schema v5 without a concrete missing invariant.
 - Development proceeds by minimum runnable vertical slices, not subsystem-first expansion.
 
-## Development policy — minimum runnable expansion
+## Development policy
 
-Each feature should normally contain only:
-1. minimum new canonical/runtime state required;
-2. minimum deterministic/query behavior;
-3. minimum Creator-facing observation/control surface if needed;
-4. focused tests;
-5. disposable production-copy acceptance when runtime behavior matters;
-6. deploy/readback;
-7. Creator UX acceptance when a Creator-facing surface changes.
+Each feature should normally contain only minimum required state/behavior, minimum Creator-facing surface, focused tests, disposable production-copy acceptance when runtime behavior matters, deploy/readback, and Creator live acceptance where appropriate.
 
 Prefer:
-`one small feature -> run -> observe -> validate -> keep -> next feature`
+`one small feature -> run -> observe -> validate -> keep -> next feature`.
 
-over broad speculative subsystem construction.
+## Foundation / P0 / P1
 
-## Foundation — COMPLETE
-
-Schema v4 provides universe-global state separate from actor runtime, data-driven actions, first-class action instances/events, place/target/participants/resources/conditions/modifiers/outcomes, concurrency-safe simulation time, generic effects/modifier sockets, and globally scoped spatial/resource identities. No broad foundation rewrite is currently required.
-
-## P0 / P0.5 / P1
-
+- Foundation schema v4 — COMPLETE.
 - P0 Foundation & Remote Control — COMPLETE / LIVE VERIFIED.
 - P0.5 AI Provider Layer — FOUNDATION COMPLETE; Darian preserves the configured Gemini cognition binding.
 - P1 Living Darian Minimum — CONTINUOUS AUTONOMY LIVE / ENGINE HARDENING PASSED.
@@ -53,87 +41,85 @@ Creator controls remain typed and audited; do not expand them into arbitrary edi
 ### P3.1 — Minimum Systemic Training Fatigue / Recovery
 Status: COMPLETE / LIVE UX VERIFIED.
 
-Live systemic fatigue, recovery paths, hard training block at fatigue `>=70`, baseline training avoidance at `>=55`, and Telegram Recovery observation are proven.
-
 ### P3.2 — Minimum Targeted Training Session
 Status: COMPLETE / ACCEPTANCE VERIFIED.
-
-Heavy Bag and Free Weights are real capability/co-location-valid training targets; selected target persists through action/event evidence and observer presentation.
 
 ### P3.3 — Minimum Training Readiness Modifier
 Status: COMPLETE / DEPLOYED / LIVE UX VERIFIED.
 
-Readiness derives from energy, thirst, sleepiness, and systemic fatigue. It changes fatigue cost without replacing hard conditions.
-
-Degraded reference: readiness `0.595`, fatigue multiplier `1.202x`, one-hour resulting fatigue `62.54`.
-
-Evidence: P3 Training Readiness Acceptance #5 / run `31673341881` SUCCESS; Deploy #129 / run `31673382889` SUCCESS; Creator verified Telegram Recovery readiness.
+Readiness derives from energy, thirst, sleepiness, and systemic fatigue; it changes fatigue cost without replacing hard conditions.
 
 ### P3.4 — Minimum Training Effectiveness Outcome
 Status: COMPLETE / ACCEPTANCE VERIFIED / DEPLOYED.
 
 Effectiveness is a positive useful-work fraction recorded in action/outcome evidence; v1 uses `effectiveness = readiness`. It does not mutate progression.
 
-Evidence:
-- merge `ea69d5c0f81bf5500fca9b4d6ea62a251fbdcd9f`;
-- main CI #318 / run `31673822574` SUCCESS;
-- P3 Training Effectiveness Acceptance #1 / run `31673822547` SUCCESS;
-- Deploy #130 / run `31673858850` SUCCESS.
-
 ### P3.5 — Minimum Effective Training Load
 Status: COMPLETE / ACCEPTANCE VERIFIED / DEPLOYED.
 
 Canonical detail: `docs/P3_5_EFFECTIVE_TRAINING_LOAD.md` and `docs/PHYSIOLOGY_AND_ITEM_EFFECTS.md`.
 
-P3.5 completes the current short-term training loop:
+P3.5 completes the current short-term loop:
+`target -> readiness -> fatigue inefficiency -> effectiveness -> effective workload -> immediate physiology`.
 
-`target -> readiness -> fatigue inefficiency -> effectiveness -> effective workload -> immediate physiology`
+No accumulated stimulus, strength/skill progression, hypertrophy/body measurements, grading, or tiers are implemented.
 
-Rules:
-- passive drift applies for full planned duration;
-- effectiveness scales training-specific energy/hunger/thirst/cleanliness effects;
-- fatigue remains on the separate P3.3 fatigue-cost multiplier;
-- `effective_minutes = planned_minutes × effectiveness` persists in outcome/event evidence;
-- no long-term skill/attribute/body/grading progression is mutated.
+## Post-P3.5 Stabilization — Autonomy Breadth + Time Observability v1
 
-Verified degraded reference:
-- effectiveness `0.595`;
-- 60 planned minutes -> `35.7` effective minutes;
-- fatigue multiplier `1.202x`;
-- resulting energy `42.05`, hunger `24.88`, thirst `51.57`, sleepiness `48.0`, cleanliness `75.63`, fatigue `62.54`.
+Status: DEPLOYED / ACCEPTANCE VERIFIED / CREATOR LIVE BEHAVIOR VERIFICATION PENDING.
+
+Canonical detail: `docs/AUTONOMY_BREADTH_TIME_OBSERVABILITY.md`.
+
+This bounded release responds to Creator-observed Kitchen/Pantry/Refrigerator/Stove repetition and opaque action timing.
+
+Delivered:
+- world object breadth expanded from 15 to 27 instances using existing estate topology and generic action vocabulary;
+- meaningful fixtures added across the wider estate, with seven previously sparse non-kitchen purposeful rooms acceptance-proven to expose legal action targets;
+- Darian autonomy policy v1.4 discourages serial same-room generic inspect/use loops and default kitchen appliance inspection when needs are comfortable;
+- normal model guidance prefers simple inspection around 2–6 simulated minutes and simple use around 2–10, while persisted compatibility bounds remain broad enough to preserve already-running actions;
+- Telegram completion notification now exposes completed duration and may include the newly planned next action, its duration, and expected simulated completion timestamp;
+- one committed action still produces at most one proactive notification per recipient;
+- time semantics remain linear: at 1x, N simulated minutes normally imply approximately N real minutes of scheduled wall wait.
 
 Evidence:
-- PR #4 merge `b6f29493a30a458133587463068df9814395eb75`;
-- PR CI #324 / run `31674874707` SUCCESS;
-- main CI #325 / run `31674911465` SUCCESS;
-- P3 Effective Training Load Acceptance #1 / run `31674911581` SUCCESS, zero model calls, disposable production copy, progression unchanged;
-- release commit `22ff453715659d2c772ffcd19868716413a715a1`;
-- Deploy #131 / run `31674963422` SUCCESS;
-- production readback healthy with schema v4, autonomy enabled/normal/unpaused/`1x`, preserved Gemini cognition binding, and Telegram API connected.
+- PR #5 merge `ac19e132bc5fa10688bb54e69fe885b1ae196510`, CI #332 SUCCESS;
+- safety correction PR #6 merge `29be3e8d70d99b23f17380a7bfd4d5adf8a07101`, CI #334 SUCCESS;
+- main CI #336 / run `31676984174` SUCCESS;
+- Autonomy Breadth and Time Acceptance #2 / run `31676984134` SUCCESS on candidate code + disposable production DB copy, zero model calls;
+- release commit `7163284d19df19cda252437563d13c83d939b197`;
+- Deploy #132 / run `31677053654` SUCCESS with healthy schema-v4 service, normal/unpaused/1x autonomy, preserved pending action and Gemini binding, and connected Telegram API.
 
-## Explicitly deferred after P3.5
+Behavioral diversity itself is not deterministic CI evidence. Creator live notification observation is the acceptance surface for deciding whether v1.4 breadth guidance is sufficient.
 
-No current implementation exists for:
-- accumulated stimulus/adaptation;
+## Deferred after current release
+
+Not implemented:
+- deterministic per-action/per-target duration profiles;
+- accumulated training stimulus/adaptation;
 - strength/endurance/other attribute progression;
 - skill XP/tier progression;
 - hypertrophy/body measurements;
 - soreness/injury;
-- exercise taxonomy/programming/reps/sets/load;
-- equipment/facility quality effects on progression;
+- exercise programming/reps/sets/load;
+- inventory/resource depletion;
 - universal grading/tier evaluation;
+- exterior/Tahoe traversal;
 - schema v5.
-
-The existence of effectiveness/effective minutes is an extension socket, not authorization to implement these systems.
 
 ## P4 / P5 / regional expansion
 
 P4 context/memory/relationships remains demand-driven and later. P5 second production character remains later. South Lake Tahoe expansion remains later and must proceed destination-by-destination when authorized.
 
-## Current resume point — DISCUSSION STOP GATE
+## Current resume point — LIVE OBSERVATION
 
-P3.5 is complete, acceptance verified, and deployed. **No next slice is currently selected or authorized.** The Creator explicitly requested discussion after P3.5 and instructed development not to continue beyond it.
+The autonomy breadth/time stabilization release is deployed. Next action is **observation rather than immediate new development**:
 
-Do not design or implement P3.6, grading, stimulus/adaptation, body progression, or another unrelated slice until the Creator discussion concludes with explicit direction.
+- confirm Telegram messages show duration plus useful next-action ETA;
+- observe whether Darian begins choosing a broader mix of meaningful estate rooms/objects;
+- note any still-implausible durations.
+
+If duration choice remains weak, discuss one bounded deterministic per-action/per-target duration-profile slice. Do not use a blanket persisted-bound reduction that can invalidate pending actions.
+
+Do not automatically return to training progression/grading work until the Creator selects that direction after live observation.
 
 Preserve schema v4, 1x wake-on-demand autonomy, globally scoped ids, actor-scoped scheduler state, first-class actions/events, Telegram presentation rules, profile/runtime separation, typed/audited Creator control, and incremental expansion only through explicitly authorized minimum-runnable needs.
