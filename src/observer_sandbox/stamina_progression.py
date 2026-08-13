@@ -13,9 +13,10 @@ from .recovery_realization import FATIGUE_HARD_BLOCK, recovery_state_quality
 
 STAMINA_FIELD_KEY = "raps_pa.stamina"
 STAMINA_METHOD_ID = "steady_state_cardio"
+STAMINA_METHOD_IDS = frozenset({"steady_state_cardio", "rowing_conditioning", "altitude_conditioning"})
 SETTLEMENT_EVENT_TYPE = "stamina_progression_settled"
 SETTLEMENT_SOURCE = "stamina-progression-settlement-v1"
-STIMULUS_SOURCE = "stamina-stimulus-steady-state-cardio-v1"
+STIMULUS_SOURCE = "stamina-stimulus-conditioning-v1"
 
 STIMULUS_MINUTES_PER_UNIT = 45.0
 NATURAL_CEILING = 100.0
@@ -56,9 +57,11 @@ def stamina_saturation_factor(recent_units: float | int) -> float:
 
 def _stimulus_from_payload(payload: dict[str, Any]) -> tuple[float, float] | None:
     method = payload.get("training_method")
-    if not isinstance(method, dict) or method.get("method_id") != STAMINA_METHOD_ID:
+    if not isinstance(method, dict) or method.get("method_id") not in STAMINA_METHOD_IDS:
         return None
     if method.get("source") != "training-method-semantics-v1":
+        return None
+    if method.get("workload_channels") != ["conditioning"]:
         return None
     effective_load = method.get("effective_load")
     if not isinstance(effective_load, dict):
