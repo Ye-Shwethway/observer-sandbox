@@ -1,0 +1,47 @@
+name: Strength Live Cycle Diagnostic v1
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - '.github/workflows/strength-live-cycle-diagnostic-v1.yml'
+      - 'scripts/strength_live_cycle_validation_v1.py'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  diagnose:
+    if: ${{ vars.VPS_DEPLOY_ENABLED == 'true' }}
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Configure SSH
+        env:
+          VPS_SSH_KEY: ${{ secrets.VPS_SSH_KEY }}
+          VPS_HOST: ${{ secrets.VPS_HOST }}
+          VPS_PORT: ${{ secrets.VPS_PORT || '22' }}
+        run: |
+          test -n "$VPS_HOST"
+          test -n "$VPS_SSH_KEY"
+          install -m 700 -d ~/.ssh
+          printf '%s\n' "$VPS_SSH_KEY" > ~/.ssh/id_ed25519
+          chmod 600 ~/.ssh/id_ed25519
+          ssh-keyscan -p "$VPS_PORT" -H "$VPS_HOST" >> ~/.ssh/known_hosts
+      - name: Stage diagnostic candidate
+        env:
+          VPS_HOST: ${{ secrets.VPS_HOST }}
+          VPS_USER: ${{ secrets.VPS_USER }}
+          VPS_PORT: ${{ secrets.VPS_PORT || '22' }}
+        run: |
+          ssh -p "$VPS_PORT" "$VPS_USER@$VPS_HOST" 'rm -rf /tmp/observer-strength-diagnostic-v1 && mkdir -p /tmp/observer-strength-diagnostic-v1'
+          rsync -az -e "ssh -p $VPS_PORT" src/ "$VPS_USER@$VPS_HOST:/tmp/observer-strength-diagnostic-v1/src/"
+          rsync -az -e "ssh -p $VPS_PORT" scripts/strength_live_cycle_validation_v1.py "$VPS_USER@$VPS_HOST:/tmp/observer-strength-diagnostic-v1/runner.py"
+      - name: Diagnose on disposable production copy only
+        env:
+          VPS_HOST: ${{ secrets.VPS_HOST }}
+          VPS_USER: ${{ secrets.VPS_USER }}
+          VPS_PORT: ${{ secrets.VPS_PORT || '22' }}
+        run: |
+          ssh -p "$VPS_PORT" "$VPS_USER@$VPS_HOST" "set -euo pipefail; cd /opt/observer-sandbox; export PYTHONPATH=/tmp/observer-strength-diagnostic-v1/src; .venv/bin/python /tmp/observer-strength-diagnostic-v1/runner.py --live-db /var/lib/observer-sandbox/observer.sqlite3; rm -rf /tmp/observer-strength-diagnostic-v1"
