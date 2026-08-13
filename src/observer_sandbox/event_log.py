@@ -5,19 +5,18 @@ import sqlite3
 import uuid
 from typing import Any
 
-from .training_methods import training_method_evidence, training_profile_for_target
+from .training_methods import training_method_evidence
 
 
 def _enrich_training_method(payload: dict[str, Any], event_type: str) -> dict[str, Any]:
     if event_type != "action_completed" or payload.get("action") != "train" or "training_method" in payload:
         return payload
     target = payload.get("target")
-    profile = training_profile_for_target(target if isinstance(target, str) else None)
+    training_load = payload.get("training_load")
     evidence = training_method_evidence(
         action_name="train",
         target=target if isinstance(target, str) else None,
-        training_profile=profile,
-        training_load=payload.get("training_load") if isinstance(payload.get("training_load"), dict) else None,
+        training_load=training_load if isinstance(training_load, dict) else None,
     )
     if evidence is None:
         return payload
