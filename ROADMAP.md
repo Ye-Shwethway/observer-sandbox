@@ -111,26 +111,26 @@ Status: COMPLETE / DEPLOYED
 Status: COMPLETE / LIVE VERIFIED
 
 **P2.2.2B — Minimum Telegram Estate Browser**
-Status: NEXT
+Status: IMPLEMENTED / CI-VALIDATED / DEPLOYED — CREATOR UI ACCEPTANCE PENDING
 
-Minimum runnable scope:
-- Universe -> Thorne Estate -> floor/zone -> room;
-- room detail: occupants, objects, exits and current/recent activity when available;
-- Back/Home navigation follows actual parent-node data;
-- locked exterior may be visible as unavailable but never becomes a movement affordance;
-- existing generic query service/schema-v4 relations remain authoritative; no Telegram-owned world logic.
+Implemented minimum scope:
+- Universe -> Thorne Estate -> floor/zone -> room through stable `loc:*` callbacks;
+- room/location detail renders occupants with current action, objects, exits and recent location activity when available;
+- Back follows the canonical `contains` parent and Home remains globally available;
+- locked exterior is shown with a lock/unavailable presentation but is not a movement affordance;
+- observer queries use the generic `located_at` resolver for current occupants and query schema-v4 event `location_id` for recent location activity;
+- Telegram remains a formatting/navigation adapter; no world logic or item-detail mechanics moved into handlers.
 
-Acceptance for **P2.2.2B only**:
-- Creator can open Telegram and navigate from Universe to at least one estate room and back without typing internal ids;
-- room data is human-readable and derived from canonical graph/query data;
-- no new simulation subsystem is required merely to complete browsing;
-- deployed bot remains healthy and current autonomy is unaffected.
+Acceptance evidence:
+- CI #260 / run `31666982672` SUCCESS, including recursive Universe -> Estate -> floor -> Kitchen navigation and parent/back/locked-boundary assertions;
+- Deploy #114 / run `31666950518` SUCCESS; systemd active, Telegram API connected, schema v4 healthy and Darian autonomy remained ON/normal/unpaused at 1x;
+- Creator has not yet personally exercised the deployed recursive browser in Telegram, so UX/live-interaction acceptance remains pending.
 
-Do not add item-detail mechanics, character session selection, inventory or regional expansion merely to finish this slice.
+Do not add item-detail mechanics, character session selection, inventory or regional expansion merely to close this slice.
 
 #### P2.2.3 — Minimum Item/Object Browser
 
-Status: AFTER ESTATE BROWSER
+Status: NEXT AFTER CREATOR ESTATE-BROWSER CHECK
 
 Minimum runnable scope:
 - room contents -> one object/item detail view;
@@ -229,8 +229,6 @@ Expand destination-by-destination afterward.
 
 ## Current resume point
 
-**Resume P2.2.2B Minimum Telegram Estate Browser on schema v4.**
+**First, let the Creator exercise P2.2.2B in Telegram. If the recursive estate browser behaves as deployed/tested, continue with P2.2.3 Minimum Item/Object Browser.**
 
-The roadmap audit found no need for another foundation rewrite. The schema-v4 architecture is compatible with the intended future expansion. The main correction is development sequencing: every future roadmap step is now an independently runnable vertical slice, and broad state/memory work no longer precedes the behavior that requires it.
-
-Preserve 1x wake-on-demand production autonomy, globally scoped ids, locked unfinished boundaries, actor-scoped scheduler state, first-class actions/events, Telegram presentation rules and per-user notification preferences.
+No additional core/schema work is required for the current browser path. Preserve 1x wake-on-demand production autonomy, globally scoped ids, locked unfinished boundaries, actor-scoped scheduler state, first-class actions/events, Telegram presentation rules and per-user notification preferences.
