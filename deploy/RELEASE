@@ -1,7 +1,7 @@
 Observer Sandbox production release marker
 
-release: research-action-semantics-v1
-accepted_main: c50f4cf9a87b15589be3b3ea4878990da7e69d02
-acceptance_workflow: Research Action Semantics Acceptance #1
-acceptance_run: 31681716339
+release: activity-semantics-batch-1
+accepted_main: 8a8f14b7da13ac0ab0ecbb461fefcdfc3639d7f8
+acceptance_workflow: Activity Semantics Batch 1 Acceptance #1
+acceptance_run: 31682656839
 status: accepted-for-production
