@@ -1,7 +1,7 @@
 Observer Sandbox production release marker
 
-release: current-action-eta-observability-v1
-accepted_main: d9fcd2ebd3556365b7b8505350d012a08f3f3ad9
-acceptance_workflow: Current Action ETA Acceptance #2
-acceptance_run: 31678671655
+release: runtime-speed-control-v1
+accepted_main: 1799dd7c7723866ec15dc29a05c682de8e1d5e4a
+acceptance_workflow: Runtime Speed Control Acceptance #1
+acceptance_run: 31679969684
 status: accepted-for-production
