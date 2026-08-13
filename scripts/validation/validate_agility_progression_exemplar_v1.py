@@ -9,11 +9,11 @@ from pathlib import Path
 from observer_sandbox.agility_progression import (
     AGILITY_FIELD_KEY,
     BASE_POSITIVE_SCALE,
-    LEVEL_EXPONENT,
-    NATURAL_CEILING,
-    SATURATION_COEFFICIENT,
     SETTLEMENT_SOURCE,
     STIMULUS_MINUTES_PER_UNIT,
+    agility_level_factor,
+    agility_saturation_factor,
+    recent_agility_stimulus_units,
     settle_agility_progression,
 )
 from observer_sandbox.db import connect
@@ -83,7 +83,8 @@ def main() -> int:
     effective_minutes = float(method["effective_load"]["effective_minutes"])
     stimulus_units = round(effective_minutes / STIMULUS_MINUTES_PER_UNIT, 6)
     event_id = int(row["id"])
-    event_time = datetime.fromisoformat(row["sim_time"])
+    event_sim_time = str(row["sim_time"])
+    event_time = datetime.fromisoformat(event_sim_time)
 
     early_state = {"energy": 90.0, "sleepiness": 10.0, "fatigue": 10.0}
     early = settle_agility_progression(
@@ -99,8 +100,9 @@ def main() -> int:
     eligible_time = (event_time + timedelta(hours=21)).isoformat()
     eligible_state = {"energy": 90.0, "sleepiness": 10.0, "fatigue": 10.0}
     quality, _ = recovery_state_quality(eligible_state)
-    level_factor = round(((NATURAL_CEILING - agility_before) / NATURAL_CEILING) ** LEVEL_EXPONENT, 9)
-    saturation_factor = round(1.0 / (1.0 + SATURATION_COEFFICIENT * stimulus_units), 9)
+    level_factor = agility_level_factor(agility_before)
+    recent_units = recent_agility_stimulus_units(conn, ACTOR, as_of_sim_time=event_sim_time)
+    saturation_factor = agility_saturation_factor(recent_units)
     expected_gain = BASE_POSITIVE_SCALE * stimulus_units * level_factor * saturation_factor * quality
 
     settled = settle_agility_progression(
@@ -112,6 +114,7 @@ def main() -> int:
     assert settled["status"] == "settled"
     assert settled["consumed_stimulus_event_ids"] == [event_id]
     assert math.isclose(settled["positive_delta"], expected_gain, rel_tol=0.0, abs_tol=1e-8)
+    assert math.isclose(settled["negative_delta"], 0.0, rel_tol=0.0, abs_tol=1e-12)
     assert math.isclose(profile_value(conn, AGILITY_FIELD_KEY), agility_before + expected_gain, rel_tol=0.0, abs_tol=1e-6)
     assert profile_value(conn, "raps_pa.strength") == strength_before
     assert profile_value(conn, "raps_pa.stamina") == stamina_before
@@ -134,6 +137,7 @@ def main() -> int:
         "baseline_agility": agility_before,
         "effective_minutes": effective_minutes,
         "stimulus_units": stimulus_units,
+        "recent_stimulus_units": recent_units,
         "level_factor": level_factor,
         "saturation_factor": saturation_factor,
         "recovery_state_quality": quality,
