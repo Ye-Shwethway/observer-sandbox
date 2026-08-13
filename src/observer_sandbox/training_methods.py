@@ -1,5 +1,13 @@
 from __future__ import annotations
 
+"""Authored training-method metadata and deterministic evidence derivation.
+
+This layer describes what kind of work a training target represents. It does
+not decide which character attribute progresses, how much stimulus is earned,
+or how progression settles; those remain responsibilities of domain-specific
+progression engines.
+"""
+
 import json
 from functools import lru_cache
 from pathlib import Path
