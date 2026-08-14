@@ -16,6 +16,7 @@ from .height_lifecycle import maybe_settle_height_lifecycle
 from .physical_attribute_progression import maybe_settle_physical_attribute_batch
 from .runtime import initialize
 from .secrets import load_runtime_secrets
+from .sexual_anatomy_physiology_lifecycle import maybe_settle_sexual_anatomy_physiology_lifecycle
 from .simulation import snapshot
 from .stamina_progression_activation import maybe_settle_stamina_progression
 from .strength_progression_activation import maybe_settle_strength_progression
@@ -73,9 +74,6 @@ def main() -> None:
                         except Exception:
                             pass
 
-                        # Structural height settles before composition so BMI and
-                        # other height-dependent derived views can consume the
-                        # current lifecycle-owned stature when it legitimately changes.
                         try:
                             maybe_settle_height_lifecycle(
                                 conn,
@@ -100,6 +98,20 @@ def main() -> None:
 
                         try:
                             maybe_settle_body_measurements(
+                                conn,
+                                actor_id,
+                                as_of_sim_time=str(after["sim_time"]),
+                                state=after,
+                            )
+                            after = snapshot(conn, actor_id)
+                        except Exception:
+                            pass
+
+                        # Structural genital anatomy is a slow lifecycle value;
+                        # momentary arousal/erection remains context-driven and is
+                        # not inferred from ordinary actions here.
+                        try:
+                            maybe_settle_sexual_anatomy_physiology_lifecycle(
                                 conn,
                                 actor_id,
                                 as_of_sim_time=str(after["sim_time"]),
