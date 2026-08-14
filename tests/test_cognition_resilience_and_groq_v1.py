@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import json
 
+from observer_sandbox import ai
 from observer_sandbox.ai import configure_provider, list_providers, set_binding
 from observer_sandbox.ai_runtime import generate_character_decision
 from observer_sandbox.db import connect
@@ -20,6 +21,30 @@ def test_groq_is_seeded_as_openai_compatible_provider(tmp_path):
     assert providers["groq"]["adapter_type"] == "openai_compatible"
     assert providers["groq"]["base_url"] == "https://api.groq.com/openai/v1"
     assert providers["groq"]["credential_ref"] == "OBSERVER_GROQ_API_KEY"
+
+
+def test_groq_catalog_uses_standard_openai_compatible_headers(tmp_path, monkeypatch):
+    db = tmp_path / "observer.sqlite3"
+    initialize(db)
+    monkeypatch.setenv("OBSERVER_GROQ_API_KEY", "test-key")
+    captured = {}
+
+    def fake_get_json(url, headers=None, timeout=20.0):
+        captured["url"] = url
+        captured["headers"] = headers
+        return {"data": []}
+
+    monkeypatch.setattr(ai, "_get_json", fake_get_json)
+    with connect(db) as conn:
+        configure_provider(conn, "groq", enabled=True)
+        provider = conn.execute("SELECT * FROM ai_providers WHERE id='groq'").fetchone()
+        ai._fetch_openai_compatible(provider)
+
+    assert captured["url"] == "https://api.groq.com/openai/v1/models"
+    assert captured["headers"]["Authorization"] == "Bearer test-key"
+    assert captured["headers"]["Content-Type"] == "application/json"
+    assert captured["headers"]["Accept"] == "application/json"
+    assert captured["headers"]["User-Agent"].startswith("observer-sandbox/")
 
 
 def test_runtime_shaped_duration_overrides_ordinary_training_preference():
