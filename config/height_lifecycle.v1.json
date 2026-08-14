@@ -1,0 +1,23 @@
+{
+  "revision": "height-lifecycle-v1",
+  "settlement_event_type": "height_lifecycle_settled",
+  "field_key": "body.height_in",
+  "genetic_max_field": "genetics.height_max_in",
+  "date_of_birth_field": "identity.date_of_birth",
+  "sex_field": "identity.sex",
+  "minimum_settlement_days": 90.0,
+  "development": {
+    "maturity_age_years": {"male": 20.0, "female": 18.0, "default": 20.0},
+    "max_growth_in_per_year": 3.0,
+    "headroom_realization_fraction_per_year": 0.75
+  },
+  "adult_decline": {
+    "start_age_years": 40.0,
+    "annual_height_fraction": {"male": 0.0009, "female": 0.0013, "default": 0.0010},
+    "acceleration_age_years": 70.0,
+    "acceleration_multiplier": 1.5,
+    "maximum_loss_in_per_year": 0.20,
+    "maximum_lifetime_decline_fraction_from_activation": 0.08
+  },
+  "maximum_abs_change_in_per_settlement": 0.08
+}
