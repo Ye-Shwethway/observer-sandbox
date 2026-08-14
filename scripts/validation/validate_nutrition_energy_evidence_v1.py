@@ -5,6 +5,7 @@ import os
 from pathlib import Path
 
 from observer_sandbox.db import connect
+from observer_sandbox.location_runtime import set_dynamic_location
 from observer_sandbox.nutrition_energy import resting_energy_reference
 from observer_sandbox.simulation import Action, apply_action, snapshot
 from observer_sandbox.world import set_field
@@ -42,7 +43,10 @@ def main() -> int:
         assert reference["ree_kcal_day"] > 0.0
         assert reference["sex"] == "male"
 
-        set_field(conn, ACTOR, "runtime.location", KITCHEN)
+        # The live actor may be anywhere when the disposable copy is taken.
+        # Use the canonical dynamic-location relation rather than only changing
+        # the compatibility cache field before exercising a Kitchen target.
+        set_dynamic_location(conn, ACTOR, KITCHEN)
         set_field(conn, ACTOR, "runtime.current_action", "idle")
         set_field(conn, ACTOR, "needs.hunger", 70.0)
         conn.commit()
