@@ -14,10 +14,13 @@ def _enrich_training_method(payload: dict[str, Any], event_type: str) -> dict[st
         return payload
     target = payload.get("target")
     training_load = payload.get("training_load")
+    conditions = payload.get("conditions")
+    training_movements = conditions.get("training_movements") if isinstance(conditions, dict) else None
     evidence = training_method_evidence(
         action_name="train",
         target=target if isinstance(target, str) else None,
         training_load=training_load if isinstance(training_load, dict) else None,
+        training_movements=training_movements if isinstance(training_movements, list) else None,
     )
     if evidence is None:
         return payload
