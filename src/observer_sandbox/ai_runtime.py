@@ -37,8 +37,13 @@ DECISION_SCHEMA: dict[str, Any] = {
                 "additionalProperties": False,
             },
         },
+        "training_movements": {
+            "type": "array",
+            "maxItems": 4,
+            "items": {"type": "string"},
+        },
     },
-    "required": ["action", "duration_minutes", "target", "reason", "resources"],
+    "required": ["action", "duration_minutes", "target", "reason", "resources", "training_movements"],
     "additionalProperties": False,
 }
 
@@ -121,7 +126,7 @@ def _decision_prompt(state: dict[str, Any], available_actions: list[str]) -> str
     return (
         "You control one autonomous simulated human. Choose exactly one next action. "
         "Act consistently with the supplied character traits, preferences, habits, skills, routine guidance, recent events, current time, and physiological state. "
-        "Physiological needs and safety override routine preferences. Do not invent rooms, objects, actions, inventory stacks, or direct state changes.\n\n"
+        "Physiological needs and safety override routine preferences. Do not invent rooms, objects, actions, inventory stacks, movement ids, or direct state changes.\n\n"
         f"Known action vocabulary: {json.dumps(available_actions)}\n"
         f"Runtime context: {json.dumps(prompt_state, ensure_ascii=False, sort_keys=True)}\n\n"
         "The action_options array is authoritative. Choose an action/target pair that appears there. "
@@ -129,6 +134,8 @@ def _decision_prompt(state: dict[str, Any], available_actions: list[str]) -> str
         "Runtime-shaped legal duration bounds override ordinary authored preferences when they are tighter. "
         "For an eat action, choose one or more resources only from that option's meal_resources list. Copy each exact stack_id and choose a quantity within its min_quantity/max_quantity bounds. The engine calculates nutrients; do not invent or calculate macro values. "
         "For every non-eat action, resources must be an empty array. "
+        "For a train action whose training_method has movement_options, choose one to four exact movement_id values from that selected option and return them in training_movements. Prefer movements that make the session coherent rather than an arbitrary full-catalog mix. "
+        "For train actions without movement_options and for every non-train action, training_movements must be an empty array. "
         "For idle only, target must be an empty string. For every other action, copy the exact target id from action_options; use an empty string when that option's target is null. "
         "Return only the structured decision and keep reason short and character-grounded."
     )
@@ -316,11 +323,14 @@ def generate_character_decision(
     if not isinstance(decision, dict):
         raise AIDecisionError("AI decision must be a JSON object")
     legacy_required = {"action", "duration_minutes", "target", "reason"}
-    required = legacy_required | {"resources"}
+    eating_required = legacy_required | {"resources"}
+    required = eating_required | {"training_movements"}
     if set(decision) == legacy_required:
         # Test/mocked callers predating Eating Behavior v1 normalize safely.
-        # Live provider schemas require resources explicitly.
-        decision = {**decision, "resources": []}
+        decision = {**decision, "resources": [], "training_movements": []}
+    elif set(decision) == eating_required:
+        # Test/mocked callers predating Training Anatomy v1 normalize safely.
+        decision = {**decision, "training_movements": []}
     if set(decision) != required:
         raise AIDecisionError("AI decision keys do not match the required schema")
     if decision["action"] not in available_actions:
@@ -338,6 +348,12 @@ def generate_character_decision(
             raise AIDecisionError("AI resource stack_id/quantity types are invalid")
         if float(resource["quantity"]) <= 0.0:
             raise AIDecisionError("AI resource quantity must be positive")
+    if not isinstance(decision["training_movements"], list) or len(decision["training_movements"]) > 4:
+        raise AIDecisionError("AI training_movements must be an array with at most four items")
+    if not all(isinstance(item, str) and item for item in decision["training_movements"]):
+        raise AIDecisionError("AI training_movements entries must be non-empty strings")
+    if decision["action"] != "train" and decision["training_movements"]:
+        raise AIDecisionError("AI training_movements must be empty for non-training actions")
     decision = dict(decision)
     decision["duration_minutes"] = _normalize_decision_duration(state, decision)
     return decision
