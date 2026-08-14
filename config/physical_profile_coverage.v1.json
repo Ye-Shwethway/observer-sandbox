@@ -1,0 +1,98 @@
+{
+  "revision": "physical-profile-coverage-audit-v1",
+  "classifications": {
+    "canonical_structural": "Authored structural or appearance fact that ordinarily remains stable without a dedicated lifecycle.",
+    "derived": "Computed from authoritative fields; no independent mutation authority.",
+    "simulated_dynamic": "Runtime-changing state owned by a deterministic engine.",
+    "lifecycle_driven": "Slow structural or long-term physiological state owned by a lifecycle engine.",
+    "intentionally_static": "Represented value intentionally left static for current scope.",
+    "coverage_gap": "Field semantics imply change or derived behavior but the required owning implementation is not yet complete."
+  },
+  "fields": {
+    "body.height_in": {"classification": "lifecycle_driven", "authority": "height_lifecycle_engine", "status": "complete"},
+    "body.weight_lb": {"classification": "simulated_dynamic", "authority": "physiology_engine", "status": "complete"},
+    "body.body_fat_pct": {"classification": "simulated_dynamic", "authority": "physiology_engine", "status": "complete"},
+    "body.lean_mass_lb": {"classification": "derived", "authority": "physiology_engine", "status": "complete"},
+    "body.fat_mass_lb": {"classification": "derived", "authority": "physiology_engine", "status": "complete"},
+    "body.bmi": {"classification": "derived", "authority": "physiology_engine", "status": "complete"},
+
+    "body.neck_in": {"classification": "lifecycle_driven", "authority": "body_progression_engine", "status": "complete"},
+    "body.shoulders_in": {"classification": "lifecycle_driven", "authority": "body_progression_engine", "status": "complete"},
+    "body.chest_in": {"classification": "lifecycle_driven", "authority": "body_progression_engine", "status": "complete"},
+    "body.waist_in": {"classification": "lifecycle_driven", "authority": "body_progression_engine", "status": "complete"},
+    "body.hips_in": {"classification": "lifecycle_driven", "authority": "body_progression_engine", "status": "complete"},
+    "body.biceps_relaxed_in": {"classification": "lifecycle_driven", "authority": "body_progression_engine", "status": "complete"},
+    "body.biceps_flexed_in": {"classification": "lifecycle_driven", "authority": "body_progression_engine", "status": "complete"},
+    "body.triceps_in": {"classification": "lifecycle_driven", "authority": "body_progression_engine", "status": "complete"},
+    "body.forearms_in": {"classification": "lifecycle_driven", "authority": "body_progression_engine", "status": "complete"},
+    "body.thighs_in": {"classification": "lifecycle_driven", "authority": "body_progression_engine", "status": "complete"},
+    "body.calves_in": {"classification": "lifecycle_driven", "authority": "body_progression_engine", "status": "complete"},
+
+    "body.abdominal_definition": {"classification": "coverage_gap", "authority": "appearance_engine", "status": "required_follow_up", "reason": "Visible muscular definition can become inconsistent with simulated body-fat/composition changes if retained as canonical text."},
+    "body.chest_hair": {"classification": "canonical_structural", "authority": "profile_core", "status": "complete", "reason": "Presence is an authored appearance trait; grooming/style changes can later be modeled separately without rewriting biological presence."},
+
+    "appearance.face_shape": {"classification": "canonical_structural", "authority": "profile_core", "status": "complete"},
+    "appearance.jawline": {"classification": "canonical_structural", "authority": "profile_core", "status": "complete"},
+    "appearance.cheekbones": {"classification": "canonical_structural", "authority": "profile_core", "status": "complete"},
+    "appearance.facial_symmetry": {"classification": "canonical_structural", "authority": "profile_core", "status": "complete"},
+    "appearance.golden_ratio_alignment": {"classification": "canonical_structural", "authority": "profile_core", "status": "complete"},
+    "appearance.eye_color": {"classification": "canonical_structural", "authority": "profile_core", "status": "complete"},
+    "appearance.eye_appeal": {"classification": "canonical_structural", "authority": "profile_core", "status": "complete"},
+    "appearance.hair_color": {"classification": "canonical_structural", "authority": "profile_core", "status": "complete"},
+    "appearance.hair_style": {"classification": "intentionally_static", "authority": "profile_core", "status": "complete", "reason": "Style is authored profile presentation until grooming behavior is modeled."},
+    "appearance.facial_hair": {"classification": "intentionally_static", "authority": "profile_core", "status": "complete", "reason": "Style is authored profile presentation until grooming behavior is modeled."},
+    "appearance.skin_quality": {"classification": "coverage_gap", "authority": "physiology_engine", "status": "required_follow_up", "reason": "Schema assigns physiology authority but no deterministic health/recovery/nutrition appearance lifecycle currently owns the value."},
+    "appearance.smile_appeal": {"classification": "canonical_structural", "authority": "profile_core", "status": "complete"},
+    "appearance.facial_beauty": {"classification": "canonical_structural", "authority": "profile_core", "status": "complete"},
+    "appearance.pars": {"classification": "derived", "authority": "appearance_engine", "status": "required_follow_up", "reason": "Derived appeal should eventually consume current body/appearance state; current authored seed compatibility must not be mistaken for a live derived engine."},
+    "appearance.distinctive_features": {"classification": "canonical_structural", "authority": "profile_core", "status": "complete"},
+    "appearance.marks_scars_tattoos": {"classification": "canonical_structural", "authority": "profile_core", "status": "complete", "reason": "New scars/tattoos require explicit future event mechanics; existing marks are authored structure."},
+
+    "sexual_anatomy.penis_length_in": {"classification": "lifecycle_driven", "authority": "sexual_anatomy_lifecycle_engine", "status": "complete", "sensitivity": "intimate"},
+    "sexual_anatomy.penis_girth_in": {"classification": "lifecycle_driven", "authority": "sexual_anatomy_lifecycle_engine", "status": "complete", "sensitivity": "intimate"},
+    "sexual_anatomy.baseline_erectile_function": {"classification": "lifecycle_driven", "authority": "sexual_physiology_engine", "status": "complete", "sensitivity": "intimate"},
+    "sexual_anatomy.erection_firmness_cap": {"classification": "canonical_structural", "authority": "profile_core", "status": "complete", "sensitivity": "intimate"},
+    "sexual_anatomy.erectile_state": {"classification": "simulated_dynamic", "authority": "sexual_physiology_engine", "status": "deferred_context_behavior", "sensitivity": "intimate", "reason": "Schema/runtime state exists; transitions intentionally wait for explicit sexual-context behavior evidence."},
+    "sexual_anatomy.erection_firmness": {"classification": "simulated_dynamic", "authority": "sexual_physiology_engine", "status": "deferred_context_behavior", "sensitivity": "intimate"},
+    "sexual_anatomy.sensitivity": {"classification": "simulated_dynamic", "authority": "sexual_physiology_engine", "status": "required_follow_up", "sensitivity": "intimate", "reason": "Schema implies physiology ownership but no current-state/lifecycle implementation owns this field yet."},
+    "sexual_state.arousal_level": {"classification": "simulated_dynamic", "authority": "sexual_physiology_engine", "status": "deferred_context_behavior", "sensitivity": "intimate"},
+
+    "physiology.fatigue": {"classification": "simulated_dynamic", "authority": "physiology_engine", "status": "complete"},
+    "physiology.muscle_soreness": {"classification": "simulated_dynamic", "authority": "training_adaptation_engine", "status": "complete_for_training_scope"},
+    "physiology.injury_state": {"classification": "simulated_dynamic", "authority": "injury_engine", "status": "deferred_domain"},
+    "physiology.illness_state": {"classification": "simulated_dynamic", "authority": "health_engine", "status": "deferred_domain"},
+    "physiology.recovery": {"classification": "simulated_dynamic", "authority": "recovery_engine", "status": "complete_for_training_scope"},
+    "physiology.resting_heart_rate_bpm": {"classification": "simulated_dynamic", "authority": "health_engine", "status": "deferred_domain"},
+    "physiology.current_heart_rate_bpm": {"classification": "simulated_dynamic", "authority": "health_engine", "status": "deferred_domain"},
+    "physiology.body_temperature_c": {"classification": "simulated_dynamic", "authority": "health_engine", "status": "deferred_domain"},
+    "physiology.blood_pressure": {"classification": "simulated_dynamic", "authority": "health_engine", "status": "deferred_domain"},
+
+    "genetics.height_max_in": {"classification": "canonical_structural", "authority": "profile_core", "status": "complete"},
+    "genetics.weight_lean_min_lb": {"classification": "canonical_structural", "authority": "profile_core", "status": "complete"},
+    "genetics.weight_lean_max_lb": {"classification": "canonical_structural", "authority": "profile_core", "status": "complete"},
+    "genetics.body_fat_floor_pct": {"classification": "canonical_structural", "authority": "profile_core", "status": "complete"},
+    "genetics.penis_length_in": {"classification": "canonical_structural", "authority": "profile_core", "status": "complete", "sensitivity": "intimate"},
+    "genetics.penis_girth_in": {"classification": "canonical_structural", "authority": "profile_core", "status": "complete", "sensitivity": "intimate"}
+  },
+  "gate": {
+    "completed_core_structural_body": true,
+    "required_follow_up_fields": [
+      "body.abdominal_definition",
+      "appearance.skin_quality",
+      "appearance.pars",
+      "sexual_anatomy.sensitivity"
+    ],
+    "deferred_context_or_domain_fields": [
+      "sexual_anatomy.erectile_state",
+      "sexual_anatomy.erection_firmness",
+      "sexual_state.arousal_level",
+      "physiology.injury_state",
+      "physiology.illness_state",
+      "physiology.resting_heart_rate_bpm",
+      "physiology.current_heart_rate_bpm",
+      "physiology.body_temperature_c",
+      "physiology.blood_pressure"
+    ],
+    "physical_profile_completion": false
+  }
+}
