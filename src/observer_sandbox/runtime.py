@@ -14,6 +14,7 @@ from .inventory import seed_home_inventory
 from .profile_schema import seed_profile_field_definitions
 from .profile_schema_source_union import seed_source_union_extensions
 from .sexual_state_schema import seed_sexual_state_fields
+from .simulation import ensure_sim_clock
 from .world import seed_home_and_darian
 
 
@@ -40,6 +41,10 @@ def _initialize_conn(conn) -> None:
     seed_source_union_extensions(conn)
     seed_sexual_state_fields(conn)
     seed_home_and_darian(conn)
+    # Stateful inventory migrations emit immutable audit events at simulation
+    # time. Establish the canonical clock before inventory seeding so a fresh
+    # database and every test/runtime initialization share the same ordering.
+    ensure_sim_clock(conn)
     seed_home_inventory(conn)
     seed_action_definitions(conn)
     defaults = {
