@@ -153,9 +153,16 @@ def _regional_training_exposure(
         if not isinstance(minutes, (int, float)) or float(minutes) <= 0.0:
             continue
         total_resistance_minutes += float(minutes)
-        weights = method_weights.get(str(method.get("method_id") or ""), {})
+        anatomy = method.get("movement_anatomy")
+        regional_load = anatomy.get("regional_load") if isinstance(anatomy, dict) else None
+        if isinstance(regional_load, dict) and regional_load:
+            weights = regional_load
+        else:
+            # Historical/pre-anatomy events remain valid through the proven
+            # method-level fallback. New movement-aware events take precedence.
+            weights = method_weights.get(str(method.get("method_id") or ""), {})
         for region, weight in weights.items():
-            weighted[region] = weighted.get(region, 0.0) + float(minutes) * max(0.0, min(1.0, float(weight)))
+            weighted[str(region)] = weighted.get(str(region), 0.0) + float(minutes) * max(0.0, min(1.0, float(weight)))
     if total_resistance_minutes <= 0.0:
         return {region: 0.0 for region in {cfg["region"] for cfg in policy["fields"].values()}}
     return {
