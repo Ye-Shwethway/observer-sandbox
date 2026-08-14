@@ -10,6 +10,16 @@ Canonical LEGO runtime expression:
 
 The LLM may propose a structured action but never receives arbitrary database-write authority. Deterministic runtime validation/application remains authoritative.
 
+## Universal character-engine invariant
+
+Darian Thorne is the first richly specified production exemplar, not the identity embedded in universe rules. Reusable runtime, cognition, physiology, progression, query and control engines operate on actor/entity ids plus domain state and policy. Character-specific facts, preferences, routines and authored cognition policy remain data/configuration.
+
+Canonical detail: `docs/UNIVERSAL_CHARACTER_ENGINE_CONTRACT.md`.
+
+Implicit actor selection may use a configured valid `default_actor_id`, or the sole existing character while the universe contains exactly one character. If multiple characters exist without a valid default, reusable engine APIs must require an explicit actor id rather than guessing Darian or the first database row.
+
+Named convenience content such as Darian's canonical JSON, Thorne Estate seed data and `/darian` UI aliases may remain character-specific. Those are exemplar/content surfaces, not reusable engine identity.
+
 ## Logical world model
 
 Every meaningful thing is an entity node or reusable definition. Typed relations connect entities. The same model must scale from Darian inside one mansion to multiple characters, residences, regions, items and later environment modules.
@@ -32,6 +42,7 @@ Schema v4 keeps the original generic graph/profile/provider tables and adds the 
 - `speed`
 - `paused`
 - `world_id`
+- `default_actor_id` as a convenience selector, not actor-owned scheduler state
 - global UI/notification/config state where appropriate.
 
 Do not store character scheduler state as singleton global keys.
@@ -131,11 +142,17 @@ Each field records an authority. Domain engines must not mutate fields they do n
 
 Needs, sleep, physiology, training adaptation, emotion, relationships, memory, inventory and environment attach through explicit capabilities, actions, events, fields and modifiers. Do not give a module its own incompatible mini-runtime unless required by a proven domain constraint.
 
+Progression modules must be actor-generic. Darian's values and history are exemplar inputs; a compatible future actor must use the same engine through its own field values, evidence, recovery state and domain policy.
+
 ## AI provider layer
 
-AI model IDs are never hard-coded into character or engine logic. Provider catalogs and bindings are resolved by scope/role. Built-in adapters include Gemini, NanoGPT, OpenAI and OpenRouter. Credentials are environment references, never plaintext database secrets.
+AI model IDs are never hard-coded into character or engine logic. Provider catalogs and bindings are resolved by scope/role. Built-in providers include Gemini, Groq, NanoGPT, OpenAI and OpenRouter, with generic OpenAI-compatible runtime support where applicable. Credentials are environment references, never plaintext database secrets.
 
 Binding precedence remains task+role -> character+role -> engine+role -> character default -> global+role -> global default.
+
+Character cognition policy is also configuration-driven: each registered character resolves its own authored policy. A future actor must not silently inherit Darian's policy merely because Darian is the current production exemplar.
+
+Runtime Cognition Fallback v1 allows one tested fallback provider/model after an eligible provider-layer failure. Fallback never rewrites the primary binding and never triggers on deterministic action/target/duration/runtime validation failures. See `docs/AI_RUNTIME_FALLBACK.md`.
 
 ## Remote operation
 
