@@ -8,7 +8,7 @@ import pytest
 
 from observer_sandbox import ai, ai_runtime
 from observer_sandbox.ai import configure_provider, list_providers, set_binding
-from observer_sandbox.ai_runtime import AIDecisionError, generate_character_decision
+from observer_sandbox.ai_runtime import AIDecisionError, _compact_prompt_state, generate_character_decision
 from observer_sandbox.db import connect
 from observer_sandbox.duration_planning import enrich_action_options
 from observer_sandbox.runtime import initialize
@@ -71,6 +71,47 @@ def test_live_ai_http_error_preserves_bounded_provider_detail(monkeypatch):
             headers={"Authorization": "Bearer test-key"},
             payload={"model": "fixture"},
         )
+
+
+def test_prompt_compaction_removes_derived_duplicates_but_keeps_authority():
+    state = {
+        "autonomy_policy": {
+            "policy_revision": "fixture-v1",
+            "decision_principles": ["choose purposefully"],
+            "reason_style": "short",
+            "need_priorities": {"strong": {"fatigue_gte": 55}},
+            "routine_windows": [{"name": "evening"}],
+        },
+        "training_load_guard": {"source": "training-session-load-recovery-guard-v1", "allowed": True},
+        "object_familiarity": {
+            "source": "object-familiarity-inspect-utility-v1",
+            "suppressed_inspect_count": 2,
+            "suppressed": [{"target": "a"}, {"target": "b"}],
+            "guidance": "familiar resources are already filtered",
+        },
+        "action_options": [
+            {
+                "action": "train",
+                "target": TRAIN_TARGET,
+                "duration": (10, 20),
+                "training_load_guard": {"source": "training-session-load-recovery-guard-v1", "allowed": True},
+            }
+        ],
+    }
+
+    compact = _compact_prompt_state(state)
+
+    assert compact["autonomy_policy"] == {
+        "policy_revision": "fixture-v1",
+        "decision_principles": ["choose purposefully"],
+        "reason_style": "short",
+    }
+    assert compact["training_load_guard"]["source"] == "training-session-load-recovery-guard-v1"
+    assert "training_load_guard" not in compact["action_options"][0]
+    assert compact["action_options"][0]["duration"] == (10, 20)
+    assert compact["action_options"][0]["preferred_duration"] == (10, 20)
+    assert "suppressed" not in compact["object_familiarity"]
+    assert compact["object_familiarity"]["suppressed_inspect_count"] == 2
 
 
 def test_runtime_shaped_duration_overrides_ordinary_training_preference():
