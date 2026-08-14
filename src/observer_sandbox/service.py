@@ -12,6 +12,7 @@ from .autonomy import autonomy_tick
 from .body_composition_progression import maybe_settle_body_composition
 from .body_measurement_progression import maybe_settle_body_measurements
 from .db import connect
+from .height_lifecycle import maybe_settle_height_lifecycle
 from .physical_attribute_progression import maybe_settle_physical_attribute_batch
 from .runtime import initialize
 from .secrets import load_runtime_secrets
@@ -63,6 +64,20 @@ def main() -> None:
 
                         try:
                             maybe_settle_physical_attribute_batch(
+                                conn,
+                                actor_id,
+                                as_of_sim_time=str(after["sim_time"]),
+                                state=after,
+                            )
+                            after = snapshot(conn, actor_id)
+                        except Exception:
+                            pass
+
+                        # Structural height settles before composition so BMI and
+                        # other height-dependent derived views can consume the
+                        # current lifecycle-owned stature when it legitimately changes.
+                        try:
+                            maybe_settle_height_lifecycle(
                                 conn,
                                 actor_id,
                                 as_of_sim_time=str(after["sim_time"]),
