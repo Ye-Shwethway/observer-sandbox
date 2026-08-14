@@ -8,17 +8,27 @@ from observer_sandbox.simulation import snapshot
 
 
 def _synthetic_seed(actor_id: str, *, dob: str, sex: str, height: float, maximum: float) -> dict:
+    values = {
+        "identity.date_of_birth": {"value": dob, "mode": "canonical", "authority": "profile_core"},
+        "identity.sex": {"value": sex, "mode": "canonical", "authority": "profile_core"},
+        "body.height_in": {"value": height, "mode": "canonical", "authority": "profile_core"},
+        "genetics.height_max_in": {"value": maximum, "mode": "canonical", "authority": "profile_core"},
+    }
+    if sex.strip().lower() == "male":
+        values.update({
+            "sexual_anatomy.penis_length_in": {"value": 6.5, "mode": "canonical", "authority": "profile_core"},
+            "sexual_anatomy.penis_girth_in": {"value": 4.5, "mode": "canonical", "authority": "profile_core"},
+            "genetics.penis_length_in": {"value": 6.5, "mode": "canonical", "authority": "profile_core"},
+            "genetics.penis_girth_in": {"value": 4.5, "mode": "canonical", "authority": "profile_core"},
+            "sexual_anatomy.baseline_erectile_function": {"value": 90.0, "mode": "static", "authority": "sexual_physiology_engine"},
+            "sexual_anatomy.erection_firmness_cap": {"value": 95.0, "mode": "canonical", "authority": "profile_core"},
+        })
     return {
         "entity_id": actor_id,
         "name": actor_id,
         "canonical_revision": f"{actor_id}-height-test",
         "profile_schema_version": 1,
-        "values": {
-            "identity.date_of_birth": {"value": dob, "mode": "canonical", "authority": "profile_core"},
-            "identity.sex": {"value": sex, "mode": "canonical", "authority": "profile_core"},
-            "body.height_in": {"value": height, "mode": "canonical", "authority": "profile_core"},
-            "genetics.height_max_in": {"value": maximum, "mode": "canonical", "authority": "profile_core"},
-        },
+        "values": values,
     }
 
 

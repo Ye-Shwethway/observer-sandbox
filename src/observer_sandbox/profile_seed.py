@@ -10,8 +10,48 @@ class ProfileSeedError(RuntimeError):
     pass
 
 
+MALE_REQUIRED_SEXUAL_PROFILE_FIELDS = (
+    "sexual_anatomy.penis_length_in",
+    "sexual_anatomy.penis_girth_in",
+    "genetics.penis_length_in",
+    "genetics.penis_girth_in",
+    "sexual_anatomy.baseline_erectile_function",
+    "sexual_anatomy.erection_firmness_cap",
+)
+
+
 def load_seed(path: str | Path) -> dict[str, Any]:
     return json.loads(Path(path).read_text(encoding="utf-8"))
+
+
+def _seed_value(seed: dict[str, Any], field_key: str) -> Any:
+    record = seed.get("values", {}).get(field_key)
+    return None if not isinstance(record, dict) else record.get("value")
+
+
+def _validate_male_sexual_profile(seed: dict[str, Any]) -> None:
+    sex = str(_seed_value(seed, "identity.sex") or "").strip().lower()
+    if sex != "male":
+        return
+
+    values = seed.get("values", {})
+    missing = [field for field in MALE_REQUIRED_SEXUAL_PROFILE_FIELDS if field not in values]
+    if missing:
+        raise ProfileSeedError(
+            "Male canonical profiles require structural and erectile physiology fields: "
+            + ", ".join(missing)
+        )
+
+    baseline = _seed_value(seed, "sexual_anatomy.baseline_erectile_function")
+    cap = _seed_value(seed, "sexual_anatomy.erection_firmness_cap")
+    if not isinstance(baseline, (int, float)) or not isinstance(cap, (int, float)):
+        raise ProfileSeedError("Male erectile physiology baseline and cap must be numeric")
+    baseline_f = float(baseline)
+    cap_f = float(cap)
+    if not 0.0 <= baseline_f <= 100.0 or not 0.0 <= cap_f <= 100.0:
+        raise ProfileSeedError("Male erectile physiology baseline and cap must be within 0..100")
+    if baseline_f > cap_f:
+        raise ProfileSeedError("Male baseline erectile function cannot exceed erection firmness cap")
 
 
 def validate_seed(conn: sqlite3.Connection, seed: dict[str, Any]) -> None:
@@ -22,6 +62,7 @@ def validate_seed(conn: sqlite3.Connection, seed: dict[str, Any]) -> None:
     unknown = sorted(set(seed.get("values", {})) - defined)
     if unknown:
         raise ProfileSeedError(f"Unknown profile fields: {', '.join(unknown)}")
+    _validate_male_sexual_profile(seed)
 
 
 def import_seed(conn: sqlite3.Connection, seed: dict[str, Any]) -> None:

@@ -11,6 +11,8 @@ from observer_sandbox.simulation import snapshot
 
 ACTOR = "char_darian"
 FIELDS = ("sexual_anatomy.penis_length_in", "sexual_anatomy.penis_girth_in")
+BASELINE_FIELD = "sexual_anatomy.baseline_erectile_function"
+CAP_FIELD = "sexual_anatomy.erection_firmness_cap"
 
 
 def main() -> int:
@@ -32,6 +34,18 @@ def main() -> int:
         }
         assert float(json.loads(before[FIELDS[0]]["value_json"])) == 10.0
         assert float(json.loads(before[FIELDS[1]]["value_json"])) == 5.0
+
+        functional = {
+            row["field_key"]: row
+            for row in conn.execute(
+                "SELECT field_key,value_json,mode,authority,source FROM character_profile_values WHERE entity_id=? AND field_key IN (?,?)",
+                (ACTOR, BASELINE_FIELD, CAP_FIELD),
+            ).fetchall()
+        }
+        assert float(json.loads(functional[BASELINE_FIELD]["value_json"])) == 95.0
+        assert functional[BASELINE_FIELD]["authority"] == "sexual_physiology_engine"
+        assert float(json.loads(functional[CAP_FIELD]["value_json"])) == 98.0
+        assert functional[CAP_FIELD]["authority"] == "profile_core"
 
         existing = conn.execute(
             "SELECT id FROM events WHERE actor_id=? AND event_type='sexual_anatomy_physiology_lifecycle_settled' ORDER BY id DESC LIMIT 1",
@@ -62,17 +76,6 @@ def main() -> int:
         assert all(after[key]["authority"] == "sexual_anatomy_lifecycle_engine" for key in FIELDS)
         assert all(after[key]["source"] == "sexual-anatomy-physiology-lifecycle-v1" for key in FIELDS)
 
-        baseline = conn.execute(
-            "SELECT 1 FROM character_profile_values WHERE entity_id=? AND field_key='sexual_anatomy.baseline_erectile_function'",
-            (ACTOR,),
-        ).fetchone()
-        cap = conn.execute(
-            "SELECT 1 FROM character_profile_values WHERE entity_id=? AND field_key='sexual_anatomy.erection_firmness_cap'",
-            (ACTOR,),
-        ).fetchone()
-        assert baseline is None
-        assert cap is None
-
         print(json.dumps({
             "ok": True,
             "disposable_production_copy": True,
@@ -80,7 +83,9 @@ def main() -> int:
             "activation_state_at_start": "fresh" if existing is None else "already_active",
             "length_in": 10.0,
             "girth_in": 5.0,
-            "functional_values_invented": False,
+            "baseline_erectile_function": 95.0,
+            "erection_firmness_cap": 98.0,
+            "functional_values_authored": True,
             "model_calls": 0,
             "telegram_calls": 0,
             "production_mutated_by_validation": False,

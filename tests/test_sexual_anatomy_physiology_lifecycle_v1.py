@@ -9,7 +9,7 @@ from observer_sandbox.sexual_anatomy_physiology_lifecycle import (
 from observer_sandbox.simulation import snapshot
 
 
-def _seed(actor_id: str, *, dob: str, length: float, girth: float, length_target: float, girth_target: float, baseline: float | None = None, cap: float | None = None) -> dict:
+def _seed(actor_id: str, *, dob: str, length: float, girth: float, length_target: float, girth_target: float, baseline: float = 90.0, cap: float = 95.0) -> dict:
     values = {
         "identity.date_of_birth": {"value": dob, "mode": "canonical", "authority": "profile_core"},
         "identity.sex": {"value": "male", "mode": "canonical", "authority": "profile_core"},
@@ -17,11 +17,9 @@ def _seed(actor_id: str, *, dob: str, length: float, girth: float, length_target
         "sexual_anatomy.penis_girth_in": {"value": girth, "mode": "canonical", "authority": "profile_core"},
         "genetics.penis_length_in": {"value": length_target, "mode": "canonical", "authority": "profile_core"},
         "genetics.penis_girth_in": {"value": girth_target, "mode": "canonical", "authority": "profile_core"},
+        "sexual_anatomy.baseline_erectile_function": {"value": baseline, "mode": "static", "authority": "sexual_physiology_engine"},
+        "sexual_anatomy.erection_firmness_cap": {"value": cap, "mode": "canonical", "authority": "profile_core"},
     }
-    if baseline is not None:
-        values["sexual_anatomy.baseline_erectile_function"] = {"value": baseline, "mode": "static", "authority": "sexual_physiology_engine"}
-    if cap is not None:
-        values["sexual_anatomy.erection_firmness_cap"] = {"value": cap, "mode": "canonical", "authority": "profile_core"}
     return {
         "entity_id": actor_id,
         "name": actor_id,
@@ -102,7 +100,7 @@ def test_synthetic_youth_develops_toward_but_not_beyond_adult_targets(tmp_path):
     assert 3.4 < result["structural_values"]["sexual_anatomy.penis_girth_in"] <= 4.5
 
 
-def test_optional_long_term_erectile_capacity_declines_slowly_with_age_when_authored(tmp_path):
+def test_long_term_erectile_capacity_declines_slowly_with_age_when_authored(tmp_path):
     db = tmp_path / "observer.sqlite3"
     initialize(db)
     with connect(db) as conn:
@@ -125,7 +123,7 @@ def test_optional_long_term_erectile_capacity_declines_slowly_with_age_when_auth
     assert row["authority"] == "sexual_physiology_engine"
 
 
-def test_functional_capacity_is_optional_and_missing_values_are_not_invented(tmp_path):
+def test_darian_authored_functional_capacity_is_available_and_stable_while_young(tmp_path):
     db = tmp_path / "observer.sqlite3"
     initialize(db)
     with connect(db) as conn:
@@ -141,6 +139,8 @@ def test_functional_capacity_is_optional_and_missing_values_are_not_invented(tmp
         cap = _value_row(conn, "char_darian", "sexual_anatomy.erection_firmness_cap")
 
     assert result["status"] == "stable"
-    assert result["functional_value"] is None
-    assert baseline is None
-    assert cap is None
+    assert result["functional_value"] == 95.0
+    assert float(baseline["value_json"]) == 95.0
+    assert float(cap["value_json"]) == 98.0
+    assert baseline["authority"] == "sexual_physiology_engine"
+    assert cap["authority"] == "profile_core"

@@ -8,9 +8,27 @@ Sexual anatomy mixes slow structural development with context-dependent physiolo
 
 Invariant:
 
-`developmental/genetic structural anatomy + age + optional authored long-term erectile capacity -> bounded structural lifecycle + bounded functional-capacity lifecycle`
+`developmental/genetic structural anatomy + age + authored long-term erectile capacity -> bounded structural lifecycle + bounded functional-capacity lifecycle`
 
 Momentary arousal and erection state remain context-driven sexual physiology and are not inferred from ordinary actions.
+
+## Male canonical profile requirement
+
+For represented male characters, erectile physiology is part of the required canonical gameplay profile rather than an optional future extension.
+
+A valid male canonical seed must include:
+- `sexual_anatomy.penis_length_in`;
+- `sexual_anatomy.penis_girth_in`;
+- `genetics.penis_length_in`;
+- `genetics.penis_girth_in`;
+- `sexual_anatomy.baseline_erectile_function`;
+- `sexual_anatomy.erection_firmness_cap`.
+
+`baseline_erectile_function` and `erection_firmness_cap` are individual authored 0-100 physiological values. The baseline cannot exceed the cap. They must not be reverse-engineered from RAPS sexual scores, athleticism, body measurements, training history, or population averages.
+
+This requirement exists so later relationship/sexual-context gameplay has an explicit physiological substrate rather than inventing one at interaction time.
+
+Momentary fields such as `sexual_anatomy.erectile_state`, `sexual_anatomy.erection_firmness`, and `sexual_state.arousal_level` remain runtime state and are not required canonical trait values.
 
 ## Structural anatomy
 
@@ -38,9 +56,9 @@ Pathology, surgery, injury, endocrine disease or other specific causes may later
 
 The existing profile schema distinguishes momentary `erection_firmness` from longer-term `baseline_erectile_function` and an individual `erection_firmness_cap`.
 
-When both long-term fields are authored/present, v1 supports slow age-linked decline in baseline erectile function after the configured age threshold, bounded by the individual cap and settlement clamps. This is a simulation capacity score, not a clinical questionnaire or diagnosis.
+For male canonical characters, both long-term fields are now required authored inputs. v1 supports slow age-linked decline in baseline erectile function after the configured age threshold, bounded by the individual cap and settlement clamps. This is a simulation capacity score, not a clinical questionnaire or diagnosis.
 
-If either baseline or cap is missing, the functional lifecycle is deferred. The engine does not invent an individual sexual-function score from body measurements, RAPS values, training history or population averages.
+The lifecycle still fails closed for incomplete legacy/synthetic records instead of inventing missing physiology. New/updated male canonical seeds are prevented from entering that incomplete state by seed validation.
 
 Longitudinal male-aging studies support age-associated decline in sexual/erectile function, while erection physiology depends on integrated vascular, neurologic and cavernosal smooth-muscle responses.
 
@@ -55,15 +73,17 @@ remain context-dependent simulated state under `sexual_physiology_engine`.
 
 This lifecycle does not change them from ordinary eating, training, showering, resting or other unrelated actions. Future sexual-context behavior may drive those states from explicit arousal/interaction/health evidence.
 
-## Activation
+## Darian canonical exemplar
 
-Activation preserves represented adult structural measurements numerically and transfers their ownership to `sexual_anatomy_lifecycle_engine`.
+Darian's canonical profile now explicitly authors:
+- structural length 10.0 in;
+- structural girth 5.0 in;
+- baseline erectile function 95/100;
+- erection firmness physiological cap 98/100.
 
-For Darian's current exemplar:
-- length remains 10.0 in;
-- girth remains 5.0 in;
-- phase is `adult_stable`;
-- no baseline erectile-function/cap score is invented because those values are not currently authored.
+These are character-specific authored facts, not reusable-engine constants.
+
+Structural length/girth activate under `sexual_anatomy_lifecycle_engine` while preserving their values. Baseline erectile function is owned by `sexual_physiology_engine`; the firmness cap remains canonical `profile_core` input.
 
 All fields are intimate and retain profile sensitivity enforcement.
 
@@ -84,16 +104,18 @@ Primary/review literature used to bound v1:
 - Travison TG et al. *Changes in sexual function in middle-aged and older men: longitudinal data from the Massachusetts Male Aging Study*. J Am Geriatr Soc. 2004. PMID 15341552.
 - Shiri R et al. *The rate of deterioration of erectile function increases with age*. Scand J Urol. 2019. PMID 31023125.
 - Promodu K et al. *Penile length in the flaccid and erect states*. J Urol. 1996. PMID 8709382.
-- Aslan Y et al. / Habous et al.-type adult anthropometry literature is treated cautiously because age-size associations differ across cohorts; no universal adult structural shrink curve is encoded.
+- Adult anthropometry literature is treated cautiously because age-size associations differ across cohorts; no universal adult structural shrink curve is encoded.
 
 ## Validation
 
 Acceptance must prove:
+- male canonical seeds fail closed when required structural or erectile-physiology fields are missing;
+- erectile baseline/cap are numeric 0-100 and baseline does not exceed cap;
 - Darian's adult 10.0/5.0 structural values are preserved exactly on activation;
+- Darian's authored 95 baseline / 98 cap are present after initialization on a disposable production copy;
 - adult structural values remain stable without arbitrary age shrink;
 - a synthetic pubertal non-Darian male develops toward but never beyond authored adult targets;
 - an older synthetic actor with explicitly authored functional baseline/cap can undergo slow bounded functional decline;
-- missing functional baseline/cap remains missing rather than being invented;
 - privacy/intimate sensitivity remains unchanged;
 - production-copy activation does not mutate live production.
 
