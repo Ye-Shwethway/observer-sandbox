@@ -27,21 +27,47 @@ Roadmap synchronized: 2026-08-14
 - Schema: v4
 - World revision: `thorne-estate-v3.2-training-environment`
 - Autonomy: enabled / normal
-- Cognition: Gemini `gemini-3.5-flash-lite`
+- Cognition: Groq `openai/gpt-oss-20b`
 - Telegram: connected
-- Latest verified speed: `1.0x` at Deploy #165 readback; speed is Creator-controlled and must be re-read whenever exact cadence matters.
-- Latest deployment: Deploy #165 `31765700369` SUCCESS from PR #54 merge `d6742fcbaa06868ca7dbd58bac33ee09430d1a0d`.
+- Latest verified speed: `1.0x` at Deploy #169 readback.
+- Latest runtime-affecting deployment: Deploy #169 `31767701373` SUCCESS from PR #60 merge `b813913ced1d51733e873b89dca2b04907dad353`.
 
-Deploy #165 readback was healthy with schema v4 and preserved Gemini/Telegram configuration. Darian was idle in the Training Hall at `2025-05-04T17:18:00+00:00`, fatigue `34.935`. A pre-deploy retry record (`failures=8`, `last_error=ValueError`, no pending action) was still present; re-check only if it persists across fresh post-deploy decisions or causes a visible stall.
+Post-Deploy169 live acceptance cleared the prior retry-cap stall on a natural decision boundary: cognition `decision_calls` advanced `331 -> 332`, `autonomy_retry` became `null`, and Darian scheduled a 10-minute `rest` action in the Training Hall. No production acceleration or direct live state mutation was used.
 
 ## Completed foundation and observer layers
 
 - Foundation schema v4 — COMPLETE.
 - P0 Foundation & Remote Control — COMPLETE / LIVE VERIFIED.
-- P0.5 AI Provider Layer foundation — COMPLETE; configured Gemini cognition preserved.
+- P0.5 AI Provider Layer foundation — COMPLETE; generic OpenAI-compatible live cognition is now active with Groq.
 - P1 Living Darian Minimum — CONTINUOUS AUTONOMY LIVE.
 - P2 Telegram Observer MVP / browse / profile-control surfaces — COMPLETE / LIVE VERIFIED.
 - Runtime speed control, action ETA, autonomy timing/observability, research/monitor semantics — DEPLOYED.
+
+## Cognition resilience / Groq free-tier recovery
+
+Status: **COMPLETE / CI VERIFIED / DEPLOYED / LIVE VERIFIED**.
+
+The August 14 idle stall had multiple bounded causes rather than a single Gemini quota failure:
+
+1. Runtime-shaped training durations could be narrower than ordinary authored preferred durations, while later normalization could expand the selected duration and repeatedly fail the final training-load check with `ValueError`.
+2. Initial Groq catalog bootstrap returned HTTP 403 until OpenAI-compatible request headers/diagnostics were hardened.
+3. After Groq bound successfully, live cognition returned HTTP 413 because the free/on-demand TPM limit was `8000` while the prompt requested `8645` tokens. The prompt contained duplicated derived runtime metadata.
+
+Delivered corrections:
+- PR #55 — duration-stall correction, generic OpenAI-compatible live decision adapter, Groq provider/bootstrap; CI #579 SUCCESS; merge `fb0e045686b129e5ecadb13e1f55c8fffb60e82f`.
+- Deploy #166 — failed at first Groq catalog bootstrap; did not establish cognition acceptance.
+- PR #56 — catalog request hardening and deploy-resilient provider bootstrap; CI #581 SUCCESS; merge `33f79327e97790f3e3fca4c0317ef87da0eae8db`; Deploy #167 SUCCESS and Groq `openai/gpt-oss-20b` bound.
+- PR #57 — live provider HTTP error detail preservation; CI #583 SUCCESS; merge `cfcd9f03fe660e8438bb2a74e2adac2b041a77f2`; Deploy #168 SUCCESS.
+- PR #58/#59 — read-only latest autonomy-error observability plus workflow syntax correction; current Runtime Read is healthy and does not induce model traffic.
+- PR #60 — semantic-preserving cognition prompt compaction for the `8000` TPM budget; CI #589 SUCCESS; merge `b813913ced1d51733e873b89dca2b04907dad353`; post-merge CI #590 and Deploy #169 SUCCESS.
+
+Current semantics:
+- provider HTTP/quota/transport failures surface as `AIDecisionError` with bounded diagnostics;
+- authoritative action/target pairs remain strict;
+- runtime-shaped duration bounds remain authoritative during planning and normalization;
+- deterministic training-load validation remains final authority;
+- provider changes do not silently hide deterministic validation failures;
+- prompt compaction removes duplicated derived context while preserving decision principles, action authority, top-level load status, resource context, and character grounding.
 
 ## Training and physiology
 
@@ -67,7 +93,7 @@ Current v1 budgets:
 - rolling 6-hour limit: `120` effective minutes;
 - rolling 24-hour limit: `180` effective minutes.
 
-Autonomous cognition receives the derived load status. Train-option duration is capped to the remaining budget; training options disappear when the remaining budget cannot support the minimum legal session; the final model-selected duration is checked again before scheduling.
+Autonomous cognition receives the derived load status. Train-option duration is capped to the remaining budget; training options disappear when the remaining budget cannot support the minimum legal session; the final model-selected duration is checked again before scheduling. Runtime-shaped legal duration bounds now also override ordinary authored planning preferences when tighter.
 
 Short rest/fatigue recovery therefore does not erase recent training dose. No schema v5, new canonical physiology field, universal injury model, or Mind Engine was introduced.
 
@@ -111,7 +137,7 @@ Current semantics:
 - the midday autonomy policy no longer advertises generic equipment checks as productive default behavior;
 - cognition is explicitly allowed to choose ordinary non-training activity or downtime instead of manufacturing fake productivity when training is unavailable.
 
-Focused tests cover the observed room-hopping inspection fallback while preserving discovery of unknown inspect-only objects.
+The first healthy post-recovery live decision selected ordinary `rest`, not a generic equipment inspection. This is directionally consistent with the intended guard; longer-run behavior should still be observed naturally before declaring a behavioral distribution.
 
 ## Physical progression state
 
@@ -175,10 +201,11 @@ For ordinary work, use focused tests + CI and the standard automatic deploy. Use
 
 ## Exact resume point
 
-Observe natural production behavior after **Object Familiarity / Inspect Utility Guard v1**.
+Continue **natural read-only observation** after the cognition-recovery/Groq migration and Object Familiarity guard.
 
-The immediate question is whether Darian now avoids room-hopping through familiar equipment for generic inspections when his training-load budget blocks further exercise, and instead chooses meaningful non-training activity or ordinary downtime.
+Immediate questions:
+- Does the old retry-cap stall stay cleared across ordinary fresh decision boundaries?
+- Does Groq remain comfortably inside normal free-tier request limits after prompt compaction?
+- When training load blocks further exercise, does Darian continue to avoid familiar-equipment inspect-room-hopping and instead select meaningful non-training activity or ordinary downtime?
 
-Also verify whether the pre-deploy `ValueError` retry record clears on fresh autonomous decisions. Investigate only if it persists or causes observable stalling.
-
-Do not build the full Character Memory Engine merely to solve familiarity, and do not start Speed progression without fresh Creator authorization.
+Do not build the full Character Memory Engine merely to solve familiarity. Do not start forced equipment rotation, Speed progression, or schema v5 without fresh Creator authorization.
