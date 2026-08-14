@@ -9,6 +9,11 @@ from .simulation import action_definition, local_objects, reachable_rooms
 from .training_methods import training_profile_for_target
 
 
+MEANINGFUL_RESOURCE_CAPABILITIES = {
+    "train", "use", "read", "eat", "drink", "shower", "sleep", "rest", "research", "monitor",
+}
+
+
 def _action_definitions(conn: sqlite3.Connection) -> list[dict[str, Any]]:
     return [
         action_definition(conn, row["action_type"])
@@ -111,3 +116,70 @@ def enrich_options_with_usage(
             row["recent_usage"] = dict(recent)
         enriched.append(row)
     return enriched
+
+
+def familiar_object_targets(
+    conn: sqlite3.Connection,
+    actor_id: str,
+    room_id: str,
+) -> tuple[set[str], dict[str, str]]:
+    """Derive a minimal familiarity proxy without introducing a memory schema.
+
+    Functional authored resources are treated as established resources rather than
+    objects that need routine re-inspection. Any object the actor has already
+    completed an action against is also familiar, including inspect-only objects
+    after their first meaningful look.
+    """
+    familiar: set[str] = set()
+    basis: dict[str, str] = {}
+
+    for obj in local_objects(conn, room_id):
+        capabilities = {str(value) for value in obj.get("capabilities", [])}
+        if capabilities & MEANINGFUL_RESOURCE_CAPABILITIES:
+            target = str(obj["id"])
+            familiar.add(target)
+            basis[target] = "established_functional_resource"
+
+    rows = conn.execute(
+        "SELECT payload_json FROM events WHERE actor_id=? AND event_type='action_completed' ORDER BY id DESC",
+        (actor_id,),
+    ).fetchall()
+    for row in rows:
+        payload = json.loads(row["payload_json"] or "{}")
+        target = payload.get("target")
+        if isinstance(target, str):
+            familiar.add(target)
+            basis[target] = "prior_interaction"
+    return familiar, basis
+
+
+def shape_inspect_options_for_familiarity(
+    conn: sqlite3.Connection,
+    actor_id: str,
+    *,
+    room_id: str,
+    action_options: list[dict[str, Any]],
+) -> tuple[list[dict[str, Any]], dict[str, Any]]:
+    """Remove routine inspect choices for resources that are already familiar.
+
+    This is choice shaping, not a persistent memory engine. Inspect-only unknown
+    objects remain available once; after any completed interaction they become
+    familiar through event history.
+    """
+    familiar, basis = familiar_object_targets(conn, actor_id, room_id)
+    suppressed: list[dict[str, str]] = []
+    filtered: list[dict[str, Any]] = []
+    for option in action_options:
+        target = option.get("target")
+        if option.get("action") == "inspect" and isinstance(target, str) and target in familiar:
+            suppressed.append({"target": target, "basis": basis.get(target, "familiar")})
+            continue
+        filtered.append(option)
+    return filtered, {
+        "source": "object-familiarity-inspect-utility-v1",
+        "suppressed_inspect_count": len(suppressed),
+        "suppressed": suppressed,
+        "guidance": (
+            "Familiar stable resources are not offered for routine inspection. Inspect remains useful for genuinely unknown inspect-only objects or future explicit change/investigation signals."
+        ),
+    }
