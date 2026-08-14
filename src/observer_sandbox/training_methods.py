@@ -13,6 +13,8 @@ from functools import lru_cache
 from pathlib import Path
 from typing import Any
 
+from .training_anatomy import movement_anatomy_evidence, movement_options, validate_selected_movements
+
 
 REPO_ROOT = Path(__file__).resolve().parents[2]
 TRAINING_METHODS_PATH = REPO_ROOT / "config" / "training_methods.v1.json"
@@ -38,6 +40,9 @@ def training_method_definition(
     method["method_id"] = method_id
     method["source"] = str(source.get("evidence_revision", "training-method-semantics-v1"))
     method["catalog_revision"] = str(source.get("revision", "training-method-semantics-v2"))
+    movement_ids = [str(item) for item in method.get("movement_pattern_ids", []) if isinstance(item, str)]
+    if movement_ids:
+        method["movement_options"] = movement_options(movement_ids)
     return method
 
 
@@ -69,6 +74,26 @@ def training_profile_for_target(
     return method
 
 
+def movement_ids_for_target(
+    target: str | None,
+    *,
+    catalog: dict[str, Any] | None = None,
+) -> tuple[str, ...]:
+    profile = training_profile_for_target(target, catalog=catalog)
+    if profile is None:
+        return ()
+    return tuple(str(item) for item in profile.get("movement_pattern_ids", []) if isinstance(item, str))
+
+
+def validate_training_movements_for_target(
+    target: str | None,
+    selected: list[str] | tuple[str, ...] | None,
+    *,
+    catalog: dict[str, Any] | None = None,
+) -> tuple[str, ...]:
+    return validate_selected_movements(selected, allowed=movement_ids_for_target(target, catalog=catalog))
+
+
 def enrich_training_action_options(
     options: list[dict[str, Any]],
     *,
@@ -91,6 +116,7 @@ def training_method_evidence(
     action_name: str,
     target: str | None,
     training_load: dict[str, Any] | None,
+    training_movements: list[str] | tuple[str, ...] | None = None,
     catalog: dict[str, Any] | None = None,
 ) -> dict[str, Any] | None:
     if action_name != "train" or not isinstance(training_load, dict):
@@ -99,7 +125,8 @@ def training_method_evidence(
     profile = training_profile_for_target(target, catalog=source)
     if profile is None:
         return None
-    return {
+    selected = validate_training_movements_for_target(target, training_movements, catalog=source)
+    evidence: dict[str, Any] = {
         "target": target,
         "method_id": profile["method_id"],
         "method_name": profile["method_name"],
@@ -114,6 +141,10 @@ def training_method_evidence(
         "source": profile["source"],
         "catalog_revision": profile["catalog_revision"],
     }
+    anatomy = movement_anatomy_evidence(selected)
+    if anatomy is not None:
+        evidence["movement_anatomy"] = anatomy
+    return evidence
 
 
 def training_method_evidence_from_event(
@@ -123,9 +154,12 @@ def training_method_evidence_from_event(
 ) -> dict[str, Any] | None:
     if payload.get("action") != "train":
         return None
+    conditions = payload.get("conditions")
+    movements = conditions.get("training_movements") if isinstance(conditions, dict) else None
     return training_method_evidence(
         action_name="train",
         target=payload.get("target"),
         training_load=payload.get("training_load"),
+        training_movements=movements if isinstance(movements, list) else None,
         catalog=catalog,
     )
