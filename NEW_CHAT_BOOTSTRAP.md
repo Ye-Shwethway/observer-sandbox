@@ -26,13 +26,15 @@ Production-copy validation is optional, not mandatory. Use it only for genuinely
 - schema: v4
 - world revision: `thorne-estate-v3.2-training-environment`
 - autonomy: enabled / normal
-- latest verified speed: `1.0x` at Deploy #164 readback; re-read whenever exact cadence matters
+- latest verified speed: `1.0x` at Deploy #165 readback; re-read whenever exact cadence matters
 - cognition: Gemini `gemini-3.5-flash-lite`
 - Telegram: connected
 
-Latest deployment: **Deploy #164 `31739837957` SUCCESS** from PR #53 merge `701599074e9e9824384e624f11c288feb07d0924`.
+Latest deployment: **Deploy #165 `31765700369` SUCCESS** from PR #54 merge `d6742fcbaa06868ca7dbd58bac33ee09430d1a0d`.
 
-Deploy #164 readback verified service active/healthy, schema v4, autonomy enabled/normal, Gemini binding preserved, Telegram connected, and Darian at `2025-05-04T15:26:00+00:00` in the Living Room reading with fatigue `38.235`.
+Deploy #165 readback verified service active/healthy, schema v4, autonomy enabled/normal, Gemini binding preserved, Telegram connected, and Darian at `2025-05-04T17:18:00+00:00` in the Training Hall, idle, with fatigue `34.935`.
+
+The readback also preserved a pre-deploy autonomy retry record (`failures=8`, `last_error=ValueError`, no pending action). Treat that as an observation item rather than evidence of a failed deployment. If it persists across fresh post-deploy decision boundaries, inspect the decision error separately.
 
 ## Environment and training methods
 
@@ -46,16 +48,7 @@ Status: **COMPLETE / CI VERIFIED / DEPLOYED**.
 
 PR #50 merged as `7516f6c09a371803508f67a1575d6ce83a170de2`; CI #557 succeeded; Deploy #161 succeeded.
 
-Cognition now receives:
-- the full legal current-room action/resource option set produced by generic capability matching;
-- one-hop reachable-location resource/action/training-method previews for movement planning;
-- strict move-first semantics for distant resources;
-- recent action-target usage metadata as context (`recent_uses`, last simulated use, repeated flag), never as a hard repetition ban;
-- resource-aware guidance to consider sensible variety when equivalent choices exist.
-
-Focused tests prove all 10 Home Gym training resources are exposed to cognition, connected-room resources are visible for planning without becoming directly actionable, and repeated Free Weights use remains legal while being marked as recently repeated.
-
-No Mind Engine, resource scoring system, forced rotation, schema change, or progression formula change was added.
+Cognition receives the full legal current-room resource/action set, one-hop reachable-location previews, strict move-first semantics for distant resources, and recent action-target usage metadata for sensible variety. No forced rotation or resource-scoring Mind Engine was added.
 
 ## Training Session Load & Recovery Guard v1
 
@@ -63,17 +56,28 @@ Status: **COMPLETE / CI VERIFIED / DEPLOYED**.
 
 PR #53 tested head `4c8d8f3caa3814f2def3c168e76b9d426bf37416`; CI #570 / run `31739634403` succeeded; merge `701599074e9e9824384e624f11c288feb07d0924`; Deploy #164 / run `31739837957` succeeded.
 
-The guard derives recent training dose from completed `action_instances` and persisted effective-training-load evidence. It adds no new canonical physiology field and no schema change.
-
-Current v1 budgets:
+The guard derives recent training dose from completed action history and persisted effective-training-load evidence. Current v1 budgets are:
 - current session: `90` effective minutes;
-- a session resets after more than `120` simulated minutes without training;
+- session reset after more than `120` simulated minutes without training;
 - rolling 6 hours: `120` effective minutes;
 - rolling 24 hours: `180` effective minutes.
 
-Cognition receives a `training_load_guard` view. Train options are capped to the remaining effective-load budget or removed when even the minimum legal train duration cannot fit. A chosen training duration is checked again against the same budget before becoming an autonomous action.
+Train options are capped/removed based on remaining effective-load budget, and the selected duration is checked again before scheduling. Short-term fatigue recovery therefore does not erase recent training dose. No new schema field, injury model, or Mind Engine was introduced.
 
-Short-term fatigue recovery therefore no longer erases recent training dose. This is a deterministic behavior guard, not a Mind Engine or long-horizon workout planner.
+## Object Familiarity / Inspect Utility Guard v1
+
+Status: **COMPLETE / CI VERIFIED / DEPLOYED**.
+
+PR #54 final tested head `674de824acf69fc4209e59e649364d0ece3696f5`; CI #575 / run `31765655658` succeeded; merge `d6742fcbaa06868ca7dbd58bac33ee09430d1a0d`; Deploy #165 / run `31765700369` succeeded. Post-merge CI #576 also succeeded.
+
+This is a bounded bridge, not a full Character Memory Engine. Cognition now derives inspection familiarity from existing world capabilities plus event history:
+- established functional estate resources are treated as familiar and low-value routine `inspect` options are suppressed;
+- genuinely unknown inspect-only objects may still receive a first-look inspection opportunity;
+- prior interaction/history can establish familiarity without adding a new memory schema;
+- the autonomy policy no longer advertises generic equipment checks as default midday productivity;
+- guidance explicitly prefers meaningful non-training activity or ordinary downtime over manufacturing fake productive inspection loops when training is unavailable.
+
+Focused tests cover the observed room-hopping fallback pattern while preserving first-look inspection for an unknown inspect-only object.
 
 ## Progression state
 
@@ -91,8 +95,10 @@ Short-term fatigue recovery therefore no longer erases recent training dose. Thi
 
 ## Exact resume point
 
-Observe autonomous behavior with the deployed **Training Session Load & Recovery Guard v1**.
+Observe autonomous behavior after **Object Familiarity / Inspect Utility Guard v1**.
 
-Verify from natural production behavior that Darian stops or shifts to recovery/non-training activity when his effective session/recent-load budget is exhausted, and that a temporary fall in systemic fatigue does not immediately reopen an excessive training burst.
+Verify naturally that training-load blocking no longer causes Darian to roam through familiar estate resources performing generic equipment inspections. Familiar stable equipment should normally disappear as low-value `inspect` choices, while genuinely novel/unknown inspect-only objects remain discoverable.
 
-Do not add a Mind Engine, forced equipment rotation, or Speed progression without fresh Creator authorization.
+Also watch whether the pre-deploy `ValueError` retry record clears on fresh autonomous decisions. Investigate it only if it persists or causes observable stalls.
+
+Do not build the full Character Memory Engine, forced equipment rotation, or Speed progression without fresh Creator authorization.
