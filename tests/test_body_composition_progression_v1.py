@@ -1,14 +1,10 @@
 import json
 from datetime import datetime, timedelta
 
-from observer_sandbox.body_composition_progression import (
-    body_composition_snapshot,
-    maybe_settle_body_composition,
-)
+from observer_sandbox.body_composition_progression import body_composition_snapshot, maybe_settle_body_composition
 from observer_sandbox.db import connect
 from observer_sandbox.runtime import initialize
 from observer_sandbox.simulation import snapshot
-
 
 ACTOR = "char_darian"
 
@@ -20,7 +16,7 @@ def _profile_row(conn, key):
     ).fetchone()
 
 
-def _insert_hour(conn, start: datetime, index: int, *, train: bool = False, eat: bool = False):
+def _insert_hour(conn, start: datetime, index: int, *, train: bool = False, eat: bool = False, resistance: bool = True):
     action_start = start + timedelta(hours=index)
     action_end = action_start + timedelta(hours=1)
     payload = {
@@ -28,7 +24,7 @@ def _insert_hour(conn, start: datetime, index: int, *, train: bool = False, eat:
         "duration_minutes": 60,
         "action_started_sim_time": action_start.isoformat(),
         "action_ended_sim_time": action_end.isoformat(),
-        "energy_expenditure": {"estimated_kcal": 95.0 if not train else 420.0},
+        "energy_expenditure": {"estimated_kcal": 420.0 if train else 95.0},
     }
     if eat:
         payload["nutrition_intake"] = {
@@ -41,7 +37,9 @@ def _insert_hour(conn, start: datetime, index: int, *, train: bool = False, eat:
     if train:
         payload["training_method"] = {
             "source": "training-method-semantics-v1",
-            "method_id": "strength_resistance",
+            "method_id": "free_weight_strength" if resistance else "steady_state_cardio",
+            "family": "resistance" if resistance else "conditioning",
+            "workload_channels": ["resistance"] if resistance else ["conditioning"],
             "effective_load": {"effective_minutes": 60.0},
         }
     conn.execute(
@@ -79,14 +77,11 @@ def test_bc2_complete_daily_window_mutates_weight_and_bf_atomically_and_bounded(
     with connect(db) as conn:
         base_state = snapshot(conn, ACTOR)
         base = datetime.fromisoformat(base_state["sim_time"])
-        bootstrap = maybe_settle_body_composition(conn, ACTOR, as_of_sim_time=base.isoformat(), state=base_state)
-        assert bootstrap["status"] == "bootstrapped"
+        assert maybe_settle_body_composition(conn, ACTOR, as_of_sim_time=base.isoformat(), state=base_state)["status"] == "bootstrapped"
         before = body_composition_snapshot(conn, ACTOR)
-
         for hour in range(24):
             _insert_hour(conn, base, hour, train=(hour == 8), eat=(hour in {2, 7, 13, 19}))
         conn.commit()
-
         end = base + timedelta(hours=24)
         state = dict(base_state)
         state.update({"sim_time": end.isoformat(), "fatigue": 12.0, "energy": 78.0, "hunger": 35.0, "sleepiness": 18.0, "thirst": 20.0})
@@ -96,19 +91,43 @@ def test_bc2_complete_daily_window_mutates_weight_and_bf_atomically_and_bounded(
             "SELECT payload_json,state_changes_json FROM events WHERE actor_id=? AND event_type='body_composition_progression_settled' ORDER BY id DESC LIMIT 1",
             (ACTOR,),
         ).fetchone()
-        payload = json.loads(event["payload_json"])
-        changes = json.loads(event["state_changes_json"])
+        payload, changes = json.loads(event["payload_json"]), json.loads(event["state_changes_json"])
 
     assert result["status"] == "applied"
-    assert after["weight_lb"] != before["weight_lb"] or after["body_fat_pct"] != before["body_fat_pct"]
     assert abs(after["weight_lb"] - before["weight_lb"]) <= 0.55
-    assert abs(after["weight_lb"] - (after["lean_mass_lb"] + after["fat_mass_lb"])) < 1e-5
+    assert abs(after["weight_lb"] - after["lean_mass_lb"] - after["fat_mass_lb"]) < 1e-5
     assert abs(after["body_fat_pct"] - 100.0 * after["fat_mass_lb"] / after["weight_lb"]) < 1e-4
     assert payload["energy_balance"]["complete"] is True
-    assert payload["training_effective_minutes"] == 60.0
+    assert payload["resistance_training_effective_minutes"] == 60.0
     assert payload["partition"]["forbes_ffm_share"] > 0.0
     assert payload["rt_recomposition"]["protein_factor"] > 0.0
+    assert payload["rt_recomposition"]["training_factor"] == 1.0
     assert "body.weight_lb" in changes and "body.body_fat_pct" in changes
+
+
+def test_bc2_non_resistance_training_does_not_create_hypertrophy_signal(tmp_path):
+    db = tmp_path / "observer.sqlite3"
+    initialize(db)
+    with connect(db) as conn:
+        base_state = snapshot(conn, ACTOR)
+        base = datetime.fromisoformat(base_state["sim_time"])
+        maybe_settle_body_composition(conn, ACTOR, as_of_sim_time=base.isoformat(), state=base_state)
+        for hour in range(24):
+            _insert_hour(conn, base, hour, train=(hour == 8), resistance=False, eat=(hour in {2, 7, 13, 19}))
+        conn.commit()
+        end = base + timedelta(hours=24)
+        state = dict(base_state)
+        state.update({"sim_time": end.isoformat(), "fatigue": 10.0, "energy": 80.0})
+        maybe_settle_body_composition(conn, ACTOR, as_of_sim_time=end.isoformat(), state=state)
+        row = conn.execute(
+            "SELECT payload_json FROM events WHERE actor_id=? AND event_type='body_composition_progression_settled' ORDER BY id DESC LIMIT 1",
+            (ACTOR,),
+        ).fetchone()
+        payload = json.loads(row["payload_json"])
+
+    assert payload["resistance_training_effective_minutes"] == 0.0
+    assert payload["rt_recomposition"]["training_factor"] == 0.0
+    assert payload["rt_recomposition"]["rt_ffm_gain_lb"] == 0.0
 
 
 def test_bc2_incomplete_window_advances_cursor_without_body_mutation(tmp_path):
@@ -121,7 +140,6 @@ def test_bc2_incomplete_window_advances_cursor_without_body_mutation(tmp_path):
         before = body_composition_snapshot(conn, ACTOR)
         _insert_hour(conn, base, 0, eat=True)
         conn.commit()
-
         end = base + timedelta(hours=24)
         state = dict(base_state)
         state["sim_time"] = end.isoformat()
