@@ -8,6 +8,7 @@ import urllib.request
 from typing import Any
 
 from .ai import AIConfigurationError, resolve_binding
+from .ai_fallback import get_fallback_binding, record_fallback_use
 from .duration_planning import enrich_action_options, normalize_duration
 from .secrets import load_runtime_secrets
 
@@ -95,8 +96,6 @@ def _compact_prompt_state(state: dict[str, Any]) -> dict[str, Any]:
         compact_options: list[dict[str, Any]] = []
         for raw in enrich_action_options(options):
             option = dict(raw)
-            # The same load status already exists once at top level. Keep the
-            # authoritative per-option duration bounds but not repeated copies.
             option.pop("training_load_guard", None)
             compact_options.append(option)
         prompt_state["action_options"] = compact_options
@@ -189,6 +188,61 @@ def _generate_gemini(provider: sqlite3.Row, key: str, model_id: str, prompt: str
         raise AIDecisionError("Gemini returned an unusable structured decision") from exc
 
 
+def _generate_for_binding(
+    conn: sqlite3.Connection,
+    binding: dict[str, Any],
+    prompt: str,
+) -> dict[str, Any]:
+    provider, key = _provider_and_key(conn, str(binding["provider_id"]))
+    parameters = binding.get("parameters") or {}
+    adapter = str(provider["adapter_type"])
+    if adapter == "nanogpt":
+        return _generate_nanogpt(provider, key, str(binding["model_id"]), prompt, parameters)
+    if adapter == "gemini":
+        return _generate_gemini(provider, key, str(binding["model_id"]), prompt, parameters)
+    if adapter == "openai_compatible":
+        return _generate_openai_compatible(provider, key, str(binding["model_id"]), prompt, parameters)
+    raise AIConfigurationError(f"P1 live decision adapter not yet enabled for provider type: {adapter}")
+
+
+def _provider_decision_with_fallback(
+    conn: sqlite3.Connection,
+    *,
+    character_id: str,
+    role: str,
+    primary_binding: dict[str, Any],
+    prompt: str,
+) -> dict[str, Any]:
+    try:
+        return _generate_for_binding(conn, primary_binding, prompt)
+    except (AIDecisionError, AIConfigurationError) as primary_exc:
+        fallback = get_fallback_binding(conn, character_id=character_id, role=role)
+        if not fallback:
+            raise
+        primary_pair = (str(primary_binding["provider_id"]), str(primary_binding["model_id"]))
+        fallback_pair = (str(fallback["provider_id"]), str(fallback["model_id"]))
+        if fallback_pair == primary_pair:
+            raise
+        try:
+            decision = _generate_for_binding(conn, fallback, prompt)
+        except (AIDecisionError, AIConfigurationError) as fallback_exc:
+            raise AIDecisionError(
+                "Primary cognition provider/model failed and configured fallback also failed. "
+                f"Primary: {str(primary_exc)[:450]} | Fallback: {str(fallback_exc)[:450]}"
+            ) from fallback_exc
+        record_fallback_use(
+            conn,
+            character_id=character_id,
+            role=role,
+            primary_provider_id=primary_pair[0],
+            primary_model_id=primary_pair[1],
+            fallback_provider_id=fallback_pair[0],
+            fallback_model_id=fallback_pair[1],
+            primary_error=str(primary_exc),
+        )
+        return decision
+
+
 def _bounds(value: Any) -> tuple[int, int] | None:
     if not isinstance(value, (list, tuple)) or len(value) != 2:
         return None
@@ -231,17 +285,18 @@ def generate_character_decision(
     binding = resolve_binding(conn, role=role, character_id=character_id)
     if binding is None:
         raise AIConfigurationError(f"No AI binding resolved for {character_id}/{role}")
-    provider, key = _provider_and_key(conn, binding["provider_id"])
     prompt = _decision_prompt(state, available_actions)
-    parameters = binding.get("parameters") or {}
-    if provider["adapter_type"] == "nanogpt":
-        decision = _generate_nanogpt(provider, key, binding["model_id"], prompt, parameters)
-    elif provider["adapter_type"] == "gemini":
-        decision = _generate_gemini(provider, key, binding["model_id"], prompt, parameters)
-    elif provider["adapter_type"] == "openai_compatible":
-        decision = _generate_openai_compatible(provider, key, binding["model_id"], prompt, parameters)
-    else:
-        raise AIConfigurationError(f"P1 live decision adapter not yet enabled for provider type: {provider['adapter_type']}")
+    decision = _provider_decision_with_fallback(
+        conn,
+        character_id=character_id,
+        role=role,
+        primary_binding=binding,
+        prompt=prompt,
+    )
+
+    # Validation remains outside the provider/fallback boundary. An invalid
+    # action/target/duration from a responding model is a deterministic
+    # decision-validation failure and must never be hidden by provider fallback.
     if not isinstance(decision, dict):
         raise AIDecisionError("AI decision must be a JSON object")
     required = {"action", "duration_minutes", "target", "reason"}
