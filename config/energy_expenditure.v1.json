@@ -1,0 +1,45 @@
+{
+  "revision": "energy-expenditure-evidence-v1",
+  "resting_reference": {
+    "formula": "mifflin-st-jeor-1990",
+    "supported_sex_values": ["male", "female"],
+    "notes": "Resting energy is an estimate for healthy adults. Activity multipliers use 2024 Compendium MET values as intensity anchors and are scaled against the actor-specific resting estimate for simulation evidence; they are not direct calorimetry."
+  },
+  "action_multipliers": {
+    "sleep": 1.0,
+    "rest": 1.3,
+    "idle": 1.3,
+    "read": 1.3,
+    "eat": 1.5,
+    "drink": 1.5,
+    "shower": 2.0,
+    "inspect": 2.0,
+    "use": 2.0,
+    "move": 3.5,
+    "train": 6.0
+  },
+  "training_target_multipliers": {
+    "obj_thorne_estate_gym_free_weights": 6.0,
+    "obj_thorne_estate_gym_heavy_bag": 5.8,
+    "obj_thorne_estate_gym_olympic_platform": 6.0,
+    "obj_thorne_estate_gym_power_rack": 6.0,
+    "obj_thorne_estate_gym_adjustable_bench": 5.0,
+    "obj_thorne_estate_gym_strength_machines": 5.0,
+    "obj_thorne_estate_gym_high_speed_treadmill": 8.0,
+    "obj_thorne_estate_gym_rowing_ergometer": 7.0,
+    "obj_thorne_estate_gym_speed_agility_station": 7.5,
+    "obj_thorne_estate_gym_altitude_chamber": 5.0,
+    "obj_thorne_estate_gym_mobility_stretching": 2.3,
+    "obj_thorne_estate_training_combat_mat": 7.8,
+    "obj_thorne_estate_training_practice_dummy": 5.8,
+    "obj_thorne_estate_training_ai_combat_sim": 9.3,
+    "obj_thorne_estate_training_obstacle_course": 5.0,
+    "obj_thorne_estate_training_combat_pit": 7.8,
+    "obj_thorne_estate_training_vr_tactical_sim": 2.3
+  },
+  "references": {
+    "mifflin_st_jeor": "Mifflin MD et al. Am J Clin Nutr. 1990;51:241-247. PMID 2305711.",
+    "compendium": "Herrmann SD et al. 2024 Adult Compendium of Physical Activities. J Sport Health Sci. 2024. PMID 38242596.",
+    "selected_anchors": "Eating sitting 1.5; showering 2.0; moderate walking about 3.5; vigorous resistance training about 6.0; punching bag 5.8; sparring 7.8; obstacle/boot-camp work 5.0; general yoga/mobility about 2.3."
+  }
+}

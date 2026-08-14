@@ -1,0 +1,27 @@
+{
+  "revision": "nutrition-evidence-v1",
+  "basis": "Authored simulation portions for current generic edible resources. Values are food-content policy, not derived from hunger/energy need scores.",
+  "profiles": {
+    "obj_thorne_estate_kitchen_pantry": {
+      "portion_label": "mixed pantry meal",
+      "energy_kcal": 650.0,
+      "protein_g": 35.0,
+      "carbohydrate_g": 75.0,
+      "fat_g": 23.0
+    },
+    "obj_thorne_estate_food_storage_provisions": {
+      "portion_label": "stored provisions meal",
+      "energy_kcal": 700.0,
+      "protein_g": 40.0,
+      "carbohydrate_g": 80.0,
+      "fat_g": 24.0
+    },
+    "obj_thorne_estate_kitchen_meal_ingredients": {
+      "portion_label": "prepared balanced meal",
+      "energy_kcal": 800.0,
+      "protein_g": 50.0,
+      "carbohydrate_g": 90.0,
+      "fat_g": 27.0
+    }
+  }
+}

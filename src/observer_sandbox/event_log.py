@@ -5,6 +5,7 @@ import sqlite3
 import uuid
 from typing import Any
 
+from .nutrition_energy import energy_expenditure_evidence, nutrition_intake_evidence
 from .training_methods import training_method_evidence
 
 
@@ -25,6 +26,47 @@ def _enrich_training_method(payload: dict[str, Any], event_type: str) -> dict[st
     return enriched
 
 
+def _enrich_nutrition_energy(
+    conn: sqlite3.Connection,
+    payload: dict[str, Any],
+    event_type: str,
+    *,
+    actor_id: str | None,
+    sim_time: str,
+) -> dict[str, Any]:
+    if event_type != "action_completed" or not actor_id:
+        return payload
+    action_name = payload.get("action")
+    duration = payload.get("duration_minutes")
+    if not isinstance(action_name, str) or not isinstance(duration, (int, float)):
+        return payload
+    target = payload.get("target")
+    target_id = target if isinstance(target, str) else None
+    enriched = dict(payload)
+
+    if "nutrition_intake" not in enriched:
+        nutrition = nutrition_intake_evidence(action_name=action_name, target=target_id)
+        if nutrition is not None:
+            enriched["nutrition_intake"] = nutrition
+
+    if "energy_expenditure" not in enriched:
+        reference_time = payload.get("action_started_sim_time")
+        if not isinstance(reference_time, str):
+            reference_time = sim_time
+        energy = energy_expenditure_evidence(
+            conn,
+            actor_id,
+            action_name=action_name,
+            target=target_id,
+            duration_minutes=float(duration),
+            as_of_sim_time=reference_time,
+        )
+        if energy is not None:
+            enriched["energy_expenditure"] = energy
+
+    return enriched
+
+
 def record_event(
     conn: sqlite3.Connection,
     *,
@@ -40,6 +82,13 @@ def record_event(
 ) -> int:
     event_uuid = str(uuid.uuid4())
     event_payload = _enrich_training_method(dict(payload or {}), event_type)
+    event_payload = _enrich_nutrition_energy(
+        conn,
+        event_payload,
+        event_type,
+        actor_id=actor_id,
+        sim_time=sim_time,
+    )
     cur = conn.execute(
         """INSERT INTO events(
             sim_time,actor_id,event_type,payload_json,event_uuid,action_id,location_id,caused_by_event_id,state_changes_json
