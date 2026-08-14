@@ -6,7 +6,7 @@ from pathlib import Path
 
 from .composition_schema import migrate_composition_schema
 
-SCHEMA_VERSION = 4
+SCHEMA_VERSION = 5
 
 SCHEMA_SQL = """
 PRAGMA foreign_keys = ON;

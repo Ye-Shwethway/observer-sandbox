@@ -105,10 +105,21 @@ CREATE TABLE IF NOT EXISTS event_participants (
     PRIMARY KEY(event_id, entity_id, role)
 );
 
+CREATE TABLE IF NOT EXISTS inventory_stacks (
+    entity_id TEXT PRIMARY KEY REFERENCES entities(id) ON DELETE CASCADE,
+    quantity REAL NOT NULL CHECK(quantity >= 0),
+    unit TEXT NOT NULL,
+    seed_revision TEXT,
+    metadata_json TEXT NOT NULL DEFAULT '{}',
+    created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    updated_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
+);
+
 CREATE INDEX IF NOT EXISTS idx_action_instances_actor_status ON action_instances(actor_id, status);
 CREATE INDEX IF NOT EXISTS idx_action_instances_place_time ON action_instances(place_id, planned_sim_time);
 CREATE INDEX IF NOT EXISTS idx_active_modifiers_subject_time ON active_modifiers(subject_id, starts_sim_time, ends_sim_time);
 CREATE INDEX IF NOT EXISTS idx_event_participants_entity ON event_participants(entity_id, event_id);
+CREATE INDEX IF NOT EXISTS idx_inventory_stacks_quantity ON inventory_stacks(quantity);
 """
 
 

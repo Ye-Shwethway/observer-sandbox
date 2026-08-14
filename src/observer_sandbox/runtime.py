@@ -10,6 +10,7 @@ from .actor_selection import ensure_default_actor_id, resolve_actor_id
 from .ai import seed_builtin_providers
 from .composition_schema import seed_action_definitions
 from .db import connect, get_runtime_state, migrate
+from .inventory import seed_home_inventory
 from .profile_schema import seed_profile_field_definitions
 from .profile_schema_source_union import seed_source_union_extensions
 from .sexual_state_schema import seed_sexual_state_fields
@@ -39,6 +40,7 @@ def _initialize_conn(conn) -> None:
     seed_source_union_extensions(conn)
     seed_sexual_state_fields(conn)
     seed_home_and_darian(conn)
+    seed_home_inventory(conn)
     seed_action_definitions(conn)
     defaults = {
         "paused": False,
