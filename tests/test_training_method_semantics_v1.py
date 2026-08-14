@@ -25,6 +25,7 @@ EXPECTED_TARGETS = {
     "obj_thorne_estate_gym_rowing_ergometer",
     "obj_thorne_estate_gym_speed_agility_station",
     "obj_thorne_estate_gym_altitude_chamber",
+    "obj_thorne_estate_gym_mobility_stretching",
     "obj_thorne_estate_training_combat_mat",
     "obj_thorne_estate_training_practice_dummy",
     "obj_thorne_estate_training_ai_combat_sim",

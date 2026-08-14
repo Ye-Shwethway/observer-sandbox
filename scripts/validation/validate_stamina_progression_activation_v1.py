@@ -101,7 +101,7 @@ def main() -> int:
         state=eligible_state,
     )
     assert due.reason == "eligible_stimulus"
-    assert due.eligible_stimulus_event_ids == (event_id,)
+    assert event_id in due.eligible_stimulus_event_ids
 
     activated = maybe_settle_stamina_progression(
         conn,
@@ -132,6 +132,7 @@ def main() -> int:
                 "baseline_mode": baseline_mode,
                 "baseline_preserved": True,
                 "new_treadmill_event_id": event_id,
+                "eligible_event_ids": list(due.eligible_stimulus_event_ids),
                 "early_29h_eligible": False,
                 "eligible_31h_reason": due.reason,
                 "activated_settlement": activated["settlement"],

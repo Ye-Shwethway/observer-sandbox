@@ -29,6 +29,7 @@ GYM_TRAINING_TARGETS = {
     ("obj_thorne_estate_gym_rowing_ergometer", "Rowing Ergometer"),
     ("obj_thorne_estate_gym_speed_agility_station", "Speed & Agility Station"),
     ("obj_thorne_estate_gym_altitude_chamber", "Altitude Training Chamber"),
+    ("obj_thorne_estate_gym_mobility_stretching", "Mobility & Stretching Area"),
 }
 
 

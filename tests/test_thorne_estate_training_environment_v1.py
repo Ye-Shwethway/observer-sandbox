@@ -14,12 +14,13 @@ NEW_TRAINING_OBJECTS = {
     "obj_thorne_estate_gym_rowing_ergometer": "loc_thorne_estate_home_gym",
     "obj_thorne_estate_gym_speed_agility_station": "loc_thorne_estate_home_gym",
     "obj_thorne_estate_gym_altitude_chamber": "loc_thorne_estate_home_gym",
+    "obj_thorne_estate_gym_mobility_stretching": "loc_thorne_estate_home_gym",
 }
 
 
 def test_training_environment_config_matches_bounded_canonical_expansion() -> None:
     world = load_world_seed()
-    assert world["revision"] == "thorne-estate-v3.2-training-environment"
+    assert world["revision"] == "thorne-estate-v3.3-physical-attribute-training"
     by_id = {item["id"]: item for item in world["objects"]}
 
     for object_id, room_id in NEW_TRAINING_OBJECTS.items():
