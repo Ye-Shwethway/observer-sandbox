@@ -10,6 +10,7 @@ from .actor_runtime import pending_action
 from .agility_progression_activation import maybe_settle_agility_progression
 from .autonomy import autonomy_tick
 from .db import connect
+from .physical_attribute_progression import maybe_settle_physical_attribute_batch
 from .runtime import initialize
 from .secrets import load_runtime_secrets
 from .simulation import snapshot
@@ -57,6 +58,17 @@ def main() -> None:
                                 after = snapshot(conn, actor_id)
                             except Exception:
                                 pass
+
+                        try:
+                            maybe_settle_physical_attribute_batch(
+                                conn,
+                                actor_id,
+                                as_of_sim_time=str(after["sim_time"]),
+                                state=after,
+                            )
+                            after = snapshot(conn, actor_id)
+                        except Exception:
+                            pass
 
                         next_result = autonomy_tick(conn, actor_id=actor_id)
                         next_pending = next_result.get("pending") if next_result.get("state") == "planned" else None

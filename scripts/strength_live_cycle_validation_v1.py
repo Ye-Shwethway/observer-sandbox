@@ -95,7 +95,7 @@ def backup(live_db: Path, copy_db: Path) -> None:
 def validate(copy_db: Path) -> dict:
     with connect(copy_db) as conn:
         before_state = snapshot(conn, ACTOR)
-        before_strength = strength(conn)
+        overall_before_strength = strength(conn)
         available = [x for x in stimuli(conn) if x["id"] not in consumed(conn)]
         assert available, "no real unconsumed Strength stimulus in copied production DB"
         selected = available[-1]
@@ -112,15 +112,29 @@ def validate(copy_db: Path) -> dict:
 
         trace = []
         settled = None
+        settled_strength_before = None
+        settled_strength_after = None
         for _ in range(40):
             after = apply_action(conn, Action("rest", 240, None, "disposable Strength recovery validation"), ACTOR)
+            strength_before_step = strength(conn)
             result = maybe_settle_strength_progression(conn, ACTOR, as_of_sim_time=after["sim_time"], state=after)
+            strength_after_step = strength(conn)
             compact = result.get("settlement") or {}
-            trace.append({"sim_time": after["sim_time"], "fatigue": after["fatigue"], "reason": result["reason"], "consumed": compact.get("consumed_stimulus_event_ids") or []})
+            trace.append({
+                "sim_time": after["sim_time"],
+                "fatigue": after["fatigue"],
+                "reason": result["reason"],
+                "consumed": compact.get("consumed_stimulus_event_ids") or [],
+                "strength_before": strength_before_step,
+                "strength_after": strength_after_step,
+            })
             if selected["id"] in (compact.get("consumed_stimulus_event_ids") or []):
                 settled = result
+                settled_strength_before = strength_before_step
+                settled_strength_after = strength_after_step
                 break
         assert settled is not None, "real Strength stimulus never reached eligible settlement"
+        assert settled_strength_before is not None and settled_strength_after is not None
         compact = settled["settlement"]
         assert settled["reason"] == "eligible_stimulus"
         assert compact["positive_delta"] > 0
@@ -135,8 +149,8 @@ def validate(copy_db: Path) -> dict:
             assert math.isclose(expected, float(item["realized_delta"]), rel_tol=0, abs_tol=2e-9)
             expected_sum += float(item["realized_delta"])
         assert math.isclose(expected_sum, float(compact["positive_delta"]), rel_tol=0, abs_tol=2e-9)
-        after_strength = strength(conn)
-        assert math.isclose(after_strength, before_strength + float(compact["net_delta"]), rel_tol=0, abs_tol=1e-6)
+        assert math.isclose(settled_strength_after, settled_strength_before + float(compact["net_delta"]), rel_tol=0, abs_tol=1e-6)
+        final_strength = strength(conn)
         history = conn.execute("SELECT mode,authority FROM character_profile_history WHERE entity_id=? AND field_key=? ORDER BY id DESC LIMIT 1", (ACTOR, STRENGTH_KEY)).fetchone()
         assert history is not None and history["mode"] == "simulated" and history["authority"] == "strength-progression-settlement-v1"
         assert selected["id"] in consumed(conn)
@@ -149,8 +163,10 @@ def validate(copy_db: Path) -> dict:
             "real_stimulus": {"event_id": selected["id"], "sim_time": selected["sim_time"], "stimulus_units": selected["units"], "effective_minutes": selected["effective_minutes"]},
             "settlement": compact,
             "positive_evidence": evidence,
-            "strength_before": before_strength,
-            "strength_after": after_strength,
+            "strength_before_validation_loop": overall_before_strength,
+            "strength_before_selected_settlement": settled_strength_before,
+            "strength_after_selected_settlement": settled_strength_after,
+            "strength_after": final_strength,
             "boundary_trace": trace,
             "model_calls": 0,
             "telegram_calls": 0,
