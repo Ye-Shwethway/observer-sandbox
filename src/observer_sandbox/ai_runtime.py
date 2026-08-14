@@ -70,10 +70,42 @@ def _provider_and_key(conn: sqlite3.Connection, provider_id: str) -> tuple[sqlit
     return provider, key
 
 
-def _decision_prompt(state: dict[str, Any], available_actions: list[str]) -> str:
+def _compact_prompt_state(state: dict[str, Any]) -> dict[str, Any]:
+    """Remove duplicated derived metadata while preserving decision semantics."""
     prompt_state = dict(state)
-    if isinstance(prompt_state.get("action_options"), list):
-        prompt_state["action_options"] = enrich_action_options(prompt_state["action_options"])
+
+    policy = prompt_state.get("autonomy_policy")
+    if isinstance(policy, dict):
+        prompt_state["autonomy_policy"] = {
+            key: policy[key]
+            for key in ("policy_revision", "decision_principles", "reason_style")
+            if key in policy
+        }
+
+    familiarity = prompt_state.get("object_familiarity")
+    if isinstance(familiarity, dict):
+        prompt_state["object_familiarity"] = {
+            key: familiarity[key]
+            for key in ("source", "suppressed_inspect_count", "guidance")
+            if key in familiarity
+        }
+
+    options = prompt_state.get("action_options")
+    if isinstance(options, list):
+        compact_options: list[dict[str, Any]] = []
+        for raw in enrich_action_options(options):
+            option = dict(raw)
+            # The same load status already exists once at top level. Keep the
+            # authoritative per-option duration bounds but not repeated copies.
+            option.pop("training_load_guard", None)
+            compact_options.append(option)
+        prompt_state["action_options"] = compact_options
+
+    return prompt_state
+
+
+def _decision_prompt(state: dict[str, Any], available_actions: list[str]) -> str:
+    prompt_state = _compact_prompt_state(state)
     return (
         "You control one autonomous simulated human. Choose exactly one next action. "
         "Act consistently with the supplied character traits, preferences, habits, skills, routine guidance, recent events, current time, and physiological state. "
