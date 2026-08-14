@@ -21,23 +21,23 @@ Roadmap synchronized: 2026-08-14
 
 ## Current verified production baseline
 
-Latest live runtime deployment: **Deploy #178 `31801236464` SUCCESS**, PR #73 merge `9d1e3f77f62d5e9a044788dee089e6bcbba6bf77`.
+Latest live runtime deployment: **Deploy #179 `31812160413` SUCCESS**, PR #74 merge `edd345c317a52b702c00dd7889ad1eefffa51927`.
 
 Verified:
 - healthy/service active;
 - schema v5;
 - world `thorne-estate-v3.3-physical-attribute-training`;
 - `inventory_seed_revision=thorne-estate-inventory-v1`;
-- wealthy food reserve migration applied exactly once;
+- wealthy food reserve migration remains applied exactly once;
 - default actor `char_darian`;
 - autonomy enabled/normal, paused false, retry null, speed 1.0;
 - Gemini `gemini-3.1-flash-lite` primary preserved;
 - Groq `qwen/qwen3.6-27b` fallback preserved;
-- Telegram connected;
+- Telegram API connected;
 - decision calls 356;
 - Darian sleeping in Master Suite with Energy 82.127, Fatigue 11.045, Hunger 50.325, Thirst 21.3, Sleepiness 31.55, Cleanliness 99.466.
 
-Post-merge CI #642 succeeded. No forced action, production acceleration or model probe was used for Deploy #178 acceptance. `main` and reusable `test` were synchronized at the merge checkpoint.
+Post-merge CI #647 succeeded. No forced action, production acceleration or model probe was used for Deploy #179 acceptance.
 
 ## Completed runtime/profile foundations
 
@@ -136,14 +136,14 @@ Verified final evidence:
 - post-merge CI #642 SUCCESS;
 - Deploy #178 SUCCESS with live reserve marker, preserved sim/runtime/body/cognition state and Telegram API connectivity.
 
-## Food Nutrition Semantics & Visibility v1 — CURRENT PR #74
+## Food Nutrition Semantics & Visibility v1
 
-Purpose: expose already-authored universal food nutrition semantics before building natural eating decisions.
+**COMPLETE / DEPLOYED** via PR #74 / Deploy #179.
 
 Invariant:
 `universal food definition + requested/default portion -> deterministic nutrient facts`
 
-Current candidate:
+Deployed:
 - reusable definition-scoped nutrition projection in `nutrition_facts.py`;
 - no stock/location/character identity in nutrition arithmetic;
 - default portion falls back to the authored nutrition basis when needed;
@@ -153,17 +153,22 @@ Current candidate:
 - facts remain viewable independently of current stock quantity;
 - no schema change, inventory mutation, new nutrition values or LLM call.
 
-Examples under regression:
+Regression examples:
 - cooked chicken breast default 200 g -> 330 kcal / 62 g protein / 0 g carbs / 7.2 g fat from the universal 100 g basis;
 - apple default 1 piece -> 95 kcal / 0.5 g protein / 25 g carbs / 0.3 g fat.
 
-Candidate validation before canonical-doc tail:
-- CI #643 SUCCESS;
-- Inventory Operations Acceptance #16 SUCCESS.
+Final evidence:
+- initial CI #643 SUCCESS;
+- initial Inventory Operations Acceptance #16 SUCCESS;
+- final-head CI #646 SUCCESS;
+- final-head Inventory Operations Acceptance #19 SUCCESS;
+- merge `edd345c317a52b702c00dd7889ad1eefffa51927`;
+- post-merge CI #647 SUCCESS;
+- Deploy #179 SUCCESS with schema/runtime/autonomy/cognition/inventory/body state preserved and Telegram API connected.
 
-This slice does **not** yet add meal selection, multi-item meal plans, portion bounds, satiety calibration or stock consumption behavior. Those belong to Eating Behavior v1.
+This slice does **not** add meal selection, multi-item meal plans, portion bounds, satiety calibration or stock consumption behavior. Those belong to Eating Behavior v1.
 
-## Eating Behavior v1 — NEXT AFTER PR #74 DEPLOYS
+## Eating Behavior v1 — NEXT
 
 Do not implement a Darian-specific meal script.
 
@@ -210,15 +215,14 @@ The inventory explorer/control backend remains shared for all future entities. A
 
 ## Later profile sequence
 
-1. Food Nutrition Semantics & Visibility v1 deploy/readback;
-2. Eating Behavior v1;
-3. natural intake/energy readiness gate;
-4. BC-2 body composition;
-5. BC-3 measurements;
-6. skill progression family;
-7. intellectual attributes;
-8. mental/emotion dynamics;
-9. later relationship/social/sexual physiology as prerequisites mature.
+1. Eating Behavior v1;
+2. natural intake/energy readiness gate;
+3. BC-2 body composition;
+4. BC-3 measurements;
+5. skill progression family;
+6. intellectual attributes;
+7. mental/emotion dynamics;
+8. later relationship/social/sexual physiology as prerequisites mature.
 
 ## Deferred boundaries
 
@@ -239,6 +243,4 @@ Do not add as side effects:
 
 ## Exact resume point
 
-Finish PR #74 canonical-doc synchronization -> rerun final-head CI + Inventory Operations Acceptance -> merge -> deploy/readback -> sync `test` to `main`.
-
-Then **Eating Behavior v1** is the next minimum-runnable slice. Do not activate BC-2 weight/BF mutation before natural definition-based intake/expenditure passes readiness.
+**Eating Behavior v1** is the next minimum-runnable slice. Start from the clean PR #74 / Deploy #179 checkpoint. Do not activate BC-2 weight/BF mutation before natural definition-based intake/expenditure passes readiness.
