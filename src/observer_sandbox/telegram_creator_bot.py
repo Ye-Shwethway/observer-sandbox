@@ -6,9 +6,11 @@ from pathlib import Path
 from typing import Any
 
 from . import telegram_bot as base
+from .creator_control import replenish_inventory_stack
 from .db import connect, migrate
 from .telegram_ai_control import callback_view as ai_callback_view
 from .telegram_ai_control import home_view as ai_home_view
+from .telegram_inventory import inventory_callback_view, inventory_command_view
 
 _ORIGINAL_API = base._api
 _ORIGINAL_SEND = base._send
@@ -40,6 +42,7 @@ def _home_message(conn, user_id: int) -> str:
 
 def _home_keyboard() -> list[list[dict[str, str]]]:
     keyboard = [list(row) for row in _ORIGINAL_HOME_KEYBOARD()]
+    keyboard.append([{"text": "🎒 Inventory", "callback_data": "inv:home"}])
     keyboard.append([{"text": "⚙️ Creator Settings", "callback_data": "ai:home"}])
     keyboard.append([{"text": "✕ Close", "callback_data": "nav:close"}])
     return keyboard
@@ -110,6 +113,18 @@ def _edit(token: str, chat_id: int, message_id: int, text: str, keyboard: list[l
 def _callback_view(conn, user_id: int, callback_data: str):
     if callback_data == "nav:close":
         return _DELETE_SENTINEL, None
+    if callback_data.startswith("inv:"):
+        role = base._user_role(user_id)
+        if role == "unauthorized":
+            return "Not authorized.", None
+        view = inventory_callback_view(
+            conn,
+            callback_data,
+            role=role,
+            requested_by=f"telegram:{user_id}",
+        )
+        if view is not None:
+            return view
     if callback_data.startswith(("ai:", "af:")):
         if base._user_role(user_id) != "owner":
             return (
@@ -122,17 +137,61 @@ def _callback_view(conn, user_id: int, callback_data: str):
 
 def _help(role: str) -> str:
     text = _ORIGINAL_HELP(role)
+    text += "\n/inventory — Browse universe inventory"
     if role == "owner":
+        text += "\n/replenish <stack_id> <quantity> — Add stock with Creator authority"
         text += "\n/settings — Creator settings and AI cognition"
     return text
 
 
 def handle_command(db_path: str | Path, *, user_id: int, text: str) -> str:
     command_line = (text or "").strip()
-    first = command_line.split()[0] if command_line else ""
+    parts = command_line.split()
+    first = parts[0] if parts else ""
     command = first.split("@", 1)[0].lower()
+    role = base._user_role(user_id)
+
+    if command in {"/inventory", "/replenish"} and role == "unauthorized":
+        return "Not authorized. Use /whoami to obtain your Telegram user id."
+
+    if command == "/inventory":
+        with connect(db_path) as conn:
+            migrate(conn)
+            return inventory_command_view(conn)
+
+    if command == "/replenish":
+        if role != "owner":
+            return "🔒 Creator authority required for inventory replenishment."
+        if len(parts) != 3:
+            return "Usage: /replenish <stack_id> <positive_quantity>"
+        stack_id = parts[1]
+        try:
+            amount = float(parts[2])
+        except ValueError:
+            return "Replenishment quantity must be numeric."
+        try:
+            with connect(db_path) as conn:
+                migrate(conn)
+                result = replenish_inventory_stack(
+                    conn,
+                    stack_id,
+                    amount,
+                    authority="creator",
+                    requested_by=f"telegram:{user_id}",
+                )
+        except (KeyError, ValueError, RuntimeError) as exc:
+            return f"Inventory replenishment rejected: {exc}"
+        return (
+            "✅ INVENTORY REPLENISHED\n"
+            "━━━━━━━━━━━━━━━━━━\n"
+            f"🧺 {result['item_name']}\n"
+            f"➕ Added {result['added_quantity']:g} {result['unit']}\n"
+            f"📏 Before {result['before_quantity']:g} {result['unit']}\n"
+            f"📏 After {result['after_quantity']:g} {result['unit']}\n"
+            "Audit event recorded."
+        )
+
     if command in {"/settings", "/ai"}:
-        role = base._user_role(user_id)
         if role == "unauthorized":
             return "Not authorized. Use /whoami to obtain your Telegram user id."
         if role != "owner":
@@ -145,6 +204,18 @@ def handle_command(db_path: str | Path, *, user_id: int, text: str) -> str:
 
 
 def _command_keyboard(command: str):
+    if command == "/inventory":
+        return [
+            [
+                {"text": "📍 Locations", "callback_data": "inv:list:locations:0"},
+                {"text": "👥 Characters", "callback_data": "inv:list:characters:0"},
+            ],
+            [
+                {"text": "📦 Containers", "callback_data": "inv:list:containers:0"},
+                {"text": "🧺 All Stocks", "callback_data": "inv:all:0"},
+            ],
+            [{"text": "⌂ Observer Home", "callback_data": "nav:home"}],
+        ]
     if command in {"/settings", "/ai"}:
         return [
             [{"text": "🧠 Primary Cognition", "callback_data": "ai:providers"}],
@@ -155,8 +226,8 @@ def _command_keyboard(command: str):
 
 
 # Install bounded Creator extensions into the existing polling loop. Telegram
-# remains an adapter; provider/fallback semantics live in reusable AI services,
-# while message deletion is presentation lifecycle only.
+# remains an adapter; inventory/provider/fallback semantics live in reusable
+# domain/query/control services, while message deletion is presentation lifecycle only.
 base._api = _api
 base._send = _send
 base._edit = _edit
