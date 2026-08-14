@@ -74,7 +74,7 @@ def _insert_bench_training(conn, start: datetime, *, minutes: float = 60.0):
     )
 
 
-def test_bc3_activation_preserves_authored_values_and_does_not_invent_hips(tmp_path):
+def test_bc3_activation_preserves_authored_values_and_activates_complete_measurement_batch(tmp_path):
     db = tmp_path / "observer.sqlite3"
     initialize(db)
     with connect(db) as conn:
@@ -93,10 +93,12 @@ def test_bc3_activation_preserves_authored_values_and_does_not_invent_hips(tmp_p
 
     assert result["status"] == "bootstrapped"
     assert before == after
-    assert "body.hips_in" in result["deferred_fields"]
-    assert hip is None
+    assert "body.hips_in" not in result["deferred_fields"]
+    assert hip is not None
+    assert json.loads(hip["value_json"]) == 39.0
     activated = set(result["activated_measurements"])
     assert activated == set(before)
+    assert "body.hips_in" in activated
     assert all(row["mode"] == "simulated" and row["authority"] == "body_progression_engine" for row in rows if row["field_key"] in activated)
 
 
@@ -151,10 +153,14 @@ def test_bc3_full_window_uses_regional_resistance_and_body_composition_signals(t
     assert payload["regional_training_exposure"].get("calves", 0.0) == 0.0
     assert after["body.chest_in"] > before["body.chest_in"]
     assert after["body.triceps_in"] > before["body.triceps_in"]
-    assert after["body.calves_in"] <= before["body.calves_in"]
+    calf_delta = after["body.calves_in"] - before["body.calves_in"]
+    chest_delta = after["body.chest_in"] - before["body.chest_in"]
+    triceps_delta = after["body.triceps_in"] - before["body.triceps_in"]
+    assert chest_delta > calf_delta
+    assert triceps_delta > calf_delta
     assert after["body.waist_in"] < before["body.waist_in"]
-    assert "body.hips_in" in payload["deferred_fields"]
-    assert "body.hips_in" not in after
+    assert "body.hips_in" not in payload["deferred_fields"]
+    assert "body.hips_in" in after
     for key, change in changes.items():
         assert abs(float(change["delta"])) <= 0.1500001
         assert key in after
