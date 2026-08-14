@@ -101,7 +101,14 @@ jobs:
             export OBSERVER_SANDBOX_DB=/var/lib/observer-sandbox/observer.sqlite3
             .venv/bin/sandboxctl init
             if grep -Eq "^OBSERVER_GROQ_API_KEY=.+" /var/lib/observer-sandbox/secrets.env 2>/dev/null; then
-              .venv/bin/sandboxctl ai bootstrap-groq-cognition
+              if .venv/bin/sandboxctl ai bootstrap-groq-cognition; then
+                echo "Groq cognition bootstrap succeeded"
+              elif grep -Eq "^OBSERVER_GEMINI_API_KEY=.+" /var/lib/observer-sandbox/secrets.env 2>/dev/null; then
+                echo "Groq cognition bootstrap failed; falling back to Gemini bootstrap"
+                .venv/bin/sandboxctl ai bootstrap-gemini-cognition
+              else
+                echo "Groq cognition bootstrap failed; preserving existing cognition binding"
+              fi
             elif grep -Eq "^OBSERVER_GEMINI_API_KEY=.+" /var/lib/observer-sandbox/secrets.env 2>/dev/null; then
               .venv/bin/sandboxctl ai bootstrap-gemini-cognition
             else
