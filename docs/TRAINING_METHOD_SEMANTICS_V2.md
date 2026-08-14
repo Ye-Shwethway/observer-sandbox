@@ -40,9 +40,20 @@ A future `obj_other_world_public_gym_rack` may bind to the same `barbell_strengt
 
 The returned evidence still contains the concrete target id for event causality plus the stable method id for downstream progression semantics.
 
-Existing downstream consumers such as Body Composition and Body Measurement progression continue to use stable `method_id` / workload-channel evidence. Their numerical policies are not duplicated into this layer.
-
 Unknown or unbound targets fail closed by returning no training-method evidence rather than guessing a method from object names.
+
+## Catalog revision versus evidence revision
+
+The catalog architecture is `training-method-semantics-v2`, but the persisted event evidence shape remains compatible with the existing `training-method-semantics-v1` evidence contract.
+
+New evidence therefore carries both:
+
+- `source = training-method-semantics-v1` — stable evidence-contract identity used by existing progression readers and historical events;
+- `catalog_revision = training-method-semantics-v2` — the resolver/catalog architecture that produced the evidence.
+
+This separation avoids invalidating historical Stamina/other progression evidence merely because target binding storage was refactored. No event migration is required.
+
+Existing downstream consumers such as Body Composition and Body Measurement progression continue to use stable `method_id` / workload-channel evidence. Their numerical policies are not duplicated into this layer.
 
 ## Universal-character boundary
 
@@ -57,8 +68,9 @@ The slice passes when:
 - reusable definitions are separated from concrete target bindings;
 - all current production training targets resolve to the same stable method ids as v1;
 - cognition still exposes method metadata for train actions;
-- completed training events still persist method evidence;
-- current Strength mapping remains unchanged;
+- completed training events still persist backward-compatible method evidence plus v2 catalog provenance;
+- existing historical v1 evidence remains consumable by progression readers;
+- current Strength and Stamina mappings remain unchanged;
 - a synthetic non-Thorne target can bind to an existing method definition without duplicating that definition;
 - no schema migration, additional model call, or Telegram call is introduced.
 
