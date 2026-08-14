@@ -68,8 +68,8 @@ def _decision_prompt(state: dict[str, Any], available_actions: list[str]) -> str
         f"Runtime context: {json.dumps(prompt_state, ensure_ascii=False, sort_keys=True)}\n\n"
         "The action_options array is authoritative. Choose an action/target pair that appears there. "
         "The duration field is the broad legal compatibility range. When preferred_duration is present, choose duration_minutes inside that narrower planning range; duration_purpose explains the intended ordinary use. "
-        "The runtime will normalize a model duration outside preferred_duration back to the nearest preferred bound without changing the selected action or target. "
-        "For idle only, target must be an empty string. For every other action, copy the exact target id from action_options. "
+        "Runtime-shaped legal duration bounds override ordinary authored preferences when they are tighter. "
+        "For idle only, target must be an empty string. For every other action, copy the exact target id from action_options; use an empty string when that option's target is null. "
         "Return only the structured decision and keep reason short and character-grounded."
     )
 
@@ -100,6 +100,32 @@ def _generate_nanogpt(provider: sqlite3.Row, key: str, model_id: str, prompt: st
         raise AIDecisionError("NanoGPT returned an unusable structured decision") from exc
 
 
+def _generate_openai_compatible(provider: sqlite3.Row, key: str, model_id: str, prompt: str, parameters: dict[str, Any]) -> dict[str, Any]:
+    base = provider["base_url"]
+    if not base:
+        raise AIConfigurationError(f"Provider {provider['id']} base_url is not configured")
+    payload: dict[str, Any] = {
+        "model": model_id,
+        "messages": [{"role": "user", "content": prompt}],
+        "stream": False,
+        "response_format": {
+            "type": "json_schema",
+            "json_schema": {"name": "observer_sandbox_decision", "strict": True, "schema": DECISION_SCHEMA},
+        },
+    }
+    payload.update(parameters)
+    response = _post_json(
+        f"{base.rstrip('/')}/chat/completions",
+        headers={"Authorization": f"Bearer {key}", "Accept": "application/json"},
+        payload=payload,
+    )
+    try:
+        content = response["choices"][0]["message"]["content"]
+        return json.loads(content) if isinstance(content, str) else content
+    except Exception as exc:
+        raise AIDecisionError(f"Provider {provider['id']} returned an unusable structured decision") from exc
+
+
 def _generate_gemini(provider: sqlite3.Row, key: str, model_id: str, prompt: str, parameters: dict[str, Any]) -> dict[str, Any]:
     base = provider["base_url"]
     if not base:
@@ -115,6 +141,37 @@ def _generate_gemini(provider: sqlite3.Row, key: str, model_id: str, prompt: str
         return json.loads(text)
     except Exception as exc:
         raise AIDecisionError("Gemini returned an unusable structured decision") from exc
+
+
+def _bounds(value: Any) -> tuple[int, int] | None:
+    if not isinstance(value, (list, tuple)) or len(value) != 2:
+        return None
+    low, high = int(value[0]), int(value[1])
+    if low <= 0 or high < low:
+        return None
+    return low, high
+
+
+def _normalize_decision_duration(state: dict[str, Any], decision: dict[str, Any]) -> int:
+    action = str(decision["action"])
+    target = decision["target"] or None
+    requested = int(decision["duration_minutes"])
+    options = state.get("action_options")
+    if isinstance(options, list):
+        for raw_option in options:
+            option = dict(raw_option)
+            option_target = option.get("target") if isinstance(option.get("target"), str) else None
+            if str(option.get("action")) != action or option_target != target:
+                continue
+            enriched_option = enrich_action_options([option])[0]
+            preferred = _bounds(enriched_option.get("preferred_duration"))
+            legal = _bounds(enriched_option.get("duration"))
+            selected = preferred or legal
+            if selected is not None:
+                low, high = selected
+                return max(low, min(high, requested))
+            break
+    return normalize_duration(action, target, requested)
 
 
 def generate_character_decision(
@@ -135,6 +192,8 @@ def generate_character_decision(
         decision = _generate_nanogpt(provider, key, binding["model_id"], prompt, parameters)
     elif provider["adapter_type"] == "gemini":
         decision = _generate_gemini(provider, key, binding["model_id"], prompt, parameters)
+    elif provider["adapter_type"] == "openai_compatible":
+        decision = _generate_openai_compatible(provider, key, binding["model_id"], prompt, parameters)
     else:
         raise AIConfigurationError(f"P1 live decision adapter not yet enabled for provider type: {provider['adapter_type']}")
     if not isinstance(decision, dict):
@@ -149,7 +208,5 @@ def generate_character_decision(
     if not isinstance(decision["target"], str) or not isinstance(decision["reason"], str):
         raise AIDecisionError("AI target/reason must be strings")
     decision = dict(decision)
-    decision["duration_minutes"] = normalize_duration(
-        decision["action"], decision["target"] or None, decision["duration_minutes"]
-    )
+    decision["duration_minutes"] = _normalize_decision_duration(state, decision)
     return decision
