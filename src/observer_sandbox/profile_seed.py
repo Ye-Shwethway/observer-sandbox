@@ -25,6 +25,13 @@ def validate_seed(conn: sqlite3.Connection, seed: dict[str, Any]) -> None:
 
 
 def import_seed(conn: sqlite3.Connection, seed: dict[str, Any]) -> None:
+    """Import canonical/static character data without clobbering live simulation state.
+
+    Canonical seeds initialize profile values and may update fields that have not
+    been activated by a simulation engine. Once a field's persisted mode is
+    ``simulated``, that live engine-owned value is authoritative across ordinary
+    re-initialization/deployment and is not reset from the seed.
+    """
     validate_seed(conn, seed)
     entity_id = seed["entity_id"]
     name = seed["name"]
@@ -54,17 +61,25 @@ def import_seed(conn: sqlite3.Connection, seed: dict[str, Any]) -> None:
     for field_key, record in seed.get("values", {}).items():
         value_json = json.dumps(record["value"], ensure_ascii=False)
         old = conn.execute(
-            "SELECT value_json FROM character_profile_values WHERE entity_id=? AND field_key=?",
+            """SELECT value_json,mode,authority,source
+            FROM character_profile_values WHERE entity_id=? AND field_key=?""",
             (entity_id, field_key),
         ).fetchone()
-        if old is not None and old[0] != value_json:
+
+        # Re-seeding is initialization, not an engine reset. A domain engine that
+        # has activated a field owns the persisted simulated value until an
+        # explicit migration/control operation says otherwise.
+        if old is not None and old["mode"] == "simulated":
+            continue
+
+        if old is not None and old["value_json"] != value_json:
             conn.execute(
                 """
                 INSERT INTO character_profile_history(
                     entity_id, field_key, old_value_json, new_value_json, mode, authority, reason
                 ) VALUES (?, ?, ?, ?, ?, ?, 'canonical seed update')
                 """,
-                (entity_id, field_key, old[0], value_json, record["mode"], record["authority"]),
+                (entity_id, field_key, old["value_json"], value_json, record["mode"], record["authority"]),
             )
         conn.execute(
             """
