@@ -8,7 +8,12 @@ from typing import Any
 
 from .ai_runtime import generate_character_decision
 from .need_resolution import shape_action_options_for_needs
-from .resource_awareness import enrich_options_with_usage, reachable_location_awareness, recent_action_usage
+from .resource_awareness import (
+    enrich_options_with_usage,
+    reachable_location_awareness,
+    recent_action_usage,
+    shape_inspect_options_for_familiarity,
+)
 from .secrets import load_runtime_secrets
 from .simulation import ACTION_NAMES, Action, action_options, snapshot, validate_action
 from .training_load_guard import projected_training_allowed, shape_training_options_for_load
@@ -234,6 +239,12 @@ class ModelDecisionProvider:
             action_options=options,
             decision_signals=decision_signals,
         )
+        options, familiarity = shape_inspect_options_for_familiarity(
+            self.conn,
+            self.character_id,
+            room_id=str(state["location"]),
+            action_options=options,
+        )
         options = _shape_discretionary_repetition(
             options,
             recent_events,
@@ -252,6 +263,7 @@ class ModelDecisionProvider:
                 else "Training remains available only within the remaining effective-load budget shown on train options."
             ),
         }
+        enriched["object_familiarity"] = familiarity
         enriched["resource_awareness"] = {
             "current_location": {
                 "id": state["location"],
@@ -281,6 +293,13 @@ class ModelDecisionProvider:
             state=enriched,
             available_actions=known_actions,
         )
+        selected_target = decision["target"] or None
+        allowed_pairs = {
+            (str(option.get("action")), option.get("target") if isinstance(option.get("target"), str) else None)
+            for option in enriched["action_options"]
+        }
+        if (decision["action"], selected_target) not in allowed_pairs:
+            raise ValueError("Model selected an action/target pair outside authoritative action_options")
         if decision["action"] == "train":
             readiness = training_readiness_modifier(state)
             if not projected_training_allowed(
@@ -292,7 +311,7 @@ class ModelDecisionProvider:
         return Action(
             decision["action"],
             decision["duration_minutes"],
-            decision["target"] or None,
+            selected_target,
             decision["reason"],
         )
 
