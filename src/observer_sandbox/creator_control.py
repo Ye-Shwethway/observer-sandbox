@@ -162,7 +162,7 @@ def replenish_inventory_stack(
         (after, stack_id),
     )
 
-    sim_time = runtime_value(conn, "sim_time")
+    sim_time = runtime_value(conn, "sim_time", None)
     if not isinstance(sim_time, str) or not sim_time:
         conn.rollback()
         raise RuntimeError("Creator inventory control requires initialized simulation time")
