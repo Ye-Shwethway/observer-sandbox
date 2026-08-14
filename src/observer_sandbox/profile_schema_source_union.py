@@ -3,8 +3,8 @@ from __future__ import annotations
 import json
 import sqlite3
 
-# Fields present in the supplied Darian source formats or previously agreed profile display
-# surfaces that are intentionally preserved even where they overlap another domain.
+# Fields present in supplied character sources, agreed profile surfaces, or
+# compatibility overrides that make the declared mode/authority truthful.
 SOURCE_UNION_FIELDS = (
     ("raps_pa.focus_precision", "raps_pa", "Focus and precision", "number", None, "static", "profile_core", "normal"),
     ("raps_pa.practical_skill", "raps_pa", "Practical skill", "number", None, "static", "profile_core", "normal"),
@@ -13,6 +13,15 @@ SOURCE_UNION_FIELDS = (
     ("raps_sa.charisma", "raps_sa", "Sexual charisma", "number", None, "static", "profile_core", "private"),
     ("appearance.marks_scars_tattoos", "appearance", "Marks, scars and tattoos", "json", None, "canonical", "profile_core", "normal"),
     ("background.connection_notes", "background", "Important connection notes", "json", None, "canonical", "profile_core", "normal"),
+
+    # Physical-presentation closure. Structural abdominal configuration is
+    # authored separately from current visible definition. PARS and baseline skin
+    # quality remain truthful canonical anchors until a broader appearance/health
+    # engine is justified; they must not advertise a fake dynamic authority.
+    ("body.abdominal_structure", "body", "Abdominal structure", "text", None, "canonical", "profile_core", "normal"),
+    ("body.abdominal_definition", "body", "Visible abdominal definition", "text", None, "derived", "appearance_engine", "normal"),
+    ("appearance.skin_quality", "appearance", "Baseline skin quality", "number", None, "canonical", "profile_core", "normal"),
+    ("appearance.pars", "appearance", "Canonical physical appeal rating", "number", None, "canonical", "profile_core", "normal"),
 )
 
 # Architecture-agreed dynamic fields needed by future life-like simulation. They start static
