@@ -19,103 +19,84 @@ Current Creator instruction and newer repository/CI/deploy/live evidence overrid
 Default:
 `test -> focused tests + CI -> merge main -> automatic deploy when runtime-affecting -> read-only production check -> sync test`
 
-Keep persistent `main` + reusable `test`. Use disposable production-copy validation for state-sensitive migrations. Never accelerate/mutate production merely to manufacture acceptance evidence.
+Keep persistent `main` + reusable `test`. Use disposable production-copy validation for state-sensitive work. Never accelerate/mutate production merely to manufacture acceptance evidence.
+
+Any new architecture/control invariant updates its canonical contract + ROADMAP + bootstrap in the same development cycle.
 
 ## Current verified production checkpoint
 
-Latest live runtime deployment: **Deploy #179 `31812160413` SUCCESS**, PR #74 merge `edd345c317a52b702c00dd7889ad1eefffa51927`.
+Latest deployed production before current PR #76: **Deploy #179 `31812160413` SUCCESS**, PR #74 merge `edd345c317a52b702c00dd7889ad1eefffa51927`.
 
-Readback:
-- healthy/service active;
-- schema v5;
-- world `thorne-estate-v3.3-physical-attribute-training`;
-- `inventory_seed_revision=thorne-estate-inventory-v1`;
-- wealthy reserve migration remains applied once;
-- default actor `char_darian`;
-- autonomy enabled/normal, paused false, retry null, speed 1.0;
-- Gemini `gemini-3.1-flash-lite` primary preserved;
-- Groq `qwen/qwen3.6-27b` fallback preserved;
-- Telegram API connected;
-- decision calls 356;
-- Darian remains asleep in Master Suite with Energy 82.127, Fatigue 11.045, Hunger 50.325, Thirst 21.3, Sleepiness 31.55, Cleanliness 99.466.
+A fresh read-only runtime read before Eating Behavior implementation showed production naturally advanced to sim `2025-05-05T05:37:00+00:00`, Darian in the Kitchen, autonomy enabled/normal and a legacy in-flight `eat` action with `resources=[]`. This established the transition rule: already-persisted empty-resource meals may finish under legacy BC-1 semantics; newly planned meals must carry valid structured inventory resources.
 
-Post-merge CI #647 succeeded. No production acceleration, forced action or model probe was used for Deploy #179 acceptance.
+Deployed baseline remains schema v5, world `thorne-estate-v3.3-physical-attribute-training`, wealthy inventory reserve migration applied once, Gemini `gemini-3.1-flash-lite` primary, Groq `qwen/qwen3.6-27b` fallback and Telegram connected.
 
 ## Universal character / object invariant
 
-Darian and the Thorne Estate are production exemplars, never reusable-engine identity. Runtime, cognition, physiology, progression, inventory and nutrition semantics remain actor/entity/definition-id driven.
+Darian and the Thorne Estate are production exemplars, never reusable-engine identity. Runtime, cognition, physiology, progression, inventory, eating and nutrition semantics remain actor/entity/definition-id driven.
 
-Inventory invariant:
-`Universal definition -> concrete instance/stack -> physical container/location -> ownership -> action/evidence -> quantity/state transition`
-
-Telegram Inventory is universe-wide:
-`Inventory -> Locations | Characters | Containers | All Stocks -> Scope -> Stack`
+Inventory/eating invariant:
+`Universal food definition -> concrete stack -> reachable eating context -> structured quantity -> deterministic validation -> atomic stock transition + immutable evidence`
 
 ## Deployed inventory/nutrition checkpoint
 
-### Inventory Foundation v1
-**COMPLETE / DEPLOYED** via PR #71 / Deploy #177.
+- Inventory Foundation v1 — deployed PR #71 / Deploy #177.
+- Inventory Operations v1 — deployed PR #73 / Deploy #178.
+- Food Nutrition Semantics & Visibility v1 — deployed PR #74 / Deploy #179.
 
-Schema v5 `inventory_stacks`, universal food definitions, concrete stacks, fixed-container metadata, deterministic decrement and definition-based nutrition are live.
+Universal food content is `config/items.v1.json`. Telegram item details already expose default-serving kcal/protein/carbs/fat. Ordinary init/deploy never refills depleted inventory.
 
-### Inventory Operations v1
-**COMPLETE / DEPLOYED** via PR #73 / Deploy #178.
+## Eating Behavior v1 — CURRENT PR #76
 
-Universe-wide inventory browsing, one-time wealthy Estate reserve, owner-only confirmed replenishment and audited typed stock control are live. Ordinary init/deploy never refills depleted stock.
+Canonical: `docs/EATING_BEHAVIOR_V1.md`.
 
-### Food Nutrition Semantics & Visibility v1
-**COMPLETE / DEPLOYED** via PR #74 / Deploy #179.
+Minimum-runnable candidate:
+- live cognition decision schema requires `resources`;
+- `eat` selects one to six exact concrete food stack IDs + quantities from authoritative meal-resource choices;
+- non-eat actions require `resources=[]`;
+- deterministic v1 portion bounds are 0.5x–2x authored default, stock-capped, with whole-number piece quantities;
+- direct local edible inventory wins; an eat-capable location lacking direct stock may use the nearest structural ancestor with edible inventory, never arbitrary global inventory;
+- structured resources persist in existing `action_instances.resources_json`; no schema v6;
+- action completion revalidates every resource and atomically decrements all selected stacks;
+- combined definition-based kcal/protein/carbs/fat snapshots into existing BC-1 `payload_json.nutrition_intake`;
+- any failed resource/stock validation rolls back the whole completion;
+- pre-v1 in-flight empty-resource eat actions remain completion-compatible via legacy target nutrition and no stock decrement;
+- Telegram completed structured meals show item quantities + combined kcal/P/C/F;
+- no Darian-specific meal branch, model-owned macro arithmetic, recipe/cooking/economy or body mutation.
 
-Canonical universal food content remains `config/items.v1.json`.
+Candidate evidence before final doc-tail validation:
+- CI #652 SUCCESS;
+- Eating Behavior v1 Acceptance #3 SUCCESS on disposable production copy;
+- Nutrition & Energy Evidence v1 Acceptance #6 SUCCESS;
+- synthetic non-Estate inventory regression green;
+- no model/Telegram API calls or live production mutation in acceptance.
 
-Deployed behavior:
-- `nutrition_facts.py` projects deterministic nutrient facts from universal item definitions;
-- nutrition arithmetic is independent of character, location and current stock quantity;
-- authored default serving is used, falling back to nutrition basis;
-- Telegram item details show `NUTRIENT FACTS · DEFAULT PORTION` with serving, kcal, protein, carbs, fat and basis;
-- no new nutrition numbers, schema change, stock mutation, body mutation or model call were introduced.
+Final-head gates must be rerun after docs synchronization before merge.
 
-Regression examples:
-- cooked chicken breast 200 g -> 330 kcal / 62 g protein / 0 g carbs / 7.2 g fat;
-- apple 1 piece -> 95 kcal / 0.5 g protein / 25 g carbs / 0.3 g fat.
+## Next gate after deployment
 
-Evidence:
-- final-head CI #646 SUCCESS;
-- Inventory Operations Acceptance #19 SUCCESS;
-- merge `edd345c317a52b702c00dd7889ad1eefffa51927`;
-- post-merge CI #647 SUCCESS;
-- Deploy #179 SUCCESS with runtime/autonomy/cognition/inventory/body state preserved and Telegram connected.
+Perform **natural intake readiness observation** read-only before BC-2:
+- structured meal resources actually appear in natural cognition/actions;
+- meal cadence/portions/macros are plausible;
+- inventory depletion matches completed evidence;
+- expenditure evidence coverage remains sufficient;
+- cognition does not enter repeated schema/payload/backoff failures.
 
-`docs/NUTRITION_ENERGY_EVIDENCE.md` distinguishes transitional legacy generic meal-target profiles from universal inventory-food nutrition. New natural eating must use universal item definitions.
-
-## Next slice — Eating Behavior v1
-
-Do not make a Darian-specific meal script.
-
-Minimum-runnable direction:
-- cognition receives universal food availability plus hunger/daypart, recent intake, energy/protein context, training/recovery, body-composition goal, preferences/diet constraints and convenience;
-- model proposes structured **multi-food resources + quantities**;
-- deterministic engine validates portion policy + current stock before mutation;
-- all meal resources are consumed atomically;
-- combined kcal/protein/carbs/fat evidence is calculated from universal definitions;
-- bounded satiety/needs effects remain separate from kcal arithmetic;
-- no recipes/cooking/economy as side effects.
-
-After deployment, observe natural intake/expenditure read-only before BC-2. Do not hide cadence defects by inflating generic meal calories.
+Do not force production meals for acceptance and do not hide cadence defects by inflating meal calories.
 
 ## Later sequence
 
-1. Eating Behavior v1;
+1. finish PR #76 -> merge/deploy/readback/sync;
 2. natural intake/energy readiness gate;
 3. BC-2 coupled Weight/BF/FM/FFM progression;
 4. BC-3 measurements;
 5. skills;
 6. intellectual attributes;
 7. mental/emotion dynamics;
-8. later social/relationship/sexual physiology as prerequisites mature.
+8. later social/relationship/sexual physiology when prerequisites mature.
 
 ## Exact resume point
 
-Start from **PR #74 / Deploy #179**. The next minimum-runnable slice is **Eating Behavior v1**.
+Finish PR #76 canonical synchronization, rerun **CI + Eating Behavior v1 Acceptance + Nutrition & Energy Evidence v1 Acceptance**, then merge/deploy/readback and sync `test`.
 
-Do not activate BC-2 before natural Eating Behavior evidence passes readiness. Do not add economy/currency, automatic restocking, full RPG encumbrance, arbitrary deep container nesting, all-object migration, Character Memory or a second production character merely for testing as side effects.
+After that, natural intake readiness is next. Do not activate BC-2 before it passes. Do not add economy/currency, automatic restocking, deep recipes/crafting, Character Memory or a second production character merely for testing as side effects.
