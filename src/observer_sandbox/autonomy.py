@@ -7,6 +7,7 @@ import uuid
 from typing import Any
 
 from .actor_runtime import actor_runtime, pending_action, set_actor_runtime, set_retry
+from .actor_selection import resolve_actor_id
 from .event_log import record_event
 from .model_decision import ModelDecisionProvider
 from .simulation import ACTION_NAMES, Action, apply_action, ensure_action_instance, runtime_value, set_runtime_value, snapshot, validate_action
@@ -173,7 +174,17 @@ def _reschedule_pending_for_speed(conn: sqlite3.Connection, *, new_speed: float,
     return len(rows)
 
 
-def set_autonomy_enabled(conn: sqlite3.Connection, enabled: bool, *, actor_id: str = "char_darian") -> dict[str, Any]:
+def _wake_resumed_actors(conn: sqlite3.Connection) -> int:
+    rows = conn.execute(
+        "SELECT actor_id FROM actor_runtime WHERE autonomy_enabled=1 AND pending_action_id IS NULL ORDER BY actor_id"
+    ).fetchall()
+    for row in rows:
+        set_actor_runtime(conn, str(row["actor_id"]), wake_reason="resume")
+    return len(rows)
+
+
+def set_autonomy_enabled(conn: sqlite3.Connection, enabled: bool, *, actor_id: str | None = None) -> dict[str, Any]:
+    actor_id = resolve_actor_id(conn, actor_id)
     current = actor_runtime(conn, actor_id)
     if not enabled:
         if current["pending_action_id"] is not None:
@@ -188,11 +199,13 @@ def set_autonomy_enabled(conn: sqlite3.Connection, enabled: bool, *, actor_id: s
     return autonomy_status(conn, actor_id)
 
 
-def set_autonomy_paused(conn: sqlite3.Connection, paused: bool, *, actor_id: str = "char_darian", now_wall: float | None = None) -> dict[str, Any]:
+def set_autonomy_paused(conn: sqlite3.Connection, paused: bool, *, actor_id: str | None = None, now_wall: float | None = None) -> dict[str, Any]:
+    actor_id = resolve_actor_id(conn, actor_id)
     now = _wall_now() if now_wall is None else float(now_wall)
     was_paused = bool(runtime_value(conn, "paused", False))
     shifted_actions = 0
     paused_seconds = 0.0
+    resumed_actors = 0
 
     if paused:
         if not was_paused:
@@ -206,9 +219,7 @@ def set_autonomy_paused(conn: sqlite3.Connection, paused: bool, *, actor_id: str
                 shifted_actions = _shift_pending_due_times(conn, paused_seconds)
         set_runtime_value(conn, PAUSE_STARTED_WALL_KEY, None)
         set_runtime_value(conn, "paused", False)
-        current = actor_runtime(conn, actor_id)
-        if current["autonomy_enabled"] and current["pending_action_id"] is None:
-            set_actor_runtime(conn, actor_id, wake_reason="resume")
+        resumed_actors = _wake_resumed_actors(conn)
 
     conn.commit()
     _event(
@@ -219,12 +230,14 @@ def set_autonomy_paused(conn: sqlite3.Connection, paused: bool, *, actor_id: str
             "paused": bool(paused),
             "paused_seconds": paused_seconds,
             "pending_actions_shifted": shifted_actions,
+            "actors_woken_on_resume": resumed_actors,
         },
     )
     return autonomy_status(conn, actor_id)
 
 
-def set_autonomy_speed(conn: sqlite3.Connection, speed: float, *, actor_id: str = "char_darian", now_wall: float | None = None) -> dict[str, Any]:
+def set_autonomy_speed(conn: sqlite3.Connection, speed: float, *, actor_id: str | None = None, now_wall: float | None = None) -> dict[str, Any]:
+    actor_id = resolve_actor_id(conn, actor_id)
     value = float(speed)
     if value <= 0 or value > 3600:
         raise ValueError("Autonomy speed must be greater than 0 and at most 3600")
@@ -256,7 +269,8 @@ def set_autonomy_speed(conn: sqlite3.Connection, speed: float, *, actor_id: str 
     return autonomy_status(conn, actor_id)
 
 
-def arm_canary_once(conn: sqlite3.Connection, *, actor_id: str = "char_darian") -> dict[str, Any]:
+def arm_canary_once(conn: sqlite3.Connection, *, actor_id: str | None = None) -> dict[str, Any]:
+    actor_id = resolve_actor_id(conn, actor_id)
     state = actor_runtime(conn, actor_id)
     if state["autonomy_enabled"]:
         raise ValueError("Canary requires autonomy to be disabled first")
@@ -271,7 +285,8 @@ def arm_canary_once(conn: sqlite3.Connection, *, actor_id: str = "char_darian") 
     return autonomy_status(conn, actor_id)
 
 
-def autonomy_tick(conn: sqlite3.Connection, *, actor_id: str = "char_darian", provider: Any | None = None, now_wall: float | None = None) -> dict[str, Any]:
+def autonomy_tick(conn: sqlite3.Connection, *, actor_id: str | None = None, provider: Any | None = None, now_wall: float | None = None) -> dict[str, Any]:
+    actor_id = resolve_actor_id(conn, actor_id)
     now = _wall_now() if now_wall is None else float(now_wall)
     state_rt = actor_runtime(conn, actor_id)
     if not state_rt["autonomy_enabled"]:
@@ -353,7 +368,8 @@ def autonomy_tick(conn: sqlite3.Connection, *, actor_id: str = "char_darian", pr
         _release_lease(conn, actor_id, owner)
 
 
-def run_canary_once(conn: sqlite3.Connection, *, actor_id: str = "char_darian", provider: Any | None = None, now_wall: float | None = None, lease_retries: int = 20) -> dict[str, Any]:
+def run_canary_once(conn: sqlite3.Connection, *, actor_id: str | None = None, provider: Any | None = None, now_wall: float | None = None, lease_retries: int = 20) -> dict[str, Any]:
+    actor_id = resolve_actor_id(conn, actor_id)
     start = _wall_now() if now_wall is None else float(now_wall)
     before = snapshot(conn, actor_id)
     arm_canary_once(conn, actor_id=actor_id)
@@ -389,9 +405,11 @@ def run_canary_once(conn: sqlite3.Connection, *, actor_id: str = "char_darian", 
     return {"ok": success, "state": "completed" if success else "failed_closed", "before": before, "plan": planned, "completion": completion, "after": after}
 
 
-def autonomy_status(conn: sqlite3.Connection, actor_id: str = "char_darian") -> dict[str, Any]:
+def autonomy_status(conn: sqlite3.Connection, actor_id: str | None = None) -> dict[str, Any]:
+    actor_id = resolve_actor_id(conn, actor_id)
     state = actor_runtime(conn, actor_id)
     return {
+        "actor_id": actor_id,
         "autonomy_enabled": state["autonomy_enabled"],
         "mode": state["autonomy_mode"],
         "paused": bool(runtime_value(conn, "paused", False)),
