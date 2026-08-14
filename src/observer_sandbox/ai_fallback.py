@@ -4,6 +4,7 @@ import sqlite3
 from datetime import datetime, timezone
 from typing import Any
 
+from .actor_selection import resolve_actor_id
 from .simulation import runtime_value, set_runtime_value
 
 FALLBACK_KEY_PREFIX = "ai_cognition_fallback:"
@@ -21,9 +22,10 @@ def _last_fallback_key(character_id: str, role: str) -> str:
 def get_fallback_binding(
     conn: sqlite3.Connection,
     *,
-    character_id: str = "char_darian",
+    character_id: str | None = None,
     role: str = "cognition",
 ) -> dict[str, Any] | None:
+    character_id = resolve_actor_id(conn, character_id)
     value = runtime_value(conn, _fallback_key(character_id, role), None)
     if not isinstance(value, dict):
         return None
@@ -44,10 +46,11 @@ def set_fallback_binding(
     provider_id: str,
     model_id: str,
     *,
-    character_id: str = "char_darian",
+    character_id: str | None = None,
     role: str = "cognition",
     tested_at: str | None = None,
 ) -> dict[str, Any]:
+    character_id = resolve_actor_id(conn, character_id)
     value = {
         "provider_id": str(provider_id),
         "model_id": str(model_id),
@@ -62,9 +65,10 @@ def set_fallback_binding(
 def clear_fallback_binding(
     conn: sqlite3.Connection,
     *,
-    character_id: str = "char_darian",
+    character_id: str | None = None,
     role: str = "cognition",
 ) -> None:
+    character_id = resolve_actor_id(conn, character_id)
     set_runtime_value(conn, _fallback_key(character_id, role), None)
     conn.commit()
 
@@ -80,6 +84,7 @@ def record_fallback_use(
     fallback_model_id: str,
     primary_error: str,
 ) -> dict[str, Any]:
+    character_id = resolve_actor_id(conn, character_id)
     value = {
         "used_at": datetime.now(timezone.utc).isoformat(),
         "primary_provider_id": primary_provider_id,
@@ -96,8 +101,9 @@ def record_fallback_use(
 def last_fallback_use(
     conn: sqlite3.Connection,
     *,
-    character_id: str = "char_darian",
+    character_id: str | None = None,
     role: str = "cognition",
 ) -> dict[str, Any] | None:
+    character_id = resolve_actor_id(conn, character_id)
     value = runtime_value(conn, _last_fallback_key(character_id, role), None)
     return dict(value) if isinstance(value, dict) else None
