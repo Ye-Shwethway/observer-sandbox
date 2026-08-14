@@ -1,0 +1,25 @@
+name: Physical Presentation Closure v1 Acceptance
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - 'config/characters/darian.canonical.json'
+      - 'config/physical_profile_coverage.v1.json'
+      - 'src/observer_sandbox/profile_schema_source_union.py'
+      - 'src/observer_sandbox/physical_presentation.py'
+      - 'src/observer_sandbox/service.py'
+      - 'scripts/validation/validate_physical_presentation_closure_v1.py'
+      - 'tests/test_physical_presentation_v1.py'
+      - 'tests/test_physical_profile_coverage_audit_v1.py'
+      - '.github/workflows/physical-presentation-closure-v1-acceptance.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  acceptance:
+    uses: ./.github/workflows/reusable-production-copy-validation.yml
+    with:
+      validator_path: scripts/validation/validate_physical_presentation_closure_v1.py
+    secrets: inherit
