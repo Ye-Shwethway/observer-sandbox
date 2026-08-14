@@ -36,7 +36,8 @@ def training_method_definition(
         return None
     method = dict(raw)
     method["method_id"] = method_id
-    method["source"] = str(source.get("revision", "training-method-semantics-v2"))
+    method["source"] = str(source.get("evidence_revision", "training-method-semantics-v1"))
+    method["catalog_revision"] = str(source.get("revision", "training-method-semantics-v2"))
     return method
 
 
@@ -111,6 +112,7 @@ def training_method_evidence(
             "effective_minutes": float(training_load.get("effective_minutes", 0.0)),
         },
         "source": profile["source"],
+        "catalog_revision": profile["catalog_revision"],
     }
 
 
