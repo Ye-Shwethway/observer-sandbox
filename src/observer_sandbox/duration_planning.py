@@ -80,13 +80,36 @@ def normalize_duration(action: str, target: str | None, requested_minutes: int) 
     return max(profile.min_minutes, min(profile.max_minutes, requested))
 
 
+def _valid_bounds(value: Any) -> tuple[int, int] | None:
+    if not isinstance(value, (list, tuple)) or len(value) != 2:
+        return None
+    low, high = int(value[0]), int(value[1])
+    if low <= 0 or high < low:
+        return None
+    return low, high
+
+
 def enrich_action_options(options: list[dict[str, Any]]) -> list[dict[str, Any]]:
     enriched: list[dict[str, Any]] = []
     for option in options:
         item = dict(option)
         profile = duration_profile(str(item.get("action")), item.get("target"))
         if profile is not None:
-            item["preferred_duration"] = (profile.min_minutes, profile.max_minutes)
+            preferred_low, preferred_high = profile.min_minutes, profile.max_minutes
+            legal = _valid_bounds(item.get("duration"))
+            if legal is not None:
+                legal_low, legal_high = legal
+                intersection_low = max(preferred_low, legal_low)
+                intersection_high = min(preferred_high, legal_high)
+                if intersection_low <= intersection_high:
+                    preferred_low, preferred_high = intersection_low, intersection_high
+                else:
+                    # Runtime shaping (for example the training-load guard) is
+                    # authoritative. If its legal range lies completely outside
+                    # the ordinary authored preference, plan inside the legal
+                    # range rather than re-expanding into an illegal duration.
+                    preferred_low, preferred_high = legal_low, legal_high
+            item["preferred_duration"] = (preferred_low, preferred_high)
             item["duration_purpose"] = profile.label
         enriched.append(item)
     return enriched

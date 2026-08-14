@@ -42,6 +42,13 @@ BUILTIN_PROVIDERS = (
         credential_ref="OBSERVER_OPENROUTER_API_KEY",
     ),
     ProviderTemplate(
+        id="groq",
+        display_name="Groq",
+        adapter_type="openai_compatible",
+        base_url="https://api.groq.com/openai/v1",
+        credential_ref="OBSERVER_GROQ_API_KEY",
+    ),
+    ProviderTemplate(
         id="nanogpt",
         display_name="NanoGPT",
         adapter_type="nanogpt",
@@ -221,7 +228,7 @@ def _fetch_openai_compatible(provider: sqlite3.Row) -> list[dict[str, Any]]:
             {
                 "model_id": model_id,
                 "display_name": raw.get("name") or model_id,
-                "context_window": raw.get("context_length"),
+                "context_window": raw.get("context_length") or raw.get("context_window"),
                 "capabilities": capabilities,
                 "metadata": raw,
             }

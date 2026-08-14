@@ -62,6 +62,7 @@ jobs:
           VPS_USER: ${{ secrets.VPS_USER }}
           VPS_PORT: ${{ secrets.VPS_PORT || '22' }}
           OBSERVER_GEMINI_API_KEY: ${{ secrets.OBSERVER_GEMINI_API_KEY }}
+          OBSERVER_GROQ_API_KEY: ${{ secrets.OBSERVER_GROQ_API_KEY }}
           OBSERVER_NANOGPT_API_KEY: ${{ secrets.OBSERVER_NANOGPT_API_KEY }}
           OBSERVER_OPENAI_API_KEY: ${{ secrets.OBSERVER_OPENAI_API_KEY }}
           OBSERVER_OPENROUTER_API_KEY: ${{ secrets.OBSERVER_OPENROUTER_API_KEY }}
@@ -71,6 +72,7 @@ jobs:
         run: |
           {
             printf 'OBSERVER_GEMINI_API_KEY=%s\n' "$OBSERVER_GEMINI_API_KEY"
+            printf 'OBSERVER_GROQ_API_KEY=%s\n' "$OBSERVER_GROQ_API_KEY"
             printf 'OBSERVER_NANOGPT_API_KEY=%s\n' "$OBSERVER_NANOGPT_API_KEY"
             printf 'OBSERVER_OPENAI_API_KEY=%s\n' "$OBSERVER_OPENAI_API_KEY"
             printf 'OBSERVER_OPENROUTER_API_KEY=%s\n' "$OBSERVER_OPENROUTER_API_KEY"
@@ -98,10 +100,12 @@ jobs:
             .venv/bin/pip install -e .
             export OBSERVER_SANDBOX_DB=/var/lib/observer-sandbox/observer.sqlite3
             .venv/bin/sandboxctl init
-            if grep -Eq "^OBSERVER_GEMINI_API_KEY=.+" /var/lib/observer-sandbox/secrets.env 2>/dev/null; then
+            if grep -Eq "^OBSERVER_GROQ_API_KEY=.+" /var/lib/observer-sandbox/secrets.env 2>/dev/null; then
+              .venv/bin/sandboxctl ai bootstrap-groq-cognition
+            elif grep -Eq "^OBSERVER_GEMINI_API_KEY=.+" /var/lib/observer-sandbox/secrets.env 2>/dev/null; then
               .venv/bin/sandboxctl ai bootstrap-gemini-cognition
             else
-              echo "Gemini cognition bootstrap skipped: credential not provisioned"
+              echo "Cognition bootstrap skipped: no supported credential provisioned"
             fi
             sudo -n /usr/bin/systemctl restart observer-sandbox
             sudo -n /usr/bin/systemctl is-active observer-sandbox

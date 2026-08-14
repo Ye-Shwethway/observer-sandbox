@@ -14,7 +14,7 @@ from .ai import (
     resolve_binding,
     set_binding,
 )
-from .ai_bootstrap import bootstrap_gemini_cognition
+from .ai_bootstrap import bootstrap_gemini_cognition, bootstrap_groq_cognition
 from .autonomy import (
     autonomy_status,
     run_canary_once,
@@ -71,6 +71,11 @@ def build_parser() -> argparse.ArgumentParser:
     bootstrap_gemini.add_argument("--character", default="char_darian")
     bootstrap_gemini.add_argument("--role", default="cognition")
     bootstrap_gemini.add_argument("--force", action="store_true")
+
+    bootstrap_groq = ai_sub.add_parser("bootstrap-groq-cognition")
+    bootstrap_groq.add_argument("--character", default="char_darian")
+    bootstrap_groq.add_argument("--role", default="cognition")
+    bootstrap_groq.add_argument("--force", action="store_true")
 
     dry_run = ai_sub.add_parser("dry-run-decision")
     dry_run.add_argument("--character", default="char_darian")
@@ -182,6 +187,9 @@ def main() -> None:
             print(json.dumps({"ok": True, "provider": args.provider, "model_count": count}))
         elif args.ai_command == "bootstrap-gemini-cognition":
             result = bootstrap_gemini_cognition(conn, character_id=args.character, role=args.role, force=args.force)
+            print(json.dumps(result, indent=2, sort_keys=True))
+        elif args.ai_command == "bootstrap-groq-cognition":
+            result = bootstrap_groq_cognition(conn, character_id=args.character, role=args.role, force=args.force)
             print(json.dumps(result, indent=2, sort_keys=True))
         elif args.ai_command == "dry-run-decision":
             result = dry_run_model_decision(conn, character_id=args.character, role=args.role)
