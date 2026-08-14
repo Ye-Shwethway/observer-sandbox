@@ -6,6 +6,7 @@ from typing import Any
 from .actor_runtime import actor_runtime, set_actor_runtime, set_lease, set_retry
 from .event_log import record_event
 from .inventory import stack_state
+from .location_runtime import current_location
 from .simulation import runtime_value, snapshot
 from .world import set_field
 
@@ -145,6 +146,7 @@ def replenish_inventory_stack(
         raise ValueError("Replenishment quantity exceeds the bounded control limit")
 
     before_stack = stack_state(conn, stack_id)
+    physical_location_id = current_location(conn, before_stack.container_id) if before_stack.container_id else None
     conn.execute("BEGIN IMMEDIATE")
     current = conn.execute(
         "SELECT quantity FROM inventory_stacks WHERE entity_id=?",
@@ -169,7 +171,7 @@ def replenish_inventory_stack(
         conn,
         sim_time=sim_time,
         event_type="creator_inventory_replenished",
-        location_id=before_stack.owner_id if before_stack.owner_id else None,
+        location_id=physical_location_id,
         state_changes={
             "inventory.quantity": {
                 "stack_id": stack_id,
@@ -190,6 +192,7 @@ def replenish_inventory_stack(
             "after_quantity": after,
             "container_id": before_stack.container_id,
             "owner_id": before_stack.owner_id,
+            "physical_location_id": physical_location_id,
         },
     )
     conn.commit()
@@ -204,6 +207,7 @@ def replenish_inventory_stack(
         "after_quantity": after,
         "container_id": before_stack.container_id,
         "owner_id": before_stack.owner_id,
+        "physical_location_id": physical_location_id,
         "authority": authority,
         "requested_by": requested_by,
     }
