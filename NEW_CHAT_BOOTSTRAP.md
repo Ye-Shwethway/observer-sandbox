@@ -28,45 +28,56 @@ When a slice introduces a new architecture/control invariant, update the task-re
 - schema: v4
 - world revision: `thorne-estate-v3.2-training-environment`
 - autonomy: enabled / normal
-- latest verified speed: `1.0x` at the cognition-recovery acceptance checkpoint
+- latest verified speed: `1.0x`
 - cognition: Groq `openai/gpt-oss-20b`
 - Telegram: connected
 
-Latest verified runtime-affecting deployment before the current AI-control slice: **Deploy #170 `31769002006` SUCCESS** from PR #62 merge `3de7a38be1d381654b28326a737974e6da2645f1`. Post-merge CI #594 also succeeded.
+Latest verified runtime-affecting deployment: **Deploy #171 `31769893556` SUCCESS** from PR #63 merge `d8a3f770dd3c6f4293f5035d1085998ba0562bf7`.
 
-PR #62 added the next planned action's cognition reason to proactive Telegram Character Updates, so the Observer now sees both what is next and why it was selected.
+Deploy #171 readback verified service active/healthy, schema v4, autonomy enabled/normal, `autonomy_retry=null`, cognition binding still Groq `openai/gpt-oss-20b`, Telegram API connected, and owner configuration present. Natural cognition had reached `decision_calls=334` at sim time `2025-05-04T17:38:00+00:00`. Deployment did not invoke the new model probe.
 
-Post-Deploy169 natural runtime acceptance verified service active/healthy, schema v4, autonomy enabled/normal, Groq credential/binding active, and the stalled retry state cleared on a fresh autonomous decision. Cognition `decision_calls` advanced `331 -> 332`, `autonomy_retry` became `null`, and Darian naturally scheduled a 10-minute `rest` action in the Training Hall with reason `Brief rest to restore energy and reduce fatigue before winding down.` No simulation acceleration or direct live state mutation was used.
+PR #62 / Deploy #170 added the next planned action's cognition reason to proactive Telegram Character Updates, so the Observer sees both what is next and why it was selected.
 
-## Current authorized slice — P2.3 Telegram Creator AI Control v1
+## P2.3 Telegram Creator AI Control v1
 
-Status: **AUTHORIZED / IMPLEMENTED ON `test` / CI+DEPLOY GATE PENDING**.
+Status: **COMPLETE / CI VERIFIED / DEPLOYED**.
 
-Creator goal:
-- switch cognition providers/models from Telegram;
-- fetch the selected provider's current model catalog;
-- test the chosen model before changing the saved binding so current auth/quota/model availability failures can be seen first.
+Delivery evidence:
+- PR #63 tested head `f2e61d374dce1c3b493d27fb94e1024b9eb5a3fd`;
+- primary CI #595 / run `31769832103` SUCCESS;
+- merge `d8a3f770dd3c6f4293f5035d1085998ba0562bf7`;
+- Deploy #171 / run `31769893556` SUCCESS.
+
+One unrelated Stamina Progression disposable-production-copy acceptance run failed on an existing eligible-event assertion against the evolving copied production state. This slice did not touch Stamina/progression semantics; the primary full CI passed, Strength acceptance passed, and production-copy validation is non-mandatory for this non-state-sensitive control slice under current project policy.
+
+Creator surface:
+- `/start` -> `⚙️ Creator Settings` -> `🧠 AI Cognition`, with `/settings` and `/ai` as direct entry commands;
+- current cognition provider/model display;
+- provider list with credential presence/absence only;
+- live provider model catalog fetch and cached pagination;
+- server-side candidate selection so long/arbitrary model ids are not placed in Telegram callback payloads;
+- one deliberately tiny real `Test Model` inference through the actual runtime adapter and structured cognition-response contract;
+- friendly auth/permission, model availability, request-limit, quota/rate and timeout diagnostics;
+- `Save & Activate` available/accepted only after a successful candidate probe.
 
 Canonical test-before-save invariant:
-- provider browsing, catalog refresh, model selection and a failed/cancelled probe do **not** change the current cognition binding;
-- catalog success alone is not treated as model health because it cannot prove current inference quota/rate availability;
-- `Test Model` performs one deliberately tiny real inference through the same provider adapter and structured cognition-response path used by runtime cognition;
-- `Save & Activate` is unavailable/rejected until that candidate has passed the probe;
-- only `Save & Activate` may enable the candidate provider and write the character cognition binding;
-- API credential values are never shown in Telegram; only presence/absence is exposed;
-- full/arbitrary model ids remain server-side rather than being placed directly in Telegram callback payloads.
+- provider browsing, catalog refresh, candidate selection, failed probe, cancellation, and ordinary navigation do **not** change the current cognition binding;
+- catalog success alone is not model-health proof because it cannot prove current inference quota/rate availability;
+- only explicit `Save & Activate` enables the selected provider and writes the character cognition binding;
+- probe execution never mutates world/profile/progression state or the current binding;
+- a passing probe proves only that one minimal inference worked at that moment, not that future quota will remain available;
+- API credential values are never displayed;
+- CI/deploy readback must not trigger the real probe because it consumes provider inference quota.
 
 Implementation surfaces:
-- `src/observer_sandbox/ai_control.py` — reusable provider/catalog/probe/binding orchestration;
-- `src/observer_sandbox/telegram_ai_control.py` — owner-only Creator AI menu, paging and candidate session;
-- `src/observer_sandbox/telegram_creator_bot.py` — bounded extension of the existing Telegram polling shell;
-- `src/observer_sandbox/service.py` — routes polling through the Creator extension;
-- `docs/TELEGRAM_OBSERVER_ARCHITECTURE.md` — authoritative presentation/control contract;
-- `tests/test_telegram_ai_control_v1.py` — focused safety regression coverage.
+- `src/observer_sandbox/ai_control.py`
+- `src/observer_sandbox/telegram_ai_control.py`
+- `src/observer_sandbox/telegram_creator_bot.py`
+- `src/observer_sandbox/service.py`
+- `docs/TELEGRAM_OBSERVER_ARCHITECTURE.md`
+- `tests/test_telegram_ai_control_v1.py`
 
-Explicit non-goals in this slice: automatic runtime provider failover, fallback-chain editing, Telegram API-key editing, model parameter tuning, schema v5, or world/profile/progression changes.
-
-Deployment verification for this slice must remain read-only. Do **not** trigger `Test Model` merely as a deployment check because the probe is intentionally a real provider call; the Creator can exercise it manually from Telegram when desired.
+Explicit non-goals remain: automatic runtime provider failover, fallback-chain editing, Telegram API-key editing, model parameter tuning, schema v5, or world/profile/progression changes.
 
 ## Cognition resilience / Groq free-tier recovery
 
@@ -149,8 +160,8 @@ The first healthy post-recovery live decision selected ordinary `rest`, not a ge
 
 ## Exact resume point
 
-Complete **P2.3 Telegram Creator AI Control v1** through focused CI, merge, automatic deploy and read-only production verification.
+P2.3 Telegram Creator AI Control v1 is deployed. Resume **natural read-only observation** of autonomous behavior.
 
-Then continue natural read-only autonomy observation. The Creator can manually exercise the new `Creator Settings -> AI Cognition` flow when a provider/model switch or quota check is desired.
+Use the new `Creator Settings -> AI Cognition` flow only when the Creator intentionally wants to browse/fetch models, test a selected model, or activate a different cognition provider/model. Do not invoke `Test Model` merely as monitoring.
 
 Do not build the full Character Memory Engine, automatic provider failover, forced equipment rotation, Speed progression, Telegram secret editing, model parameter tuning, or schema v5 without fresh Creator authorization.
