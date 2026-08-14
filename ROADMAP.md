@@ -11,7 +11,7 @@ Roadmap synchronized: 2026-08-15
 - Preserve the LEGO runtime contract:
   `Actor(s) + Action + Place + Simulation Time + Conditions/Modifiers + Resources/Targets -> Validation -> State Changes + Events`.
 - Darian/Thorne Estate are first rich production exemplars, never reusable-engine identity.
-- Reusable runtime/cognition/progression/query/control/inventory/nutrition logic is actor/entity/definition-id driven.
+- Reusable runtime/cognition/progression/query/control/inventory/nutrition/training logic is actor/entity/definition-id driven.
 - Prefer minimum-runnable reversible slices.
 - One bounded exemplar for a genuinely new invariant; structurally equivalent follow-ons batch by pattern.
 - Default flow: `branch -> focused tests + CI -> merge main -> automatic deploy when runtime-affecting -> read-only production check`.
@@ -20,20 +20,20 @@ Roadmap synchronized: 2026-08-15
 
 ## Current verified production baseline
 
-Latest runtime deployment: **Deploy #183 `31826301329` SUCCESS**, BC-3 PR #82 merge `45c29a834828c9afc1f0a7e190b9f5904019e546`.
+Latest runtime deployment: **Deploy #184 `31828453356` SUCCESS**, Training Method Semantics v2 PR #84 merge `5c7d1524d7d4e66a9b4c92c8232a3a371113391d`.
 
-Post-deploy Runtime Read #12 rerun verified:
+Main CI #708 passed. A post-deploy read-only Runtime Read #12 rerun (`read-runtime` job `94858499326`) verified:
 - service active/healthy;
 - schema v5;
 - autonomy enabled/normal, paused false, retry null, speed 1.0x;
-- sim `2025-05-05T11:17:00+00:00`;
-- cognition decision calls 386;
-- current pending action `read` in the Living Room;
+- sim `2025-05-05T12:00:00+00:00`;
+- cognition decision calls 389;
+- pending action `idle` in Darian's Master Suite;
 - Gemini `gemini-3.1-flash-lite` primary with tested Groq `qwen/qwen3.6-27b` fallback preserved;
 - `body.weight_lb=215.0` and `body.body_fat_pct=9.0` remain live `simulated` `physiology_engine` fields;
-- BC-2 activation boundary remains `2025-05-05T07:55:00+00:00`, `bootstrapped`, `stat_mutated=false`, old/new composition identical;
-- all eleven BC-3 circumference fields are present in production, including `body.hips_in=39.0`;
-- BC-3 fields remained authored/static and no `body_measurement_progression_settled` event existed at readback, so deployment/seed upgrade is verified while natural runtime activation is still pending.
+- BC-2 activation boundary remains `2025-05-05T07:55:00+00:00`, numerical body composition unchanged at activation;
+- BC-3 naturally activated at `2025-05-05T11:47:00+00:00`, `status=bootstrapped`, `stat_mutated=false`, `deferred_fields=[]`;
+- all eleven BC-3 measurements are live `simulated` `body_progression_engine` fields, with `body.hips_in=39.0` preserved.
 
 A historical provider 413 occurred on an 8,645-token cognition request. It is not current retry state. Cognition enrichment remains compact rather than copying raw histories.
 
@@ -52,8 +52,9 @@ A historical provider 413 occurred on an 8,645-token cognition request. It is no
 - fatigue/recovery, targeted training, readiness/effectiveness/effective load;
 - Minimum Training Stimulus + Session Load/Recovery Guard;
 - causal needs + sleep/circadian behavior;
-- Training Method Semantics v1;
-- Physical Attribute Progression Framework v1 for Strength, Stamina, Agility, Speed, Reflexes, Endurance, Flexibility.
+- Training Method Semantics v2 — reusable method definitions separated from world-target bindings;
+- Physical Attribute Progression Framework v1 for Strength, Stamina, Agility, Speed, Reflexes, Endurance, Flexibility;
+- BC-2 Body Composition and BC-3 Body Measurement progression, both live-activated.
 
 ## Universal Item / Eating Program
 
@@ -93,37 +94,31 @@ Research locks:
 
 ### BC-0 — Simulated Profile Re-seed Safety
 
-**COMPLETE / DEPLOYED** via PR #69 / Deploy #175.
-Ordinary re-init/deploy preserves engine-owned simulated profile state.
+**COMPLETE / DEPLOYED** via PR #69 / Deploy #175. Ordinary re-init/deploy preserves engine-owned simulated profile state.
 
 ### BC-1 — Nutrition & Energy Evidence
 
-**COMPLETE / DEPLOYED** via PR #70 / Deploy #176.
-Provides actor-specific resting-energy reference, Compendium-informed action intensity, immutable intake/expenditure evidence and coverage-aware bounded aggregation. BC-1 itself never mutates Weight/BF.
+**COMPLETE / DEPLOYED** via PR #70 / Deploy #176. Provides actor-specific resting-energy reference, Compendium-informed action intensity, immutable intake/expenditure evidence and coverage-aware bounded aggregation. BC-1 itself never mutates Weight/BF.
 
 ### BC-2 — Body Composition Progression Exemplar
 
-**COMPLETE / DEPLOYED / LIVE-ACTIVATED** via PR #78 / Deploy #182; direct activation readback via PR #79 / Runtime Read #11 and preserved after Deploy #183.
+**COMPLETE / DEPLOYED / LIVE-ACTIVATED** via PR #78 / Deploy #182 and preserved through Deploy #184.
 
 Invariant:
 `complete bounded BC-1 evidence + current FM/FFM + resistance-training evidence + recovery + genetic envelope -> deterministic 24h settlement -> atomic Weight/BF history + event`
 
 Live behavior:
-- first completed-action boundary activated `body.weight_lb` + `body.body_fat_pct` as simulated `physiology_engine` fields with no numerical change;
-- pre-activation history cannot create retroactive gain/loss;
+- activation preserves Weight/BF numerically and prevents retroactive gain/loss;
 - 24 simulated-hour settlement windows;
 - incomplete evidence creates an audited no-mutation deferred window rather than an artificial deficit;
 - passive partition uses Forbes small-change FFM share and Hall tissue-change energy densities rather than a fixed 3,500-kcal rule;
-- only training methods whose workload channels include `resistance` qualify for separate RT lean adaptation;
-- protein factor saturates at the 1.6 g/kg/day policy reference;
-- RT adaptation is constrained by energy availability, recovery, resistance effective minutes, genetic FFM headroom and sustainable BF-floor headroom;
+- resistance-only lean adaptation is constrained by protein, energy availability, recovery, effective minutes, genetic FFM headroom and BF-floor headroom;
 - only Weight/BF persist; FM/FFM/BMI remain derived views;
-- coupled history/event writes are atomic;
 - no extra LLM call, Darian-specific engine branch or schema migration.
 
 ### BC-3 — Body Measurement Progression Batch
 
-**COMPLETE / DEPLOYED / SEEDED / ACTIVATION PENDING NATURAL BOUNDARY** via PR #82 / Deploy #183.
+**COMPLETE / DEPLOYED / LIVE-ACTIVATED** via PR #82 / Deploy #183; natural activation verified after Deploy #184.
 
 Invariant:
 `BC-2 bounded body-composition settlement + regional resistance evidence + authored anatomy/genetic envelope -> bounded regional measurement settlement -> atomic profile history + event`
@@ -138,40 +133,78 @@ BC-3 behavior:
 - changed fields, profile history and causal settlement event are atomic;
 - no schema migration and no extra model call.
 
-Darian's complete authored measurement family now includes `body.hips_in=39.0`. The reusable profile schema includes `genetics.hips_max_in`; Darian's authored hip envelope is 41.0. These values are Darian-specific canon and are not universal character ratios.
+Darian's complete authored measurement family includes `body.hips_in=39.0`; reusable schema includes `genetics.hips_max_in`, with Darian's authored hip envelope 41.0. These are character-specific canon, not universal ratios.
 
-PR-head CI #698 passed the full test suite and CLI smoke checks. Disposable production-copy acceptance passed for BC-3 as well as BC-2, Strength and Stamina regression lanes. The BC-3 validator exercises candidate initialization on the production copy, proving the new authored hip fields can be added without clobbering existing engine-owned simulated state.
+Live activation at `2025-05-05T11:47:00+00:00` changed all eleven measurement fields to `simulated` under `body_progression_engine` without numerical mutation. Hips remained 39.0 and `deferred_fields=[]`.
 
-Post-deploy Runtime Read #12 rerun confirmed all eleven body measurements are present, with hips at 39.0 inches. The first natural BC-3 activation event had not yet occurred at that readback. Production must not be accelerated or directly mutated only to manufacture activation evidence.
+## Training Method Semantics v2
+
+**COMPLETE / DEPLOYED** via PR #84 / Deploy #184.
+
+Canonical: `docs/TRAINING_METHOD_SEMANTICS_V2.md`.
+
+Invariant:
+`concrete training target -> target binding -> reusable stable method definition -> effective-load evidence -> domain progression engines`
+
+Behavior:
+- reusable `methods` are keyed by stable `method_id` and contain no character identity or concrete world-object id;
+- separate `bindings` map current trainable objects to reusable methods;
+- a synthetic non-Thorne target proved that another world object can reuse `barbell_strength_work` without copied method metadata or an engine branch;
+- unknown/unbound targets fail closed rather than guessing from object names;
+- downstream Strength/Stamina/BC-2/BC-3 semantics continue to consume stable method ids/workload channels;
+- persisted event evidence retains `source=training-method-semantics-v1` because the evidence contract did not change, while new events add `catalog_revision=training-method-semantics-v2` for provenance;
+- historical v1 events therefore remain valid with no migration;
+- no schema migration or extra model/Telegram call.
+
+Validation:
+- PR-head CI #707 SUCCESS;
+- Minimum Training Stimulus production-copy Acceptance #15 SUCCESS;
+- Public Readiness Security Audit #22 SUCCESS;
+- main CI #708 SUCCESS;
+- Deploy #184 SUCCESS;
+- post-deploy runtime healthy.
+
+Acceptance also fixed stale validation setup: current authoritative dynamic location is `located_at`; the production-copy training validator now uses `set_dynamic_location(...)` rather than only writing the legacy `runtime.location` cache.
+
+## Telegram Profile schema-driven UX — REQUIRED FOLLOW-UP
+
+Canonical debt record: `docs/TELEGRAM_PROFILE_SCHEMA_DRIVEN_UX.md`.
+
+Current good behavior:
+- ordinary represented fields are queried/rendered by schema domain, not hard-coded field rows;
+- therefore new normal-sensitivity fields such as `body.hips_in` auto-appear in the existing Body section without a Telegram-specific patch.
+
+Remaining debt:
+- `PROFILE_SECTIONS` in `profile_observer.py` is still a fixed registry;
+- a wholly new ordinary profile domain/section may still require code-level registration.
+
+Target direction:
+`domain/collection -> section id + label + icon + order + visibility + renderer kind`
+
+Ordinary future sections should become metadata/config-driven; special renderers remain only for genuinely different data shapes. Sensitivity must remain authoritative so private/intimate fields never auto-surface merely because they exist in schema.
+
+Complete this debt before broad Skill/Intellectual/Mental/Social profile expansion makes the fixed registry expensive to unwind.
 
 ## Public Repository Security — COMPLETE / PUBLIC
 
 Canonical: `docs/PUBLIC_REPOSITORY_SECURITY.md` and `SECURITY.md`.
 
-`Ye-Shwethway/observer-sandbox` is public. Public Readiness Hardening v1 was merged in PR #80 (`bf5e537cdeceaa6c5a8d4d61f21b67d636f01f20`) and Public Hardening Fixup v1 followed in PR #81. Public Readiness Security Audit on PR #82 also completed SUCCESS.
+`Ye-Shwethway/observer-sandbox` is public. Public Readiness Hardening v1/v1 fixup are complete; Public Readiness Security Audit #22 also passed on PR #84.
 
-Security locks:
-- full reachable Git-history scan uses `fetch-depth: 0`;
-- potential secret values are never printed by the audit;
-- `.env`, `secrets.env`, private-key formats, runtime DBs and backups are ignored;
-- `pull_request_target` and `permissions: write-all` are prohibited;
-- reusable production-copy validation retains an explicit same-repository fork guard;
-- GitHub additionally withholds repository secrets from fork-originated `pull_request` workflows by default;
-- disposable production-copy validation unsets all model and Telegram credentials;
-- production credentials remain GitHub Actions secrets plus VPS `/var/lib/observer-sandbox/secrets.env` mode `0600`;
-- repository `GITHUB_TOKEN` observed in public audit/read workflows has read-only contents/metadata permissions.
+Security locks remain unchanged. Manual UI verification is still needed where the GitHub App cannot fully read account-level repository settings: outside-contributor workflow approval, Secret scanning/Push protection, and `main` branch/ruleset protection.
 
-Post-visibility manual settings still require UI verification where the GitHub App cannot read account-level repository settings: outside-contributor workflow approval, Secret scanning/Push protection, and `main` branch/ruleset protection.
+## Next development sequence
 
-## Later profile sequence
+1. **Training Anatomy / Movement Semantics** — reusable movement/exercise patterns beneath universal method definitions, with primary/secondary regional loading for anatomically specific BC-3 evidence;
+2. **Regional Measurement Detraining** — region-specific training absence/disuse decay reconciled with systemic BC-2 FFM loss so decline is realistic without double counting;
+3. **Telegram Profile schema-driven section UX** before broad profile expansion;
+4. skill progression family;
+5. intellectual attributes;
+6. mental/emotion dynamics;
+7. later relationship/social/sexual physiology when prerequisites mature;
+8. broad Mind/Behavior architecture only after enough real feature signals exist to justify it.
 
-1. observe and verify BC-3 natural production activation;
-2. verify remaining post-public GitHub security settings when convenient;
-3. skill progression family;
-4. intellectual attributes;
-5. mental/emotion dynamics;
-6. later relationship/social/sexual physiology when prerequisites mature;
-7. broad Mind/Behavior architecture only after enough real feature signals exist to justify it.
+Post-public GitHub settings verification can proceed opportunistically and does not block runtime development.
 
 ## Future universal object/inventory expansion
 
@@ -203,6 +236,6 @@ Do not add as side effects:
 
 ## Exact resume point
 
-Re-read live production first. If a natural eligible action boundary has occurred since post-deploy Runtime Read #12, verify **BC-3 activation** read-only. Do not force or accelerate production for evidence.
+Re-read live production and current canonical repository first. BC-3 is naturally live-activated and Training Method Semantics v2 is deployed.
 
-After BC-3 activation is naturally verified, proceed to the **skill progression family** unless the Creator gives a newer instruction.
+The proposed next minimum-runnable slice is **Training Anatomy / Movement Semantics**. It should add reusable movement/exercise semantics such as squat, hinge, horizontal/vertical press, row, curl, extension and calf patterns, then emit anatomically specific regional evidence while keeping actor identity, concrete gym objects and BC-3 formulas outside the movement-definition layer.
