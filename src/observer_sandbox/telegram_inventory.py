@@ -5,6 +5,7 @@ from typing import Any
 
 from .creator_control import replenish_inventory_stack
 from .inventory import all_inventory_stacks, inventory_for_entity, list_inventory_scopes, stack_state
+from .nutrition_facts import nutrition_facts_for_definition
 from .world import get_field
 
 PAGE_SIZE = 8
@@ -180,6 +181,20 @@ def _stack_view(
         lines.append(f"🧭 Mobility    {str(mobility).replace('_', ' ').title()}")
     if kind:
         lines.append(f"🗃 Storage     {str(kind).replace('_', ' ').title()}")
+
+    nutrition = nutrition_facts_for_definition(stack.definition_id)
+    if nutrition is not None:
+        lines.extend([
+            "",
+            "🥗 NUTRIENT FACTS · DEFAULT PORTION",
+            f"🍽 Serving     {_fmt_number(nutrition['quantity'])} {nutrition['unit']}",
+            f"🔥 Energy      {_fmt_number(nutrition['energy_kcal'])} kcal",
+            f"🥩 Protein     {_fmt_number(nutrition['protein_g'])} g",
+            f"🌾 Carbs       {_fmt_number(nutrition['carbohydrate_g'])} g",
+            f"🥑 Fat         {_fmt_number(nutrition['fat_g'])} g",
+            f"📐 Basis       {_fmt_number(nutrition['basis_quantity'])} {nutrition['unit']}",
+        ])
+
     keyboard: list[list[dict[str, str]]] = []
     if is_owner:
         keyboard.append([{"text": "➕ Replenish Stock", "callback_data": f"inv:replenish:{stack_id}"}])
