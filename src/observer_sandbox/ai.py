@@ -3,6 +3,7 @@ from __future__ import annotations
 import json
 import os
 import sqlite3
+import urllib.error
 import urllib.parse
 import urllib.request
 from dataclasses import dataclass
@@ -156,6 +157,15 @@ def _get_json(url: str, headers: dict[str, str] | None = None, timeout: float = 
     try:
         with urllib.request.urlopen(request, timeout=timeout) as response:
             return json.loads(response.read().decode("utf-8"))
+    except urllib.error.HTTPError as exc:
+        try:
+            body = exc.read().decode("utf-8", errors="replace").strip()
+        except Exception:
+            body = ""
+        detail = f"HTTP {exc.code}: {exc.reason}"
+        if body:
+            detail = f"{detail}: {body[:1000]}"
+        raise CatalogFetchError(detail) from exc
     except Exception as exc:
         raise CatalogFetchError(str(exc)) from exc
 
@@ -169,7 +179,12 @@ def _auth_headers(provider: sqlite3.Row) -> dict[str, str]:
     key = _credential(provider)
     if not key:
         raise AIConfigurationError(f"Missing credential environment variable: {provider['credential_ref']}")
-    return {"Authorization": f"Bearer {key}", "Accept": "application/json"}
+    return {
+        "Authorization": f"Bearer {key}",
+        "Accept": "application/json",
+        "Content-Type": "application/json",
+        "User-Agent": "observer-sandbox/0.0.1",
+    }
 
 
 def _fetch_gemini(provider: sqlite3.Row) -> list[dict[str, Any]]:
