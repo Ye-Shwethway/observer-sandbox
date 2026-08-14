@@ -110,10 +110,11 @@ def main() -> int:
         as_of_sim_time=eligible_time,
         state=eligible_state,
     )
+    settlement = activated["settlement"]
     assert activated["reason"] == "eligible_stimulus"
-    assert event_id in activated["settlement"]["stimulus_event_ids"]
-    assert activated["settlement"]["raw_positive_delta"] > 0.0
-    assert activated["settlement"]["net_delta"] > 0.0
+    assert event_id in settlement["consumed_stimulus_event_ids"]
+    assert settlement["positive_delta"] > 0.0
+    assert settlement["net_delta"] > 0.0
     assert profile_value(conn, STAMINA_FIELD_KEY) > baseline_stamina
     assert profile_value(conn, STRENGTH_FIELD) == baseline_strength
 
@@ -124,7 +125,7 @@ def main() -> int:
         state=eligible_state,
     )
     assert repeated["reason"] != "eligible_stimulus"
-    assert event_id not in repeated["settlement"]["stimulus_event_ids"]
+    assert repeated["settlement"] is None or event_id not in repeated["settlement"].get("consumed_stimulus_event_ids", [])
 
     history = conn.execute(
         "SELECT field_key,old_value_json,new_value_json,mode,authority,reason FROM character_profile_history WHERE entity_id=? AND field_key=? ORDER BY id DESC LIMIT 2",
