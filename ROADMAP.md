@@ -14,33 +14,34 @@ Roadmap synchronized: 2026-08-14
 - Character-specific facts/policy/world content are data; reusable simulation/cognition/progression/query/control logic is actor/entity-id driven.
 - Prefer minimum-runnable reversible slices.
 - Use exemplar-first for genuinely new invariants, then batch structurally equivalent follow-ons.
-- For physiology/body systems, reconcile human evidence before freezing formulas; simulation approximations must be documented as policy rather than biological law.
+- For physiology/body systems, reconcile human evidence before freezing formulas; simulation approximations are documented policy, not biological law.
 - For world objects, reusable definition and concrete universe instance are distinct identities. Ownership, physical containment and location are separate state.
 - Default development: `test -> focused tests + CI -> merge main -> deploy if runtime-affecting -> read-only production check -> sync test`.
 - Never accelerate or directly mutate production merely to manufacture acceptance evidence.
 
 ## Current verified production baseline
 
-Latest runtime deployment: **Deploy #176 `31789221876` SUCCESS** from PR #70 merge `5d00003166ab5cf93a5bbc764cc6105219e9dce0`.
+Latest runtime deployment: **Deploy #177 `31791851792` SUCCESS** from PR #71 merge `73ec29e8d97a168fa81af85f8a223692f9adfbad`.
 
-The last detailed readback before the inventory-v5 candidate established:
+Deploy #177 readback verified:
 - service active / healthy;
-- schema v4;
+- **schema v5**;
 - world revision `thorne-estate-v3.3-physical-attribute-training`;
 - default actor `char_darian`;
+- `inventory_seed_revision=thorne-estate-inventory-v1`;
 - autonomy enabled / normal, `paused=false`, `autonomy_retry=null`;
 - speed `1.0x`;
-- primary Gemini `gemini-3.1-flash-lite` preserved by ordinary bootstrap;
+- primary Gemini `gemini-3.1-flash-lite` preserved;
 - fallback Groq `qwen/qwen3.6-27b` preserved;
-- Telegram connected;
-- `decision_calls=356` at readback;
-- Darian sleeping in Master Suite with Energy 82.127, Fatigue 11.045, Hunger 50.325, Thirst 21.3, Sleepiness 31.55, Cleanliness 99.466.
+- Telegram connected with owner/allowed-user config present;
+- cognition `decision_calls=356` at readback;
+- Darian remained sleeping in Master Suite with Energy 82.127, Fatigue 11.045, Hunger 50.325, Thirst 21.3, Sleepiness 31.55, Cleanliness 99.466.
 
-Creator independently observed the Telegram bot boot after Deploy #176. Do not infer newer detailed live physiology from that notification alone; re-read production after the next runtime-affecting merge.
+Post-merge CI #624 SUCCESS. No model probe, forced action, production acceleration or direct live-state mutation was used for the inventory deployment.
 
 ## Completed platform/runtime layers
 
-- Foundation schema v4 — COMPLETE / production baseline through Deploy #176.
+- Foundation schema v4 runtime model — COMPLETE; superseded operationally by schema v5 inventory extension.
 - P0 Foundation & Remote Control — COMPLETE / LIVE VERIFIED.
 - P0.5 dynamic AI provider/runtime layer — COMPLETE.
 - P1 continuous autonomy — LIVE.
@@ -79,174 +80,136 @@ Invariant:
 Status: **COMPLETE / CI VERIFIED / DEPLOYED**.
 Canonical contract: `docs/PHYSICAL_ATTRIBUTE_PROGRESSION_FRAMEWORK.md`.
 
-PR #68 final head `5ebe50d0752790c1abea7ee6d653be8ebd5a1c2e`; merge `3bceda924ed0fe18ce1d1360f6e0cc2c62c55f7e`; CI #608/post-merge #609 plus targeted acceptances green; Deploy #174 success.
-
-All seven core RAPS-PA fields have live progression:
-- Strength;
-- Stamina;
-- Agility;
-- Speed;
-- Reflexes;
-- Endurance;
-- Flexibility.
-
-Speed/Reflexes/Endurance/Flexibility use the actor-generic policy-driven framework. Existing Strength/Stamina/Agility implementations remain stable. Flexibility has a real Mobility & Stretching Area and `mobility_stretching` evidence method. Activation never retroactively awards historical gain.
-
-## Grading state
-
-- Strength grading exemplar — COMPLETE / DEPLOYED.
-- Attribute Grading Batch 1 — COMPLETE / DEPLOYED for compatible 0..100 fields.
-- IQ remains a separate scale.
-- Skills grading/progression remains separate.
-- Body composition/measurements are a distinct physiology family.
+All seven core RAPS-PA fields have active progression: Strength, Stamina, Agility, Speed, Reflexes, Endurance, Flexibility. Speed/Reflexes/Endurance/Flexibility use the actor-generic policy-driven framework. Flexibility has real `mobility_stretching` evidence. Existing Strength/Stamina/Agility implementations remain stable.
 
 ## Body Composition Progression Program — CURRENT ACTIVE PROGRAM
 
-Canonical research contract: `docs/BODY_COMPOSITION_RESEARCH_FOUNDATION.md`.
-Canonical BC-1 contract: `docs/NUTRITION_ENERGY_EVIDENCE.md`.
-Canonical item/inventory contract: `docs/INVENTORY_ITEM_ARCHITECTURE.md`.
+Canonical contracts:
+- `docs/BODY_COMPOSITION_RESEARCH_FOUNDATION.md`
+- `docs/NUTRITION_ENERGY_EVIDENCE.md`
+- `docs/INVENTORY_ITEM_ARCHITECTURE.md`
 
 Creator requirement: realistic human body behavior must consider age, sex, individual genetic potential, nutrition/energy balance and plausible body proportions before formulas are frozen.
 
-### Evidence-led decisions
-
-Research reconciled from NIH/NIDDK Hall/Forbes dynamic body-weight work, resistance-training sex/age response evidence, genetic/inter-individual variability, protein/energy-deficit literature, body-composition references and the 2024 Compendium of Physical Activities.
-
-Locked direction:
+Locked research direction:
 - no universal static `3500 kcal = 1 lb` law;
 - model weight, FM, FFM and BF% as a coupled system over bounded settlement intervals;
-- Hall/Forbes-style partitioning is a documented first-order approximation, not a full human metabolic model;
+- Hall/Forbes-style partitioning is a documented first-order approximation, not a full metabolic model;
 - sex affects baseline/reference physiology but is not a crude hypertrophy multiplier;
 - age is context/modifier, not a hard response cliff;
-- genetic potential is character-specific canonical/config data; population FFMI/FMI is plausibility context only;
+- genetic potential is character-specific config/canonical data; population FFMI/FMI is plausibility context only;
 - kcal/protein cannot be inferred from abstract hunger/energy scores;
 - protein/energy availability constrains later lean adaptation;
-- action expenditure is actor-scaled using a resting-energy reference plus authored Compendium-informed intensity anchors.
-
-Current profile already declares `body.weight_lb`, `body.body_fat_pct`, derived `body.lean_mass_lb`, `body.fat_mass_lb`, `body.bmi`, canonical DOB/sex/height, and genetic lean-condition weight range/body-fat floor.
+- expenditure is actor-scaled from resting physiology + authored Compendium-informed intensity.
 
 ### BC-0 — Simulated Profile Re-seed Safety
 
-Status: **COMPLETE / CI VERIFIED / DEPLOYED**.
+Status: **COMPLETE / DEPLOYED** via PR #69 / Deploy #175.
 
-PR #69:
-- tested head `2a23ff48207867a6684832b8fefdd260053eac78`;
-- CI #610 SUCCESS;
-- merge `e407533eff098f5803cc17469e8b9da8c24c21b8`;
-- post-merge CI #611 SUCCESS;
-- Deploy #175 SUCCESS.
-
-Invariant: ordinary canonical seed import initializes inactive fields but preserves existing `mode=simulated` value/mode/authority/source. Non-simulated canonical/static fields remain intentionally seed-updatable.
+Ordinary seed import initializes inactive/non-simulated fields but preserves existing `mode=simulated` values and their authority/source across ordinary re-init/deploy.
 
 ### BC-1 — Minimum Nutrition & Energy Balance Evidence
 
-Status: **COMPLETE / CI VERIFIED / PRODUCTION-COPY VALIDATED / DEPLOYED**.
+Status: **COMPLETE / DEPLOYED** via PR #70 / Deploy #176.
 
-PR #70:
-- final head `bdc6e117074e961b7b21c01dc9d42181d11c6e89`;
-- final CI #615 SUCCESS;
-- final Nutrition & Energy Evidence Acceptance #3 SUCCESS;
-- merge `5d00003166ab5cf93a5bbc764cc6105219e9dce0`;
-- Deploy #176 SUCCESS.
-
-Implementation:
-- authored kcal/protein/carbohydrate/fat evidence;
+BC-1 provides:
 - Mifflin-St Jeor actor-specific resting-energy reference;
 - Compendium-informed action/training intensity anchors;
-- immutable `nutrition_intake` and `energy_expenditure` event evidence;
-- bounded `energy_balance_window()` with coverage/missing-evidence guard;
-- historical pre-BC-1 actions are not silently recomputed;
-- BC-1 never mutates weight or body fat.
+- immutable nutrition/expenditure event evidence;
+- bounded coverage-aware `energy_balance_window()`;
+- no retroactive reinterpretation of pre-BC-1 history;
+- no body-weight/BF mutation.
 
-Production-copy evidence on Darian-shaped live state showed about `2073.388 kcal/day` REE, an `800 kcal / 50 g protein` prepared meal, about `53.994 kcal` expenditure for the 25-minute eat action, unchanged weight/BF, zero model/Telegram calls and no live DB mutation.
-
-BC-1 direct Estate-object nutrition profiles are now explicitly transitional. Definition-based item nutrition supersedes them as eating behavior migrates to inventory stacks.
+Disposable-production validation showed approximately `2073.388 kcal/day` REE for the current exemplar, an `800 kcal / 50 g protein` prepared-meal evidence event and unchanged weight/BF. BC-1 direct Estate-object nutrition profiles are transitional compatibility data and are superseded by definition-based nutrition as Eating Behavior v1 activates.
 
 ## Universal Item & Inventory Program
 
 Canonical contract: `docs/INVENTORY_ITEM_ARCHITECTURE.md`.
 
-### Architecture invariant
-
+Core invariant:
 `Universal definition -> concrete instance/stack -> physical container/location -> ownership -> action/evidence -> quantity/state transition`
 
-- An apple is one universal definition everywhere; Darian, a shop or a backpack may hold different concrete stacks of the same definition.
-- A concrete treadmill at Thorne Estate eventually references a reusable treadmill/equipment definition; there is no `Darian's treadmill` definition.
-- Structural world `contains` remains authored topology/containment and is not reused as mutable inventory state.
-- Dynamic inventory containment, ownership, carriage and equipment state remain distinct semantics.
+- An apple is one universal definition everywhere; a home, shop, character or backpack may hold concrete stacks of that definition.
+- A Thorne Estate treadmill eventually becomes a concrete instance of a reusable equipment definition; there is no `Darian's treadmill` definition.
+- Structural world `contains` remains authored topology/fixture containment and is not reused as mutable inventory state.
+- Inventory containment, ownership, carriage/equipped state and world location remain separate semantics.
 
 ### Fixed and movable containers
 
-Fixed/immovable container examples:
-- estate/house/room storage space;
+Fixed/immovable examples:
+- estate/room storage;
 - refrigerator;
 - pantry;
-- supply shelf;
+- shelf;
 - locker / armory rack.
 
-Movable container examples:
+Movable examples:
 - backpack;
-- bag;
-- suitcase;
+- bag / suitcase;
 - crate;
 - toolbox / medical kit.
 
-A movable container carries its contained inventory with it logically. Container nesting must be bounded and cycle-free. Ownership does not imply physical possession, and carriage does not imply ownership.
+Moving a movable container logically moves its contents. Container nesting must remain bounded and cycle-free. Ownership never implies physical possession.
 
-### Inventory Foundation v1 — CURRENT SLICE
+### Inventory Foundation v1
 
-Status: **IMPLEMENTED ON PR #71 / CI VERIFIED / PRODUCTION-COPY MIGRATION VERIFIED / MERGE-DEPLOY PENDING**.
+Status: **COMPLETE / CI VERIFIED / PRODUCTION-COPY MIGRATION VERIFIED / DEPLOYED**.
 
-Schema v5 is now justified by a concrete missing persistence invariant: schema v4 had reusable `entity_definitions`, concrete `entities.definition_id`, generic relations/events/actions, but no durable quantity/depletion record for item stacks. The v5 candidate adds only normalized `inventory_stacks`; it does not create a parallel world model.
+Delivery:
+- PR #71 final head `7bd3849b0bf606c40901c83e2847d2bbf716f20f`;
+- final CI #623 SUCCESS;
+- Inventory Foundation Acceptance #4 SUCCESS on disposable production copy;
+- merge `73ec29e8d97a168fa81af85f8a223692f9adfbad`;
+- post-merge CI #624 SUCCESS;
+- Deploy #177 SUCCESS with live schema v5 readback.
 
-Candidate implementation:
-- `config/items.v1.json`: universal food definitions with canonical unit/portion/nutrition semantics;
-- `config/worlds/home.inventory.v1.json`: concrete Estate stock stacks and fixed storage containers;
-- `inventory_stacks`: quantity + unit + seed metadata;
-- stack entities reference reusable `entity_definitions`;
-- mutable inventory containment uses `stored_in`;
-- legal/economic ownership uses `owned_by`;
-- deterministic quantity validation/decrement;
-- definition-based nutrition scales by consumed quantity;
-- depleted stacks remain identifiable at quantity zero;
-- ordinary initialize/deploy does **not** replenish a live stack: seed quantity is first-install data only.
+Schema v5 is justified by one concrete missing invariant: schema v4 already had reusable `entity_definitions`, concrete `entities.definition_id`, generic relations/actions/events, but no durable stack quantity/depletion record. v5 adds only normalized `inventory_stacks`; it does not create a parallel world model.
 
-Initial universal food exemplar set includes apple, banana, cooked chicken breast, cooked white rice, eggs, oats, Greek yogurt, mixed vegetables, olive oil and whey protein powder. Estate stock is concrete inventory content; the definitions are not Estate-specific.
+Implemented:
+- universal food definitions in `config/items.v1.json`;
+- concrete Estate stock in `config/worlds/home.inventory.v1.json`;
+- fixed container metadata;
+- `stored_in` mutable inventory containment;
+- `owned_by` ownership;
+- quantity/unit persistence;
+- deterministic availability validation and decrement;
+- definition-based quantity-scaled nutrition;
+- first-seed-only stock: ordinary initialize/deploy does not replenish consumed quantity.
 
-Validation on PR #71:
-- initial CI #617 found only one stale `schema_version == 4` test expectation; all new inventory tests passed;
-- stale expectation corrected to v5;
-- final-head CI #620 SUCCESS;
-- Inventory Foundation Acceptance #1 SUCCESS on a disposable live production copy;
-- production copy migrated schema v4 -> v5 while preserving sim time, world revision, actor runtime, weight and BF;
-- 12 seeded apples -> consume 2 -> 10, then reinitialize -> still 10 (no refill regression);
-- model calls 0; Telegram calls 0; live production DB unchanged.
+Initial universal food definitions: apple, banana, cooked chicken breast, cooked white rice, eggs, oats, Greek yogurt, mixed vegetables, olive oil and whey protein powder.
 
-### Eating Behavior v1 — NEXT AFTER INVENTORY DEPLOY
+Production-copy migration evidence:
+- schema v4 -> v5;
+- sim time, world revision, actor runtime, weight and BF preserved;
+- seeded apples 12 -> consume 2 -> 10 -> reinitialize -> still 10;
+- model calls 0; Telegram calls 0; live source DB untouched.
 
-Do not turn food choice into a hardcoded Darian meal script.
+Deploy #177 confirms the production database is now schema v5 with inventory seed revision active while cognition/autonomy/Telegram and current Darian state remain preserved.
+
+## Eating Behavior v1 — NEXT MINIMUM-RUNNABLE SLICE
+
+Do not implement a Darian-specific meal script.
 
 Cognition should receive deterministic food availability/portion context and may consider:
-- hunger and time/daypart;
+- hunger/daypart;
 - recent intake and meal cadence;
-- estimated energy/protein context;
+- energy/protein context;
 - training/recovery state;
 - body-composition goal;
 - preferences/aversions/dietary constraints;
 - cooking/convenience context;
 - available stock;
-- later budget/cost when economy exists.
+- future budget/cost context when economy exists.
 
-Character policy controls priorities. Darian may naturally prioritize protein/recovery because he is fitness-oriented; chicken/apple/rice semantics remain universal definitions.
+Character policy controls priorities. Darian may naturally prioritize protein/recovery because he is fitness-oriented; chicken/apple/rice semantics remain universal.
 
-The model proposes a structured food/portion intent. Deterministic inventory/nutrition code validates quantity, decrements stock, calculates nutrient totals and records immutable evidence. The model never performs authoritative macro arithmetic or stock mutation.
+The model proposes structured food/portion intent. Deterministic inventory/nutrition code validates quantity, decrements stock, calculates nutrient totals and records immutable evidence. The model never owns macro arithmetic or stock mutation.
 
 ### Natural intake readiness gate — REQUIRED BEFORE BC-2
 
-After Inventory Foundation and Eating Behavior v1 deploy:
+After Eating Behavior v1 deploy:
 - observe ordinary production behavior read-only;
-- verify meal cadence is plausible;
-- verify daily intake/protein context is not an artifact of the old hunger loop;
+- verify meal cadence and total intake are physiologically plausible;
 - verify naturally selected foods have complete definition-based nutrition evidence;
 - verify expenditure coverage/magnitudes remain plausible;
 - do not hide sparse eating by inflating calories in one generic meal.
@@ -256,11 +219,11 @@ After Inventory Foundation and Eating Behavior v1 deploy:
 Only after the readiness gate passes:
 - activate coupled `body.weight_lb` + `body.body_fat_pct` through one actor-generic deterministic engine;
 - derive FM/FFM/BMI consistently;
-- aggregate causal definition-based nutrition, expenditure and training evidence over bounded windows;
+- aggregate definition-based nutrition, expenditure and training evidence over bounded windows;
 - use bounded FM/FFM partitioning rather than one fixed tissue ratio;
 - model resistance-training lean adaptation separately, constrained by training evidence, protein/energy availability, training state and personalized genetic headroom;
 - no crude sex hypertrophy multiplier;
-- age/sex enter only where evidence supports them;
+- age/sex enter only where supported by evidence;
 - bootstrap at activation boundary without retroactive gain/loss;
 - write coupled fields atomically with profile history/audit event;
 - clamp/reject implausible single-window changes;
@@ -268,58 +231,52 @@ Only after the readiness gate passes:
 
 ### BC-3 — Body Measurement Progression Batch
 
-Only after BC-2 is live/validated. Circumferences must combine composition, regional training/anatomy and character-specific structural/genetic envelopes; do not derive every circumference from body weight alone.
+Only after BC-2 is live/validated. Circumferences must combine composition, regional training/anatomy and character-specific structural/genetic envelopes; never derive every circumference from body weight alone.
 
 ## Future universal object migration
 
-Do not migrate every Estate object as a side effect of the body-composition prerequisite. Once the inventory/item invariant is deployed, follow exemplar-first then batch-by-pattern:
-
-1. consumable food/drink definitions + stacks — current exemplar;
+Proceed by family, not one-off rewrites:
+1. consumable food/drink definitions + stacks — exemplar complete;
 2. movable containers + carried inventory;
-3. fixed storage fixtures/capacity semantics where needed;
+3. fixed storage capacity semantics where needed;
 4. training equipment definitions + existing Estate instances;
 5. tools/electronics/books/medical supplies;
-6. clothing/equipment/equipped-state surfaces;
-7. material/crafting inputs only when a concrete gameplay need exists;
-8. economy: ownership transfer, vendors, pricing, currencies, transactions, scarcity/replenishment.
+6. clothing/equipment/equipped-state;
+7. materials/crafting only when required;
+8. economy: ownership transfer, vendors, prices/listings, currencies/accounts, transactions, scarcity/replenishment.
 
-Economic value is state/context, not item identity. The same universal apple may have different owners, locations, prices and availability over time.
+Economic value is context/state, not item identity. The same apple definition may have different owners, locations, prices and availability over time.
 
-## Planned profile/system unlock sequence
+## Planned sequence
 
-1. Inventory Foundation v1 merge/deploy/readback;
-2. Eating Behavior v1;
-3. natural intake/energy evidence readiness gate;
-4. BC-2 body composition exemplar;
-5. BC-3 body measurement batch;
-6. skill progression exemplar;
-7. compatible skill batch;
-8. intellectual attribute exemplar/batch;
-9. mental/emotion dynamics;
-10. later social/relationship/sexual physiology families as causal prerequisites exist.
+1. Eating Behavior v1;
+2. natural intake/energy readiness gate;
+3. BC-2 body composition exemplar;
+4. BC-3 body measurement batch;
+5. skill progression exemplar + compatible batch;
+6. intellectual attribute family;
+7. mental/emotion dynamics;
+8. later social/relationship/sexual physiology as causal prerequisites mature.
 
 ## Deferred boundaries
 
-Do not add as side effects of the current minimum foundation:
+Do not add as side effects of the current body program:
 - full Character Memory Engine;
 - multi-fallback/circuit-breaker/provider-health systems;
 - Telegram secret/model-parameter editing;
 - second production character solely for testing;
 - forced equipment rotation;
-- full RPG inventory UI or encumbrance;
-- spoilage/expiration and deep recipe/cooking graph;
-- arbitrary deep nested containers;
-- migration of every existing Estate object in the consumable exemplar;
-- currency/shops/vendor/economy simulation;
+- full RPG inventory UI/encumbrance;
+- spoilage/expiration or deep recipe graph;
+- arbitrary deep container nesting;
+- all-object migration at once;
+- currency/shops/economy simulation;
 - generalized crafting;
-- detailed endocrine or menstrual-cycle/hormone engine;
-- micronutrient or organ-by-organ metabolic simulation;
-- exact fluid/glycogen fluctuation model;
+- detailed endocrine/micronutrient/organ-by-organ metabolic simulation;
+- exact fluid/glycogen model;
 - richer relationship engine;
 - estate exterior/Tahoe traversal.
 
 ## Exact resume point
 
-Finish **PR #71 Inventory Foundation v1**: canonical docs sync -> final-head CI + production-copy acceptance -> merge -> automatic Deploy/readback -> synchronize `test` to `main`.
-
-Then implement **Eating Behavior v1** as the next minimum-runnable slice. Only after natural definition-based intake/expenditure evidence is plausible should BC-2 weight/BF mutation be activated.
+Repository/runtime checkpoint is clean after Inventory Foundation v1. **Next authorized proposal is Eating Behavior v1** under the universal item/inventory contract. After it is deployed, observe natural definition-based intake/expenditure before activating BC-2 weight/BF mutation.
