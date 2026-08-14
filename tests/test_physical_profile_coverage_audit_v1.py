@@ -23,22 +23,21 @@ def test_audit_classifies_core_physical_lifecycle_fields():
     assert fields["body.weight_lb"]["classification"] == "simulated_dynamic"
     assert fields["body.bmi"]["classification"] == "derived"
     assert fields["body.hips_in"]["authority"] == "body_progression_engine"
+    assert fields["body.abdominal_structure"]["classification"] == "canonical_structural"
+    assert fields["body.abdominal_definition"]["classification"] == "derived"
     assert fields["sexual_anatomy.penis_length_in"]["authority"] == "sexual_anatomy_lifecycle_engine"
     assert fields["sexual_anatomy.baseline_erectile_function"]["authority"] == "sexual_physiology_engine"
 
 
-def test_audit_keeps_known_gaps_machine_readable():
+def test_physical_completion_gate_has_no_unresolved_representation_blockers():
     catalog = _catalog()
-    required = set(catalog["gate"]["required_follow_up_fields"])
-    assert required == {
-        "body.abdominal_definition",
-        "appearance.skin_quality",
-        "appearance.pars",
-        "sexual_anatomy.sensitivity",
-    }
-    assert catalog["gate"]["physical_profile_completion"] is False
-    for key in required:
-        assert catalog["fields"][key]["status"] == "required_follow_up"
+    assert catalog["gate"]["required_follow_up_fields"] == []
+    assert catalog["gate"]["physical_profile_completion"] is True
+    assert catalog["fields"]["appearance.skin_quality"]["classification"] == "intentionally_static"
+    assert catalog["fields"]["appearance.skin_quality"]["authority"] == "profile_core"
+    assert catalog["fields"]["appearance.pars"]["classification"] == "canonical_structural"
+    assert catalog["fields"]["appearance.pars"]["authority"] == "profile_core"
+    assert catalog["fields"]["sexual_anatomy.sensitivity"]["status"] == "deferred_context_behavior"
 
 
 def test_intimate_audit_entries_match_schema_sensitivity(tmp_path):
