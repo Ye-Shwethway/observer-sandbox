@@ -103,10 +103,11 @@ def test_location_and_character_inventory_lists_are_generic(tmp_path, monkeypatc
     monkeypatch.setenv("OBSERVER_TELEGRAM_OWNER_ID", "100")
 
     with connect(db) as conn:
-        locations_text, _ = _callback_view(conn, 100, "inv:list:locations:0")
+        locations_text, locations_keyboard = _callback_view(conn, 100, "inv:list:locations:0")
         assert "INVENTORY · LOCATIONS" in locations_text
-        assert "Darian" not in locations_text
+        assert not _contains_callback(locations_keyboard, "inv:scope:char_darian")
 
-        characters_text, _ = _callback_view(conn, 100, "inv:list:characters:0")
+        characters_text, characters_keyboard = _callback_view(conn, 100, "inv:list:characters:0")
         assert "INVENTORY · CHARACTERS" in characters_text
         assert "Darian Thorne" in characters_text
+        assert _contains_callback(characters_keyboard, "inv:scope:char_darian")
