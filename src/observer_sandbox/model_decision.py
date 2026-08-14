@@ -9,6 +9,7 @@ from .actor_selection import resolve_actor_id
 from .ai_runtime import generate_character_decision
 from .character_config import configured_character_ids, load_character_autonomy_policy
 from .eating_behavior import enrich_eating_action_options, validate_proposed_resources
+from .meal_choice_intelligence import meal_choice_context
 from .need_resolution import shape_action_options_for_needs
 from .resource_awareness import (
     enrich_options_with_usage,
@@ -299,6 +300,12 @@ class ModelDecisionProvider:
         enriched["character"] = self._character_context()
         enriched["autonomy_policy"] = self.policy
         enriched["decision_signals"] = decision_signals
+        enriched["meal_choice_context"] = meal_choice_context(
+            self.conn,
+            self.character_id,
+            state=state,
+            autonomy_policy=self.policy,
+        )
         enriched["recent_events"] = recent_events
         return enriched
 

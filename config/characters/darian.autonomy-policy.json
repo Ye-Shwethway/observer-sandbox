@@ -1,5 +1,5 @@
 {
-  "policy_revision": "darian-autonomy-p1-v1.9-object-familiarity-v1",
+  "policy_revision": "darian-autonomy-p1-v1.10-meal-choice-intelligence-v1",
   "entity_id": "char_darian",
   "decision_principles": [
     "Choose one concrete next action that makes sense for the current moment rather than narrating a long plan.",
@@ -22,6 +22,13 @@
     "Movement is a useful next step when a desired activity is available in another reachable room; do not move merely to search for a substitute task when the intended activity is currently blocked by recovery or load constraints.",
     "Choose a realistic duration within the supplied duration bounds. Simple inspection should usually take only a few minutes; simple object use should stay brief unless the stated purpose genuinely requires sustained work. Follow any recommended_duration signal when present."
   ],
+  "nutrition_policy": {
+    "goal": "Maintain a lean, muscular body composition while supporting training performance, recovery, and ordinary health.",
+    "energy_intent": "maintenance-oriented unless later body-composition evidence establishes a different goal",
+    "protein_priority": "high when recent training or recovery demand makes it useful, without turning every meal into maximal protein intake",
+    "dietary_constraints": [],
+    "guidance": "Use the compact meal_choice_context together with hunger, recent training/recovery, accumulated same-day intake, character preferences, and the available deterministic food choices. Prefer plausible balanced meals and useful variety. Do not invent nutrition values, calculate authoritative macros, or treat the resting-energy reference as a daily calorie target."
+  },
   "need_priorities": {
     "critical": {
       "sleepiness_gte": 80,
