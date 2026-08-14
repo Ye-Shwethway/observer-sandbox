@@ -1,0 +1,33 @@
+{
+  "revision": "body-composition-progression-v1",
+  "settlement_event_type": "body_composition_progression_settled",
+  "settlement_window_hours": 24.0,
+  "partition": {
+    "forbes_constant_kg": 10.4,
+    "fat_change_energy_density_mj_per_kg": 39.5,
+    "lean_change_energy_density_mj_per_kg": 7.6,
+    "kcal_per_mj": 239.005736,
+    "max_abs_partition_weight_change_lb_per_window": 0.5
+  },
+  "resistance_training_recomposition": {
+    "protein_reference_g_per_kg_day": 1.6,
+    "energy_deficit_zero_gain_kcal_day": 500.0,
+    "effective_training_minutes_for_full_signal": 60.0,
+    "max_ffm_gain_lb_per_day_before_modifiers": 0.03,
+    "genetic_headroom_exponent": 0.5,
+    "fat_energy_cost_ratio_mj_per_kg_lean_to_mj_per_kg_fat": 0.1924050633
+  },
+  "guards": {
+    "min_weight_lb": 70.0,
+    "max_weight_lb": 800.0,
+    "min_body_fat_pct": 2.0,
+    "max_body_fat_pct": 70.0,
+    "minimum_evidence_coverage_ratio": 0.95
+  },
+  "notes": [
+    "Forbes small-change partition uses dFFM/dBW = 10.4 / (10.4 + FM_kg).",
+    "39.5 MJ/kg fat-change and 7.6 MJ/kg lean-change energy densities follow Hall 2008's bounded tissue-change treatment.",
+    "Resistance-training recomposition is a conservative simulation policy layered separately from passive energy partition and remains constrained by protein, energy availability, recovery, training evidence, genetic headroom, and sustainable fat-floor headroom.",
+    "No fixed 3500 kcal per pound rule is used."
+  ]
+}
