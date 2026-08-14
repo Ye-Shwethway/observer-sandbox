@@ -4,6 +4,7 @@ import json
 import sqlite3
 from typing import Any
 
+from .actor_selection import resolve_actor_id
 from .autonomy import autonomy_status
 from .location_runtime import current_location
 from .simulation import snapshot
@@ -64,6 +65,24 @@ def _definition(conn: sqlite3.Connection, definition_id: str | None) -> dict[str
         "effects": json.loads(row["effects_json"]),
         "metadata": json.loads(row["metadata_json"]),
     }
+
+
+def _default_location_id(conn: sqlite3.Connection) -> str:
+    rows = conn.execute(
+        """
+        SELECT child.id
+        FROM entities parent
+        JOIN relations r ON r.source_id=parent.id AND r.relation_type='contains'
+        JOIN entities child ON child.id=r.target_id AND child.entity_type='location'
+        WHERE parent.entity_type='world'
+        ORDER BY child.id
+        """
+    ).fetchall()
+    if len(rows) == 1:
+        return str(rows[0][0])
+    if not rows:
+        raise KeyError("No top-level location is available")
+    raise ValueError("Multiple top-level locations exist; pass location_id explicitly")
 
 
 def list_worlds(conn: sqlite3.Connection) -> list[dict[str, Any]]:
@@ -135,7 +154,8 @@ def list_characters(conn: sqlite3.Connection) -> list[dict[str, Any]]:
     return result
 
 
-def character_summary(conn: sqlite3.Connection, character_id: str = "char_darian") -> dict[str, Any]:
+def character_summary(conn: sqlite3.Connection, character_id: str | None = None) -> dict[str, Any]:
+    character_id = resolve_actor_id(conn, character_id)
     entity = _entity(conn, character_id)
     if entity is None:
         raise KeyError(f"Unknown character: {character_id}")
@@ -201,7 +221,8 @@ def recent_location_activity(conn: sqlite3.Connection, *, location_id: str, limi
     return result
 
 
-def location_summary(conn: sqlite3.Connection, location_id: str = "loc_thorne_estate") -> dict[str, Any]:
+def location_summary(conn: sqlite3.Connection, location_id: str | None = None) -> dict[str, Any]:
+    location_id = location_id or _default_location_id(conn)
     entity = _entity(conn, location_id)
     if entity is None:
         raise KeyError(f"Unknown location: {location_id}")
@@ -304,7 +325,8 @@ def location_summary(conn: sqlite3.Connection, location_id: str = "loc_thorne_es
     }
 
 
-def recent_history(conn: sqlite3.Connection, *, character_id: str = "char_darian", limit: int = 8) -> list[dict[str, Any]]:
+def recent_history(conn: sqlite3.Connection, *, character_id: str | None = None, limit: int = 8) -> list[dict[str, Any]]:
+    character_id = resolve_actor_id(conn, character_id)
     limit = max(1, min(int(limit), 50))
     rows = conn.execute(
         "SELECT id, sim_time, event_type, payload_json FROM events WHERE actor_id=? ORDER BY id DESC LIMIT ?",
@@ -329,7 +351,8 @@ def recent_history(conn: sqlite3.Connection, *, character_id: str = "char_darian
     return result
 
 
-def observer_status(conn: sqlite3.Connection, character_id: str = "char_darian") -> dict[str, Any]:
+def observer_status(conn: sqlite3.Connection, character_id: str | None = None) -> dict[str, Any]:
+    character_id = resolve_actor_id(conn, character_id)
     status = autonomy_status(conn, character_id)
     pending = status.get("pending_action")
     if pending:
