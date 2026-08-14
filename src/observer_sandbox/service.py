@@ -10,6 +10,7 @@ from .actor_runtime import pending_action
 from .agility_progression_activation import maybe_settle_agility_progression
 from .autonomy import autonomy_tick
 from .body_composition_progression import maybe_settle_body_composition
+from .body_measurement_progression import maybe_settle_body_measurements
 from .db import connect
 from .physical_attribute_progression import maybe_settle_physical_attribute_batch
 from .runtime import initialize
@@ -73,6 +74,17 @@ def main() -> None:
 
                         try:
                             maybe_settle_body_composition(
+                                conn,
+                                actor_id,
+                                as_of_sim_time=str(after["sim_time"]),
+                                state=after,
+                            )
+                            after = snapshot(conn, actor_id)
+                        except Exception:
+                            pass
+
+                        try:
+                            maybe_settle_body_measurements(
                                 conn,
                                 actor_id,
                                 as_of_sim_time=str(after["sim_time"]),
