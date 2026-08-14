@@ -12,60 +12,62 @@ Roadmap synchronized: 2026-08-14
   `Actor(s) + Action + Place + Simulation Time + Conditions/Modifiers + Resources/Targets -> Validation -> State Changes + Events`.
 - Darian/Thorne Estate are first rich production exemplars, never reusable-engine identity.
 - Reusable runtime/cognition/progression/query/control/inventory/nutrition logic is entity/definition-id driven.
-- Universal definition and concrete instance are distinct; ownership, storage, carriage/equipped state and physical location remain separate.
 - Prefer minimum-runnable reversible slices.
 - New invariant: one bounded exemplar; structurally equivalent follow-ons batch by pattern.
-- Default flow: `test -> focused tests + CI -> merge main -> deploy if runtime-affecting -> read-only production check -> sync test`.
-- State-sensitive migrations use disposable production-copy validation.
+- Default flow: `branch -> focused tests + CI -> merge main -> automatic deploy when runtime-affecting -> read-only production check`.
+- Production-copy validation is used only for concrete stateful/migration risk.
 - Never accelerate/directly mutate production merely to manufacture acceptance evidence.
 
 ## Current verified production baseline
 
-Latest deployed production before current PR #76: **Deploy #179 `31812160413` SUCCESS**, PR #74 merge `edd345c317a52b702c00dd7889ad1eefffa51927`.
+Latest deployment: **Deploy #180 `31816335698` SUCCESS**, PR #76 merge `ed297348ea0ba77d8f02e9ebec41f19643e7f175`.
 
-A fresh read-only runtime read before Eating Behavior implementation showed production had advanced naturally to sim time `2025-05-05T05:37:00+00:00`, with Darian in the Kitchen and a legacy in-flight `eat` action whose persisted resources were empty. That observation established the transition rule: an already-persisted pre-v1 empty-resource meal may finish under legacy BC-1 semantics, while newly planned meals must use structured inventory resources.
-
-Verified deployed baseline remains:
-- healthy/service active;
+Fresh read-only Runtime Read attempt 6 completed successfully after deployment. Verified:
+- service active/healthy;
 - schema v5;
 - world `thorne-estate-v3.3-physical-attribute-training`;
 - `inventory_seed_revision=thorne-estate-inventory-v1`;
-- wealthy food reserve migration applied exactly once;
-- autonomy enabled/normal, paused false, speed 1.0;
+- wealthy food reserve migration remains applied once;
+- autonomy enabled/normal, paused false, retry null;
+- live speed 3.0x;
+- sim time `2025-05-05T06:10:00+00:00` at that read;
+- Darian in the Home Gym with a 50-minute structured `train` action pending;
+- cognition decision calls 363;
 - Gemini `gemini-3.1-flash-lite` primary preserved;
 - Groq `qwen/qwen3.6-27b` fallback preserved;
 - Telegram connected.
 
+A historical cognition error showed a provider request/TPM 413 at 8,645 requested tokens. It was not the current retry state, but future cognition enrichment should remain compact rather than expanding raw histories.
+
 ## Completed runtime/profile foundations
 
-- schema v4 composable runtime foundation — complete; operationally extended by schema v5 inventory stack persistence;
-- P0/P0.5 foundation + dynamic provider layer — complete;
-- P1 continuous autonomy — live;
-- P2 Telegram Observer/Profile/Control — deployed;
-- P2.3 Creator AI Control v1 — deployed/Creator-exercised;
-- Runtime Cognition Fallback v1 — deployed/Creator-configured;
-- Telegram Home lifecycle — deployed;
-- Universal Character Engine — deployed;
-- Dynamic Resource Awareness / Choice Breadth — deployed;
-- Object Familiarity / Inspect Utility Guard — deployed;
-- fatigue/recovery, targeted training, readiness/effectiveness/effective load — deployed;
-- Minimum Training Stimulus + Session Load/Recovery Guard — deployed;
-- causal needs + sleep/circadian behavior — deployed;
-- Training Method Semantics v1 — deployed;
-- Physical Attribute Progression Framework v1 — deployed for Strength, Stamina, Agility, Speed, Reflexes, Endurance, Flexibility.
+- schema v4 composable runtime foundation, operationally extended by schema v5 inventory stacks;
+- P0/P0.5 foundation + dynamic provider layer;
+- P1 continuous autonomy;
+- P2 Telegram Observer/Profile/Control;
+- P2.3 Creator AI Control v1;
+- Runtime Cognition Fallback v1;
+- Telegram Home lifecycle;
+- Universal Character Engine;
+- Dynamic Resource Awareness / Choice Breadth;
+- Object Familiarity / Inspect Utility Guard;
+- fatigue/recovery, targeted training, readiness/effectiveness/effective load;
+- Minimum Training Stimulus + Session Load/Recovery Guard;
+- causal needs + sleep/circadian behavior;
+- Training Method Semantics v1;
+- Physical Attribute Progression Framework v1 for Strength, Stamina, Agility, Speed, Reflexes, Endurance, Flexibility.
 
 ## Body Composition Program — ACTIVE
 
 Canonical:
 - `docs/BODY_COMPOSITION_RESEARCH_FOUNDATION.md`
 - `docs/NUTRITION_ENERGY_EVIDENCE.md`
-- `docs/INVENTORY_ITEM_ARCHITECTURE.md`
-- `docs/INVENTORY_OPERATIONS_V1.md`
 - `docs/EATING_BEHAVIOR_V1.md`
+- `docs/MEAL_CHOICE_INTELLIGENCE_V1.md`
 
 Research direction remains:
-- no static universal `3500 kcal = 1 lb` law;
-- later engine couples Weight/FM/FFM/BF% over bounded intervals;
+- no static universal `3500 kcal = 1 lb` rule;
+- body composition couples Weight/FM/FFM/BF% over bounded intervals;
 - sex affects reference/baseline physiology but is not a crude hypertrophy multiplier;
 - age is context, not a hard cliff;
 - genetics are character-specific potential envelopes;
@@ -83,114 +85,94 @@ Ordinary re-init/deploy preserves engine-owned simulated profile state.
 **COMPLETE / DEPLOYED** via PR #70 / Deploy #176.
 Provides actor-specific resting-energy reference, Compendium-informed action intensity, immutable intake/expenditure evidence and coverage-aware bounded aggregation. BC-1 itself never mutates body weight/BF.
 
-## Universal Item & Inventory Program
+## Universal Item / Eating Program
 
 Core invariant:
-`Universal definition -> concrete instance/stack -> physical container/location -> ownership -> action/evidence -> quantity/state transition`
+`Universal definition -> concrete stack -> reachable action context -> structured quantity -> deterministic validation -> state transition + immutable evidence`
 
 ### Inventory Foundation v1
 
 **COMPLETE / DEPLOYED** via PR #71 / Deploy #177.
-
-- schema v5 normalized `inventory_stacks`;
-- universal food definitions;
-- concrete Estate stacks;
-- fixed container metadata;
-- `stored_in` and `owned_by` separation;
-- deterministic decrement + quantity-scaled nutrition;
-- ordinary init/deploy never refills changed stock.
+Schema v5 inventory stacks, universal food definitions, concrete Estate stocks and deterministic quantity-scaled nutrition are live. Ordinary init/deploy never refills changed stock.
 
 ### Inventory Operations v1
 
 **COMPLETE / DEPLOYED** via PR #73 / Deploy #178.
-
-- one-time wealthy-Estate food reserve while external economy/purchasing is absent;
-- universal inventory query scopes for arbitrary locations, characters, containers and all stocks;
-- Telegram Inventory is universe-wide, not Darian/Estate hardcoded;
-- authorized users browse read-only;
-- only Telegram Owner/Creator may replenish;
-- typed existing-stack positive replenishment with confirmation + audit;
-- no simulation-time advance, ownership/container rewrite, arbitrary SQL or LLM call.
-
-This is one explicit baseline migration, **not recurring auto-restock**. After marker application, ordinary re-init/deploy preserves depletion.
+Universe-wide inventory browsing, one-time wealthy Estate reserve and owner-only typed replenishment are live. Reserve migration is not recurring auto-restock.
 
 ### Food Nutrition Semantics & Visibility v1
 
 **COMPLETE / DEPLOYED** via PR #74 / Deploy #179.
+Definition-scoped default-portion nutrition facts and Telegram visibility are live. No duplicate nutrition database exists in Telegram.
 
-Invariant:
-`universal food definition + requested/default portion -> deterministic nutrient facts`
+### Eating Behavior v1
 
-Deployed:
-- reusable definition-scoped nutrition projection;
-- deterministic kcal/protein/carbohydrate/fat scaling;
-- Telegram stack detail displays Nutrient Facts for the authored default portion;
-- no schema change, inventory mutation, new nutrition values or LLM call.
-
-Regression examples:
-- cooked chicken breast 200 g -> 330 kcal / 62 g protein / 0 g carbs / 7.2 g fat;
-- apple 1 piece -> 95 kcal / 0.5 g protein / 25 g carbs / 0.3 g fat.
-
-## Eating Behavior v1 — CURRENT CANDIDATE PR #76
-
-Canonical: `docs/EATING_BEHAVIOR_V1.md`.
+**COMPLETE / DEPLOYED** via PR #76 / Deploy #180.
 
 Invariant:
 `local eat capability + reachable inventory food stacks + structured quantities -> deterministic validation -> atomic stock decrement + immutable combined nutrition evidence`
 
-Implemented candidate:
-- live cognition schema now carries a required `resources` array;
-- `eat` chooses one to six exact inventory stack IDs plus bounded quantities; non-eat actions require `resources=[]`;
-- cognition receives deterministic stock/default-portion/min/max/macronutrient context but never owns macro arithmetic;
-- v1 portion guardrail is 0.5x–2x authored default, stock-capped, with whole-number piece quantities;
-- direct local inventory wins; an eat-capable room with no direct stack may use the nearest enclosing structural inventory scope, preserving site provisioning without global remote consumption;
-- structured resources persist in existing `action_instances.resources_json`; no schema v6;
-- completion revalidates and atomically decrements all selected stacks in the same SQLite completion transaction;
-- combined definition-based kcal/protein/carbs/fat snapshots into the existing BC-1 `nutrition_intake` event field;
-- any failed resource/stock validation rolls back the whole action completion rather than partially consuming food;
-- already-persisted pre-v1 empty-resource eat actions may finish via legacy target-based BC-1 evidence without inventory decrement; newly planned eats fail closed without resources;
-- Telegram `CHARACTER UPDATE` for a structured meal shows consumed food quantities and combined kcal/P/C/F;
-- synthetic non-Estate inventory regression proves the meal-resource engine is not Darian/Estate-specific.
+Live code now supports:
+- required structured cognition `resources`;
+- one to six concrete meal stack IDs + quantities;
+- deterministic 0.5x–2x default-portion guardrails, stock-capped, whole-piece validation;
+- nearest enclosing inventory-scope access only from a local eat-capable context;
+- persistence in existing `action_instances.resources_json` with no schema v6;
+- completion-time revalidation and atomic multi-stack decrement;
+- exact combined kcal/protein/carbs/fat snapshot into BC-1 `nutrition_intake`;
+- rollback of the entire completion on any invalid/missing stock;
+- legacy compatibility only for already-persisted pre-v1 empty-resource meals;
+- Telegram completed-meal item quantities + combined macros.
 
-Candidate evidence before canonical-doc tail:
-- CI #652 SUCCESS;
-- Eating Behavior v1 Acceptance #3 SUCCESS on disposable production copy;
-- Nutrition & Energy Evidence v1 Acceptance #6 SUCCESS;
-- acceptance uses no model/Telegram calls and never mutates production;
-- production-copy structured settlement is verified rollback-safe.
+## Meal Choice Intelligence v1 — CURRENT PR #77
 
-After docs synchronization, rerun final-head gates before merge/deploy.
+Canonical: `docs/MEAL_CHOICE_INTELLIGENCE_V1.md`.
 
-### Natural intake readiness gate — NEXT AFTER EATING BEHAVIOR DEPLOYS
+Purpose: improve food selection using the **existing single cognition call**, without creating a separate Mind Engine or Behavior Engine.
 
-Do **not** jump straight to BC-2.
+Candidate behavior:
+- deterministic compact same-day intake/macros/meal-count summary;
+- compact same-day expenditure + evidence coverage context;
+- latest meal timing/kcal/protein;
+- recent 12-hour training count/minutes + time since latest session;
+- current hunger/energy/fatigue/sleepiness/thirst;
+- actor-specific REE reference explicitly labeled as non-target;
+- character-authored nutrition goal, energy intent, protein priority and dietary constraints;
+- no raw-history expansion, no extra LLM call, no inventory/body mutation and no schema change.
 
-Observe natural production read-only and verify:
-- model-selected meals are actually using structured resources;
-- meal cadence and portions are plausible;
-- daily kcal/protein/macros are plausible for the actor/context;
-- inventory decreases match completed structured meal evidence;
-- BC-1 expenditure coverage remains adequate;
-- no repeated decision/schema/backoff failure emerges from the larger meal-resource cognition context.
+Darian's authored policy is maintenance-oriented: preserve a lean muscular body composition while supporting training performance, recovery and ordinary health. Protein receives contextual priority after training/recovery demand rather than being maximized in every meal. No dietary constraint is currently authored.
 
-Never force a production meal merely to manufacture acceptance evidence. If natural cadence is wrong, fix the smallest behavior/needs bridge rather than hiding it with implausible meal sizes.
+Validation policy:
+- focused read-only unit regressions;
+- full CI;
+- existing Eating Behavior acceptance remains green;
+- no new production-copy gate because no stateful migration is introduced.
 
-### BC-2 — Body Composition Progression Exemplar
+## BC-2 — Body Composition Progression Exemplar — NEXT AUTHORIZED SLICE
 
-Only after readiness passes:
-- coupled `body.weight_lb` + `body.body_fat_pct` actor-generic mutation;
-- consistent FM/FFM/BMI derivation;
-- bounded energy partition + separate RT lean adaptation;
-- protein/energy/training/genetic headroom constraints;
-- evidence-supported age/sex effects only;
-- no retroactive activation gains/losses;
-- atomic profile history/audit;
-- implausible-window guards;
-- no Darian branch or extra model calls.
+Proceed after Meal Choice Intelligence v1 merge/deploy/readback. Natural Eating Behavior should continue autonomously at the Creator-selected runtime speed; do not force or accelerate meals merely for acceptance.
+
+BC-2 activation must be safe even before the next natural meal appears:
+- establish an explicit activation boundary at deployment/activation sim time;
+- never retroactively settle legacy/incomplete pre-activation history;
+- settle only bounded windows with adequate persisted BC-1 evidence coverage;
+- if evidence is incomplete, defer mutation rather than treating missing intake/expenditure as a deficit.
+
+Minimum-runnable BC-2 target:
+- actor-generic coupled mutation of `body.weight_lb` + `body.body_fat_pct`;
+- derive FM/FFM/BMI consistently from those persisted values;
+- bounded energy-partition approximation inspired by validated Hall/Forbes direction rather than a fixed 3,500-kcal rule;
+- separate resistance-training lean adaptation constrained by protein, energy availability, recovery and character genetic headroom;
+- age/sex effects only where evidence-supported;
+- atomic profile value/history/audit mutation;
+- implausible-window and physiological clamps;
+- no Darian branch, no extra model call, no fluid/glycogen/endocrine/micronutrient simulation.
+
+Natural meal observation remains useful evidence for later calibration, but current Creator instruction authorizes BC-2 implementation without waiting for a naturally timed meal. Runtime settlement guards, not forced production behavior, must provide safety.
 
 ### BC-3 — Body Measurement Progression Batch
 
-After BC-2. Circumferences combine composition, regional training/anatomy and character-specific structural/genetic envelopes rather than body weight alone.
+After BC-2. Circumferences combine body composition, regional training/anatomy and character-specific structural/genetic envelopes rather than body weight alone.
 
 ## Future universal object/inventory expansion
 
@@ -198,28 +180,27 @@ Proceed by family:
 1. consumable definitions/stacks — foundation complete;
 2. movable containers + carried inventory;
 3. fixed storage capacity semantics;
-4. training equipment definitions + concrete Estate instances;
+4. training equipment definitions + concrete instances;
 5. tools/electronics/books/medical supplies;
 6. clothing/equipped-state;
 7. materials/crafting when justified;
 8. economy: ownership transfer, vendors, pricing, currency/accounts, transactions, scarcity/replenishment.
 
-The inventory explorer/control backend remains shared for all future entities. A future shop, character, warehouse or backpack must not require a new named inventory subsystem.
-
 ## Later profile sequence
 
-1. finish Eating Behavior v1 PR #76 -> merge/deploy/readback;
-2. natural intake/energy readiness gate;
-3. BC-2 body composition;
-4. BC-3 measurements;
-5. skill progression family;
-6. intellectual attributes;
-7. mental/emotion dynamics;
-8. later relationship/social/sexual physiology as prerequisites mature.
+1. finish Meal Choice Intelligence v1 PR #77 -> merge/deploy/readback;
+2. BC-2 body composition;
+3. BC-3 measurements;
+4. skill progression family;
+5. intellectual attributes;
+6. mental/emotion dynamics;
+7. later relationship/social/sexual physiology when prerequisites mature;
+8. broad Mind/Behavior architecture only after enough real feature signals exist to justify it.
 
 ## Deferred boundaries
 
 Do not add as side effects:
+- broad Mind Engine / Behavior Engine now;
 - Character Memory Engine;
 - multi-fallback/circuit-breaker/provider-health expansion;
 - Telegram secret/model-parameter editing;
@@ -236,6 +217,4 @@ Do not add as side effects:
 
 ## Exact resume point
 
-Finish PR #76 canonical synchronization -> rerun final-head CI + Eating Behavior v1 Acceptance + Nutrition & Energy Evidence v1 Acceptance -> merge -> deploy/readback -> sync `test`.
-
-Then perform the **natural intake readiness gate** read-only. Do not activate BC-2 weight/BF mutation until natural structured intake/expenditure passes readiness.
+Finish **Meal Choice Intelligence v1 PR #77**, merge/deploy/read back, then proceed directly to **BC-2 Body Composition Progression Exemplar** under activation-boundary and complete-evidence guards.
