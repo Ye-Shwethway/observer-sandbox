@@ -1,5 +1,6 @@
 {
   "revision": "training-method-semantics-v2",
+  "evidence_revision": "training-method-semantics-v1",
   "methods": {
     "free_weight_strength": {"method_name": "Free-Weight Strength Work", "family": "resistance", "workload_channels": ["resistance"], "tags": ["free_weight", "compound"], "planning": {"preferred_duration": [45, 90], "purpose": "strength session"}},
     "heavy_bag_rounds": {"method_name": "Heavy-Bag Rounds", "family": "combat_conditioning", "workload_channels": ["conditioning", "combat"], "tags": ["interval", "striking"], "planning": {"preferred_duration": [20, 45], "purpose": "heavy-bag session"}},
