@@ -39,6 +39,24 @@ Character-specific files are resolved through the character configuration regist
 
 A model decision provider for actor A must load actor A's registered policy. If no policy is registered, it must fail explicitly rather than silently fall back to Darian's policy.
 
+## Canonical profile completeness
+
+Canonical profile requirements may be conditional on represented biological/anatomical domains when those fields are foundational to later gameplay. Conditional requirements belong in generic seed validation, never in named-character branches.
+
+For represented male characters, the canonical profile must include the current male structural sexual-anatomy inputs plus long-term erectile physiology:
+- `sexual_anatomy.penis_length_in`;
+- `sexual_anatomy.penis_girth_in`;
+- `genetics.penis_length_in`;
+- `genetics.penis_girth_in`;
+- `sexual_anatomy.baseline_erectile_function`;
+- `sexual_anatomy.erection_firmness_cap`.
+
+The erectile baseline and cap are authored individual 0-100 physiology values and the baseline may not exceed the cap. Missing required male fields fail canonical seed validation rather than being invented later by a relationship or sexual-behavior system.
+
+Momentary sexual state remains separate from canonical traits. `sexual_anatomy.erectile_state`, current `sexual_anatomy.erection_firmness`, and `sexual_state.arousal_level` are context-dependent runtime state and must not be treated as permanently authored canonical values.
+
+Equivalent future sex/anatomy-specific requirements should follow the same pattern: schema-defined, conditionally validated, privacy-aware and actor-independent.
+
 ## Universal progression rule
 
 Progression engines must follow the reusable form:
@@ -79,4 +97,5 @@ A universalization change is acceptable when:
 - existing single-character Darian behavior remains compatible;
 - global controls remain global;
 - a synthetic non-Darian regression proves that Darian policy is not silently reused;
+- conditional canonical-profile validation is schema/domain driven rather than character-name driven;
 - no schema-v5 migration is introduced solely for this contract.
