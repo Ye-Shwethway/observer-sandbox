@@ -138,6 +138,7 @@ FIELDS = (
     ProfileField("genetics.shoulders_max_in", "genetics", "Genetic maximum shoulders", unit="in", default_mode="canonical"),
     ProfileField("genetics.chest_max_in", "genetics", "Genetic maximum chest", unit="in", default_mode="canonical"),
     ProfileField("genetics.waist_target_in", "genetics", "Genetic-maximum-condition waist", unit="in", default_mode="canonical"),
+    ProfileField("genetics.hips_max_in", "genetics", "Genetic maximum hips", unit="in", default_mode="canonical"),
     ProfileField("genetics.biceps_relaxed_max_in", "genetics", "Genetic maximum relaxed biceps", unit="in", default_mode="canonical"),
     ProfileField("genetics.biceps_flexed_max_in", "genetics", "Genetic maximum flexed biceps", unit="in", default_mode="canonical"),
     ProfileField("genetics.triceps_max_in", "genetics", "Genetic maximum triceps", unit="in", default_mode="canonical"),

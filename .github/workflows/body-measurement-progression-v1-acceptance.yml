@@ -1,0 +1,23 @@
+name: Body Measurement Progression v1 Acceptance
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - 'config/body_measurement_progression.v1.json'
+      - 'src/observer_sandbox/body_measurement_progression.py'
+      - 'src/observer_sandbox/service.py'
+      - 'scripts/validation/validate_body_measurement_progression_v1.py'
+      - 'tests/test_body_measurement_progression_v1.py'
+      - 'docs/BODY_MEASUREMENT_PROGRESSION_V1.md'
+      - '.github/workflows/body-measurement-progression-v1-acceptance.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  acceptance:
+    uses: ./.github/workflows/reusable-production-copy-validation.yml
+    with:
+      validator_path: scripts/validation/validate_body_measurement_progression_v1.py
+    secrets: inherit

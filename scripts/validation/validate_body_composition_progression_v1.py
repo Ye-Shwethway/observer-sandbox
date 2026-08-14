@@ -60,6 +60,15 @@ def main() -> int:
             (ACTOR,),
         ).fetchone()[0]
 
+        # Acceptance must prove the activation invariant even after production has
+        # already activated BC-2. Reset only the disposable copy's BC-2 event
+        # cursor; current profile values remain the copied live values.
+        conn.execute(
+            "DELETE FROM events WHERE actor_id=? AND event_type='body_composition_progression_settled'",
+            (ACTOR,),
+        )
+        conn.commit()
+
         bootstrap = maybe_settle_body_composition(conn, ACTOR, as_of_sim_time=base.isoformat(), state=live_copy_state)
         assert bootstrap["status"] == "bootstrapped"
         assert body_composition_snapshot(conn, ACTOR) == before
@@ -111,6 +120,7 @@ def main() -> int:
             "disposable_production_copy": True,
             "actor_id": ACTOR,
             "activation_value_preserved": True,
+            "live_activation_state_independent": True,
             "before": before,
             "after": after,
             "weight_delta_lb": round(after["weight_lb"] - before["weight_lb"], 6),
