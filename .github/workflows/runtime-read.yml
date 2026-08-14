@@ -31,8 +31,7 @@ jobs:
           VPS_USER: ${{ secrets.VPS_USER }}
           VPS_PORT: ${{ secrets.VPS_PORT || '22' }}
         run: |
-          # autonomy-status includes mode, pending action and retry state.
-          # This read also verifies the first production canary left a safe disabled state.
+          # Read-only runtime/status inspection. No model calls or state mutation.
           ssh -p "$VPS_PORT" "$VPS_USER@$VPS_HOST" '
             set -euo pipefail
             cd /opt/observer-sandbox
@@ -41,6 +40,34 @@ jobs:
             .venv/bin/sandboxctl status
             .venv/bin/sandboxctl living-status
             .venv/bin/sandboxctl autonomy-status
+            .venv/bin/python - <<"PY"
+import json
+import sqlite3
+
+db = sqlite3.connect("/var/lib/observer-sandbox/observer.sqlite3")
+db.row_factory = sqlite3.Row
+row = db.execute(
+    "SELECT sim_time, payload_json FROM events WHERE actor_id=? AND event_type=? ORDER BY id DESC LIMIT 1",
+    ("char_darian", "autonomy_error"),
+).fetchone()
+if row is None:
+    print("LATEST_AUTONOMY_ERROR=null")
+else:
+    payload = json.loads(row["payload_json"])
+    detail = {
+        "sim_time": row["sim_time"],
+        "stage": payload.get("stage"),
+        "error_type": payload.get("error_type"),
+        "message": payload.get("message"),
+        "retry_seconds": payload.get("retry_seconds"),
+    }
+    print("LATEST_AUTONOMY_ERROR=" + json.dumps(detail, sort_keys=True))
+PY
+            if grep -Eq "^OBSERVER_GROQ_API_KEY=.+" /var/lib/observer-sandbox/secrets.env 2>/dev/null; then
+              echo "GROQ_CREDENTIAL_PRESENT=true"
+            else
+              echo "GROQ_CREDENTIAL_PRESENT=false"
+            fi
             if grep -Eq "^OBSERVER_NANOGPT_API_KEY=.+" /var/lib/observer-sandbox/secrets.env 2>/dev/null; then
               echo "NANOGPT_CREDENTIAL_PRESENT=true"
             else
