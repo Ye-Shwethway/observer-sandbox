@@ -6,6 +6,7 @@ from datetime import datetime, timezone
 from pathlib import Path
 
 from .actor_runtime import actor_runtime, migrate_legacy_actor_runtime
+from .actor_selection import ensure_default_actor_id, resolve_actor_id
 from .ai import seed_builtin_providers
 from .composition_schema import seed_action_definitions
 from .db import connect, get_runtime_state, migrate
@@ -50,7 +51,9 @@ def _initialize_conn(conn) -> None:
             (key, json.dumps(value)),
         )
     conn.commit()
-    migrate_legacy_actor_runtime(conn, "char_darian")
+    default_actor_id = ensure_default_actor_id(conn)
+    if default_actor_id is not None:
+        migrate_legacy_actor_runtime(conn, default_actor_id)
 
 
 def initialize(db_path: str | Path) -> None:
@@ -65,17 +68,20 @@ def status(db_path: str | Path) -> RuntimeStatus:
             "SELECT value FROM schema_meta WHERE key='schema_version'"
         ).fetchone()[0])
         runtime = get_runtime_state(conn)
-        darian = actor_runtime(conn, "char_darian")
+        default_actor_id = resolve_actor_id(conn)
+        default_actor = actor_runtime(conn, default_actor_id)
         # Compatibility projection for operational/readback surfaces. Actor-owned
         # state is authoritative in actor_runtime; these fields are not persisted
-        # back into global runtime_state.
+        # back into global runtime_state. The projection follows the configured
+        # default actor rather than a named-character engine assumption.
         runtime.update({
-            "autonomy_enabled": darian["autonomy_enabled"],
-            "autonomy_mode": darian["autonomy_mode"],
-            "autonomy_pending_action_id": darian["pending_action_id"],
-            "autonomy_retry": darian["retry"],
-            "cognition_wake_reason": darian["wake_reason"],
-            "cognition_wake_stats": darian["cognition_stats"],
+            "default_actor_id": default_actor_id,
+            "autonomy_enabled": default_actor["autonomy_enabled"],
+            "autonomy_mode": default_actor["autonomy_mode"],
+            "autonomy_pending_action_id": default_actor["pending_action_id"],
+            "autonomy_retry": default_actor["retry"],
+            "cognition_wake_reason": default_actor["wake_reason"],
+            "cognition_wake_stats": default_actor["cognition_stats"],
         })
         return RuntimeStatus(
             healthy=True,
