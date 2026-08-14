@@ -5,7 +5,6 @@ import sqlite3
 import uuid
 from typing import Any
 
-from .eating_behavior import settle_eating_action
 from .nutrition_energy import energy_expenditure_evidence, nutrition_intake_evidence
 from .training_methods import training_method_evidence
 
@@ -49,6 +48,9 @@ def _enrich_nutrition_energy(
     if "nutrition_intake" not in enriched:
         nutrition = None
         if action_name == "eat" and action_id:
+            # Lazy import avoids inventory -> event_log -> eating_behavior -> inventory.
+            from .eating_behavior import settle_eating_action
+
             try:
                 nutrition = settle_eating_action(conn, action_id)
             except Exception:
