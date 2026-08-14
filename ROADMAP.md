@@ -28,11 +28,11 @@ Roadmap synchronized: 2026-08-14
 - Schema: v4
 - World revision: `thorne-estate-v3.2-training-environment`
 - Autonomy: enabled / normal
-- Cognition: Groq `openai/gpt-oss-20b`
+- Last independently verified cognition at Deploy #171: Groq `openai/gpt-oss-20b`; the Creator subsequently reported successfully testing and activating Gemini through Telegram P2.3.
 - Telegram: connected
 - Latest verified speed: `1.0x`.
 - Latest verified runtime-affecting deployment: Deploy #171 `31769893556` SUCCESS from PR #63 merge `d8a3f770dd3c6f4293f5035d1085998ba0562bf7`.
-- Deploy #171 readback: service active/healthy, schema v4, autonomy enabled/normal, retry state null, Groq binding preserved, Telegram API connected, Creator owner configuration present.
+- Deploy #171 readback: service active/healthy, schema v4, autonomy enabled/normal, retry state null, Groq binding preserved at that checkpoint, Telegram API connected, Creator owner configuration present.
 - PR #62 / Deploy #170 added the next planned action reason to proactive Telegram Character Updates.
 
 Post-Deploy169 live acceptance cleared the prior retry-cap stall on a natural decision boundary: cognition `decision_calls` advanced `331 -> 332`, `autonomy_retry` became `null`, and Darian scheduled a 10-minute `rest` action in the Training Hall. By Deploy #171 readback natural cognition had advanced to `decision_calls=334`; no production acceleration, direct live state mutation, or validation-induced model probe was used.
@@ -41,7 +41,7 @@ Post-Deploy169 live acceptance cleared the prior retry-cap stall on a natural de
 
 - Foundation schema v4 — COMPLETE.
 - P0 Foundation & Remote Control — COMPLETE / LIVE VERIFIED.
-- P0.5 AI Provider Layer foundation — COMPLETE; generic OpenAI-compatible live cognition is now active with Groq.
+- P0.5 AI Provider Layer foundation — COMPLETE; generic OpenAI-compatible live cognition is deployed.
 - P1 Living Darian Minimum — CONTINUOUS AUTONOMY LIVE.
 - P2 Telegram Observer MVP / browse / profile-control surfaces — COMPLETE / LIVE VERIFIED.
 - Runtime speed control, action ETA, autonomy timing/observability, research/monitor semantics — DEPLOYED.
@@ -49,14 +49,15 @@ Post-Deploy169 live acceptance cleared the prior retry-cap stall on a natural de
 
 ## P2.3 Telegram Creator AI Control v1
 
-Status: **COMPLETE / CI VERIFIED / DEPLOYED**.
+Status: **COMPLETE / CI VERIFIED / DEPLOYED / CREATOR-EXERCISED**.
 
 Delivery:
 - PR #63 tested head `f2e61d374dce1c3b493d27fb94e1024b9eb5a3fd`;
 - primary CI #595 / run `31769832103` SUCCESS;
 - merged as `d8a3f770dd3c6f4293f5035d1085998ba0562bf7`;
 - Deploy #171 / run `31769893556` SUCCESS;
-- readback confirmed service health, Groq binding preservation, Telegram connectivity and no deployment-triggered model probe.
+- readback confirmed service health, Groq binding preservation at deployment, Telegram connectivity and no deployment-triggered model probe;
+- Creator later reported a successful real Gemini model probe and successful activation back to Gemini through Telegram, providing user-side live acceptance of the control path.
 
 One unrelated Stamina Progression production-copy acceptance workflow failed on an existing eligible-event assertion against the evolving disposable production copy. This AI-control slice does not touch Stamina/progression semantics; the canonical development policy treats that production-copy workflow as non-blocking for this non-state-sensitive control-plane slice. Primary full CI and Strength acceptance succeeded.
 
@@ -87,12 +88,39 @@ Probe semantics:
 - probe execution never mutates world/profile/progression state or the current cognition binding;
 - deployment/CI verification must not invoke the probe; it is an explicit Creator action.
 
-Explicit non-goals for this slice:
-- automatic runtime provider failover;
-- API-key editing through Telegram;
-- model parameter tuning;
-- fallback-chain editing;
-- schema v5 or new world/profile state.
+Historical non-goals for P2.3 were automatic runtime provider failover, API-key editing, parameter tuning, fallback-chain editing and schema changes. Runtime failover is now separately authorized as the bounded v1 slice below.
+
+## Runtime Cognition Fallback v1
+
+Status: **AUTHORIZED / IMPLEMENTED ON `test` / CI+DEPLOY GATE PENDING**.
+
+Canonical contract: `docs/AI_RUNTIME_FALLBACK.md`.
+
+Minimum-runnable scope:
+- one ordinary primary cognition binding plus at most one tested fallback provider/model;
+- fallback selection from Telegram using the same `fetch -> select -> Test Model -> Save` safety pattern;
+- primary binding never changes merely because fallback is used;
+- provider/model invocation failure may trigger one fallback attempt;
+- deterministic action/target/duration/runtime validation failure never triggers provider fallback;
+- if both primary and fallback fail, existing autonomy retry/backoff remains authoritative;
+- successful fallback use records bounded provider/model/error metadata for observability;
+- no schema v5; fallback configuration uses runtime control state.
+
+v1 deliberately does **not** add an ordered multi-fallback chain, circuit breaker, provider-health scoring, permanent automatic rebinding, or Telegram API-key editing.
+
+## Telegram Observer Home Message Lifecycle v1
+
+Status: **AUTHORIZED / IMPLEMENTED ON `test` / CI+DEPLOY GATE PENDING**.
+
+Canonical contract: `docs/TELEGRAM_HOME_LIFECYCLE.md`.
+
+Current behavior:
+- `/start` Home board includes `✕ Close`;
+- Close deletes the message rather than editing it into a placeholder;
+- newly sent `/start` Home boards auto-delete after 5 minutes by default;
+- TTL can be configured through `OBSERVER_TELEGRAM_HOME_TTL_SECONDS`, bounded to 30..3600 seconds;
+- deletion failures are presentation-only and cannot affect autonomy/simulation;
+- no persistent world/schema field is added for ephemeral Telegram cleanup.
 
 ## Cognition resilience / Groq free-tier recovery
 
@@ -175,7 +203,7 @@ Cognition receives every legal current-room action/resource from generic capabil
 
 ## Object Familiarity / Inspect Utility Guard v1
 
-Status: COMPLETE / CI VERIFIED / DEPLOYED.
+Status: COMPLETE / CI VERIFIED / DEPLOYED**.
 
 PR #54 final tested head `674de824acf69fc4209e59e649364d0ece3696f5`; CI #575 / run `31765655658` succeeded; merge `d6742fcbaa06868ca7dbd58bac33ee09430d1a0d`; Deploy #165 / run `31765700369` succeeded; post-merge CI #576 succeeded.
 
@@ -227,7 +255,7 @@ Agility uses authored `speed_agility_drills` evidence from the Speed & Agility S
 
 Not yet implemented as complete families:
 - full Character Memory Engine / richer episodic-semantic memory;
-- automatic runtime provider failover/fallback-chain control;
+- multi-fallback chains, provider circuit breakers and provider-health scoring;
 - Telegram API-key editing and model-parameter tuning;
 - Speed progression;
 - Reflexes progression;
@@ -254,11 +282,8 @@ For ordinary work, use focused tests + CI and the standard automatic deploy. Use
 
 ## Exact resume point
 
-P2.3 Telegram Creator AI Control v1 is deployed. Resume **natural read-only observation** of autonomous behavior and use the new Telegram AI control only when the Creator intentionally wants to inspect catalogs, test a candidate model, or change cognition provider/model.
+Complete the authorized **Runtime Cognition Fallback v1 + Telegram Observer Home Message Lifecycle v1** batch through focused CI, merge, standard deploy and read-only production verification. Do not induce a model failure or real model probe merely for deployment validation.
 
-Immediate observation questions remain:
-- Does the old retry-cap stall stay cleared across ordinary fresh decision boundaries?
-- Does Groq remain healthy under normal free-tier request limits after prompt compaction?
-- When training load blocks further exercise, does Darian continue to avoid familiar-equipment inspect-room-hopping and instead select meaningful non-training activity or ordinary downtime?
+After deployment, configure a tested fallback through Telegram when the Creator chooses; then continue natural read-only autonomy observation. The fallback should be observed only if an ordinary primary provider/model call naturally fails.
 
-Do not trigger a model probe merely for monitoring; it is an explicit Creator action and consumes one minimal inference call. Do not build the full Character Memory Engine, automatic provider failover, forced equipment rotation, Speed progression, Telegram secret editing, model parameter tuning, or schema v5 without fresh Creator authorization.
+Do not build the full Character Memory Engine, multi-fallback chains/circuit breakers, forced equipment rotation, Speed progression, Telegram secret editing, model parameter tuning, or schema v5 without fresh Creator authorization.
