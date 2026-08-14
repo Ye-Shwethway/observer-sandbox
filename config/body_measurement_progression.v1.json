@@ -1,0 +1,31 @@
+{
+  "revision": "body-measurement-progression-v1",
+  "settlement_event_type": "body_measurement_progression_settled",
+  "body_composition_event_type": "body_composition_progression_settled",
+  "activation_reason": "BC-3 activation boundary; numerical measurement preserved",
+  "general_lean_headroom_share": 1.0,
+  "regional_rt_headroom_share": 1.0,
+  "fallback_global_ffm_headroom_fraction": 0.10,
+  "minimum_activation_fraction": 0.85,
+  "maximum_activation_fraction": 1.50,
+  "fields": {
+    "body.neck_in": {"region": "neck", "max_field": "genetics.neck_max_in", "fat_elasticity": 0.05, "lean_loss_elasticity": 0.70, "max_abs_change_in_per_window": 0.05},
+    "body.shoulders_in": {"region": "shoulders", "max_field": "genetics.shoulders_max_in", "fat_elasticity": 0.03, "lean_loss_elasticity": 0.85, "max_abs_change_in_per_window": 0.10},
+    "body.chest_in": {"region": "chest", "max_field": "genetics.chest_max_in", "fat_elasticity": 0.10, "lean_loss_elasticity": 0.85, "max_abs_change_in_per_window": 0.10},
+    "body.waist_in": {"region": "waist", "target_field": "genetics.waist_target_in", "fat_elasticity": 0.34, "lean_elasticity": 0.08, "lean_loss_elasticity": 0.20, "max_abs_change_in_per_window": 0.15},
+    "body.hips_in": {"region": "hips", "max_field": "genetics.hips_max_in", "fat_elasticity": 0.16, "lean_loss_elasticity": 0.70, "max_abs_change_in_per_window": 0.12},
+    "body.biceps_relaxed_in": {"region": "biceps", "max_field": "genetics.biceps_relaxed_max_in", "fat_elasticity": 0.04, "lean_loss_elasticity": 0.90, "max_abs_change_in_per_window": 0.05},
+    "body.biceps_flexed_in": {"region": "biceps", "max_field": "genetics.biceps_flexed_max_in", "fat_elasticity": 0.04, "lean_loss_elasticity": 0.90, "max_abs_change_in_per_window": 0.05},
+    "body.triceps_in": {"region": "triceps", "max_field": "genetics.triceps_max_in", "fat_elasticity": 0.04, "lean_loss_elasticity": 0.90, "max_abs_change_in_per_window": 0.05},
+    "body.forearms_in": {"region": "forearms", "max_field": "genetics.forearms_max_in", "fat_elasticity": 0.03, "lean_loss_elasticity": 0.90, "max_abs_change_in_per_window": 0.04},
+    "body.thighs_in": {"region": "thighs", "max_field": "genetics.thighs_max_in", "fat_elasticity": 0.08, "lean_loss_elasticity": 0.90, "max_abs_change_in_per_window": 0.08},
+    "body.calves_in": {"region": "calves", "max_field": "genetics.calves_max_in", "fat_elasticity": 0.04, "lean_loss_elasticity": 0.90, "max_abs_change_in_per_window": 0.05}
+  },
+  "method_region_weights": {
+    "free_weight_strength": {"neck": 0.20, "shoulders": 0.75, "chest": 0.75, "waist": 0.15, "hips": 0.55, "biceps": 0.65, "triceps": 0.65, "forearms": 0.70, "thighs": 0.80, "calves": 0.35},
+    "olympic_lifting": {"neck": 0.30, "shoulders": 0.80, "chest": 0.40, "waist": 0.20, "hips": 0.90, "biceps": 0.40, "triceps": 0.45, "forearms": 0.70, "thighs": 1.00, "calves": 0.55},
+    "barbell_strength_work": {"neck": 0.25, "shoulders": 0.65, "chest": 0.65, "waist": 0.20, "hips": 0.85, "biceps": 0.45, "triceps": 0.55, "forearms": 0.65, "thighs": 0.95, "calves": 0.40},
+    "bench_resistance_work": {"neck": 0.10, "shoulders": 0.80, "chest": 1.00, "waist": 0.05, "hips": 0.00, "biceps": 0.20, "triceps": 1.00, "forearms": 0.30, "thighs": 0.00, "calves": 0.00},
+    "machine_resistance_work": {"neck": 0.15, "shoulders": 0.60, "chest": 0.60, "waist": 0.10, "hips": 0.55, "biceps": 0.60, "triceps": 0.60, "forearms": 0.45, "thighs": 0.65, "calves": 0.35}
+  }
+}
