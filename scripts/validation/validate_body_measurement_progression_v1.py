@@ -1,0 +1,207 @@
+from __future__ import annotations
+
+import json
+import os
+from datetime import datetime, timedelta
+from pathlib import Path
+
+from observer_sandbox.body_measurement_progression import (
+    body_measurement_snapshot,
+    maybe_settle_body_measurements,
+)
+from observer_sandbox.db import connect
+from observer_sandbox.simulation import snapshot
+
+ACTOR = "char_darian"
+
+
+def _insert_training(conn, start: datetime, method_id: str, weights_case: str) -> None:
+    end = start + timedelta(minutes=60)
+    payload = {
+        "action": "train",
+        "duration_minutes": 60,
+        "action_started_sim_time": start.isoformat(),
+        "action_ended_sim_time": end.isoformat(),
+        "training_method": {
+            "source": "training-method-semantics-v1",
+            "method_id": method_id,
+            "family": "resistance",
+            "workload_channels": ["resistance"],
+            "effective_load": {"effective_minutes": 60.0},
+            "validation_case": weights_case,
+        },
+    }
+    conn.execute(
+        "INSERT INTO events(sim_time,actor_id,event_type,payload_json) VALUES(?,?,?,?)",
+        (end.isoformat(), ACTOR, "action_completed", json.dumps(payload)),
+    )
+
+
+def _insert_bc2(conn, start: datetime, end: datetime, *, fm_delta: float, partition_ffm: float, rt_ffm: float) -> int:
+    old = {
+        "weight_lb": 215.0,
+        "body_fat_pct": 9.0,
+        "fat_mass_lb": 19.35,
+        "lean_mass_lb": 195.65,
+        "bmi": 26.167763,
+    }
+    new_fm = old["fat_mass_lb"] + fm_delta
+    new_ffm = old["lean_mass_lb"] + partition_ffm + rt_ffm
+    new_weight = new_fm + new_ffm
+    payload = {
+        "source": "body-composition-progression-v1",
+        "status": "applied",
+        "settled_from_sim_time": start.isoformat(),
+        "settled_through_sim_time": end.isoformat(),
+        "old": old,
+        "new": {
+            "weight_lb": new_weight,
+            "body_fat_pct": 100.0 * new_fm / new_weight,
+            "fat_mass_lb": new_fm,
+            "lean_mass_lb": new_ffm,
+            "bmi": 703.0 * new_weight / (76.0 * 76.0),
+        },
+        "partition": {
+            "partition_delta_ffm_lb": partition_ffm,
+            "partition_delta_fm_lb": fm_delta,
+        },
+        "rt_recomposition": {
+            "rt_ffm_gain_lb": rt_ffm,
+            "rt_fm_energy_cost_lb": 0.0,
+        },
+        "stat_mutated": True,
+        "validation_case": True,
+    }
+    cur = conn.execute(
+        "INSERT INTO events(sim_time,actor_id,event_type,payload_json) VALUES(?,?,?,?)",
+        (end.isoformat(), ACTOR, "body_composition_progression_settled", json.dumps(payload)),
+    )
+    return int(cur.lastrowid)
+
+
+def main() -> int:
+    if os.environ.get("OBSERVER_VALIDATION_DISPOSABLE") != "1":
+        raise RuntimeError("validator requires disposable mode")
+    db_path = Path(os.environ["OBSERVER_SANDBOX_DB"]).resolve()
+    if "/tmp/" not in str(db_path):
+        raise RuntimeError("refusing non-temporary validation DB")
+
+    with connect(db_path) as conn:
+        live_state = snapshot(conn, ACTOR)
+        activation = datetime.fromisoformat(str(live_state["sim_time"]))
+        before = body_measurement_snapshot(conn, ACTOR)
+        before_history = conn.execute(
+            "SELECT COUNT(*) FROM character_profile_history WHERE entity_id=? AND authority='body_progression_engine'",
+            (ACTOR,),
+        ).fetchone()[0]
+
+        bootstrap = maybe_settle_body_measurements(
+            conn,
+            ACTOR,
+            as_of_sim_time=activation.isoformat(),
+            state=live_state,
+        )
+        assert bootstrap["status"] == "bootstrapped"
+        assert body_measurement_snapshot(conn, ACTOR) == before
+        assert "body.hips_in" in bootstrap["deferred_fields"]
+        assert conn.execute(
+            "SELECT 1 FROM character_profile_values WHERE entity_id=? AND field_key='body.hips_in'",
+            (ACTOR,),
+        ).fetchone() is None
+
+        modes = conn.execute(
+            "SELECT field_key,mode,authority FROM character_profile_values WHERE entity_id=? AND authority='body_progression_engine' ORDER BY field_key",
+            (ACTOR,),
+        ).fetchall()
+        activated = set(bootstrap["activated_measurements"])
+        assert activated
+        assert all(
+            row["mode"] == "simulated" and row["authority"] == "body_progression_engine"
+            for row in modes if row["field_key"] in activated
+        )
+
+        partial_end = activation + timedelta(hours=12)
+        _insert_bc2(
+            conn,
+            activation - timedelta(hours=12),
+            partial_end,
+            fm_delta=-0.02,
+            partition_ffm=0.02,
+            rt_ffm=0.05,
+        )
+        conn.commit()
+        partial = maybe_settle_body_measurements(
+            conn,
+            ACTOR,
+            as_of_sim_time=partial_end.isoformat(),
+            state=live_state,
+        )
+        assert partial["status"] == "deferred_partial_pre_activation_window"
+        assert body_measurement_snapshot(conn, ACTOR) == before
+
+        full_start = partial_end
+        full_end = full_start + timedelta(hours=24)
+        _insert_training(conn, full_start + timedelta(hours=8), "bench_resistance_work", "upper_body")
+        bc2_id = _insert_bc2(
+            conn,
+            full_start,
+            full_end,
+            fm_delta=-0.08,
+            partition_ffm=0.05,
+            rt_ffm=0.20,
+        )
+        conn.commit()
+        applied = maybe_settle_body_measurements(
+            conn,
+            ACTOR,
+            as_of_sim_time=full_end.isoformat(),
+            state=live_state,
+        )
+        after = body_measurement_snapshot(conn, ACTOR)
+        assert applied["status"] == "applied"
+        assert after["body.chest_in"] > before["body.chest_in"]
+        assert after["body.triceps_in"] > before["body.triceps_in"]
+        assert after["body.waist_in"] < before["body.waist_in"]
+        assert "body.hips_in" not in after
+
+        latest = conn.execute(
+            "SELECT caused_by_event_id,payload_json,state_changes_json FROM events WHERE actor_id=? AND event_type='body_measurement_progression_settled' ORDER BY id DESC LIMIT 1",
+            (ACTOR,),
+        ).fetchone()
+        payload = json.loads(latest["payload_json"])
+        changes = json.loads(latest["state_changes_json"])
+        assert latest["caused_by_event_id"] == bc2_id
+        assert payload["regional_training_exposure"]["chest"] == 1.0
+        assert payload["regional_training_exposure"]["triceps"] == 1.0
+        assert payload["regional_training_exposure"].get("calves", 0.0) == 0.0
+        assert payload["body_composition_signal"]["rt_ffm_gain_lb"] == 0.20
+        assert payload["deferred_fields"] == ["body.hips_in"]
+        assert payload["stat_mutated"] is True
+        assert all(abs(float(change["delta"])) <= 0.1500001 for change in changes.values())
+
+        after_history = conn.execute(
+            "SELECT COUNT(*) FROM character_profile_history WHERE entity_id=? AND authority='body_progression_engine'",
+            (ACTOR,),
+        ).fetchone()[0]
+        assert after_history == before_history + len(bootstrap["activated_measurements"]) + len(changes)
+
+        print(json.dumps({
+            "ok": True,
+            "disposable_production_copy": True,
+            "actor_id": ACTOR,
+            "activation_value_preserved": True,
+            "activated_fields": sorted(bootstrap["activated_measurements"]),
+            "deferred_fields": bootstrap["deferred_fields"],
+            "partial_pre_activation_window_deferred": True,
+            "regional_bench_chest_exposure": payload["regional_training_exposure"]["chest"],
+            "regional_bench_triceps_exposure": payload["regional_training_exposure"]["triceps"],
+            "changed_fields": sorted(changes),
+            "model_calls": 0,
+            "telegram_calls": 0,
+            "production_mutated_by_validation": False
+        }, sort_keys=True))
+    return 0
+
+
+if __name__ == "__main__":
+    raise SystemExit(main())
