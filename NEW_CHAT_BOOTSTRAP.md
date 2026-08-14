@@ -28,13 +28,13 @@ When a slice introduces a new architecture/control invariant, update the task-re
 - schema: v4
 - world revision: `thorne-estate-v3.2-training-environment`
 - autonomy: enabled / normal
-- latest verified speed: `1.0x`
-- cognition at last independent deploy readback: Groq `openai/gpt-oss-20b`; Creator subsequently reported successfully testing and activating Gemini through Telegram
+- latest verified speed: `3.0x`
+- cognition: Gemini `gemini-3.1-flash-lite`
 - Telegram: connected
 
-Latest verified runtime-affecting deployment: **Deploy #171 `31769893556` SUCCESS** from PR #63 merge `d8a3f770dd3c6f4293f5035d1085998ba0562bf7`.
+Latest verified runtime-affecting deployment: **Deploy #172 `31779629810` SUCCESS** from PR #65 merge `20c01b82a1ebacbd05d5a12cdccef009c7284981`.
 
-Deploy #171 readback verified service active/healthy, schema v4, autonomy enabled/normal, `autonomy_retry=null`, cognition binding still Groq at that checkpoint, Telegram API connected, and owner configuration present. Natural cognition had reached `decision_calls=334` at sim time `2025-05-04T17:38:00+00:00`. Deployment did not invoke a model probe.
+Deploy #172 readback verified service active/healthy, schema v4, autonomy enabled/normal, `autonomy_retry=null`, Creator-selected Gemini `gemini-3.1-flash-lite` preserved across the Groq bootstrap entry point (`changed=false`, `existing_binding_preserved`), Telegram API connected, and owner configuration present. Natural cognition had reached `decision_calls=352` at sim time `2025-05-04T21:32:00+00:00`; Darian was showering in the Master Bathroom. Deployment did not invoke a real model probe or intentionally induce provider failure. Post-merge CI #602 / run `31779629861` also succeeded.
 
 PR #62 / Deploy #170 added the next planned action's cognition reason to proactive Telegram Character Updates.
 
@@ -47,11 +47,12 @@ Delivery evidence:
 - primary CI #595 / run `31769832103` SUCCESS;
 - merge `d8a3f770dd3c6f4293f5035d1085998ba0562bf7`;
 - Deploy #171 / run `31769893556` SUCCESS;
-- Creator later reported a successful real Gemini probe and successful activation back to Gemini through Telegram.
+- Creator later reported a successful real Gemini probe and successful activation back to Gemini through Telegram;
+- Deploy #172 independently verified the selected Gemini binding and that normal deployment now preserves it.
 
 Creator surface:
 - `/start` -> `⚙️ Creator Settings` -> AI cognition controls, with `/settings` and `/ai` direct entries;
-- current cognition provider/model display;
+- current primary and fallback provider/model display;
 - provider list with credential presence/absence only;
 - live catalog fetch and cached pagination;
 - server-side candidate selection;
@@ -60,17 +61,24 @@ Creator surface:
 - save only after a successful probe.
 
 Canonical test-before-save invariant:
-- browsing, catalog refresh, selection, failed probe, cancellation and navigation do not mutate the current binding;
+- browsing, catalog refresh, selection, failed probe, cancellation and navigation do not mutate cognition configuration;
 - catalog success alone is not inference-health proof;
-- only explicit save changes a binding/control selection;
+- only explicit Creator save changes a primary/fallback selection;
 - API credential values are never displayed;
 - CI/deploy readback must not trigger real model probes.
 
 ## Runtime Cognition Fallback v1
 
-Status: **AUTHORIZED / IMPLEMENTED ON `test` / CI+DEPLOY GATE PENDING**.
+Status: **COMPLETE / CI VERIFIED / DEPLOYED**.
 
 Canonical contract: `docs/AI_RUNTIME_FALLBACK.md`.
+
+Delivery evidence:
+- PR #65 final tested head `ddfcd757fb94d270a5b20db1bd1601d92b050903`;
+- primary CI #601 / run `31779586802` SUCCESS;
+- merge `20c01b82a1ebacbd05d5a12cdccef009c7284981`;
+- Deploy #172 / run `31779629810` SUCCESS;
+- post-merge CI #602 / run `31779629861` SUCCESS.
 
 Current v1 invariant:
 - one primary cognition binding plus at most one tested fallback provider/model;
@@ -80,13 +88,14 @@ Current v1 invariant:
 - deterministic action/target/duration/runtime validation failures never trigger fallback;
 - if primary and fallback both fail, existing autonomy retry/backoff handles the combined provider failure;
 - successful fallback usage records bounded runtime observability metadata;
+- normal deployment/bootstrap preserves any existing explicit Creator-selected primary binding; `force=True` is reserved for explicit administrative migration;
 - no schema v5.
 
 Explicitly deferred: multi-fallback chains, circuit breakers, health scoring, permanent automatic rebinding, Telegram API-key editing and model-parameter tuning.
 
 ## Telegram Observer Home Message Lifecycle v1
 
-Status: **AUTHORIZED / IMPLEMENTED ON `test` / CI+DEPLOY GATE PENDING**.
+Status: **COMPLETE / CI VERIFIED / DEPLOYED**.
 
 Canonical contract: `docs/TELEGRAM_HOME_LIFECYCLE.md`.
 
@@ -95,6 +104,7 @@ Current behavior:
 - Close deletes the Home message through Telegram `deleteMessage`;
 - newly sent `/start` boards auto-delete after 5 minutes by default;
 - `OBSERVER_TELEGRAM_HOME_TTL_SECONDS` may override the TTL, bounded to 30..3600 seconds;
+- Home TTL is active only while that message is displaying Observer Home; navigating away cancels the timer and returning Home re-arms it;
 - lifecycle cleanup is Telegram presentation state only and cannot mutate simulation/autonomy;
 - timer state is intentionally in-process; service restart may forget outstanding timers, while manual Close remains available.
 
@@ -171,8 +181,10 @@ This is a bounded bridge, not a full Character Memory Engine. Established functi
 
 ## Exact resume point
 
-Complete the authorized **Runtime Cognition Fallback v1 + Telegram Observer Home Message Lifecycle v1** batch through focused CI, merge, automatic deploy and read-only production verification.
+Runtime Cognition Fallback v1 and Telegram Observer Home Message Lifecycle v1 are deployed. Resume **natural read-only observation** of autonomous behavior.
 
-Do not intentionally induce a provider failure or real model probe merely to validate deployment. After deployment, configure/test a fallback only through an explicit Creator interaction, then observe fallback behavior naturally if the primary provider/model later fails.
+The fallback is configuration-ready but should be selected/tested/saved through Telegram only when the Creator intentionally chooses a fallback model. Do not intentionally induce a provider failure or real model probe merely for monitoring. Observe fallback behavior naturally if the primary provider/model later fails.
+
+Current production readback after Deploy #172: Gemini `gemini-3.1-flash-lite`, autonomy enabled/normal, speed `3.0x`, `autonomy_retry=null`, Telegram connected, decision calls `352`.
 
 Do not build the full Character Memory Engine, multi-fallback chains/circuit breakers, forced equipment rotation, Speed progression, Telegram secret editing, model parameter tuning, or schema v5 without fresh Creator authorization.
