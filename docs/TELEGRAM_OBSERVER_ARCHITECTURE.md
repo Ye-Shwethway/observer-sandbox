@@ -58,7 +58,7 @@ Character browsing:
 
 Model control browsing:
 
-`AI -> providers -> provider catalog -> model -> binding target`
+`AI -> providers -> provider catalog -> model -> test candidate -> save binding`
 
 The initial single-character/single-home implementation may default to Darian and Home, but service interfaces must accept ids so later character/location selection does not require architectural replacement.
 
@@ -113,11 +113,21 @@ When Quasi or later characters exist, the same menus and queries must operate wi
 ### AI/model control
 
 - list providers
-- refresh provider catalog
-- list currently fetched models
+- show only credential presence/absence; never expose credential values
+- refresh provider catalogs without changing the active cognition binding
+- list currently fetched models with bounded pagination
 - show current binding
-- change provider/model binding through existing backend resolution/binding APIs
+- stage one provider/model candidate server-side without embedding arbitrary/full model ids in Telegram callback payloads
+- run one deliberately tiny **real inference probe** against the selected candidate before activation; catalog fetch success alone is not sufficient because it cannot prove current inference quota/rate-limit availability
+- classify common auth/permission, model-unavailable, request-limit, rate/quota and timeout failures in Creator-facing language while retaining bounded provider diagnostics
+- require a successful probe before `Save & Activate`
+- on candidate selection, catalog refresh, probe failure, cancellation, or navigation, preserve the existing cognition binding
+- only explicit `Save & Activate` may enable the selected provider and mutate the character cognition binding
+- change provider/model binding through reusable AI control/binding services rather than Telegram-owned SQL or duplicated runtime logic
 - never hard-code model ids in Telegram
+- do not add automatic provider failover, Telegram secret editing, or model-parameter tuning merely as a side effect of this control slice
+
+A successful probe proves that one minimal inference worked **at that moment** through the selected provider/model and the runtime-compatible structured response path. It does not guarantee future quota availability.
 
 ### Runtime/world controls
 
@@ -139,7 +149,8 @@ P2 should introduce a reusable observer/query facade, tentatively `ObserverServi
 - `get_character_profile(character_id, section=None)`
 - `recent_events(actor_id=None, location_id=None, limit=...)`
 - `autonomy_status(character_id)`
-- provider/model/binding list and mutation methods delegated to the existing AI backend
+- provider/model/binding list and mutation methods delegated to the existing AI backend/control service
+- non-mutating candidate model probe delegated to the AI runtime adapter path
 
 The exact Python API can evolve, but the separation is mandatory.
 
@@ -151,6 +162,9 @@ Persist only UI/navigation preferences that are genuinely Telegram-specific, suc
 - currently selected character id
 - currently selected location/sublocation id
 - pagination cursor/page
+- temporary AI provider/model candidate and its latest probe result
+
+Temporary AI candidate state is not a binding. It may contain provider/model ids, probe status, latency and test timestamp, but never API keys or copied world/profile state. Candidate state must be cleared after activation/cancellation and must never override runtime binding resolution by itself.
 
 Do not copy world state into Telegram session storage. World state remains authoritative in the runtime DB.
 
@@ -164,11 +178,11 @@ Authorization has three explicit roles:
 2. **Allowed user** — identities listed in `OBSERVER_TELEGRAM_ALLOWED_USER_IDS`. They may use the currently exposed observer/control surface but are not the root authority for future user-management changes.
 3. **Unauthorized user** — receives no world data or control access; `/start` and `/whoami` may reveal only the caller's own Telegram id and authorization state for bootstrap.
 
-The bot token, owner id, and allowed-user ids are secrets/config and are never committed or logged as values.
+The bot token, owner id, allowed-user ids and provider API credentials are secrets/config and are never committed, logged, or displayed as values.
 
 Future user-management commands should be owner-only. The intended direction is owner-controlled list/add/remove/role management backed by a persistent authorization store; the initial environment-backed allowlist remains the bootstrap source until that layer is implemented. No allowed user may remove/demote the owner or grant owner authority through ordinary commands.
 
-Control callbacks and future user-management callbacks must re-check authorization server-side; hidden buttons alone are not authorization.
+Control callbacks, AI/provider/model callbacks, and future user-management callbacks must re-check authorization server-side; hidden buttons alone are not authorization.
 
 ## Telegram presentation contract
 
@@ -222,22 +236,23 @@ The underlying events remain stored; future `/history technical` or debug views 
 
 ### Large data and hierarchy
 
-Do not dump giant profiles, location contents, item registries, or histories into one Telegram message.
+Do not dump giant profiles, location contents, item registries, model catalogs, or histories into one Telegram message.
 
 Use layered views:
 
 - summary -> details
 - universe -> location -> room -> contents -> item
 - characters -> selected character -> profile section -> fields
+- AI -> providers -> paginated models -> candidate -> test -> save
 - history -> bounded page -> next/previous
 
-Inline buttons are preferred where they reduce command typing. Callback payloads carry stable ids; display text carries human-friendly names.
+Inline buttons are preferred where they reduce command typing. Callback payloads carry bounded stable ids or server-side selection indexes; display text carries human-friendly names. Long arbitrary provider model ids should remain server-side rather than being copied directly into callback payloads.
 
 ### Reuse and testing
 
 Formatting should be implemented through shared formatter/helper functions rather than duplicated per command. New Telegram features must extend the existing visual vocabulary instead of inventing unrelated output styles.
 
-Relevant tests should cover presentation invariants such as timestamp format, friendly entity naming, safe pagination/length behavior, and suppression of internal control noise in default observer views.
+Relevant tests should cover presentation invariants such as timestamp format, friendly entity naming, safe pagination/length behavior, suppression of internal control noise in default observer views, owner-only AI settings, test-before-save enforcement, and binding preservation on failed probes.
 
 Presentation formatting must never become a second business-logic layer. It may transform labels, time strings, ordering, grouping, and visibility for human consumption, but authoritative state and rules remain in backend/query/control services.
 
@@ -250,8 +265,9 @@ Examples:
 - summary message -> inline buttons for Details / Profile / Location / History
 - profile overview -> section buttons -> paginated fields
 - location -> Rooms / Characters / Items / Events
+- Creator Settings -> AI Cognition -> Provider -> Model -> Test Model -> Save & Activate
 
-Telegram message limits must never force the data model to become shallow. Large profiles are paginated/sectioned at the presentation layer.
+Telegram message limits must never force the data model to become shallow. Large profiles and catalogs are paginated/sectioned at the presentation layer.
 
 ## P2 implementation stages
 
@@ -281,7 +297,9 @@ Telegram message limits must never force the data model to become shallow. Large
 
 - owner-only user management
 - provider/model catalog browsing and refresh
-- binding selection/change
+- staged provider/model candidate selection
+- runtime-compatible real inference probe before binding activation
+- explicit test-before-save binding selection/change
 - richer runtime controls
 - scoped event/history filters
 - future notification/watch preferences
@@ -301,5 +319,7 @@ Later phases may add relationships, inventory, physiology dashboards, memory vie
 ## Acceptance principle
 
 P2 MVP passes when the Creator can independently open Telegram and inspect the live sandbox and basic runtime state without relying on ChatGPT narration, while the codebase remains ready for hierarchical universe browsing, multiple characters/resources, and owner-managed users later.
+
+P2.3 AI control passes when the owner can browse/fetch provider catalogs, stage a model, perform one minimal real inference test, observe a useful current provider error if that test fails, and activate the candidate only after a successful test without any pre-save change to the existing cognition binding.
 
 Every P2 acceptance review must also treat presentation quality as functional UX: normal Telegram output must be human-readable, consistently formatted, mobile-scannable, and compliant with the presentation contract above.

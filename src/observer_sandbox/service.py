@@ -15,7 +15,7 @@ from .secrets import load_runtime_secrets
 from .simulation import snapshot
 from .stamina_progression_activation import maybe_settle_stamina_progression
 from .strength_progression_activation import maybe_settle_strength_progression
-from .telegram_bot import run_polling
+from .telegram_creator_bot import run_polling
 from .telegram_notifications import dispatch_action_completion
 
 DB_PATH = Path(os.environ.get("OBSERVER_SANDBOX_DB", "/var/lib/observer-sandbox/observer.sqlite3"))

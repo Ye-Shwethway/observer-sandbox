@@ -17,6 +17,7 @@ Roadmap synchronized: 2026-08-14
   `test -> focused tests + CI -> merge to main -> automatic deploy when runtime-affecting -> read-only production check`.
 - Keep only persistent `main` and reusable `test` branches unless a concrete exceptional need requires otherwise.
 - Production-copy validation is optional and reserved for genuinely state-sensitive or migration-heavy changes that local tests/CI cannot cover well enough.
+- New architecture/control surfaces must update their canonical contract plus this roadmap/bootstrap checkpoint in the same development cycle.
 
 ## Current production baseline
 
@@ -29,8 +30,9 @@ Roadmap synchronized: 2026-08-14
 - Autonomy: enabled / normal
 - Cognition: Groq `openai/gpt-oss-20b`
 - Telegram: connected
-- Latest verified speed: `1.0x` at Deploy #169 readback.
-- Latest runtime-affecting deployment: Deploy #169 `31767701373` SUCCESS from PR #60 merge `b813913ced1d51733e873b89dca2b04907dad353`.
+- Latest verified speed: `1.0x` at the cognition-recovery acceptance checkpoint.
+- Latest verified runtime-affecting deployment before the current AI-control slice: Deploy #170 `31769002006` SUCCESS from PR #62 merge `3de7a38be1d381654b28326a737974e6da2645f1`.
+- PR #62 added the next planned action reason to proactive Telegram Character Updates; post-merge CI #594 also succeeded.
 
 Post-Deploy169 live acceptance cleared the prior retry-cap stall on a natural decision boundary: cognition `decision_calls` advanced `331 -> 332`, `autonomy_retry` became `null`, and Darian scheduled a 10-minute `rest` action in the Training Hall. No production acceleration or direct live state mutation was used.
 
@@ -42,6 +44,44 @@ Post-Deploy169 live acceptance cleared the prior retry-cap stall on a natural de
 - P1 Living Darian Minimum — CONTINUOUS AUTONOMY LIVE.
 - P2 Telegram Observer MVP / browse / profile-control surfaces — COMPLETE / LIVE VERIFIED.
 - Runtime speed control, action ETA, autonomy timing/observability, research/monitor semantics — DEPLOYED.
+- Telegram proactive next-action reason visibility — DEPLOYED via PR #62 / Deploy #170.
+
+## P2.3 Telegram Creator AI Control v1
+
+Status: **AUTHORIZED / IMPLEMENTED ON `test` / CI+DEPLOY GATE PENDING**.
+
+Current minimum-runnable scope:
+- owner-only `Creator Settings -> AI Cognition` navigation;
+- display the current cognition provider/model binding;
+- list built-in providers while revealing only credential presence/absence, never credential values;
+- fetch a provider's live model catalog without changing the active cognition binding or enabling the provider as a side effect;
+- cache and paginate fetched models;
+- stage a provider/model candidate server-side so arbitrary/full model ids do not need to fit Telegram callback payloads;
+- run one deliberately tiny **real inference probe** through the selected model's actual runtime adapter and structured cognition-response path;
+- report useful auth/permission, model availability, request-limit, rate/quota, timeout, or bounded provider errors;
+- require a successful probe before `Save & Activate` becomes available or is accepted server-side;
+- preserve the current cognition binding on browse, refresh, candidate selection, test failure, cancellation, and navigation;
+- only explicit `Save & Activate` enables the provider and changes the character cognition binding.
+
+Architecture split:
+- reusable provider/catalog/probe/binding orchestration lives in `src/observer_sandbox/ai_control.py`;
+- Telegram candidate session/navigation/presentation lives in `src/observer_sandbox/telegram_ai_control.py`;
+- the existing polling shell is extended through `src/observer_sandbox/telegram_creator_bot.py` rather than duplicating the base bot/runtime;
+- `service.py` routes Telegram polling through that extension;
+- canonical behavior is defined in `docs/TELEGRAM_OBSERVER_ARCHITECTURE.md`.
+
+Probe semantics:
+- catalog fetch is not treated as an inference health check;
+- the probe consumes one intentionally minimal real provider inference call and therefore can detect a current quota/rate/auth/model failure before activation;
+- a passing probe proves only that the selected model worked at that moment; it does not guarantee future quota availability;
+- probe execution never mutates world/profile/progression state or the current cognition binding.
+
+Explicit non-goals for this slice:
+- automatic runtime provider failover;
+- API-key editing through Telegram;
+- model parameter tuning;
+- fallback-chain editing;
+- schema v5 or new world/profile state.
 
 ## Cognition resilience / Groq free-tier recovery
 
@@ -176,6 +216,8 @@ Agility uses authored `speed_agility_drills` evidence from the Speed & Agility S
 
 Not yet implemented as complete families:
 - full Character Memory Engine / richer episodic-semantic memory;
+- automatic runtime provider failover/fallback-chain control;
+- Telegram API-key editing and model-parameter tuning;
 - Speed progression;
 - Reflexes progression;
 - Endurance progression;
@@ -201,11 +243,8 @@ For ordinary work, use focused tests + CI and the standard automatic deploy. Use
 
 ## Exact resume point
 
-Continue **natural read-only observation** after the cognition-recovery/Groq migration and Object Familiarity guard.
+Complete the authorized **P2.3 Telegram Creator AI Control v1** through focused CI, merge, automatic deploy, and read-only production readback without inducing a validation model call.
 
-Immediate questions:
-- Does the old retry-cap stall stay cleared across ordinary fresh decision boundaries?
-- Does Groq remain comfortably inside normal free-tier request limits after prompt compaction?
-- When training load blocks further exercise, does Darian continue to avoid familiar-equipment inspect-room-hopping and instead select meaningful non-training activity or ordinary downtime?
+After deployment, the Creator can exercise `Creator Settings -> AI Cognition` manually when desired. A model probe is intentionally a real API call and must not be triggered merely for deployment validation.
 
-Do not build the full Character Memory Engine merely to solve familiarity. Do not start forced equipment rotation, Speed progression, or schema v5 without fresh Creator authorization.
+Continue natural read-only autonomy observation in parallel with this control-plane work. Do not build the full Character Memory Engine, automatic provider failover, forced equipment rotation, Speed progression, Telegram secret editing, or schema v5 without fresh Creator authorization.
