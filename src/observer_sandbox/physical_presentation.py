@@ -56,10 +56,10 @@ def refresh_physical_presentation(
         conn.execute(
             """
             INSERT INTO character_profile_history(
-                entity_id, field_key, old_value_json, new_value_json, mode, authority, reason, observed_at
-            ) VALUES (?, 'body.abdominal_definition', ?, ?, 'derived', 'appearance_engine', 'physical presentation refresh', ?)
+                entity_id, field_key, old_value_json, new_value_json, mode, authority, reason
+            ) VALUES (?, 'body.abdominal_definition', ?, ?, 'derived', 'appearance_engine', 'physical presentation refresh')
             """,
-            (actor_id, old["value_json"], value_json, as_of_sim_time),
+            (actor_id, old["value_json"], value_json),
         )
 
     conn.execute(
