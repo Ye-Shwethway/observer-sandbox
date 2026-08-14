@@ -137,7 +137,9 @@ def replenish_inventory_stack(
 
     The operation is intentionally narrow: it cannot create arbitrary definitions,
     move ownership, edit containers, or set negative quantities. Normal inventory
-    semantics remain authoritative after the intervention.
+    semantics remain authoritative after the intervention. If the caller already
+    owns a transaction, a SAVEPOINT keeps this control atomic without stealing the
+    caller's transaction boundary.
     """
     amount = float(quantity)
     if amount <= 0.0:
@@ -147,55 +149,73 @@ def replenish_inventory_stack(
 
     before_stack = stack_state(conn, stack_id)
     physical_location_id = current_location(conn, before_stack.container_id) if before_stack.container_id else None
-    conn.execute("BEGIN IMMEDIATE")
-    current = conn.execute(
-        "SELECT quantity FROM inventory_stacks WHERE entity_id=?",
-        (stack_id,),
-    ).fetchone()
-    if current is None:
-        conn.rollback()
-        raise KeyError(f"Unknown inventory stack: {stack_id}")
-    before = float(current[0])
-    after = before + amount
-    conn.execute(
-        "UPDATE inventory_stacks SET quantity=?,updated_at=CURRENT_TIMESTAMP WHERE entity_id=?",
-        (after, stack_id),
-    )
 
-    sim_time = runtime_value(conn, "sim_time", None)
-    if not isinstance(sim_time, str) or not sim_time:
-        conn.rollback()
-        raise RuntimeError("Creator inventory control requires initialized simulation time")
+    nested = conn.in_transaction
+    savepoint = "creator_inventory_replenish"
+    if nested:
+        conn.execute(f"SAVEPOINT {savepoint}")
+    else:
+        conn.execute("BEGIN IMMEDIATE")
 
-    record_event(
-        conn,
-        sim_time=sim_time,
-        event_type="creator_inventory_replenished",
-        location_id=physical_location_id,
-        state_changes={
-            "inventory.quantity": {
+    try:
+        current = conn.execute(
+            "SELECT quantity FROM inventory_stacks WHERE entity_id=?",
+            (stack_id,),
+        ).fetchone()
+        if current is None:
+            raise KeyError(f"Unknown inventory stack: {stack_id}")
+        before = float(current[0])
+        after = before + amount
+        conn.execute(
+            "UPDATE inventory_stacks SET quantity=?,updated_at=CURRENT_TIMESTAMP WHERE entity_id=?",
+            (after, stack_id),
+        )
+
+        sim_time = runtime_value(conn, "sim_time", None)
+        if not isinstance(sim_time, str) or not sim_time:
+            raise RuntimeError("Creator inventory control requires initialized simulation time")
+
+        record_event(
+            conn,
+            sim_time=sim_time,
+            event_type="creator_inventory_replenished",
+            location_id=physical_location_id,
+            state_changes={
+                "inventory.quantity": {
+                    "stack_id": stack_id,
+                    "before": before,
+                    "after": after,
+                    "unit": before_stack.unit,
+                }
+            },
+            payload={
+                "authority": authority,
+                "requested_by": requested_by,
                 "stack_id": stack_id,
-                "before": before,
-                "after": after,
+                "definition_id": before_stack.definition_id,
+                "item_name": before_stack.name,
+                "added_quantity": amount,
                 "unit": before_stack.unit,
-            }
-        },
-        payload={
-            "authority": authority,
-            "requested_by": requested_by,
-            "stack_id": stack_id,
-            "definition_id": before_stack.definition_id,
-            "item_name": before_stack.name,
-            "added_quantity": amount,
-            "unit": before_stack.unit,
-            "before_quantity": before,
-            "after_quantity": after,
-            "container_id": before_stack.container_id,
-            "owner_id": before_stack.owner_id,
-            "physical_location_id": physical_location_id,
-        },
-    )
-    conn.commit()
+                "before_quantity": before,
+                "after_quantity": after,
+                "container_id": before_stack.container_id,
+                "owner_id": before_stack.owner_id,
+                "physical_location_id": physical_location_id,
+            },
+        )
+
+        if nested:
+            conn.execute(f"RELEASE SAVEPOINT {savepoint}")
+        else:
+            conn.commit()
+    except Exception:
+        if nested:
+            conn.execute(f"ROLLBACK TO SAVEPOINT {savepoint}")
+            conn.execute(f"RELEASE SAVEPOINT {savepoint}")
+        else:
+            conn.rollback()
+        raise
+
     return {
         "ok": True,
         "stack_id": stack_id,
