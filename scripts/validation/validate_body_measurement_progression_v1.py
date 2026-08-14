@@ -10,6 +10,7 @@ from observer_sandbox.body_measurement_progression import (
     maybe_settle_body_measurements,
 )
 from observer_sandbox.db import connect
+from observer_sandbox.runtime import initialize
 from observer_sandbox.simulation import snapshot
 
 ACTOR = "char_darian"
@@ -85,6 +86,11 @@ def main() -> int:
     db_path = Path(os.environ["OBSERVER_SANDBOX_DB"]).resolve()
     if "/tmp/" not in str(db_path):
         raise RuntimeError("refusing non-temporary validation DB")
+
+    # Exercise the real candidate upgrade path on the disposable production copy.
+    # Re-initialization adds newly authored canonical/static fields while the seed
+    # importer preserves already simulated engine-owned values.
+    initialize(db_path)
 
     with connect(db_path) as conn:
         live_state = snapshot(conn, ACTOR)
@@ -199,6 +205,7 @@ def main() -> int:
             "ok": True,
             "disposable_production_copy": True,
             "actor_id": ACTOR,
+            "candidate_initialize_exercised": True,
             "activation_value_preserved": True,
             "activated_fields": sorted(bootstrap["activated_measurements"]),
             "deferred_fields": bootstrap["deferred_fields"],
