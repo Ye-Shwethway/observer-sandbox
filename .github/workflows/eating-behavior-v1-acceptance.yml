@@ -1,0 +1,23 @@
+name: Eating Behavior v1 Acceptance
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - 'src/observer_sandbox/eating_behavior.py'
+      - 'src/observer_sandbox/event_log.py'
+      - 'src/observer_sandbox/model_decision.py'
+      - 'src/observer_sandbox/ai_runtime.py'
+      - 'scripts/validation/validate_eating_behavior_v1.py'
+      - 'tests/test_eating_behavior_v1.py'
+      - '.github/workflows/eating-behavior-v1-acceptance.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  acceptance:
+    uses: ./.github/workflows/reusable-production-copy-validation.yml
+    with:
+      validator_path: scripts/validation/validate_eating_behavior_v1.py
+    secrets: inherit
