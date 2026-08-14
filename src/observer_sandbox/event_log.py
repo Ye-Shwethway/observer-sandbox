@@ -9,15 +9,29 @@ from .nutrition_energy import energy_expenditure_evidence, nutrition_intake_evid
 from .training_methods import training_method_evidence
 
 
-def _enrich_training_method(payload: dict[str, Any], event_type: str) -> dict[str, Any]:
+def _enrich_training_method(
+    conn: sqlite3.Connection,
+    payload: dict[str, Any],
+    event_type: str,
+    *,
+    action_id: str | None,
+) -> dict[str, Any]:
     if event_type != "action_completed" or payload.get("action") != "train" or "training_method" in payload:
         return payload
     target = payload.get("target")
     training_load = payload.get("training_load")
+    conditions = payload.get("conditions")
+    if not isinstance(conditions, dict) and action_id:
+        row = conn.execute("SELECT conditions_json FROM action_instances WHERE id=?", (action_id,)).fetchone()
+        if row is not None:
+            parsed = json.loads(row[0] or "{}")
+            conditions = parsed if isinstance(parsed, dict) else None
+    training_movements = conditions.get("training_movements") if isinstance(conditions, dict) else None
     evidence = training_method_evidence(
         action_name="train",
         target=target if isinstance(target, str) else None,
         training_load=training_load if isinstance(training_load, dict) else None,
+        training_movements=training_movements if isinstance(training_movements, list) else None,
     )
     if evidence is None:
         return payload
@@ -97,7 +111,12 @@ def record_event(
     payload: dict[str, Any] | None = None,
 ) -> int:
     event_uuid = str(uuid.uuid4())
-    event_payload = _enrich_training_method(dict(payload or {}), event_type)
+    event_payload = _enrich_training_method(
+        conn,
+        dict(payload or {}),
+        event_type,
+        action_id=action_id,
+    )
     event_payload = _enrich_nutrition_energy(
         conn,
         event_payload,
