@@ -122,6 +122,8 @@ def format_action_completion(
 
     if next_action:
         lines.extend(["", f"⏭ Next: {_action_title(next_action)}"])
+        if next_action.get("reason"):
+            lines.append(f"💭 {next_action['reason']}")
         next_duration = _duration_line(next_action, completed=False)
         expected_sim = _expected_end_sim_time(next_action)
         if next_duration:
