@@ -1,0 +1,24 @@
+name: Sexual Anatomy Physiology Lifecycle v1 Acceptance
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - 'config/sexual_anatomy_physiology_lifecycle.v1.json'
+      - 'src/observer_sandbox/sexual_anatomy_physiology_lifecycle.py'
+      - 'src/observer_sandbox/sexual_state_schema.py'
+      - 'src/observer_sandbox/service.py'
+      - 'scripts/validation/validate_sexual_anatomy_physiology_lifecycle_v1.py'
+      - 'tests/test_sexual_anatomy_physiology_lifecycle_v1.py'
+      - 'docs/SEXUAL_ANATOMY_PHYSIOLOGY_LIFECYCLE_V1.md'
+      - '.github/workflows/sexual-anatomy-physiology-lifecycle-v1-acceptance.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  acceptance:
+    uses: ./.github/workflows/reusable-production-copy-validation.yml
+    with:
+      validator_path: scripts/validation/validate_sexual_anatomy_physiology_lifecycle_v1.py
+    secrets: inherit
