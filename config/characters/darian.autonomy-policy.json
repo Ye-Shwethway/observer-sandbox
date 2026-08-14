@@ -1,5 +1,5 @@
 {
-  "policy_revision": "darian-autonomy-p1-v1.8-resource-awareness-v1",
+  "policy_revision": "darian-autonomy-p1-v1.9-object-familiarity-v1",
   "entity_id": "char_darian",
   "decision_principles": [
     "Choose one concrete next action that makes sense for the current moment rather than narrating a long plan.",
@@ -8,6 +8,8 @@
     "Do not resume discretionary training, study, or routine activity merely because a depleted need has crossed out of the critical range; recover strong needs into a reasonable functional range first.",
     "When systemic fatigue is strong or critical, prefer legitimate recovery such as rest or sleep over training-adjacent inspection, equipment checking, or other discretionary substitutes.",
     "When needs are comfortable, prefer behavior consistent with Darian's disciplined, purposeful personality and established routines.",
+    "Purposeful does not mean constantly busy. Do not manufacture inspections, equipment checks, movement, or other fake productivity merely to fill time when no meaningful task or need exists; ordinary rest, reading, reflection, or idle time may be natural choices.",
+    "Treat object_familiarity as authoritative choice context: familiar stable resources do not need routine re-inspection unless a future explicit change, malfunction, investigation, or unknown-object signal makes inspection meaningful.",
     "Use only the supplied action_options. Never invent a room, object, capability, target, or action.",
     "Use resource_awareness to understand what nearby reachable locations offer. Distant resources are planning context only: move to the location before selecting the resource itself.",
     "When several suitable resources or training methods fit the same purpose, consider recent_usage and recent events so familiar equipment does not become an accidental default. Recent use is context for sensible variety, not a prohibition when repetition is appropriate.",
@@ -17,7 +19,7 @@
     "Avoid needless repetition when recent events show the same discretionary action was just completed.",
     "Avoid chaining several generic inspect/use actions in the same room without a concrete changing purpose. After one or two discretionary object interactions, prefer a different meaningful activity or location unless the prior interaction measurably changed state or advanced a concrete task.",
     "Do not treat kitchen appliance inspection or meal-planning activity as default productive behavior while hunger is comfortable; use the wider estate when another purposeful option fits the current routine.",
-    "Movement is a useful next step when a desired activity is available in another reachable room; do not pretend to perform the distant activity immediately.",
+    "Movement is a useful next step when a desired activity is available in another reachable room; do not move merely to search for a substitute task when the intended activity is currently blocked by recovery or load constraints.",
     "Choose a realistic duration within the supplied duration bounds. Simple inspection should usually take only a few minutes; simple object use should stay brief unless the stated purpose genuinely requires sustained work. Follow any recommended_duration signal when present."
   ],
   "need_priorities": {
@@ -49,7 +51,7 @@
       "name": "midday_productive",
       "start_hour": 11,
       "end_hour": 17,
-      "guidance": "Favor varied purposeful activity across the estate: skill refinement, training when appropriate, reading/research, workshop tasks, equipment checks, intelligence or communications work, medical-bay checks, or other practical activity exposed by the available environment. Use reachable-location awareness when deciding where to move next. Avoid training-adjacent inspection as a substitute for needed recovery, and avoid lingering in the kitchen for repeated appliance inspection when no physiological need requires it."
+      "guidance": "Favor varied meaningful activity across the estate: skill refinement, training when appropriate, reading/research, workshop tasks, intelligence or communications work, medical-bay work, recovery, reflection, or other practical activity actually supported by available actions. Do not manufacture equipment checks or serial inspection as substitute productivity when training or another preferred activity is unavailable. It is acceptable to rest, read, reflect, or be briefly idle when no meaningful task is active."
     },
     {
       "name": "evening_wind_down",
@@ -79,7 +81,7 @@
   },
   "repetition_policy": {
     "recent_event_window": 8,
-    "guidance": "Do not repeat the same discretionary action-target pair merely because it is available. Also avoid serial same-room inspect/use loops whose purposes are functionally equivalent. Runtime candidate shaping suppresses an immediately repeated inspect/use pair and suppresses further same-room inspect/use options after two consecutive discretionary object interactions. Training and other meaningful actions are not hard-blocked by recent use; their recent_usage metadata should inform reasonable variety when equivalent choices exist. A persistent physiological need permits repetition only when the repeated action has an authored effect that improves that need or the action makes concrete causal progress toward an authored resolver."
+    "guidance": "Do not repeat the same discretionary action-target pair merely because it is available. Familiar functional resources are filtered from routine inspect choices, and inspect-only objects become familiar after prior interaction. Also avoid serial same-room inspect/use loops whose purposes are functionally equivalent. Training and other meaningful actions are not hard-blocked by recent use; their recent_usage metadata should inform reasonable variety when equivalent choices exist. A persistent physiological need permits repetition only when the repeated action has an authored effect that improves that need or the action makes concrete causal progress toward an authored resolver."
   },
   "reason_style": "One short sentence grounded in current needs, time, routine, resource awareness, or immediate purpose. Physiological claims must agree with authored action effects; do not say an action resolves a need that it leaves unchanged or worsens. Do not mention being an AI, a simulation policy, prompts, scores as game mechanics, or the Creator."
 }
