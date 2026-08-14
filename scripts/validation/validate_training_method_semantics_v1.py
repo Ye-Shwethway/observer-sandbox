@@ -6,7 +6,7 @@ from pathlib import Path
 
 from observer_sandbox.db import connect
 from observer_sandbox.simulation import Action, apply_action
-from observer_sandbox.training_methods import load_training_method_catalog
+from observer_sandbox.training_methods import load_training_method_catalog, training_profile_for_target
 from observer_sandbox.world import set_field
 
 
@@ -41,16 +41,29 @@ def main() -> int:
 
     conn = connect(db_path)
     catalog = load_training_method_catalog()
-    profiles = catalog["profiles"]
-    assert len(profiles) == 16
-    assert all("primary_domains" not in profile for profile in profiles.values())
+    methods = catalog["methods"]
+    bindings = catalog["bindings"]
+    assert catalog["revision"] == "training-method-semantics-v2"
+    assert len(methods) == 17
+    assert len(bindings) == 17
+    assert set(bindings.values()) <= set(methods)
+    assert all("primary_domains" not in method for method in methods.values())
 
     missing_targets = [
         target
-        for target in profiles
+        for target in bindings
         if conn.execute("SELECT 1 FROM entities WHERE id=? AND entity_type='object'", (target,)).fetchone() is None
     ]
     assert not missing_targets, missing_targets
+
+    synthetic_catalog = {
+        "revision": "synthetic-training-method-semantics-v2",
+        "methods": {"barbell_strength_work": methods["barbell_strength_work"]},
+        "bindings": {"obj_other_world_public_gym_rack": "barbell_strength_work"},
+    }
+    synthetic = training_profile_for_target("obj_other_world_public_gym_rack", catalog=synthetic_catalog)
+    assert synthetic is not None
+    assert synthetic["method_id"] == "barbell_strength_work"
 
     _prepare_gym(conn)
     apply_action(conn, Action("train", 30, TREADMILL, "steady aerobic work"))
@@ -75,8 +88,10 @@ def main() -> int:
         "ok": True,
         "validation_db": str(db_path),
         "catalog_revision": catalog["revision"],
-        "authored_method_count": len(profiles),
+        "reusable_method_count": len(methods),
+        "target_binding_count": len(bindings),
         "all_targets_present_on_production_copy": True,
+        "synthetic_non_thorne_binding": synthetic,
         "treadmill_method": treadmill_method,
         "treadmill_strength_stimulus": False,
         "free_weights_method": strength_method,
