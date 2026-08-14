@@ -1,0 +1,25 @@
+name: Inventory Operations v1 Acceptance
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - 'config/worlds/home.inventory.v1.json'
+      - 'src/observer_sandbox/inventory.py'
+      - 'src/observer_sandbox/creator_control.py'
+      - 'src/observer_sandbox/telegram_inventory.py'
+      - 'src/observer_sandbox/telegram_creator_bot.py'
+      - 'scripts/validation/validate_inventory_operations_v1.py'
+      - 'tests/test_inventory_operations_v1.py'
+      - 'tests/test_telegram_inventory_v1.py'
+      - '.github/workflows/inventory-operations-v1-acceptance.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  acceptance:
+    uses: ./.github/workflows/reusable-production-copy-validation.yml
+    with:
+      validator_path: scripts/validation/validate_inventory_operations_v1.py
+    secrets: inherit
