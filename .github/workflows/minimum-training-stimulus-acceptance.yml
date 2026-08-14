@@ -57,13 +57,14 @@ jobs:
             .venv/bin/python - <<"PY"
           import json, os
           from observer_sandbox.db import connect
+          from observer_sandbox.location_runtime import set_dynamic_location
           from observer_sandbox.simulation import Action, apply_action
           from observer_sandbox.training_stimulus import FREE_WEIGHTS_TARGET
           from observer_sandbox.world import set_field
 
           db = os.environ["OBSERVER_SANDBOX_DB"]
           with connect(db) as conn:
-              set_field(conn, "char_darian", "runtime.location", "loc_thorne_estate_home_gym")
+              set_dynamic_location(conn, "char_darian", "loc_thorne_estate_home_gym")
               before_strength = conn.execute(
                   "SELECT value_json FROM character_profile_values WHERE entity_id=? AND field_key=?",
                   ("char_darian", "raps_pa.strength"),
@@ -103,6 +104,7 @@ jobs:
                   "disposable": True,
                   "candidate_source": True,
                   "candidate_config": True,
+                  "authoritative_location_relation": True,
                   "model_calls": 0,
                   "free_weights_strength_stimulus": True,
                   "heavy_bag_strength_stimulus": False,
