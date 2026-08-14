@@ -23,7 +23,12 @@ def _legacy_value(conn: sqlite3.Connection, key: str) -> Any:
     return None if row is None else json.loads(row[0])
 
 
-def migrate_legacy_actor_runtime(conn: sqlite3.Connection, actor_id: str = "char_darian") -> None:
+def migrate_legacy_actor_runtime(conn: sqlite3.Connection, actor_id: str) -> None:
+    """Move the old singleton scheduler state onto one explicitly selected actor.
+
+    This exists only for pre-v4 compatibility. Runtime engines themselves are actor-id
+    driven and must not infer a named character here.
+    """
     ensure_actor_runtime(conn, actor_id)
     marker = conn.execute("SELECT value FROM schema_meta WHERE key=?", (f"actor_runtime_migrated:{actor_id}",)).fetchone()
     if marker is not None:
@@ -44,8 +49,6 @@ def migrate_legacy_actor_runtime(conn: sqlite3.Connection, actor_id: str = "char
         if existing is not None:
             pending_action_id = action_id
         else:
-            # Legacy pending plans may contain pre-v4 action state. Do not invent a
-            # partially valid first-class action; clear it at the migration boundary.
             pending_action_id = None
             wake_reason = "runtime_schema_migrated"
 
