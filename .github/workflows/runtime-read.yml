@@ -40,29 +40,7 @@ jobs:
             .venv/bin/sandboxctl status
             .venv/bin/sandboxctl living-status
             .venv/bin/sandboxctl autonomy-status
-            .venv/bin/python - <<"PY"
-import json
-import sqlite3
-
-db = sqlite3.connect("/var/lib/observer-sandbox/observer.sqlite3")
-db.row_factory = sqlite3.Row
-row = db.execute(
-    "SELECT sim_time, payload_json FROM events WHERE actor_id=? AND event_type=? ORDER BY id DESC LIMIT 1",
-    ("char_darian", "autonomy_error"),
-).fetchone()
-if row is None:
-    print("LATEST_AUTONOMY_ERROR=null")
-else:
-    payload = json.loads(row["payload_json"])
-    detail = {
-        "sim_time": row["sim_time"],
-        "stage": payload.get("stage"),
-        "error_type": payload.get("error_type"),
-        "message": payload.get("message"),
-        "retry_seconds": payload.get("retry_seconds"),
-    }
-    print("LATEST_AUTONOMY_ERROR=" + json.dumps(detail, sort_keys=True))
-PY
+            .venv/bin/python -c "import json,sqlite3; db=sqlite3.connect(\"/var/lib/observer-sandbox/observer.sqlite3\"); db.row_factory=sqlite3.Row; row=db.execute(\"SELECT sim_time, payload_json FROM events WHERE actor_id=? AND event_type=? ORDER BY id DESC LIMIT 1\", (\"char_darian\", \"autonomy_error\")).fetchone(); payload=json.loads(row[\"payload_json\"]) if row else {}; detail={\"sim_time\":row[\"sim_time\"],\"stage\":payload.get(\"stage\"),\"error_type\":payload.get(\"error_type\"),\"message\":payload.get(\"message\"),\"retry_seconds\":payload.get(\"retry_seconds\")} if row else None; print(\"LATEST_AUTONOMY_ERROR=\" + json.dumps(detail, sort_keys=True))"
             if grep -Eq "^OBSERVER_GROQ_API_KEY=.+" /var/lib/observer-sandbox/secrets.env 2>/dev/null; then
               echo "GROQ_CREDENTIAL_PRESENT=true"
             else
