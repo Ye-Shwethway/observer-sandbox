@@ -36,9 +36,14 @@ RISKY_BASENAMES = {
 }
 RISKY_SUFFIXES = {".pem", ".p12", ".pfx"}
 
+# Only uppercase environment-style names whose semantic suffix is itself an
+# authorization credential are considered by the generic assignment detector.
+# This intentionally excludes ordinary variables such as page_token and file
+# path constants such as DEFAULT_SECRET_FILE; concrete credential formats are
+# still caught independently by SECRET_PATTERNS above.
 SENSITIVE_ASSIGNMENT = re.compile(
-    r"(?im)^\s*(?:export\s+)?"
-    r"(?P<name>[A-Z][A-Z0-9_]*(?:API_KEY|TOKEN|SECRET|PASSWORD|PRIVATE_KEY|SSH_KEY|VPS_HOST)[A-Z0-9_]*)"
+    r"(?m)^\s*(?:export\s+)?"
+    r"(?P<name>[A-Z][A-Z0-9_]*(?:API_KEY|ACCESS_TOKEN|BOT_TOKEN|PASSWORD|PRIVATE_KEY|SSH_KEY|VPS_HOST))"
     r"\s*=\s*(?P<value>[^\r\n#]+?)\s*$"
 )
 
@@ -173,12 +178,18 @@ def scan_workflow_policy() -> list[str]:
             findings.append(f"{rel}: pull_request_target is prohibited for this repository")
         if re.search(r"(?m)^\s*permissions\s*:\s*write-all\s*$", text):
             findings.append(f"{rel}: permissions: write-all is prohibited")
-        if "secrets." in text and re.search(r"(?m)^\s*pull_request\s*:", text):
-            guard = "github.event.pull_request.head.repo.full_name == github.repository"
-            if guard not in text:
-                findings.append(
-                    f"{rel}: direct secret use on pull_request requires a same-repository fork guard"
-                )
+
+    # The reusable candidate-tree validator is the highest-risk PR path because
+    # it stages repository content to the VPS. Require its explicit defense-in-
+    # depth same-repository guard in addition to GitHub's default withholding of
+    # repository secrets from fork-originated pull requests.
+    reusable = workflow_dir / "reusable-production-copy-validation.yml"
+    reusable_text = reusable.read_text(encoding="utf-8")
+    guard = "github.event.pull_request.head.repo.full_name == github.repository"
+    if guard not in reusable_text:
+        findings.append(
+            ".github/workflows/reusable-production-copy-validation.yml: missing same-repository fork guard"
+        )
     return findings
 
 

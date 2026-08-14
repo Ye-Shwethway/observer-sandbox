@@ -82,27 +82,37 @@ Live contract:
 - Weight/BF persist together; FM/FFM/BMI remain derived views;
 - no schema migration or extra model call.
 
-## Current operational slice — Public Readiness Hardening v1
+## Public repository security checkpoint
 
-Creator explicitly approved making `Ye-Shwethway/observer-sandbox` public because the private GitHub Actions monthly allowance is nearly exhausted and public standard GitHub-hosted runners are documented by GitHub as free and unlimited.
+`Ye-Shwethway/observer-sandbox` is now **PUBLIC**.
+
+Public Readiness Hardening v1 merged via PR #80 / `bf5e537cdeceaa6c5a8d4d61f21b67d636f01f20`. After the visibility transition, previously queued CI resumed on a standard GitHub-hosted runner and CI #680 passed.
+
+Public Hardening Fixup v1 refined the audit's generic assignment detector to remove two false positives while preserving concrete credential signatures. Public Readiness Security Audit #2 passed with:
+- `PUBLIC_READINESS_SECRET_AUDIT=PASS`;
+- `full_history_high_confidence_secret_findings=0`;
+- `PUBLIC_READINESS_WORKFLOW_POLICY=PASS`.
 
 Canonical:
 - `docs/PUBLIC_REPOSITORY_SECURITY.md`
 - `SECURITY.md`
 
-Required hardening before the Creator flips visibility:
-- full reachable Git history is audited with `fetch-depth: 0` for high-confidence secret/token signatures and risky secret filenames;
-- potential secret values are never printed by the audit;
+Security invariants:
+- full reachable Git history is scanned with `fetch-depth: 0`;
 - `.env`, `secrets.env`, SSH/private-key formats, runtime DBs and backups remain excluded from repository content;
-- `pull_request_target` is prohibited;
-- fork-originated `pull_request` events are explicitly blocked from reusable VPS-backed production-copy validation;
+- `pull_request_target` and `permissions: write-all` are prohibited;
+- reusable VPS-backed production-copy validation retains a same-repository fork guard;
+- GitHub withholds repository secrets from fork-originated `pull_request` workflows by default;
 - disposable validators unset every model credential including Groq and all Telegram credentials;
-- GitHub Actions repository token stays read-only by default;
-- any live credential finding blocks publication and requires rotation/investigation.
+- production credentials stay in GitHub Actions Secrets and VPS `/var/lib/observer-sandbox/secrets.env` mode `0600`;
+- the public security-audit runner reported `GITHUB_TOKEN` Contents: read / Metadata: read.
 
-After hardening passes and merges, the Creator performs the repository visibility change manually. Immediately re-check Actions fork approval policy, read-only workflow token permissions, Secret scanning/Push protection, and `main` branch/ruleset protection because GitHub documents that push rulesets are disabled by a private-to-public transition.
+The GitHub App cannot read all repository Actions/security/ruleset settings. Before resuming BC-3, manually verify in the UI:
+1. outside-contributor fork workflow approval policy;
+2. Secret scanning / Push protection;
+3. `main` branch/ruleset protection after the private-to-public transition.
 
-## Next development slice after public flip — BC-3 Body Measurement Progression Batch
+## Next development slice — BC-3 Body Measurement Progression Batch
 
 Do not split structurally equivalent circumference fields into repetitive PR/deploy cycles.
 
@@ -122,17 +132,16 @@ Measurements must combine live body composition + regional training/anatomical c
 
 ## Later sequence
 
-1. finish Public Readiness Hardening v1;
-2. Creator changes repo Private -> Public and verifies security/Actions settings;
-3. BC-3 measurement batch;
-4. skills;
-5. intellectual attributes;
-6. mental/emotion dynamics;
-7. later social/relationship/sexual physiology;
-8. broad Mind/Behavior architecture only after enough feature families exist to justify it.
+1. verify post-public GitHub security settings;
+2. BC-3 measurement batch;
+3. skills;
+4. intellectual attributes;
+5. mental/emotion dynamics;
+6. later social/relationship/sexual physiology;
+7. broad Mind/Behavior architecture only after enough feature families exist to justify it.
 
 ## Exact resume point
 
-Finish **Public Readiness Hardening v1**, require its full-history audit + CI to pass, merge it, then guide the Creator through the manual Private -> Public change and post-change security checks. After that resume **BC-3 Body Measurement Progression Batch**.
+Finish the post-public GitHub settings verification, then resume **BC-3 Body Measurement Progression Batch**.
 
 Do not add economy/currency, automatic restocking, deep recipes/crafting, Character Memory, broad Mind/Behavior engines, or a second production character merely for testing as side effects.
