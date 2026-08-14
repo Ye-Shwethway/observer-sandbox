@@ -1,6 +1,6 @@
 # Observer Sandbox — New Chat Bootstrap
 
-Status: **READY**
+Status: **ACTIVE DEVELOPMENT**
 Last synchronized: 2026-08-14
 
 ## Startup / authority
@@ -32,11 +32,33 @@ When a slice introduces a new architecture/control invariant, update the task-re
 - cognition: Gemini `gemini-3.1-flash-lite`
 - Telegram: connected
 
-Latest verified runtime-affecting deployment: **Deploy #172 `31779629810` SUCCESS** from PR #65 merge `20c01b82a1ebacbd05d5a12cdccef009c7284981`.
+Latest verified runtime-affecting deployment remains **Deploy #172 `31779629810` SUCCESS** from PR #65 merge `20c01b82a1ebacbd05d5a12cdccef009c7284981` until the current universalization slice is merged and deployed.
 
 Deploy #172 readback verified service active/healthy, schema v4, autonomy enabled/normal, `autonomy_retry=null`, Creator-selected Gemini `gemini-3.1-flash-lite` preserved across the Groq bootstrap entry point (`changed=false`, `existing_binding_preserved`), Telegram API connected, and owner configuration present. Natural cognition had reached `decision_calls=352` at sim time `2025-05-04T21:32:00+00:00`; Darian was showering in the Master Bathroom. Deployment did not invoke a real model probe or intentionally induce provider failure. Post-merge CI #602 / run `31779629861` also succeeded.
 
-PR #62 / Deploy #170 added the next planned action's cognition reason to proactive Telegram Character Updates.
+Creator subsequently selected **Groq Qwen 3.6 27B** as the single fallback model through Telegram and reported the required real `Test Model` probe green. Treat that as proof the candidate worked at selection time only. Do not deliberately fail Gemini or consume a probe merely to force fallback acceptance; wait for natural provider-layer failure if runtime fallback evidence is needed.
+
+## Universal Character Engine Contract — CURRENT ACTIVE SLICE
+
+Canonical contract: `docs/UNIVERSAL_CHARACTER_ENGINE_CONTRACT.md`.
+
+Creator clarified that Darian is an exemplar because his detailed canonical facts already exist; universe rules and engines must remain universally reusable rather than fixed around Darian.
+
+Current `test` implementation is hardening this boundary before further profile simulation unlocks:
+- `config/characters/registry.json` resolves Darian's canonical/runtime-default/autonomy-policy files as character content rather than engine identity;
+- `actor_selection.py` resolves explicit actor -> configured valid `default_actor_id` -> sole actor only; multiple actors without a valid default fail closed;
+- legacy actor-runtime migration requires an explicitly resolved actor;
+- autonomy, runtime status, CLI, AI bootstrap/control/fallback, simulation and observer-query paths no longer rely on a literal `char_darian` default for reusable behavior;
+- character cognition resolves that character's own registered policy; an unregistered synthetic actor must fail rather than inherit Darian's autonomy policy;
+- missing character location is an explicit invalid runtime state rather than silently becoming the Thorne Estate Master Suite;
+- movement uses generic dynamic-location semantics;
+- global resume wakes every enabled idle actor at a real decision boundary rather than only a selected exemplar;
+- Darian canonical/config files, Thorne Estate content and clearly named convenience aliases such as `/darian` remain valid exemplar/presentation content;
+- no schema v5.
+
+Regression coverage includes a synthetic non-Darian actor specifically to catch character-identity leakage before a second production character is introduced.
+
+**State at this checkpoint:** implementation/docs are on `test`, but CI/merge/deploy evidence has not yet been established. Do not describe this slice as deployed until those gates pass.
 
 ## P2.3 Telegram Creator AI Control v1
 
@@ -69,7 +91,7 @@ Canonical test-before-save invariant:
 
 ## Runtime Cognition Fallback v1
 
-Status: **COMPLETE / CI VERIFIED / DEPLOYED**.
+Status: **COMPLETE / CI VERIFIED / DEPLOYED / CREATOR-CONFIGURED**.
 
 Canonical contract: `docs/AI_RUNTIME_FALLBACK.md`.
 
@@ -163,11 +185,24 @@ PR #54 final tested head `674de824acf69fc4209e59e649364d0ece3696f5`; CI #575 suc
 
 This is a bounded bridge, not a full Character Memory Engine. Established functional estate resources suppress low-value routine inspect fallback while genuinely unknown inspect-only objects may still receive a first-look opportunity.
 
-## Progression state
+## Progression state and next authorized expansion
 
-- Strength: active/deployed/live-cycle validated; Free Weights remains the deliberate Strength source.
-- Stamina: active/deployed; pure-conditioning sources are treadmill, rowing ergometer, and altitude chamber.
-- Agility: active/deployed; `speed_agility_drills` from the Speed & Agility Station is the authored evidence surface.
+Current active/deployed progression:
+- Strength — live-cycle validated; Free Weights deliberate source.
+- Stamina — pure-conditioning sources: treadmill, rowing ergometer, altitude chamber.
+- Agility — `speed_agility_drills` from Speed & Agility Station.
+
+After Universal Character Engine hardening is green/deployed, continue immediately with **Physical Attribute Progression Framework v1** for:
+- Speed
+- Reflexes
+- Endurance
+- Flexibility
+
+Do not create four independent character-specific engines. Reconcile the shared Strength/Stamina/Agility lifecycle into an actor-generic/policy-driven progression contract, while preserving attribute-specific evidence and physiology where needed. Current Darian values are exemplar inputs only.
+
+Important semantic separation: Stamina is cardiovascular/work-capacity reserve; Endurance must measure sustained performance under accumulated workload/fatigue rather than duplicate Stamina. If Flexibility lacks valid current evidence, add the smallest reusable mobility/stretching method rather than fabricating progression from unrelated training.
+
+After PA completion, planned profile-unlock sequence is body composition exemplar -> measurement batch -> skill exemplar/batch -> intellectual attribute exemplar/batch -> mental/emotion dynamics.
 
 ## Core safety boundaries that remain
 
@@ -178,13 +213,12 @@ This is a bounded bridge, not a full Character Memory Engine. Established functi
 - Post-deploy verification is read-only unless a concrete live control change is explicitly requested.
 - Never trigger provider fallback from deterministic validation failure.
 - Do not trigger a real AI probe for CI/deployment acceptance; it consumes provider inference quota.
+- Do not add a second production character merely to validate universalization; use synthetic disposable test fixtures until single-character profile expansion is substantially further along.
 
 ## Exact resume point
 
-Runtime Cognition Fallback v1 and Telegram Observer Home Message Lifecycle v1 are deployed. Resume **natural read-only observation** of autonomous behavior.
+Finish the current **Universal Character Engine Contract** hardening on `test`: focused regression/full CI -> merge -> standard deploy -> read-only production verification. Until that evidence exists, production remains at Deploy #172.
 
-The fallback is configuration-ready but should be selected/tested/saved through Telegram only when the Creator intentionally chooses a fallback model. Do not intentionally induce a provider failure or real model probe merely for monitoring. Observe fallback behavior naturally if the primary provider/model later fails.
+Then continue autonomously with **Physical Attribute Progression Framework v1** and the Speed/Reflexes/Endurance/Flexibility batch under the exemplar-first-then-batch policy.
 
-Current production readback after Deploy #172: Gemini `gemini-3.1-flash-lite`, autonomy enabled/normal, speed `3.0x`, `autonomy_retry=null`, Telegram connected, decision calls `352`.
-
-Do not build the full Character Memory Engine, multi-fallback chains/circuit breakers, forced equipment rotation, Speed progression, Telegram secret editing, model parameter tuning, or schema v5 without fresh Creator authorization.
+Do not build the full Character Memory Engine, multi-fallback chains/circuit breakers, forced equipment rotation, Telegram secret editing, model parameter tuning, a second production character, or schema v5 as side effects.
