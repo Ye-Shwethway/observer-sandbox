@@ -103,11 +103,15 @@ def main() -> int:
         )
         assert bootstrap["status"] == "bootstrapped"
         assert body_measurement_snapshot(conn, ACTOR) == before
-        assert "body.hips_in" in bootstrap["deferred_fields"]
-        assert conn.execute(
-            "SELECT 1 FROM character_profile_values WHERE entity_id=? AND field_key='body.hips_in'",
+        assert "body.hips_in" not in bootstrap["deferred_fields"]
+        hip = conn.execute(
+            "SELECT value_json,mode,authority FROM character_profile_values WHERE entity_id=? AND field_key='body.hips_in'",
             (ACTOR,),
-        ).fetchone() is None
+        ).fetchone()
+        assert hip is not None
+        assert json.loads(hip["value_json"]) == 39.0
+        assert hip["mode"] == "simulated"
+        assert hip["authority"] == "body_progression_engine"
 
         modes = conn.execute(
             "SELECT field_key,mode,authority FROM character_profile_values WHERE entity_id=? AND authority='body_progression_engine' ORDER BY field_key",
@@ -115,6 +119,7 @@ def main() -> int:
         ).fetchall()
         activated = set(bootstrap["activated_measurements"])
         assert activated
+        assert "body.hips_in" in activated
         assert all(
             row["mode"] == "simulated" and row["authority"] == "body_progression_engine"
             for row in modes if row["field_key"] in activated
@@ -162,7 +167,7 @@ def main() -> int:
         assert after["body.chest_in"] > before["body.chest_in"]
         assert after["body.triceps_in"] > before["body.triceps_in"]
         assert after["body.waist_in"] < before["body.waist_in"]
-        assert "body.hips_in" not in after
+        assert "body.hips_in" in after
 
         latest = conn.execute(
             "SELECT caused_by_event_id,payload_json,state_changes_json FROM events WHERE actor_id=? AND event_type='body_measurement_progression_settled' ORDER BY id DESC LIMIT 1",
@@ -175,9 +180,14 @@ def main() -> int:
         assert payload["regional_training_exposure"]["triceps"] == 1.0
         assert payload["regional_training_exposure"].get("calves", 0.0) == 0.0
         assert payload["body_composition_signal"]["rt_ffm_gain_lb"] == 0.20
-        assert payload["deferred_fields"] == ["body.hips_in"]
+        assert payload["deferred_fields"] == []
         assert payload["stat_mutated"] is True
         assert all(abs(float(change["delta"])) <= 0.1500001 for change in changes.values())
+        calf_delta = after["body.calves_in"] - before["body.calves_in"]
+        chest_delta = after["body.chest_in"] - before["body.chest_in"]
+        triceps_delta = after["body.triceps_in"] - before["body.triceps_in"]
+        assert chest_delta > calf_delta
+        assert triceps_delta > calf_delta
 
         after_history = conn.execute(
             "SELECT COUNT(*) FROM character_profile_history WHERE entity_id=? AND authority='body_progression_engine'",
