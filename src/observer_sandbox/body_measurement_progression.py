@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import json
 import sqlite3
+from datetime import datetime
 from functools import lru_cache
 from pathlib import Path
 from typing import Any
@@ -120,6 +121,33 @@ def _genetic_ffm_ceiling_lb(conn: sqlite3.Connection, actor_id: str) -> float | 
     return round(lean_condition_max * (1.0 - fat_floor / 100.0), 6)
 
 
+def _resistance_region_weights(payload: dict[str, Any], policy: dict[str, Any]) -> tuple[float, dict[str, float]] | None:
+    if payload.get("action") != "train":
+        return None
+    method = payload.get("training_method")
+    if not isinstance(method, dict):
+        return None
+    channels = method.get("workload_channels")
+    if not isinstance(channels, list) or "resistance" not in channels:
+        return None
+    effective = method.get("effective_load")
+    minutes = effective.get("effective_minutes") if isinstance(effective, dict) else None
+    if not isinstance(minutes, (int, float)) or float(minutes) <= 0.0:
+        return None
+    anatomy = method.get("movement_anatomy")
+    regional_load = anatomy.get("regional_load") if isinstance(anatomy, dict) else None
+    if isinstance(regional_load, dict) and regional_load:
+        weights = regional_load
+    else:
+        weights = policy["method_region_weights"].get(str(method.get("method_id") or ""), {})
+    normalized = {
+        str(region): max(0.0, min(1.0, float(weight)))
+        for region, weight in weights.items()
+        if isinstance(weight, (int, float))
+    }
+    return float(minutes), normalized
+
+
 def _regional_training_exposure(
     conn: sqlite3.Connection,
     actor_id: str,
@@ -128,7 +156,6 @@ def _regional_training_exposure(
     end_sim_time: str,
 ) -> dict[str, float]:
     policy = load_body_measurement_policy()
-    method_weights = policy["method_region_weights"]
     weighted: dict[str, float] = {}
     total_resistance_minutes = 0.0
     rows = conn.execute(
@@ -137,38 +164,71 @@ def _regional_training_exposure(
     ).fetchall()
     for row in rows:
         payload = json.loads(row["payload_json"] or "{}")
-        if payload.get("action") != "train":
-            continue
         ended = payload.get("action_ended_sim_time") or row["sim_time"]
         if not isinstance(ended, str) or not (start_sim_time < ended <= end_sim_time):
             continue
-        method = payload.get("training_method")
-        if not isinstance(method, dict):
+        parsed = _resistance_region_weights(payload, policy)
+        if parsed is None:
             continue
-        channels = method.get("workload_channels")
-        if not isinstance(channels, list) or "resistance" not in channels:
-            continue
-        effective = method.get("effective_load")
-        minutes = effective.get("effective_minutes") if isinstance(effective, dict) else None
-        if not isinstance(minutes, (int, float)) or float(minutes) <= 0.0:
-            continue
-        total_resistance_minutes += float(minutes)
-        anatomy = method.get("movement_anatomy")
-        regional_load = anatomy.get("regional_load") if isinstance(anatomy, dict) else None
-        if isinstance(regional_load, dict) and regional_load:
-            weights = regional_load
-        else:
-            # Historical/pre-anatomy events remain valid through the proven
-            # method-level fallback. New movement-aware events take precedence.
-            weights = method_weights.get(str(method.get("method_id") or ""), {})
+        minutes, weights = parsed
+        total_resistance_minutes += minutes
         for region, weight in weights.items():
-            weighted[str(region)] = weighted.get(str(region), 0.0) + float(minutes) * max(0.0, min(1.0, float(weight)))
+            weighted[region] = weighted.get(region, 0.0) + minutes * weight
+    regions = {str(cfg["region"]) for cfg in policy["fields"].values()}
     if total_resistance_minutes <= 0.0:
-        return {region: 0.0 for region in {cfg["region"] for cfg in policy["fields"].values()}}
+        return {region: 0.0 for region in regions}
     return {
-        region: round(max(0.0, min(1.0, value / total_resistance_minutes)), 6)
-        for region, value in weighted.items()
+        region: round(max(0.0, min(1.0, weighted.get(region, 0.0) / total_resistance_minutes)), 6)
+        for region in regions
     }
+
+
+def _regional_detraining_state(
+    conn: sqlite3.Connection,
+    actor_id: str,
+    *,
+    activation_sim_time: str,
+    end_sim_time: str,
+) -> dict[str, dict[str, Any]]:
+    policy = load_body_measurement_policy()
+    detraining = policy["regional_detraining"]
+    grace_days = float(detraining["grace_days"])
+    ramp_days = max(1e-6, float(detraining["ramp_days"]))
+    minimum_exposure = float(detraining["minimum_region_exposure"])
+    regions = {str(cfg["region"]) for cfg in policy["fields"].values()}
+    last_exposure: dict[str, str | None] = {region: None for region in regions}
+
+    rows = conn.execute(
+        "SELECT sim_time,payload_json FROM events WHERE actor_id=? AND event_type='action_completed' ORDER BY id",
+        (actor_id,),
+    ).fetchall()
+    for row in rows:
+        payload = json.loads(row["payload_json"] or "{}")
+        ended = payload.get("action_ended_sim_time") or row["sim_time"]
+        if not isinstance(ended, str) or not (activation_sim_time < ended <= end_sim_time):
+            continue
+        parsed = _resistance_region_weights(payload, policy)
+        if parsed is None:
+            continue
+        _, weights = parsed
+        for region, weight in weights.items():
+            if region in last_exposure and weight >= minimum_exposure:
+                last_exposure[region] = ended
+
+    end_dt = datetime.fromisoformat(end_sim_time)
+    activation_dt = datetime.fromisoformat(activation_sim_time)
+    result: dict[str, dict[str, Any]] = {}
+    for region in sorted(regions):
+        reference_raw = last_exposure[region]
+        reference_dt = datetime.fromisoformat(reference_raw) if reference_raw else activation_dt
+        inactive_days = max(0.0, (end_dt - reference_dt).total_seconds() / 86400.0)
+        pressure = 0.0 if inactive_days <= grace_days else min(1.0, (inactive_days - grace_days) / ramp_days)
+        result[region] = {
+            "last_qualifying_exposure_sim_time": reference_raw,
+            "inactive_days": round(inactive_days, 6),
+            "pressure": round(pressure, 6),
+        }
+    return result
 
 
 def _activate(conn: sqlite3.Connection, actor_id: str, sim_time: str) -> dict[str, Any]:
@@ -243,6 +303,8 @@ def _project_field(
     fm_delta_lb: float,
     old_fm_lb: float,
     region_exposure: float,
+    detraining_pressure: float,
+    settlement_days: float,
     genetic_max: float | None,
     waist_target: float | None,
     activation_value: float,
@@ -251,6 +313,7 @@ def _project_field(
     partition_delta = 0.0
     rt_delta = 0.0
     lean_loss_delta = 0.0
+    detraining_delta = 0.0
     fat_delta = 0.0
 
     if partition_ffm_delta_lb > 0.0:
@@ -272,12 +335,24 @@ def _project_field(
         else:
             rt_delta = current * headroom_fraction * region_exposure * float(cfg.get("lean_elasticity", 0.10))
 
+    detraining = policy["regional_detraining"]
+    suppress_for_systemic_loss = bool(detraining.get("suppress_when_partition_ffm_loss", True)) and partition_ffm_delta_lb < 0.0
+    if genetic_max is not None and not suppress_for_systemic_loss and detraining_pressure > 0.0:
+        post_activation_excess = max(0.0, current - activation_value)
+        fraction = min(
+            1.0,
+            float(detraining["max_excess_decay_fraction_per_24h"]) * max(0.0, settlement_days) * detraining_pressure,
+        )
+        detraining_delta = -post_activation_excess * fraction
+
     if abs(fm_delta_lb) > 1e-12 and old_fm_lb > 1e-6:
         fat_delta = current * (fm_delta_lb / old_fm_lb) * float(cfg.get("fat_elasticity", 0.0))
 
-    lean_projected = current + partition_delta + rt_delta + lean_loss_delta
+    lean_projected = current + partition_delta + rt_delta + lean_loss_delta + detraining_delta
     if genetic_max is not None:
         lean_projected = min(lean_projected, genetic_max)
+        if detraining_delta < 0.0 and partition_ffm_delta_lb >= 0.0:
+            lean_projected = max(activation_value, lean_projected)
     projected = lean_projected + fat_delta
     if waist_target is not None and fm_delta_lb <= 0.0:
         projected = max(projected, waist_target)
@@ -292,6 +367,7 @@ def _project_field(
         "partition_lean_delta_in": round(partition_delta, 9),
         "regional_rt_delta_in": round(rt_delta, 9),
         "lean_loss_delta_in": round(lean_loss_delta, 9),
+        "regional_detraining_delta_in": round(detraining_delta, 9),
         "fat_delta_in": round(fat_delta, 9),
         "clamped_delta_in": round(delta, 9),
     }
@@ -372,6 +448,13 @@ def maybe_settle_body_measurements(
     else:
         global_headroom = max(1.0, ceiling - current_ffm)
     regional = _regional_training_exposure(conn, actor_id, start_sim_time=start, end_sim_time=end)
+    detraining_state = _regional_detraining_state(
+        conn,
+        actor_id,
+        activation_sim_time=activation,
+        end_sim_time=end,
+    )
+    settlement_days = max(0.0, (datetime.fromisoformat(end) - datetime.fromisoformat(start)).total_seconds() / 86400.0)
 
     current = body_measurement_snapshot(conn, actor_id)
     activation_values: dict[str, float] = {}
@@ -397,6 +480,8 @@ def maybe_settle_body_measurements(
         if cfg.get("max_field") and genetic_max is None:
             deferred_fields.append(field_key)
             continue
+        region = str(cfg["region"])
+        region_detraining = detraining_state.get(region, {"pressure": 0.0})
         projected, detail = _project_field(
             current=value,
             cfg=cfg,
@@ -405,7 +490,9 @@ def maybe_settle_body_measurements(
             rt_ffm_gain_lb=rt_ffm,
             fm_delta_lb=fm_delta,
             old_fm_lb=old_fm,
-            region_exposure=float(regional.get(str(cfg["region"]), 0.0)),
+            region_exposure=float(regional.get(region, 0.0)),
+            detraining_pressure=float(region_detraining.get("pressure", 0.0)),
+            settlement_days=settlement_days,
             genetic_max=genetic_max,
             waist_target=waist_target,
             activation_value=activation_value,
@@ -413,8 +500,9 @@ def maybe_settle_body_measurements(
         new_values[field_key] = projected
         details[field_key] = {
             **detail,
-            "region": cfg["region"],
-            "regional_exposure": round(float(regional.get(str(cfg["region"]), 0.0)), 6),
+            "region": region,
+            "regional_exposure": round(float(regional.get(region, 0.0)), 6),
+            "detraining": region_detraining,
             "genetic_max_in": None if genetic_max is None else round(genetic_max, 6),
             "waist_target_in": None if waist_target is None else round(waist_target, 6),
         }
@@ -456,6 +544,11 @@ def maybe_settle_body_measurements(
                     "global_ffm_headroom_lb": round(global_headroom, 6),
                 },
                 "regional_training_exposure": regional,
+                "regional_detraining": {
+                    "source": policy["regional_detraining"]["revision"],
+                    "suppressed_by_systemic_ffm_loss": bool(partition_ffm < 0.0),
+                    "regions": detraining_state,
+                },
                 "projection_detail": details,
                 "deferred_fields": deferred_fields,
                 "stat_mutated": bool(changes),
