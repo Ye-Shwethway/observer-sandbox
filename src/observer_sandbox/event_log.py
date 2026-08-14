@@ -5,6 +5,7 @@ import sqlite3
 import uuid
 from typing import Any
 
+from .eating_behavior import settle_eating_action
 from .nutrition_energy import energy_expenditure_evidence, nutrition_intake_evidence
 from .training_methods import training_method_evidence
 
@@ -32,6 +33,7 @@ def _enrich_nutrition_energy(
     event_type: str,
     *,
     actor_id: str | None,
+    action_id: str | None,
     sim_time: str,
 ) -> dict[str, Any]:
     if event_type != "action_completed" or not actor_id:
@@ -45,7 +47,19 @@ def _enrich_nutrition_energy(
     enriched = dict(payload)
 
     if "nutrition_intake" not in enriched:
-        nutrition = nutrition_intake_evidence(action_name=action_name, target=target_id)
+        nutrition = None
+        if action_name == "eat" and action_id:
+            try:
+                nutrition = settle_eating_action(conn, action_id)
+            except Exception:
+                # Completion mutations and inventory settlement belong to one
+                # transaction boundary. Roll back the whole completion before
+                # surfacing the deterministic failure to autonomy handling.
+                conn.rollback()
+                raise
+        if nutrition is None:
+            # Compatibility path for pre-Eating-Behavior in-flight eat actions.
+            nutrition = nutrition_intake_evidence(action_name=action_name, target=target_id)
         if nutrition is not None:
             enriched["nutrition_intake"] = nutrition
 
@@ -87,6 +101,7 @@ def record_event(
         event_payload,
         event_type,
         actor_id=actor_id,
+        action_id=action_id,
         sim_time=sim_time,
     )
     cur = conn.execute(
