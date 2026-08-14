@@ -1,7 +1,7 @@
 {
   "entity_id": "char_darian",
   "name": "Darian Thorne",
-  "canonical_revision": "darian-canonical-v2-male-erectile-physiology",
+  "canonical_revision": "darian-canonical-v3-physical-presentation",
   "profile_schema_version": 1,
   "source_policy": "Reconciled from uploaded historical profiles and later approved canon; conflicting historical values are superseded, not silently merged.",
   "values": {
@@ -26,7 +26,7 @@
     "body.forearms_in": {"value": 14.0, "mode": "static", "authority": "body_progression_engine"},
     "body.thighs_in": {"value": 25.0, "mode": "static", "authority": "body_progression_engine"},
     "body.calves_in": {"value": 17.0, "mode": "static", "authority": "body_progression_engine"},
-    "body.abdominal_definition": {"value": "rare, well-defined 8-pack", "mode": "canonical", "authority": "profile_core"},
+    "body.abdominal_structure": {"value": "rare 8-pack configuration", "mode": "canonical", "authority": "profile_core"},
     "body.chest_hair": {"value": "present, neatly groomed", "mode": "canonical", "authority": "profile_core"},
 
     "appearance.eye_color": {"value": "deep blue", "mode": "canonical", "authority": "profile_core"},

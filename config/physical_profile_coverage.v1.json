@@ -1,5 +1,5 @@
 {
-  "revision": "physical-profile-coverage-audit-v1",
+  "revision": "physical-profile-coverage-audit-v1.1-closed",
   "classifications": {
     "canonical_structural": "Authored structural or appearance fact that ordinarily remains stable without a dedicated lifecycle.",
     "derived": "Computed from authoritative fields; no independent mutation authority.",
@@ -28,7 +28,8 @@
     "body.thighs_in": {"classification": "lifecycle_driven", "authority": "body_progression_engine", "status": "complete"},
     "body.calves_in": {"classification": "lifecycle_driven", "authority": "body_progression_engine", "status": "complete"},
 
-    "body.abdominal_definition": {"classification": "coverage_gap", "authority": "appearance_engine", "status": "required_follow_up", "reason": "Visible muscular definition can become inconsistent with simulated body-fat/composition changes if retained as canonical text."},
+    "body.abdominal_structure": {"classification": "canonical_structural", "authority": "profile_core", "status": "complete", "reason": "Authored abdominal configuration is separated from current visible definition."},
+    "body.abdominal_definition": {"classification": "derived", "authority": "appearance_engine", "status": "complete", "reason": "Visible definition is deterministically refreshed from current body fat relative to the actor's authored sustainable floor."},
     "body.chest_hair": {"classification": "canonical_structural", "authority": "profile_core", "status": "complete", "reason": "Presence is an authored appearance trait; grooming/style changes can later be modeled separately without rewriting biological presence."},
 
     "appearance.face_shape": {"classification": "canonical_structural", "authority": "profile_core", "status": "complete"},
@@ -41,10 +42,10 @@
     "appearance.hair_color": {"classification": "canonical_structural", "authority": "profile_core", "status": "complete"},
     "appearance.hair_style": {"classification": "intentionally_static", "authority": "profile_core", "status": "complete", "reason": "Style is authored profile presentation until grooming behavior is modeled."},
     "appearance.facial_hair": {"classification": "intentionally_static", "authority": "profile_core", "status": "complete", "reason": "Style is authored profile presentation until grooming behavior is modeled."},
-    "appearance.skin_quality": {"classification": "coverage_gap", "authority": "physiology_engine", "status": "required_follow_up", "reason": "Schema assigns physiology authority but no deterministic health/recovery/nutrition appearance lifecycle currently owns the value."},
+    "appearance.skin_quality": {"classification": "intentionally_static", "authority": "profile_core", "status": "complete", "reason": "Schema now describes baseline skin quality truthfully; a future current-skin health state can be added only when supporting health evidence exists."},
     "appearance.smile_appeal": {"classification": "canonical_structural", "authority": "profile_core", "status": "complete"},
     "appearance.facial_beauty": {"classification": "canonical_structural", "authority": "profile_core", "status": "complete"},
-    "appearance.pars": {"classification": "derived", "authority": "appearance_engine", "status": "required_follow_up", "reason": "Derived appeal should eventually consume current body/appearance state; current authored seed compatibility must not be mistaken for a live derived engine."},
+    "appearance.pars": {"classification": "canonical_structural", "authority": "profile_core", "status": "complete", "reason": "PARS is retained as the authored canonical appeal anchor instead of claiming a nonexistent live appearance engine."},
     "appearance.distinctive_features": {"classification": "canonical_structural", "authority": "profile_core", "status": "complete"},
     "appearance.marks_scars_tattoos": {"classification": "canonical_structural", "authority": "profile_core", "status": "complete", "reason": "New scars/tattoos require explicit future event mechanics; existing marks are authored structure."},
 
@@ -54,7 +55,7 @@
     "sexual_anatomy.erection_firmness_cap": {"classification": "canonical_structural", "authority": "profile_core", "status": "complete", "sensitivity": "intimate"},
     "sexual_anatomy.erectile_state": {"classification": "simulated_dynamic", "authority": "sexual_physiology_engine", "status": "deferred_context_behavior", "sensitivity": "intimate", "reason": "Schema/runtime state exists; transitions intentionally wait for explicit sexual-context behavior evidence."},
     "sexual_anatomy.erection_firmness": {"classification": "simulated_dynamic", "authority": "sexual_physiology_engine", "status": "deferred_context_behavior", "sensitivity": "intimate"},
-    "sexual_anatomy.sensitivity": {"classification": "simulated_dynamic", "authority": "sexual_physiology_engine", "status": "required_follow_up", "sensitivity": "intimate", "reason": "Schema implies physiology ownership but no current-state/lifecycle implementation owns this field yet."},
+    "sexual_anatomy.sensitivity": {"classification": "simulated_dynamic", "authority": "sexual_physiology_engine", "status": "deferred_context_behavior", "sensitivity": "intimate", "reason": "This is a current physiological state distinct from the RAPS-SA sensitivity trait; it remains unset until explicit sexual/health context provides evidence."},
     "sexual_state.arousal_level": {"classification": "simulated_dynamic", "authority": "sexual_physiology_engine", "status": "deferred_context_behavior", "sensitivity": "intimate"},
 
     "physiology.fatigue": {"classification": "simulated_dynamic", "authority": "physiology_engine", "status": "complete"},
@@ -76,15 +77,11 @@
   },
   "gate": {
     "completed_core_structural_body": true,
-    "required_follow_up_fields": [
-      "body.abdominal_definition",
-      "appearance.skin_quality",
-      "appearance.pars",
-      "sexual_anatomy.sensitivity"
-    ],
+    "required_follow_up_fields": [],
     "deferred_context_or_domain_fields": [
       "sexual_anatomy.erectile_state",
       "sexual_anatomy.erection_firmness",
+      "sexual_anatomy.sensitivity",
       "sexual_state.arousal_level",
       "physiology.injury_state",
       "physiology.illness_state",
@@ -93,6 +90,6 @@
       "physiology.body_temperature_c",
       "physiology.blood_pressure"
     ],
-    "physical_profile_completion": false
+    "physical_profile_completion": true
   }
 }

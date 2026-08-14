@@ -14,6 +14,7 @@ from .body_measurement_progression import maybe_settle_body_measurements
 from .db import connect
 from .height_lifecycle import maybe_settle_height_lifecycle
 from .physical_attribute_progression import maybe_settle_physical_attribute_batch
+from .physical_presentation import refresh_physical_presentation
 from .runtime import initialize
 from .secrets import load_runtime_secrets
 from .sexual_anatomy_physiology_lifecycle import maybe_settle_sexual_anatomy_physiology_lifecycle
@@ -118,6 +119,18 @@ def main() -> None:
                                 state=after,
                             )
                             after = snapshot(conn, actor_id)
+                        except Exception:
+                            pass
+
+                        # Materialized presentation fields are deterministic caches,
+                        # refreshed only after their authoritative body inputs have
+                        # settled. They are not independent progression authorities.
+                        try:
+                            refresh_physical_presentation(
+                                conn,
+                                actor_id,
+                                as_of_sim_time=str(after["sim_time"]),
+                            )
                         except Exception:
                             pass
 
