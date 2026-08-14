@@ -49,7 +49,12 @@ def main() -> int:
         assert actor_runtime_before is not None
         actor_runtime_before = tuple(actor_runtime_before)
 
-    assert before_schema == 4, f"expected production-copy schema v4 before migration, got {before_schema}"
+    # Inventory Foundation originally proved the production v4 -> v5 transition.
+    # Production is now already v5, so the durable acceptance invariant is that
+    # ordinary candidate initialization preserves the live runtime/profile state,
+    # retains definition/instance/containment semantics, and does not refill a
+    # stack after an allowed one-time explicit stock migration has settled.
+    assert before_schema == 5, f"expected current production-copy schema v5, got {before_schema}"
 
     initialize(db_path)
     migrated = status(db_path)
@@ -70,18 +75,20 @@ def main() -> int:
 
         apples = stack_state(conn, APPLE_STACK)
         assert apples.definition_id == "item.food.apple"
-        assert apples.quantity == 12.0
+        assert apples.quantity > 2.0
         assert apples.container_id == "obj_thorne_estate_kitchen_refrigerator"
         assert apples.owner_id == "loc_thorne_estate"
+        quantity_before_consumption = apples.quantity
 
         consumed = consume_stack(conn, APPLE_STACK, 2.0)
-        assert consumed["remaining_quantity"] == 10.0
+        expected_remaining = quantity_before_consumption - 2.0
+        assert consumed["remaining_quantity"] == expected_remaining
         assert consumed["energy_kcal"] == 190.0
 
     initialize(db_path)
 
     with connect(db_path) as conn:
-        assert stack_state(conn, APPLE_STACK).quantity == 10.0
+        assert stack_state(conn, APPLE_STACK).quantity == expected_remaining
         assert int(conn.execute("SELECT value FROM schema_meta WHERE key='schema_version'").fetchone()[0]) == 5
 
     print(json.dumps({
@@ -97,7 +104,8 @@ def main() -> int:
         "body_fat_preserved": True,
         "inventory_seed_revision": "thorne-estate-inventory-v1",
         "apple_definition_id": "item.food.apple",
-        "apple_quantity_after_test_consumption": 10.0,
+        "apple_quantity_before_test_consumption": quantity_before_consumption,
+        "apple_quantity_after_test_consumption": expected_remaining,
         "reinitialize_did_not_refill": True,
         "model_calls": 0,
         "telegram_calls": 0,

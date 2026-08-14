@@ -5,94 +5,101 @@ Scope: privileged administrative controls that directly alter Observer Sandbox r
 
 ## Purpose
 
-Creator controls are a deliberate escape hatch for administrative intervention in the running universe. They are not character actions, not cognition proposals, and not ordinary observer commands.
+Creator controls are deliberate administrative interventions. They are not character actions, cognition proposals or ordinary observer commands. Add them one bounded typed use case at a time; never turn Creator Control into arbitrary database editing.
 
-The first implemented control is **Restore Basic Stats** for a character. Future Creator controls must be added one minimum-runnable slice at a time rather than as a broad admin framework.
+Implemented controls:
+1. Restore Basic Stats — actor-scoped living-state reset.
+2. Replenish Inventory Stack — positive bounded stock addition to an existing stack.
 
 ## Authority boundary
 
-The Creator may authorize a bounded direct state mutation through a trusted control service. That authorization does **not** transfer domain ownership of the affected fields.
+The Creator may authorize a bounded mutation through a trusted reusable control service. That authorization does not give LLM cognition direct mutation authority and does not erase normal domain ownership afterward.
 
-Examples:
-- `needs.energy`, `needs.hunger`, `needs.thirst`, `needs.sleepiness` remain owned by `needs_engine`;
-- `physiology.cleanliness` and `physiology.fatigue` remain owned by `physiology_engine`;
-- `runtime.current_action` remains owned by `living_runtime`.
+Telegram/CLI/Actions are adapters. They call backend control services; they never own the mutation semantics or write SQLite directly.
 
-Creator authority is recorded in the control event/audit payload. Normal simulation engines continue owning the resulting fields afterward.
-
-LLMs never receive Creator-control authority.
-
-## First control — Restore Basic Stats
+## Restore Basic Stats
 
 Current baseline:
-- Energy: `75`
-- Hunger: `20`
-- Thirst: `15`
-- Sleepiness: `15`
-- Cleanliness: `80`
-- Systemic fatigue: `0`
+- Energy 75;
+- Hunger 20;
+- Thirst 15;
+- Sleepiness 15;
+- Cleanliness 80;
+- systemic Fatigue 0.
 
-The restore is actor-scoped and currently defaults to `char_darian` in operator surfaces.
+The actor-scoped restore preserves simulation time, location, canonical profile, autonomy enabled/mode, world topology and unrelated state. It resets current action to idle, cancels a now-stale pending action, clears actor lease/retry and emits `creator_basic_stats_restored` with before/after evidence.
 
-It preserves:
+Field authority remains with the normal needs/physiology/living engines after the intervention.
+
+## Replenish Inventory Stack
+
+Backend: `replenish_inventory_stack(stack_id, quantity, ...)`.
+
+This control is universal; it is not specific to Darian, one Estate or food. Any existing compatible stack anywhere in the universe may be targeted by stable stack id.
+
+Allowed mutation:
+- existing stack only;
+- positive bounded quantity only;
+- quantity is **added** to current stock.
+
+It must preserve:
+- item definition identity;
+- owner;
+- storage/container relation;
+- world topology;
 - simulation time;
-- current location;
-- canonical profile data;
-- autonomy enabled/disabled state;
-- autonomy mode;
-- world topology and all unrelated state.
+- character profile/physiology;
+- actor autonomy/runtime state.
 
-It resets `runtime.current_action` to `idle` and cancels an outstanding pending autonomous action because the action's original physiological reason may no longer be valid after the restore. Actor lease/retry state is cleared and the actor wake reason becomes `creator_basic_stats_restored`, allowing cognition to re-evaluate from the restored state.
+It may not:
+- create arbitrary definitions/stacks;
+- set negative stock;
+- change ownership/container;
+- perform arbitrary SQL/field editing;
+- impersonate a character action;
+- trigger an LLM call.
 
-## Audit/event contract
+Every successful replenishment emits `creator_inventory_replenished` containing Creator authority, requester/source, stack and definition ids, item name, added quantity/unit, before/after quantity, owner, container and resolved physical location.
 
-Every successful privileged restore must append a `creator_basic_stats_restored` event containing at least:
-- actor id;
-- location id;
-- simulation time;
-- requested-by identity/source;
-- Creator authority marker;
-- cancelled pending action id when present;
-- before/after snapshots;
-- explicit state changes;
-- applied baseline.
+## One-time canonical stock migrations
 
-The control event is administrative history. It is not fabricated as a character action and does not need to appear in the default narrative history feed.
+A Creator-approved canonical baseline migration is distinct from an ordinary Creator control call.
+
+For example, `thorne-estate-wealthy-food-reserve-v1` uses `ensure_minimum` once to establish a realistic reserve while external purchasing/economy is absent. A durable marker prevents reapplication. Once applied, ordinary re-init/deploy must not refill depleted stock.
+
+Such migrations emit explicit administrative audit evidence and must be production-copy validated before live deployment.
 
 ## Access control
 
 ### Telegram
 
-- Only the configured `OBSERVER_TELEGRAM_OWNER_ID` may apply Creator-authority mutations.
-- Allowed users may continue using the ordinary authorized observer surface but cannot invoke root Creator controls.
-- Server-side authorization is mandatory even if a control button is hidden from non-owners.
-- Mutating inline controls should use a confirmation step when a mistaken tap could alter live state.
+- `OBSERVER_TELEGRAM_OWNER_ID` is the root Creator authority.
+- Allowed users may use exposed read-only observer surfaces, including inventory browsing, but may not apply Creator mutations.
+- Authorization is rechecked server-side for every mutation callback/command; hidden buttons are not authorization.
+- Button-driven mutation uses a confirmation screen before application.
 
-Current Telegram surfaces:
-- owner-only `🩺 Restore Basic Stats` button on a character view;
-- confirmation screen before callback mutation;
-- owner-only `/restorestats [character_id]` typed command for deliberate direct use.
+Current owner mutation surfaces include:
+- `🩺 Restore Basic Stats` + confirmation;
+- `/restorestats [character_id]`;
+- inventory stack `➕ Replenish Stock` + confirmation;
+- `/replenish <stack_id> <positive_quantity>`.
 
 ### CLI / Actions
 
-Operator CLI:
-
-`sandboxctl creator restore-basic-stats --character <character_id>`
-
-GitHub Actions exposes the same backend through `.github/workflows/creator-control.yml`. The workflow's initial push is guarded by a persistent marker so the bootstrap production restore is applied only once automatically. A later deliberate `workflow_dispatch` may apply the restore again.
+Operator surfaces may expose the same reusable backend control services with equivalent authorization/audit policy. The existing basic-stats operator workflow remains separately guarded.
 
 ## Safety rules for future Creator controls
 
 A new control must:
-1. call a reusable backend control service rather than write SQLite directly from Telegram;
-2. define exactly which state it may mutate and which state it must preserve;
-3. retain normal domain field authority after the intervention unless the feature explicitly changes ownership;
-4. invalidate/cancel stale pending work when the mutation makes that work semantically obsolete;
-5. append a queryable audit event with before/after evidence;
+1. call a reusable backend control service;
+2. define exactly what it may mutate and what it preserves;
+3. retain normal domain authority afterward unless explicitly changing authority is the feature;
+4. cancel/invalidate stale work only when the mutation makes that work obsolete;
+5. append queryable audit evidence;
 6. enforce owner/operator authorization server-side;
-7. expose a human-readable confirmation/result in Creator-facing UI;
-8. have focused tests and production readback before being considered live;
+7. provide human-readable confirmation/result for risky UI actions;
+8. have focused regression and state-sensitive production-copy/readback evidence where appropriate;
 9. remain independent of LLM cognition;
-10. stay within the minimum-runnable expansion policy.
+10. stay minimum-runnable and entity/id generic.
 
-Do not build generic arbitrary-field editing, SQL consoles, unrestricted entity mutation, or bulk world rewriting under the label of Creator Control. Add narrow typed controls only when a concrete operational use case exists.
+Do not add arbitrary-field editors, SQL consoles, unrestricted entity mutation or bulk world rewriting under Creator Control.

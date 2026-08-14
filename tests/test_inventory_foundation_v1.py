@@ -14,6 +14,9 @@ from observer_sandbox.inventory import (
 from observer_sandbox.runtime import initialize, status
 
 
+WEALTHY_APPLE_RESERVE = 120.0
+
+
 def test_schema_v5_seeds_universal_food_definitions_and_estate_stacks(tmp_path):
     db_path = tmp_path / "observer.sqlite3"
     initialize(db_path)
@@ -35,7 +38,7 @@ def test_schema_v5_seeds_universal_food_definitions_and_estate_stacks(tmp_path):
 
         apples = stack_state(conn, "stack_estate_apples")
         assert apples.definition_id == "item.food.apple"
-        assert apples.quantity == 12.0
+        assert apples.quantity == WEALTHY_APPLE_RESERVE
         assert apples.unit == "piece"
         assert apples.container_id == "obj_thorne_estate_kitchen_refrigerator"
         assert apples.owner_id == "loc_thorne_estate"
@@ -67,17 +70,18 @@ def test_consumption_is_atomic_and_reinitialize_does_not_refill_stock(tmp_path):
 
     with connect(db_path) as conn:
         consumed = consume_stack(conn, "stack_estate_apples", 2.0)
-        assert consumed["remaining_quantity"] == 10.0
-        assert stack_state(conn, "stack_estate_apples").quantity == 10.0
+        expected_remaining = WEALTHY_APPLE_RESERVE - 2.0
+        assert consumed["remaining_quantity"] == expected_remaining
+        assert stack_state(conn, "stack_estate_apples").quantity == expected_remaining
 
         with pytest.raises(ValueError, match="Insufficient quantity"):
-            consume_stack(conn, "stack_estate_apples", 11.0)
-        assert stack_state(conn, "stack_estate_apples").quantity == 10.0
+            consume_stack(conn, "stack_estate_apples", expected_remaining + 1.0)
+        assert stack_state(conn, "stack_estate_apples").quantity == expected_remaining
 
     initialize(db_path)
 
     with connect(db_path) as conn:
-        assert stack_state(conn, "stack_estate_apples").quantity == 10.0
+        assert stack_state(conn, "stack_estate_apples").quantity == expected_remaining
 
 
 def test_structural_contains_is_not_reused_for_mutable_inventory_containment(tmp_path):

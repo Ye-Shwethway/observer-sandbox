@@ -17,5 +17,24 @@
     {"id":"stack_estate_mixed_vegetables","definition_id":"item.food.mixed_vegetables","quantity":2500.0,"unit":"g","container_id":"obj_thorne_estate_kitchen_refrigerator"},
     {"id":"stack_estate_olive_oil","definition_id":"item.food.olive_oil","quantity":1000.0,"unit":"g","container_id":"obj_thorne_estate_kitchen_pantry"},
     {"id":"stack_estate_whey_protein","definition_id":"item.food.whey_protein_powder","quantity":1200.0,"unit":"g","container_id":"obj_thorne_estate_kitchen_pantry"}
+  ],
+  "stock_migrations": [
+    {
+      "revision": "thorne-estate-wealthy-food-reserve-v1",
+      "mode": "ensure_minimum",
+      "reason": "Creator-approved wealthy-estate reserve while outside-world purchasing and economic replenishment are not implemented",
+      "minimum_quantities": {
+        "stack_estate_apples": 120.0,
+        "stack_estate_bananas": 90.0,
+        "stack_estate_chicken_breast": 30000.0,
+        "stack_estate_white_rice": 36000.0,
+        "stack_estate_eggs": 240.0,
+        "stack_estate_oats": 15000.0,
+        "stack_estate_greek_yogurt": 16000.0,
+        "stack_estate_mixed_vegetables": 30000.0,
+        "stack_estate_olive_oil": 8000.0,
+        "stack_estate_whey_protein": 10000.0
+      }
+    }
   ]
 }
