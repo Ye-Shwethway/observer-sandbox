@@ -9,7 +9,6 @@ from observer_sandbox.body_composition_progression import body_composition_snaps
 from observer_sandbox.db import connect
 from observer_sandbox.simulation import snapshot
 
-
 ACTOR = "char_darian"
 
 
@@ -34,7 +33,9 @@ def _insert_hour(conn, base: datetime, hour: int, *, train: bool = False, eat: b
     if train:
         payload["training_method"] = {
             "source": "training-method-semantics-v1",
-            "method_id": "strength_resistance",
+            "method_id": "free_weight_strength",
+            "family": "resistance",
+            "workload_channels": ["resistance"],
             "effective_load": {"effective_minutes": 60.0},
         }
     conn.execute(
@@ -59,15 +60,9 @@ def main() -> int:
             (ACTOR,),
         ).fetchone()[0]
 
-        bootstrap = maybe_settle_body_composition(
-            conn,
-            ACTOR,
-            as_of_sim_time=base.isoformat(),
-            state=live_copy_state,
-        )
-        after_bootstrap = body_composition_snapshot(conn, ACTOR)
+        bootstrap = maybe_settle_body_composition(conn, ACTOR, as_of_sim_time=base.isoformat(), state=live_copy_state)
         assert bootstrap["status"] == "bootstrapped"
-        assert after_bootstrap == before
+        assert body_composition_snapshot(conn, ACTOR) == before
         modes = conn.execute(
             "SELECT field_key,mode,authority FROM character_profile_values WHERE entity_id=? AND field_key IN ('body.weight_lb','body.body_fat_pct') ORDER BY field_key",
             (ACTOR,),
@@ -82,19 +77,10 @@ def main() -> int:
         end = base + timedelta(hours=24)
         settlement_state = dict(live_copy_state)
         settlement_state.update({
-            "sim_time": end.isoformat(),
-            "fatigue": 12.0,
-            "energy": 78.0,
-            "hunger": 35.0,
-            "sleepiness": 18.0,
-            "thirst": 20.0,
+            "sim_time": end.isoformat(), "fatigue": 12.0, "energy": 78.0,
+            "hunger": 35.0, "sleepiness": 18.0, "thirst": 20.0,
         })
-        applied = maybe_settle_body_composition(
-            conn,
-            ACTOR,
-            as_of_sim_time=end.isoformat(),
-            state=settlement_state,
-        )
+        applied = maybe_settle_body_composition(conn, ACTOR, as_of_sim_time=end.isoformat(), state=settlement_state)
         after = body_composition_snapshot(conn, ACTOR)
         assert applied["status"] == "applied"
         assert abs(after["weight_lb"] - before["weight_lb"]) <= 0.55
@@ -108,9 +94,10 @@ def main() -> int:
         payload = json.loads(latest["payload_json"])
         changes = json.loads(latest["state_changes_json"])
         assert payload["energy_balance"]["complete"] is True
-        assert payload["training_effective_minutes"] == 60.0
+        assert payload["resistance_training_effective_minutes"] == 60.0
         assert payload["partition"]["forbes_ffm_share"] > 0.0
         assert payload["rt_recomposition"]["protein_factor"] > 0.0
+        assert payload["rt_recomposition"]["training_factor"] == 1.0
         assert "body.weight_lb" in changes and "body.body_fat_pct" in changes
 
         after_history = conn.execute(
@@ -129,7 +116,7 @@ def main() -> int:
             "weight_delta_lb": round(after["weight_lb"] - before["weight_lb"], 6),
             "body_fat_delta_pct": round(after["body_fat_pct"] - before["body_fat_pct"], 6),
             "evidence_complete": payload["energy_balance"]["complete"],
-            "training_effective_minutes": payload["training_effective_minutes"],
+            "resistance_training_effective_minutes": payload["resistance_training_effective_minutes"],
             "model_calls": 0,
             "telegram_calls": 0,
             "production_mutated_by_validation": False,
