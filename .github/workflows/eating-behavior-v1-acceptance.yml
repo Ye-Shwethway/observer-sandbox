@@ -8,8 +8,10 @@ on:
       - 'src/observer_sandbox/event_log.py'
       - 'src/observer_sandbox/model_decision.py'
       - 'src/observer_sandbox/ai_runtime.py'
+      - 'src/observer_sandbox/telegram_notifications.py'
       - 'scripts/validation/validate_eating_behavior_v1.py'
       - 'tests/test_eating_behavior_v1.py'
+      - 'tests/test_telegram_eating_behavior_v1.py'
       - '.github/workflows/eating-behavior-v1-acceptance.yml'
 
 permissions:
