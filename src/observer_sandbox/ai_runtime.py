@@ -24,8 +24,21 @@ DECISION_SCHEMA: dict[str, Any] = {
         "duration_minutes": {"type": "integer", "minimum": 1, "maximum": 720},
         "target": {"type": "string"},
         "reason": {"type": "string"},
+        "resources": {
+            "type": "array",
+            "maxItems": 6,
+            "items": {
+                "type": "object",
+                "properties": {
+                    "stack_id": {"type": "string"},
+                    "quantity": {"type": "number", "exclusiveMinimum": 0},
+                },
+                "required": ["stack_id", "quantity"],
+                "additionalProperties": False,
+            },
+        },
     },
-    "required": ["action", "duration_minutes", "target", "reason"],
+    "required": ["action", "duration_minutes", "target", "reason", "resources"],
     "additionalProperties": False,
 }
 
@@ -108,12 +121,14 @@ def _decision_prompt(state: dict[str, Any], available_actions: list[str]) -> str
     return (
         "You control one autonomous simulated human. Choose exactly one next action. "
         "Act consistently with the supplied character traits, preferences, habits, skills, routine guidance, recent events, current time, and physiological state. "
-        "Physiological needs and safety override routine preferences. Do not invent rooms, objects, actions, or direct state changes.\n\n"
+        "Physiological needs and safety override routine preferences. Do not invent rooms, objects, actions, inventory stacks, or direct state changes.\n\n"
         f"Known action vocabulary: {json.dumps(available_actions)}\n"
         f"Runtime context: {json.dumps(prompt_state, ensure_ascii=False, sort_keys=True)}\n\n"
         "The action_options array is authoritative. Choose an action/target pair that appears there. "
         "The duration field is the broad legal compatibility range. When preferred_duration is present, choose duration_minutes inside that narrower planning range; duration_purpose explains the intended ordinary use. "
         "Runtime-shaped legal duration bounds override ordinary authored preferences when they are tighter. "
+        "For an eat action, choose one or more resources only from that option's meal_resources list. Copy each exact stack_id and choose a quantity within its min_quantity/max_quantity bounds. The engine calculates nutrients; do not invent or calculate macro values. "
+        "For every non-eat action, resources must be an empty array. "
         "For idle only, target must be an empty string. For every other action, copy the exact target id from action_options; use an empty string when that option's target is null. "
         "Return only the structured decision and keep reason short and character-grounded."
     )
@@ -295,11 +310,17 @@ def generate_character_decision(
     )
 
     # Validation remains outside the provider/fallback boundary. An invalid
-    # action/target/duration from a responding model is a deterministic
-    # decision-validation failure and must never be hidden by provider fallback.
+    # action/target/duration/resources result from a responding model is a
+    # deterministic decision-validation failure and must never be hidden by
+    # provider fallback.
     if not isinstance(decision, dict):
         raise AIDecisionError("AI decision must be a JSON object")
-    required = {"action", "duration_minutes", "target", "reason"}
+    legacy_required = {"action", "duration_minutes", "target", "reason"}
+    required = legacy_required | {"resources"}
+    if set(decision) == legacy_required:
+        # Test/mocked callers predating Eating Behavior v1 normalize safely.
+        # Live provider schemas require resources explicitly.
+        decision = {**decision, "resources": []}
     if set(decision) != required:
         raise AIDecisionError("AI decision keys do not match the required schema")
     if decision["action"] not in available_actions:
@@ -308,6 +329,15 @@ def generate_character_decision(
         raise AIDecisionError("AI duration_minutes is out of bounds")
     if not isinstance(decision["target"], str) or not isinstance(decision["reason"], str):
         raise AIDecisionError("AI target/reason must be strings")
+    if not isinstance(decision["resources"], list):
+        raise AIDecisionError("AI resources must be an array")
+    for resource in decision["resources"]:
+        if not isinstance(resource, dict) or set(resource) != {"stack_id", "quantity"}:
+            raise AIDecisionError("AI resource entries must contain exactly stack_id and quantity")
+        if not isinstance(resource["stack_id"], str) or not isinstance(resource["quantity"], (int, float)):
+            raise AIDecisionError("AI resource stack_id/quantity types are invalid")
+        if float(resource["quantity"]) <= 0.0:
+            raise AIDecisionError("AI resource quantity must be positive")
     decision = dict(decision)
     decision["duration_minutes"] = _normalize_decision_duration(state, decision)
     return decision

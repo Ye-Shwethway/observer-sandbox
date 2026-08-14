@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import json
 import os
 import urllib.error
 from datetime import datetime, timedelta
@@ -26,6 +27,13 @@ def _fmt_delta(label: str, icon: str, before: float, after: float, *, high_is_go
     beneficial = delta > 0 if high_is_good else delta < 0
     marker = "✓" if beneficial else "•"
     return f"{icon} {label:<11} {before:.1f} → {after:.1f}  {direction}{abs(delta):.1f} {marker}"
+
+
+def _fmt_number(value: int | float) -> str:
+    number = float(value)
+    if abs(number - round(number)) < 1e-9:
+        return str(int(round(number)))
+    return f"{number:.2f}".rstrip("0").rstrip(".")
 
 
 def _entity_name(conn, entity_id: str | None) -> str | None:
@@ -76,6 +84,31 @@ def _expected_end_sim_time(action: dict[str, Any]) -> str | None:
         return None
 
 
+def _meal_lines(action: dict[str, Any]) -> list[str]:
+    nutrition = action.get("nutrition_intake")
+    if not isinstance(nutrition, dict) or nutrition.get("source") != "eating-behavior-v1":
+        return []
+    items = nutrition.get("items")
+    lines = ["", "🍽 Meal"]
+    if isinstance(items, list):
+        for item in items:
+            if not isinstance(item, dict):
+                continue
+            name = item.get("item_name") or item.get("definition_id") or "Food"
+            quantity = item.get("quantity")
+            unit = item.get("unit")
+            if isinstance(quantity, (int, float)) and isinstance(unit, str):
+                lines.append(f"• {name} · {_fmt_number(quantity)} {unit}")
+    lines.append(
+        "🔥 "
+        f"{_fmt_number(float(nutrition.get('energy_kcal', 0.0)))} kcal · "
+        f"P {_fmt_number(float(nutrition.get('protein_g', 0.0)))} g · "
+        f"C {_fmt_number(float(nutrition.get('carbohydrate_g', 0.0)))} g · "
+        f"F {_fmt_number(float(nutrition.get('fat_g', 0.0)))} g"
+    )
+    return lines
+
+
 def format_action_completion(
     action: dict[str, Any],
     before: dict[str, Any],
@@ -103,6 +136,8 @@ def format_action_completion(
         lines.extend(["", f"📍 {before.get('location_name', 'Unknown')} → {after.get('location_name', 'Unknown')}"])
     else:
         lines.extend(["", f"📍 {after.get('location_name', 'Unknown')}"])
+
+    lines.extend(_meal_lines(action))
 
     fatigue_change = None
     if "fatigue" in before and "fatigue" in after:
@@ -134,6 +169,31 @@ def format_action_completion(
     return "\n".join(lines)
 
 
+def _completion_nutrition(conn, action_id: str) -> dict[str, Any] | None:
+    row = conn.execute(
+        "SELECT payload_json FROM events WHERE action_id=? AND event_type='action_completed' ORDER BY id DESC LIMIT 1",
+        (action_id,),
+    ).fetchone()
+    if row is None:
+        return None
+    payload = json.loads(row["payload_json"] or "{}")
+    nutrition = payload.get("nutrition_intake")
+    if not isinstance(nutrition, dict) or nutrition.get("source") != "eating-behavior-v1":
+        return None
+    enriched = dict(nutrition)
+    items: list[dict[str, Any]] = []
+    for raw in nutrition.get("items") or []:
+        if not isinstance(raw, dict):
+            continue
+        item = dict(raw)
+        item_name = _entity_name(conn, str(item.get("stack_id") or ""))
+        if item_name:
+            item["item_name"] = item_name
+        items.append(item)
+    enriched["items"] = items
+    return enriched
+
+
 def dispatch_action_completion(
     conn,
     *,
@@ -157,6 +217,9 @@ def dispatch_action_completion(
     target_name = _entity_name(conn, action.get("target"))
     if target_name:
         display_action["target_name"] = target_name
+    nutrition = _completion_nutrition(conn, action_id)
+    if nutrition is not None:
+        display_action["nutrition_intake"] = nutrition
 
     display_next = None
     if next_action:

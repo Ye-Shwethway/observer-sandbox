@@ -8,6 +8,7 @@ from typing import Any
 from .actor_selection import resolve_actor_id
 from .ai_runtime import generate_character_decision
 from .character_config import configured_character_ids, load_character_autonomy_policy
+from .eating_behavior import enrich_eating_action_options, validate_proposed_resources
 from .need_resolution import shape_action_options_for_needs
 from .resource_awareness import (
     enrich_options_with_usage,
@@ -245,6 +246,7 @@ class ModelDecisionProvider:
         decision_signals = self._decision_signals(state)
         recent_events = self._recent_events()
         options = enrich_training_action_options(action_options(self.conn, self.character_id))
+        options = enrich_eating_action_options(self.conn, str(state["location"]), options)
         options, training_load_guard = shape_training_options_for_load(
             self.conn,
             self.character_id,
@@ -318,6 +320,12 @@ class ModelDecisionProvider:
         }
         if (decision["action"], selected_target) not in allowed_pairs:
             raise ValueError("Model selected an action/target pair outside authoritative action_options")
+        resources = validate_proposed_resources(
+            self.conn,
+            action_name=str(decision["action"]),
+            location_id=str(state["location"]),
+            resources=decision.get("resources"),
+        )
         if decision["action"] == "train":
             readiness = training_readiness_modifier(state)
             if not projected_training_allowed(
@@ -331,6 +339,7 @@ class ModelDecisionProvider:
             decision["duration_minutes"],
             selected_target,
             decision["reason"],
+            resources=resources,
         )
 
 
@@ -361,6 +370,7 @@ def dry_run_model_decision(
             "duration_minutes": action.duration_minutes,
             "target": action.target,
             "reason": action.reason,
+            "resources": list(action.resources),
         },
         "state_before": before,
         "state_after": after,
