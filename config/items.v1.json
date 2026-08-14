@@ -1,0 +1,85 @@
+{
+  "revision": "universal-items-v1",
+  "definitions": [
+    {
+      "id": "item.food.apple",
+      "entity_type": "item",
+      "name": "Apple",
+      "capabilities": ["eat", "inspect"],
+      "properties": {"category":"food","subcategory":"fruit","stackable":true,"canonical_unit":"piece","default_portion_quantity":1.0,"tags":["fruit","raw","plant"]},
+      "nutrition": {"basis_quantity":1.0,"unit":"piece","energy_kcal":95.0,"protein_g":0.5,"carbohydrate_g":25.0,"fat_g":0.3}
+    },
+    {
+      "id": "item.food.banana",
+      "entity_type": "item",
+      "name": "Banana",
+      "capabilities": ["eat", "inspect"],
+      "properties": {"category":"food","subcategory":"fruit","stackable":true,"canonical_unit":"piece","default_portion_quantity":1.0,"tags":["fruit","raw","plant"]},
+      "nutrition": {"basis_quantity":1.0,"unit":"piece","energy_kcal":105.0,"protein_g":1.3,"carbohydrate_g":27.0,"fat_g":0.4}
+    },
+    {
+      "id": "item.food.chicken_breast_cooked",
+      "entity_type": "item",
+      "name": "Cooked Chicken Breast",
+      "capabilities": ["eat", "inspect"],
+      "properties": {"category":"food","subcategory":"protein","stackable":true,"canonical_unit":"g","default_portion_quantity":200.0,"tags":["protein","cooked","animal"]},
+      "nutrition": {"basis_quantity":100.0,"unit":"g","energy_kcal":165.0,"protein_g":31.0,"carbohydrate_g":0.0,"fat_g":3.6}
+    },
+    {
+      "id": "item.food.white_rice_cooked",
+      "entity_type": "item",
+      "name": "Cooked White Rice",
+      "capabilities": ["eat", "inspect"],
+      "properties": {"category":"food","subcategory":"carbohydrate","stackable":true,"canonical_unit":"g","default_portion_quantity":250.0,"tags":["grain","cooked","carbohydrate"]},
+      "nutrition": {"basis_quantity":100.0,"unit":"g","energy_kcal":130.0,"protein_g":2.7,"carbohydrate_g":28.2,"fat_g":0.3}
+    },
+    {
+      "id": "item.food.egg_large",
+      "entity_type": "item",
+      "name": "Large Egg",
+      "capabilities": ["eat", "inspect"],
+      "properties": {"category":"food","subcategory":"protein","stackable":true,"canonical_unit":"piece","default_portion_quantity":2.0,"tags":["protein","animal"]},
+      "nutrition": {"basis_quantity":1.0,"unit":"piece","energy_kcal":72.0,"protein_g":6.3,"carbohydrate_g":0.4,"fat_g":4.8}
+    },
+    {
+      "id": "item.food.oats_dry",
+      "entity_type": "item",
+      "name": "Rolled Oats",
+      "capabilities": ["eat", "inspect"],
+      "properties": {"category":"food","subcategory":"grain","stackable":true,"canonical_unit":"g","default_portion_quantity":80.0,"tags":["grain","carbohydrate","breakfast"]},
+      "nutrition": {"basis_quantity":100.0,"unit":"g","energy_kcal":389.0,"protein_g":16.9,"carbohydrate_g":66.3,"fat_g":6.9}
+    },
+    {
+      "id": "item.food.greek_yogurt_plain",
+      "entity_type": "item",
+      "name": "Plain Greek Yogurt",
+      "capabilities": ["eat", "inspect"],
+      "properties": {"category":"food","subcategory":"dairy","stackable":true,"canonical_unit":"g","default_portion_quantity":250.0,"tags":["dairy","protein","ready_to_eat"]},
+      "nutrition": {"basis_quantity":100.0,"unit":"g","energy_kcal":59.0,"protein_g":10.3,"carbohydrate_g":3.6,"fat_g":0.4}
+    },
+    {
+      "id": "item.food.mixed_vegetables",
+      "entity_type": "item",
+      "name": "Mixed Vegetables",
+      "capabilities": ["eat", "inspect"],
+      "properties": {"category":"food","subcategory":"vegetable","stackable":true,"canonical_unit":"g","default_portion_quantity":200.0,"tags":["vegetable","plant","fiber_source"]},
+      "nutrition": {"basis_quantity":100.0,"unit":"g","energy_kcal":65.0,"protein_g":3.0,"carbohydrate_g":13.0,"fat_g":0.5}
+    },
+    {
+      "id": "item.food.olive_oil",
+      "entity_type": "item",
+      "name": "Olive Oil",
+      "capabilities": ["eat", "inspect"],
+      "properties": {"category":"food","subcategory":"fat","stackable":true,"canonical_unit":"g","default_portion_quantity":10.0,"tags":["fat","oil","plant"]},
+      "nutrition": {"basis_quantity":100.0,"unit":"g","energy_kcal":884.0,"protein_g":0.0,"carbohydrate_g":0.0,"fat_g":100.0}
+    },
+    {
+      "id": "item.food.whey_protein_powder",
+      "entity_type": "item",
+      "name": "Whey Protein Powder",
+      "capabilities": ["eat", "inspect"],
+      "properties": {"category":"food","subcategory":"supplement_food","stackable":true,"canonical_unit":"g","default_portion_quantity":30.0,"tags":["protein","powder","convenience"]},
+      "nutrition": {"basis_quantity":100.0,"unit":"g","energy_kcal":400.0,"protein_g":80.0,"carbohydrate_g":8.0,"fat_g":6.0}
+    }
+  ]
+}
