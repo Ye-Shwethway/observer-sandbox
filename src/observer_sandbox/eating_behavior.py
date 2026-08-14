@@ -5,7 +5,7 @@ import math
 import sqlite3
 from typing import Any
 
-from .inventory import inventory_for_entity, item_definition, nutrition_for_stack_quantity, stack_state
+from .inventory import inventory_for_entity, item_definition, nutrition_for_stack_quantity
 
 
 EATING_BEHAVIOR_SOURCE = "eating-behavior-v1"
@@ -34,9 +34,29 @@ def _portion_bounds(definition: dict[str, Any], unit: str, available: float) -> 
     return round(minimum, 6), round(selected_default, 6), round(maximum, 6)
 
 
-def meal_resource_choices(conn: sqlite3.Connection, location_id: str) -> list[dict[str, Any]]:
-    """Return edible inventory portions physically available in one location scope."""
-    scoped = inventory_for_entity(conn, location_id)
+def _scope_chain(conn: sqlite3.Connection, location_id: str) -> list[str]:
+    """Return location then nearest structural ancestors, without named-world assumptions."""
+    result = [location_id]
+    frontier = [location_id]
+    seen = {location_id}
+    while frontier:
+        current = frontier.pop(0)
+        rows = conn.execute(
+            "SELECT source_id FROM relations WHERE target_id=? AND relation_type='contains' ORDER BY id",
+            (current,),
+        ).fetchall()
+        for row in rows:
+            parent = str(row[0])
+            if parent in seen:
+                continue
+            seen.add(parent)
+            result.append(parent)
+            frontier.append(parent)
+    return result
+
+
+def _choices_for_scope(conn: sqlite3.Connection, scope_id: str) -> list[dict[str, Any]]:
+    scoped = inventory_for_entity(conn, scope_id)
     choices: list[dict[str, Any]] = []
     for stack in scoped["stacks"]:
         definition = item_definition(stack.definition_id)
@@ -57,6 +77,7 @@ def meal_resource_choices(conn: sqlite3.Connection, location_id: str) -> list[di
                 "min_quantity": minimum,
                 "default_quantity": default,
                 "max_quantity": maximum,
+                "access_scope_id": scope_id,
                 "default_nutrition": {
                     "energy_kcal": default_nutrition["energy_kcal"],
                     "protein_g": default_nutrition["protein_g"],
@@ -66,6 +87,21 @@ def meal_resource_choices(conn: sqlite3.Connection, location_id: str) -> list[di
             }
         )
     return sorted(choices, key=lambda row: (str(row["name"]).lower(), str(row["stack_id"])))
+
+
+def meal_resource_choices(conn: sqlite3.Connection, location_id: str) -> list[dict[str, Any]]:
+    """Return edible stock reachable through the nearest enclosing inventory scope.
+
+    Direct room inventory wins. If a food-access room has no concrete stack of its
+    own, the nearest structural ancestor with edible stock is used. This preserves
+    site-level provisioning without making arbitrary remote inventory globally
+    accessible; cognition only receives these choices on a local eat-capable action.
+    """
+    for scope_id in _scope_chain(conn, location_id):
+        choices = _choices_for_scope(conn, scope_id)
+        if choices:
+            return choices
+    return []
 
 
 def enrich_eating_action_options(
