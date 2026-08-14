@@ -20,7 +20,7 @@ from .resource_awareness import (
 from .secrets import load_runtime_secrets
 from .simulation import ACTION_NAMES, Action, action_options, snapshot, validate_action
 from .training_load_guard import projected_training_allowed, shape_training_options_for_load
-from .training_methods import enrich_training_action_options
+from .training_methods import enrich_training_action_options, validate_training_movements_for_target
 from .training_modifiers import training_readiness_modifier
 
 
@@ -333,6 +333,7 @@ class ModelDecisionProvider:
             location_id=str(state["location"]),
             resources=decision.get("resources"),
         )
+        training_movements: tuple[str, ...] = ()
         if decision["action"] == "train":
             readiness = training_readiness_modifier(state)
             if not projected_training_allowed(
@@ -341,12 +342,20 @@ class ModelDecisionProvider:
                 effectiveness=float(readiness["effectiveness"]),
             ):
                 raise ValueError("Training duration exceeds the remaining recent-load budget")
+            training_movements = validate_training_movements_for_target(
+                selected_target,
+                decision.get("training_movements"),
+            )
+        elif decision.get("training_movements"):
+            raise ValueError("Training movements are only valid for train actions")
+        conditions = {"training_movements": list(training_movements)} if training_movements else {}
         return Action(
             decision["action"],
             decision["duration_minutes"],
             selected_target,
             decision["reason"],
             resources=resources,
+            conditions=conditions,
         )
 
 
@@ -378,6 +387,7 @@ def dry_run_model_decision(
             "target": action.target,
             "reason": action.reason,
             "resources": list(action.resources),
+            "training_movements": list(action.conditions.get("training_movements", [])),
         },
         "state_before": before,
         "state_after": after,
