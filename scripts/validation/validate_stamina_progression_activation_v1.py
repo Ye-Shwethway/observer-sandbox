@@ -8,7 +8,7 @@ from pathlib import Path
 from observer_sandbox.db import connect
 from observer_sandbox.location_runtime import set_dynamic_location
 from observer_sandbox.simulation import Action, apply_action, set_runtime_value, snapshot
-from observer_sandbox.stamina_progression import STAMINA_FIELD_KEY, latest_stamina_settlement_time
+from observer_sandbox.stamina_progression import SETTLEMENT_SOURCE, STAMINA_FIELD_KEY, latest_stamina_settlement_time
 from observer_sandbox.stamina_progression_activation import maybe_settle_stamina_progression, stamina_progression_due
 from observer_sandbox.world import set_field
 
@@ -133,7 +133,7 @@ def main() -> int:
     ).fetchall()
     assert history
     assert history[0]["mode"] == "simulated"
-    assert history[0]["authority"] == "physical_attribute_progression_engine"
+    assert history[0]["authority"] == SETTLEMENT_SOURCE
 
     print(json.dumps({
         "ok": True,
