@@ -1,0 +1,50 @@
+{
+  "revision": "training-anatomy-v1",
+  "movements": {
+    "squat": {
+      "name": "Squat Pattern",
+      "tags": ["knee_dominant", "compound", "lower_body"],
+      "region_weights": {"waist": 0.15, "hips": 0.85, "thighs": 1.00, "calves": 0.30}
+    },
+    "hinge": {
+      "name": "Hip Hinge Pattern",
+      "tags": ["hip_dominant", "compound", "posterior_chain"],
+      "region_weights": {"neck": 0.10, "shoulders": 0.15, "waist": 0.20, "hips": 1.00, "forearms": 0.50, "thighs": 0.75, "calves": 0.20}
+    },
+    "horizontal_press": {
+      "name": "Horizontal Press",
+      "tags": ["push", "upper_body", "compound"],
+      "region_weights": {"shoulders": 0.75, "chest": 1.00, "biceps": 0.10, "triceps": 0.90, "forearms": 0.25}
+    },
+    "vertical_press": {
+      "name": "Vertical Press",
+      "tags": ["push", "upper_body", "compound"],
+      "region_weights": {"neck": 0.10, "shoulders": 1.00, "chest": 0.35, "triceps": 0.85, "forearms": 0.30}
+    },
+    "row": {
+      "name": "Row / Horizontal Pull",
+      "tags": ["pull", "upper_body", "compound"],
+      "region_weights": {"neck": 0.10, "shoulders": 0.75, "chest": 0.15, "biceps": 0.75, "forearms": 0.80}
+    },
+    "curl": {
+      "name": "Elbow Flexion / Curl",
+      "tags": ["pull", "isolation", "arms"],
+      "region_weights": {"shoulders": 0.10, "biceps": 1.00, "forearms": 0.55}
+    },
+    "extension": {
+      "name": "Elbow Extension",
+      "tags": ["push", "isolation", "arms"],
+      "region_weights": {"shoulders": 0.10, "triceps": 1.00, "forearms": 0.25}
+    },
+    "calf_raise": {
+      "name": "Calf Raise / Plantar Flexion",
+      "tags": ["lower_body", "isolation", "calves"],
+      "region_weights": {"thighs": 0.15, "calves": 1.00}
+    },
+    "olympic_pull": {
+      "name": "Olympic Pull",
+      "tags": ["explosive", "full_body", "pull"],
+      "region_weights": {"neck": 0.25, "shoulders": 0.65, "waist": 0.20, "hips": 0.90, "biceps": 0.25, "forearms": 0.75, "thighs": 1.00, "calves": 0.55}
+    }
+  }
+}
