@@ -3,11 +3,13 @@ from __future__ import annotations
 from typing import Any
 
 from .ai_control import (
+    activate_cognition_fallback,
     activate_cognition_model,
     cognition_overview,
     models_for_provider,
     probe_model,
     refresh_provider_catalog,
+    remove_cognition_fallback,
 )
 from .simulation import runtime_value, set_runtime_value
 
@@ -33,9 +35,18 @@ def _provider_map(conn) -> dict[str, dict[str, Any]]:
     return {row["id"]: row for row in cognition_overview(conn)["providers"]}
 
 
+def _prefix(mode: str) -> str:
+    return "af" if mode == "fallback" else "ai"
+
+
+def _mode_title(mode: str) -> str:
+    return "Fallback" if mode == "fallback" else "Primary"
+
+
 def _home_keyboard() -> list[list[dict[str, str]]]:
     return [
-        [{"text": "🧠 AI Cognition", "callback_data": "ai:providers"}],
+        [{"text": "🧠 Primary Cognition", "callback_data": "ai:providers"}],
+        [{"text": "🛟 Fallback Model", "callback_data": "af:providers"}],
         [{"text": "⌂ Observer Home", "callback_data": "nav:home"}],
     ]
 
@@ -43,27 +54,38 @@ def _home_keyboard() -> list[list[dict[str, str]]]:
 def home_view(conn) -> tuple[str, list[list[dict[str, str]]]]:
     overview = cognition_overview(conn)
     binding = overview.get("binding") or {}
-    provider = binding.get("provider_id") or "Not configured"
-    model = binding.get("model_id") or "Not configured"
-    text = (
-        "⚙️ CREATOR SETTINGS\n"
-        "━━━━━━━━━━━━━━━━━━\n"
-        "🧠 AI Cognition\n\n"
-        f"Current provider: {provider}\n"
-        f"Current model: {model}\n\n"
-        "Choose AI Cognition to browse providers, fetch live model catalogs, test a candidate, and activate it explicitly."
-    )
-    return text, _home_keyboard()
-
-
-def _providers_view(conn) -> tuple[str, list[list[dict[str, str]]]]:
-    overview = cognition_overview(conn)
-    current = overview.get("binding") or {}
-    current_provider = current.get("provider_id")
+    fallback = overview.get("fallback") or {}
+    last = overview.get("last_fallback") or {}
     lines = [
-        "🧠 AI COGNITION · PROVIDERS",
+        "⚙️ CREATOR SETTINGS",
         "━━━━━━━━━━━━━━━━━━",
-        f"Current: {current.get('provider_id', 'None')} / {current.get('model_id', 'None')}",
+        "🧠 AI Cognition",
+        "",
+        f"Primary: {binding.get('provider_id', 'Not configured')} / {binding.get('model_id', 'Not configured')}",
+        f"Fallback: {fallback.get('provider_id', 'Not configured')} / {fallback.get('model_id', 'Not configured')}",
+    ]
+    if last:
+        lines.extend([
+            "",
+            f"🛟 Last fallback: {last.get('fallback_provider_id')} / {last.get('fallback_model_id')}",
+            f"🕒 {last.get('used_at', 'Unknown')}",
+        ])
+    lines.extend([
+        "",
+        "Primary is tried first. A configured fallback is used only when the provider/model call itself fails; deterministic action validation never triggers fallback.",
+    ])
+    return "\n".join(lines), _home_keyboard()
+
+
+def _providers_view(conn, mode: str = "primary") -> tuple[str, list[list[dict[str, str]]]]:
+    overview = cognition_overview(conn)
+    selected_binding = (overview.get("fallback") if mode == "fallback" else overview.get("binding")) or {}
+    selected_provider = selected_binding.get("provider_id")
+    prefix = _prefix(mode)
+    lines = [
+        f"🧠 AI COGNITION · {_mode_title(mode).upper()} PROVIDERS",
+        "━━━━━━━━━━━━━━━━━━",
+        f"Current {_mode_title(mode).lower()}: {selected_binding.get('provider_id', 'None')} / {selected_binding.get('model_id', 'None')}",
         "",
         "Select a provider:",
     ]
@@ -71,13 +93,15 @@ def _providers_view(conn) -> tuple[str, list[list[dict[str, str]]]]:
     for provider in overview["providers"]:
         provider_id = str(provider["id"])
         credential = "🔑" if provider.get("credential_present") else "⚪"
-        current_icon = "✅" if provider_id == current_provider else ""
+        current_icon = "✅" if provider_id == selected_provider else ""
         lines.append(
             f"• {provider['display_name']} · {'credential ready' if provider.get('credential_present') else 'credential missing'}"
         )
         keyboard.append(
-            [{"text": f"{current_icon}{credential} {provider['display_name']}", "callback_data": f"ai:p:{provider_id}"}]
+            [{"text": f"{current_icon}{credential} {provider['display_name']}", "callback_data": f"{prefix}:p:{provider_id}"}]
         )
+    if mode == "fallback" and overview.get("fallback"):
+        keyboard.append([{"text": "🗑 Remove Fallback", "callback_data": "af:clear"}])
     keyboard.extend([
         [{"text": "← Creator Settings", "callback_data": "ai:home"}],
         [{"text": "⌂ Observer Home", "callback_data": "nav:home"}],
@@ -85,14 +109,21 @@ def _providers_view(conn) -> tuple[str, list[list[dict[str, str]]]]:
     return "\n".join(lines), keyboard
 
 
-def _provider_view(conn, provider_id: str, *, notice: str | None = None) -> tuple[str, list[list[dict[str, str]]]]:
+def _provider_view(
+    conn,
+    provider_id: str,
+    *,
+    mode: str = "primary",
+    notice: str | None = None,
+) -> tuple[str, list[list[dict[str, str]]]]:
     providers = _provider_map(conn)
     provider = providers.get(provider_id)
+    prefix = _prefix(mode)
     if provider is None:
-        return "Unknown AI provider.", [[{"text": "← Providers", "callback_data": "ai:providers"}]]
+        return "Unknown AI provider.", [[{"text": "← Providers", "callback_data": f"{prefix}:providers"}]]
     models = models_for_provider(conn, provider_id)
     lines = [
-        f"🧠 {provider['display_name']}",
+        f"🧠 {_mode_title(mode)} · {provider['display_name']}",
         "━━━━━━━━━━━━━━━━━━",
         f"🔐 Credential: {'Available' if provider.get('credential_present') else 'Missing'}",
         f"📚 Cached models: {len(models)}",
@@ -102,30 +133,31 @@ def _provider_view(conn, provider_id: str, *, notice: str | None = None) -> tupl
         lines.append(f"🕒 Last refresh: {provider['last_refresh_at']}")
     if notice:
         lines.extend(["", notice])
-    lines.extend(["", "Fetching a catalog does not change the active cognition binding."])
+    lines.extend(["", "Fetching a catalog does not change primary or fallback cognition settings."])
     keyboard = [
-        [{"text": "🔄 Fetch Models", "callback_data": f"ai:r:{provider_id}"}],
-        [{"text": "📚 Browse Models", "callback_data": f"ai:page:{provider_id}:0"}],
-        [{"text": "← Providers", "callback_data": "ai:providers"}],
+        [{"text": "🔄 Fetch Models", "callback_data": f"{prefix}:r:{provider_id}"}],
+        [{"text": "📚 Browse Models", "callback_data": f"{prefix}:page:{provider_id}:0"}],
+        [{"text": "← Providers", "callback_data": f"{prefix}:providers"}],
         [{"text": "⌂ Observer Home", "callback_data": "nav:home"}],
     ]
     return "\n".join(lines), keyboard
 
 
-def _models_page(conn, provider_id: str, page: int) -> tuple[str, list[list[dict[str, str]]]]:
+def _models_page(conn, provider_id: str, page: int, *, mode: str = "primary") -> tuple[str, list[list[dict[str, str]]]]:
     providers = _provider_map(conn)
     provider = providers.get(provider_id)
+    prefix = _prefix(mode)
     if provider is None:
-        return "Unknown AI provider.", [[{"text": "← Providers", "callback_data": "ai:providers"}]]
+        return "Unknown AI provider.", [[{"text": "← Providers", "callback_data": f"{prefix}:providers"}]]
     models = models_for_provider(conn, provider_id)
     if not models:
-        return _provider_view(conn, provider_id, notice="No cached models yet. Tap Fetch Models first.")
+        return _provider_view(conn, provider_id, mode=mode, notice="No cached models yet. Tap Fetch Models first.")
     pages = max(1, (len(models) + AI_PAGE_SIZE - 1) // AI_PAGE_SIZE)
     page = max(0, min(int(page), pages - 1))
     start = page * AI_PAGE_SIZE
     visible = models[start : start + AI_PAGE_SIZE]
     lines = [
-        f"📚 {provider['display_name']} MODELS",
+        f"📚 {_mode_title(mode).upper()} · {provider['display_name']} MODELS",
         "━━━━━━━━━━━━━━━━━━",
         f"Page {page + 1}/{pages} · {len(models)} models",
         "",
@@ -137,17 +169,17 @@ def _models_page(conn, provider_id: str, page: int) -> tuple[str, list[list[dict
         label = str(model.get("display_name") or model["model_id"])
         if len(label) > 48:
             label = label[:45] + "…"
-        keyboard.append([{"text": f"🧠 {label}", "callback_data": f"ai:m:{provider_id}:{index}"}])
+        keyboard.append([{"text": f"🧠 {label}", "callback_data": f"{prefix}:m:{provider_id}:{index}"}])
     nav: list[dict[str, str]] = []
     if page > 0:
-        nav.append({"text": "◀️", "callback_data": f"ai:page:{provider_id}:{page - 1}"})
+        nav.append({"text": "◀️", "callback_data": f"{prefix}:page:{provider_id}:{page - 1}"})
     if page + 1 < pages:
-        nav.append({"text": "▶️", "callback_data": f"ai:page:{provider_id}:{page + 1}"})
+        nav.append({"text": "▶️", "callback_data": f"{prefix}:page:{provider_id}:{page + 1}"})
     if nav:
         keyboard.append(nav)
     keyboard.extend([
-        [{"text": "🔄 Refresh Catalog", "callback_data": f"ai:r:{provider_id}"}],
-        [{"text": f"← {provider['display_name']}", "callback_data": f"ai:p:{provider_id}"}],
+        [{"text": "🔄 Refresh Catalog", "callback_data": f"{prefix}:r:{provider_id}"}],
+        [{"text": f"← {provider['display_name']}", "callback_data": f"{prefix}:p:{provider_id}"}],
     ])
     return "\n".join(lines), keyboard
 
@@ -155,14 +187,16 @@ def _models_page(conn, provider_id: str, page: int) -> tuple[str, list[list[dict
 def _candidate_view(conn, user_id: int, *, notice: str | None = None) -> tuple[str, list[list[dict[str, str]]]]:
     candidate = _candidate(conn, user_id)
     if not candidate:
-        return "No AI model candidate is selected.", [[{"text": "← Providers", "callback_data": "ai:providers"}]]
+        return "No AI model candidate is selected.", [[{"text": "← Creator Settings", "callback_data": "ai:home"}]]
     provider_id = str(candidate["provider_id"])
     model_id = str(candidate["model_id"])
+    mode = str(candidate.get("mode") or "primary")
+    prefix = _prefix(mode)
     providers = _provider_map(conn)
     provider_name = providers.get(provider_id, {}).get("display_name", provider_id)
     tested = bool(candidate.get("probe_ok"))
     lines = [
-        "🧪 AI MODEL CANDIDATE",
+        f"🧪 {_mode_title(mode).upper()} MODEL CANDIDATE",
         "━━━━━━━━━━━━━━━━━━",
         f"Provider: {provider_name}",
         f"Model: {model_id}",
@@ -172,15 +206,19 @@ def _candidate_view(conn, user_id: int, *, notice: str | None = None) -> tuple[s
         lines.append(f"Latency: {candidate['latency_ms']} ms")
     if notice:
         lines.extend(["", notice])
-    lines.extend(["", "The current cognition binding is unchanged until Save & Activate."])
+    if mode == "fallback":
+        lines.extend(["", "The primary binding stays unchanged. Save will configure this tested model only as runtime fallback."])
+    else:
+        lines.extend(["", "The current primary binding is unchanged until Save & Activate."])
     keyboard: list[list[dict[str, str]]] = [
-        [{"text": "🧪 Test Model", "callback_data": "ai:test"}],
+        [{"text": "🧪 Test Model", "callback_data": f"{prefix}:test"}],
     ]
     if tested:
-        keyboard.append([{"text": "✅ Save & Activate", "callback_data": "ai:save"}])
+        label = "✅ Save Fallback" if mode == "fallback" else "✅ Save & Activate"
+        keyboard.append([{"text": label, "callback_data": f"{prefix}:save"}])
     keyboard.extend([
-        [{"text": "🗑 Cancel Candidate", "callback_data": "ai:cancel"}],
-        [{"text": f"← {provider_name} Models", "callback_data": f"ai:page:{provider_id}:0"}],
+        [{"text": "🗑 Cancel Candidate", "callback_data": f"{prefix}:cancel"}],
+        [{"text": f"← {provider_name} Models", "callback_data": f"{prefix}:page:{provider_id}:0"}],
     ])
     return "\n".join(lines), keyboard
 
@@ -203,85 +241,128 @@ def _friendly_probe_error(exc: Exception) -> str:
     return f"{heading}\n{detail[:900]}"
 
 
-def callback_view(conn, user_id: int, callback_data: str) -> tuple[str, list[list[dict[str, str]]] | None]:
-    if callback_data == "ai:home":
-        return home_view(conn)
-    if callback_data == "ai:providers":
-        return _providers_view(conn)
-    if callback_data.startswith("ai:p:"):
-        return _provider_view(conn, callback_data.split(":", 2)[2])
-    if callback_data.startswith("ai:r:"):
-        provider_id = callback_data.split(":", 2)[2]
-        try:
-            count = refresh_provider_catalog(conn, provider_id)
-            return _provider_view(conn, provider_id, notice=f"✅ Catalog refreshed: {count} models available.")
-        except Exception as exc:
-            return _provider_view(conn, provider_id, notice=f"❌ Catalog refresh failed safely.\n{str(exc)[:900]}")
-    if callback_data.startswith("ai:page:"):
-        _, _, provider_id, page = callback_data.split(":", 3)
-        try:
-            return _models_page(conn, provider_id, int(page))
-        except ValueError:
-            return "Invalid model page.", [[{"text": "← Providers", "callback_data": "ai:providers"}]]
-    if callback_data.startswith("ai:m:"):
-        _, _, provider_id, index_text = callback_data.split(":", 3)
-        try:
-            index = int(index_text)
-        except ValueError:
-            return "Invalid model selection.", [[{"text": "← Providers", "callback_data": "ai:providers"}]]
-        models = models_for_provider(conn, provider_id)
-        if index < 0 or index >= len(models):
-            return "That model selection is stale. Refresh the model list.", [[{"text": "← Providers", "callback_data": "ai:providers"}]]
-        selected = models[index]
-        _save_candidate(
-            conn,
-            user_id,
+def _select_model(conn, user_id: int, provider_id: str, index_text: str, *, mode: str):
+    prefix = _prefix(mode)
+    try:
+        index = int(index_text)
+    except ValueError:
+        return "Invalid model selection.", [[{"text": "← Providers", "callback_data": f"{prefix}:providers"}]]
+    models = models_for_provider(conn, provider_id)
+    if index < 0 or index >= len(models):
+        return "That model selection is stale. Refresh the model list.", [[{"text": "← Providers", "callback_data": f"{prefix}:providers"}]]
+    selected = models[index]
+    _save_candidate(
+        conn,
+        user_id,
+        {
+            "mode": mode,
+            "provider_id": provider_id,
+            "model_id": selected["model_id"],
+            "probe_ok": False,
+        },
+    )
+    return _candidate_view(conn, user_id)
+
+
+def _test_candidate(conn, user_id: int, *, mode: str):
+    candidate = _candidate(conn, user_id)
+    if not candidate or str(candidate.get("mode") or "primary") != mode:
+        return "No matching AI model candidate is selected.", [[{"text": "← Providers", "callback_data": f"{_prefix(mode)}:providers"}]]
+    try:
+        result = probe_model(conn, str(candidate["provider_id"]), str(candidate["model_id"]))
+        candidate.update(
             {
-                "provider_id": provider_id,
-                "model_id": selected["model_id"],
-                "probe_ok": False,
-            },
+                "probe_ok": True,
+                "latency_ms": result["latency_ms"],
+                "tested_at": result["tested_at"],
+            }
         )
-        return _candidate_view(conn, user_id)
-    if callback_data == "ai:test":
-        candidate = _candidate(conn, user_id)
-        if not candidate:
-            return "No AI model candidate is selected.", [[{"text": "← Providers", "callback_data": "ai:providers"}]]
-        try:
-            result = probe_model(conn, str(candidate["provider_id"]), str(candidate["model_id"]))
-            candidate.update(
-                {
-                    "probe_ok": True,
-                    "latency_ms": result["latency_ms"],
-                    "tested_at": result["tested_at"],
-                }
+        _save_candidate(conn, user_id, candidate)
+        return _candidate_view(conn, user_id, notice="✅ Real inference succeeded. This candidate may now be saved.")
+    except Exception as exc:
+        candidate.update({"probe_ok": False})
+        candidate.pop("latency_ms", None)
+        candidate.pop("tested_at", None)
+        _save_candidate(conn, user_id, candidate)
+        return _candidate_view(conn, user_id, notice=_friendly_probe_error(exc))
+
+
+def _save_selected_candidate(conn, user_id: int, *, mode: str):
+    candidate = _candidate(conn, user_id)
+    prefix = _prefix(mode)
+    if not candidate or str(candidate.get("mode") or "primary") != mode or not candidate.get("probe_ok"):
+        return "🔒 Test the selected model successfully before saving.", [[{"text": "← Providers", "callback_data": f"{prefix}:providers"}]]
+    try:
+        if mode == "fallback":
+            binding = activate_cognition_fallback(
+                conn,
+                str(candidate["provider_id"]),
+                str(candidate["model_id"]),
+                tested_at=candidate.get("tested_at"),
             )
-            _save_candidate(conn, user_id, candidate)
-            return _candidate_view(conn, user_id, notice="✅ Real inference succeeded. This candidate may now be activated.")
-        except Exception as exc:
-            candidate.update({"probe_ok": False})
-            candidate.pop("latency_ms", None)
-            candidate.pop("tested_at", None)
-            _save_candidate(conn, user_id, candidate)
-            return _candidate_view(conn, user_id, notice=_friendly_probe_error(exc))
-    if callback_data == "ai:save":
-        candidate = _candidate(conn, user_id)
-        if not candidate or not candidate.get("probe_ok"):
-            return "🔒 Test the selected model successfully before activation.", [[{"text": "← AI Providers", "callback_data": "ai:providers"}]]
-        try:
+        else:
             binding = activate_cognition_model(conn, str(candidate["provider_id"]), str(candidate["model_id"]))
-        except Exception as exc:
-            return _candidate_view(conn, user_id, notice=f"❌ Activation failed safely.\n{str(exc)[:900]}")
-        _save_candidate(conn, user_id, None)
+    except Exception as exc:
+        return _candidate_view(conn, user_id, notice=f"❌ Save failed safely.\n{str(exc)[:900]}")
+    _save_candidate(conn, user_id, None)
+    if mode == "fallback":
         return (
-            "✅ AI COGNITION ACTIVATED\n"
+            "✅ COGNITION FALLBACK SAVED\n"
             "━━━━━━━━━━━━━━━━━━\n"
             f"Provider: {binding['provider_id']}\n"
             f"Model: {binding['model_id']}\n\n"
-            "Future cognition wakes will use this binding. Existing world/profile state was not changed.",
+            "Primary cognition is unchanged. This model is used only when the primary provider/model call fails.",
             _home_keyboard(),
         )
-    if callback_data == "ai:cancel":
+    return (
+        "✅ AI COGNITION ACTIVATED\n"
+        "━━━━━━━━━━━━━━━━━━\n"
+        f"Provider: {binding['provider_id']}\n"
+        f"Model: {binding['model_id']}\n\n"
+        "Future cognition wakes will try this primary binding first. Existing world/profile state was not changed.",
+        _home_keyboard(),
+    )
+
+
+def callback_view(conn, user_id: int, callback_data: str) -> tuple[str, list[list[dict[str, str]]] | None]:
+    if callback_data == "ai:home":
+        return home_view(conn)
+
+    if callback_data in {"ai:providers", "af:providers"}:
+        return _providers_view(conn, "fallback" if callback_data.startswith("af:") else "primary")
+
+    mode = "fallback" if callback_data.startswith("af:") else "primary"
+    prefix = _prefix(mode)
+    if not callback_data.startswith(f"{prefix}:"):
+        return "Unknown AI Creator setting.", _home_keyboard()
+
+    if callback_data.startswith(f"{prefix}:p:"):
+        return _provider_view(conn, callback_data.split(":", 2)[2], mode=mode)
+    if callback_data.startswith(f"{prefix}:r:"):
+        provider_id = callback_data.split(":", 2)[2]
+        try:
+            count = refresh_provider_catalog(conn, provider_id)
+            return _provider_view(conn, provider_id, mode=mode, notice=f"✅ Catalog refreshed: {count} models available.")
+        except Exception as exc:
+            return _provider_view(conn, provider_id, mode=mode, notice=f"❌ Catalog refresh failed safely.\n{str(exc)[:900]}")
+    if callback_data.startswith(f"{prefix}:page:"):
+        _, _, provider_id, page = callback_data.split(":", 3)
+        try:
+            return _models_page(conn, provider_id, int(page), mode=mode)
+        except ValueError:
+            return "Invalid model page.", [[{"text": "← Providers", "callback_data": f"{prefix}:providers"}]]
+    if callback_data.startswith(f"{prefix}:m:"):
+        _, _, provider_id, index_text = callback_data.split(":", 3)
+        return _select_model(conn, user_id, provider_id, index_text, mode=mode)
+    if callback_data == f"{prefix}:test":
+        return _test_candidate(conn, user_id, mode=mode)
+    if callback_data == f"{prefix}:save":
+        return _save_selected_candidate(conn, user_id, mode=mode)
+    if callback_data == f"{prefix}:cancel":
         _save_candidate(conn, user_id, None)
-        return _providers_view(conn)
+        return _providers_view(conn, mode)
+    if callback_data == "af:clear":
+        remove_cognition_fallback(conn)
+        _save_candidate(conn, user_id, None)
+        return _providers_view(conn, "fallback")
     return "Unknown AI Creator setting.", _home_keyboard()

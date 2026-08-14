@@ -10,6 +10,7 @@ from typing import Any
 from . import ai as ai_backend
 from . import ai_runtime
 from .ai import AIConfigurationError, configure_provider, list_models, list_providers, resolve_binding, set_binding
+from .ai_fallback import clear_fallback_binding, get_fallback_binding, last_fallback_use, set_fallback_binding
 from .secrets import load_runtime_secrets
 
 
@@ -39,6 +40,8 @@ def cognition_overview(
         "character_id": character_id,
         "role": role,
         "binding": resolve_binding(conn, role=role, character_id=character_id),
+        "fallback": get_fallback_binding(conn, character_id=character_id, role=role),
+        "last_fallback": last_fallback_use(conn, character_id=character_id, role=role),
         "providers": provider_summaries(conn),
     }
 
@@ -188,6 +191,39 @@ def activate_cognition_model(
     if binding is None:
         raise AIControlError("Cognition binding was not persisted")
     return binding
+
+
+def activate_cognition_fallback(
+    conn: sqlite3.Connection,
+    provider_id: str,
+    model_id: str,
+    *,
+    tested_at: str | None,
+    character_id: str = "char_darian",
+    role: str = "cognition",
+) -> dict[str, Any]:
+    """Persist one tested provider/model as runtime fallback without changing primary binding."""
+    primary = resolve_binding(conn, role=role, character_id=character_id)
+    if primary and primary.get("provider_id") == provider_id and primary.get("model_id") == model_id:
+        raise AIControlError("Fallback must differ from the current primary cognition binding")
+    configure_provider(conn, provider_id, enabled=True)
+    return set_fallback_binding(
+        conn,
+        provider_id,
+        model_id,
+        character_id=character_id,
+        role=role,
+        tested_at=tested_at,
+    )
+
+
+def remove_cognition_fallback(
+    conn: sqlite3.Connection,
+    *,
+    character_id: str = "char_darian",
+    role: str = "cognition",
+) -> None:
+    clear_fallback_binding(conn, character_id=character_id, role=role)
 
 
 def models_for_provider(conn: sqlite3.Connection, provider_id: str) -> list[dict[str, Any]]:
