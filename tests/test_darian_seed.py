@@ -25,10 +25,11 @@ def test_darian_canonical_seed_imports_cleanly(tmp_path):
             "SELECT COUNT(*) FROM character_hobbies WHERE entity_id='char_darian'"
         ).fetchone()[0]
 
-    assert revision == "darian-canonical-v2-male-erectile-physiology"
+    assert revision == "darian-canonical-v3-physical-presentation"
     assert values["body.height_in"] == "76.0"
     assert values["body.weight_lb"] == "215.0"
     assert values["body.body_fat_pct"] == "9.0"
+    assert values["body.abdominal_structure"] == '"rare 8-pack configuration"'
     assert values["raps_ia.iq"] == "140"
     assert values["sexual_anatomy.penis_length_in"] == "10.0"
     assert values["sexual_anatomy.penis_girth_in"] == "5.0"
