@@ -49,6 +49,10 @@ def _forget_home_delete(chat_id: int, message_id: int) -> None:
     _HOME_DELETE_DEADLINES.pop((int(chat_id), int(message_id)), None)
 
 
+def _arm_home_delete(chat_id: int, message_id: int) -> None:
+    _HOME_DELETE_DEADLINES[(int(chat_id), int(message_id))] = time.time() + _home_ttl_seconds()
+
+
 def _expire_home_messages(token: str, *, now: float | None = None) -> None:
     current = time.time() if now is None else float(now)
     due = [key for key, deadline in _HOME_DELETE_DEADLINES.items() if deadline <= current]
@@ -80,7 +84,7 @@ def _send(token: str, chat_id: int, text: str, keyboard: list[list[dict[str, str
         payload["reply_markup"] = markup
     result = _ORIGINAL_API(token, "sendMessage", payload, timeout=15)
     if text.startswith("🌌 OBSERVER HOME") and isinstance(result, dict) and result.get("message_id") is not None:
-        _HOME_DELETE_DEADLINES[(int(chat_id), int(result["message_id"]))] = time.time() + _home_ttl_seconds()
+        _arm_home_delete(chat_id, int(result["message_id"]))
     return result
 
 
@@ -97,6 +101,10 @@ def _edit(token: str, chat_id: int, message_id: int, text: str, keyboard: list[l
             _forget_home_delete(chat_id, message_id)
         return
     _ORIGINAL_EDIT(token, chat_id, message_id, text, keyboard)
+    if text.startswith("🌌 OBSERVER HOME"):
+        _arm_home_delete(chat_id, message_id)
+    else:
+        _forget_home_delete(chat_id, message_id)
 
 
 def _callback_view(conn, user_id: int, callback_data: str):
