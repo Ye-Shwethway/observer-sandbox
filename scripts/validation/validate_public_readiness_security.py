@@ -36,9 +36,14 @@ RISKY_BASENAMES = {
 }
 RISKY_SUFFIXES = {".pem", ".p12", ".pfx"}
 
+# Only uppercase environment-style names whose semantic suffix is itself an
+# authorization credential are considered by the generic assignment detector.
+# This intentionally excludes ordinary variables such as page_token and file
+# path constants such as DEFAULT_SECRET_FILE; concrete credential formats are
+# still caught independently by SECRET_PATTERNS above.
 SENSITIVE_ASSIGNMENT = re.compile(
-    r"(?im)^\s*(?:export\s+)?"
-    r"(?P<name>[A-Z][A-Z0-9_]*(?:API_KEY|TOKEN|SECRET|PASSWORD|PRIVATE_KEY|SSH_KEY|VPS_HOST)[A-Z0-9_]*)"
+    r"(?m)^\s*(?:export\s+)?"
+    r"(?P<name>[A-Z][A-Z0-9_]*(?:API_KEY|ACCESS_TOKEN|BOT_TOKEN|PASSWORD|PRIVATE_KEY|SSH_KEY|VPS_HOST))"
     r"\s*=\s*(?P<value>[^\r\n#]+?)\s*$"
 )
 
