@@ -1,0 +1,23 @@
+name: Nutrition & Energy Evidence v1 Acceptance
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - 'config/nutrition_profiles.v1.json'
+      - 'config/energy_expenditure.v1.json'
+      - 'src/observer_sandbox/nutrition_energy.py'
+      - 'src/observer_sandbox/event_log.py'
+      - 'scripts/validation/validate_nutrition_energy_evidence_v1.py'
+      - 'tests/test_nutrition_energy_evidence_v1.py'
+      - '.github/workflows/nutrition-energy-evidence-v1-acceptance.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  acceptance:
+    uses: ./.github/workflows/reusable-production-copy-validation.yml
+    with:
+      validator_path: scripts/validation/validate_nutrition_energy_evidence_v1.py
+    secrets: inherit
