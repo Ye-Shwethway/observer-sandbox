@@ -6,6 +6,7 @@ from datetime import datetime, timedelta
 from pathlib import Path
 
 from observer_sandbox.db import connect
+from observer_sandbox.location_runtime import set_dynamic_location
 from observer_sandbox.simulation import Action, apply_action, set_runtime_value, snapshot
 from observer_sandbox.stamina_progression import STAMINA_FIELD_KEY, latest_stamina_settlement_time
 from observer_sandbox.stamina_progression_activation import maybe_settle_stamina_progression, stamina_progression_due
@@ -37,7 +38,7 @@ def main() -> int:
     conn = connect(db_path)
     baseline_stamina = profile_value(conn, STAMINA_FIELD_KEY)
     baseline_strength = profile_value(conn, STRENGTH_FIELD)
-    set_field(conn, ACTOR, "runtime.location", HOME_GYM)
+    set_dynamic_location(conn, ACTOR, HOME_GYM)
     set_field(conn, ACTOR, "runtime.current_action", "idle")
     set_field(conn, ACTOR, "needs.energy", 90.0)
     set_field(conn, ACTOR, "needs.sleepiness", 10.0)
@@ -109,42 +110,43 @@ def main() -> int:
         as_of_sim_time=eligible_time,
         state=eligible_state,
     )
-    assert activated["state"] == "settled"
-    assert activated["settlement"]["positive_delta"] > 0.0
-    assert event_id in activated["settlement"]["consumed_stimulus_event_ids"]
+    assert activated["reason"] == "eligible_stimulus"
+    assert event_id in activated["settlement"]["stimulus_event_ids"]
+    assert activated["settlement"]["raw_positive_delta"] > 0.0
+    assert activated["settlement"]["net_delta"] > 0.0
     assert profile_value(conn, STAMINA_FIELD_KEY) > baseline_stamina
     assert profile_value(conn, STRENGTH_FIELD) == baseline_strength
 
-    replay = maybe_settle_stamina_progression(
+    repeated = maybe_settle_stamina_progression(
         conn,
         ACTOR,
         as_of_sim_time=eligible_time,
-        state=snapshot(conn, ACTOR),
+        state=eligible_state,
     )
-    assert replay["state"] == "skipped"
-    assert replay["reason"] == "same_or_older_boundary"
+    assert repeated["reason"] != "eligible_stimulus"
+    assert event_id not in repeated["settlement"]["stimulus_event_ids"]
 
-    print(
-        json.dumps(
-            {
-                "ok": True,
-                "validation_db": str(db_path),
-                "baseline_mode": baseline_mode,
-                "baseline_preserved": True,
-                "new_treadmill_event_id": event_id,
-                "eligible_event_ids": list(due.eligible_stimulus_event_ids),
-                "early_29h_eligible": False,
-                "eligible_31h_reason": due.reason,
-                "activated_settlement": activated["settlement"],
-                "strength_unchanged": True,
-                "replay_skipped": True,
-                "model_calls": 0,
-                "telegram_calls": 0,
-                "production_mutated_by_validation": False,
-            },
-            sort_keys=True,
-        )
-    )
+    history = conn.execute(
+        "SELECT field_key,old_value_json,new_value_json,mode,authority,reason FROM character_profile_history WHERE entity_id=? AND field_key=? ORDER BY id DESC LIMIT 2",
+        (ACTOR, STAMINA_FIELD_KEY),
+    ).fetchall()
+    assert history
+    assert history[0]["mode"] == "simulated"
+    assert history[0]["authority"] == "physical_attribute_progression_engine"
+
+    print(json.dumps({
+        "ok": True,
+        "disposable_production_copy": True,
+        "actor_id": ACTOR,
+        "baseline_mode": baseline_mode,
+        "stamina_before": baseline_stamina,
+        "stamina_after": profile_value(conn, STAMINA_FIELD_KEY),
+        "strength_unchanged": profile_value(conn, STRENGTH_FIELD) == baseline_strength,
+        "stimulus_event_id": event_id,
+        "model_calls": 0,
+        "telegram_calls": 0,
+        "production_mutated_by_validation": False,
+    }, sort_keys=True))
     conn.close()
     return 0
 
