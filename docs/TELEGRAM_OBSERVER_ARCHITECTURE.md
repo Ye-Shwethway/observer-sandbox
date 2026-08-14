@@ -1,325 +1,170 @@
 # Telegram Observer Architecture
 
-Status: ACTIVE DESIGN
-Scope: P2 Telegram Observer and future Creator-facing universe observation/control surface.
+Status: ACTIVE
+Scope: Creator-facing mobile observation/control adapter for the persistent universe.
 
 ## Product intent
 
-Telegram is not a Darian-status bot. It is the first mobile shell for the Creator's long-term goal: **observe and control the universe through a progressively richer interface**.
+Telegram is not a Darian-status bot and not a Thorne-Estate control panel. It is the first mobile shell for observing and controlling the universe through reusable query/control services.
 
-P2 starts deliberately small, but its internal contracts must support later expansion without rebuilding the runtime or coupling Telegram handlers directly to SQLite.
+Darian, `/darian`, Home and the Thorne Estate may remain convenience/exemplar presentation surfaces while production has one rich character/home. Backend contracts must remain entity-id driven so later characters, locations, containers and resources require no duplicate architecture.
 
-## Architectural rule
+## Adapter rule
 
-Telegram is an adapter/UI layer only.
+Telegram is UI/transport only.
 
-Handlers MUST call reusable application/query/control services. They MUST NOT encode world rules, mutate SQLite directly, duplicate model-binding logic, or invent Telegram-specific representations of core entities.
+`Telegram update -> command/callback router -> reusable query/control service -> canonical runtime/world/profile/inventory/provider backend -> formatted Telegram view`
 
-Target flow:
+Handlers must not encode world rules, own stock/macro calculations, mutate SQLite directly, hard-code provider/model ids, or create Telegram-specific copies of canonical entities.
 
-`Telegram update -> command/callback router -> Observer Query / Runtime Control services -> world/profile/event/provider backends -> formatted Telegram view`
+The same service layer must remain reusable by CLI/web/mobile surfaces.
 
-The same service layer must remain usable by future web/mobile/CLI observer surfaces.
+## Generic observer resources
 
-## Generic observer resource model
+Primary resources include:
+- universe/world;
+- locations/sublocations;
+- characters;
+- item definitions + concrete item/stack instances;
+- fixed/movable inventory containers;
+- runtime state/actions/events;
+- profile sections/fields;
+- providers/models/bindings;
+- typed Creator controls.
 
-The observer layer should navigate canonical runtime resources by stable ids rather than by hard-coded Darian/Home assumptions.
-
-Primary resource classes:
-
-- Universe / world
-- Location
-- Sublocation / room
-- Item / object
-- Character
-- Character profile section / field
-- Runtime state
-- Event / history entry
-- Provider
-- Model
-- Binding
-- Control state
-
-Each resource should expose a reusable summary representation and, where appropriate, a detail representation. Telegram should format these resources but not own their semantics.
+Stable ids are callback/query identities. Normal presentation prefers human-readable names.
 
 ## Navigation model
 
-The long-term UI should behave like hierarchical browsing rather than a flat command dump.
-
-Conceptual hierarchy:
-
+World:
 `Universe -> Location -> Sublocation -> Contents`
 
-Contents may include characters, items/objects, exits/relations, active events, and state summaries.
+Character:
+`Characters -> Character -> State | Profile | History | Inventory | Physiology | Skills | ...`
 
-Character browsing:
+Inventory:
+`Inventory -> Locations | Characters | Containers | All Stocks -> Scope -> Stack`
 
-`Characters -> selected character -> current state | profile | recent history | relationships | inventory | physiology | skills | preferences | other future sections`
+AI:
+`Creator Settings -> AI -> Provider -> Model -> Test -> Save`
 
-Model control browsing:
+Large resources use layered/paginated views rather than giant messages.
 
-`AI -> providers -> provider catalog -> model -> test candidate -> save binding`
+## Universal inventory observer invariant
 
-The initial single-character/single-home implementation may default to Darian and Home, but service interfaces must accept ids so later character/location selection does not require architectural replacement.
+Telegram Inventory is **universe-wide**, never implemented as `Darian's Estate inventory`.
 
-## P2 MVP surface
+The Creator/authorized observer can browse:
+- inventory related to any location;
+- inventory related to any character;
+- any fixed or movable container;
+- all current universe stock stacks.
 
-The first live Telegram slice should stay minimal and immediately useful:
+A scope may legitimately contain zero inventory. New future characters, shops, warehouses, bags/backpacks or regions must work through the same handlers/query service by stable entity id.
 
-- `/start` or home menu — compact observer entry point.
-- `/status` — world runtime + autonomy + current selected/default character summary.
-- `/watch` — human-readable "what is happening now" view with current action and recent event context.
-- `/history` — recent action/event timeline with bounded pagination.
-- `/darian` — Darian summary view; implemented internally through generic character lookup, not a Darian-only backend.
-- `/home` — Home summary view; implemented internally through generic location lookup.
-- autonomy controls: pause, resume, speed, status. Continuous enable remains separately gated until explicitly approved.
+Darian's Estate is only the first production content exemplar.
 
-Use Telegram inline buttons where they materially reduce command typing, but callback payloads must carry stable resource/action ids rather than display names.
+Current entry points:
+- `/start -> 🎒 Inventory`;
+- `/inventory`;
+- Locations / Characters / Containers / All Stocks buttons;
+- stack detail with quantity/unit, universal definition, owner, container and container mobility/kind.
 
-## Near-term expansion already reserved by the architecture
+Synthetic non-Estate location and non-Darian character + movable backpack tests guard against identity leakage.
 
-These do not all belong in the first MVP, but the service/API design must allow them:
+## Inventory authorization/control
 
-### Location observation
+Read/write authority is separate:
+- configured Owner may browse and apply typed inventory replenishment;
+- Allowed users may browse but cannot replenish;
+- Unauthorized users receive no world inventory data.
 
-- list locations
-- select a location
-- list sublocations/rooms
-- open a room
-- show room state, occupants, objects/items, exits/relations, and recent events
-- navigate parent/back without hard-coded room names
+Owner stack detail may expose `➕ Replenish Stock`.
 
-### Item observation
+Button path:
+`Stack -> Replenish -> amount -> explicit confirmation -> typed backend control -> audited result`
 
-- list items in a selected location/room or character inventory
-- open item details
-- show capabilities, static definition, mutable state, ownership/location, and relevant history
+Owner direct command:
+`/replenish <stack_id> <positive_quantity>`
 
-### Character observation
+Telegram never performs the SQL mutation itself. It calls the reusable Creator control service. Server-side role checks are mandatory even if mutation buttons are hidden.
 
-- list/select characters
-- current location/action/needs/state
-- full detailed canonical profile
-- profile section browsing instead of dumping an enormous message
-- skills, traits, preferences, habits, measurements, physiology and later relationship/memory/inventory views
-- recent event history scoped to the selected character
+## General character/location observation
 
-### Multi-character future
+The observer layer may expose:
+- location list/detail/rooms/contents/exits/recent events;
+- item/stack detail;
+- character list/selection/current state/profile/history;
+- inventory scoped through the universal inventory query contract.
 
-No Telegram session should assume `char_darian` forever. Maintain a per-chat/session selected-character id with a project default fallback while the world still has only one character.
+No Telegram session should assume `char_darian` forever. Selected actor/location/session navigation remains a presentation concern; world state remains canonical in runtime storage.
 
-When Quasi or later characters exist, the same menus and queries must operate without duplicated handlers.
+## AI/model control
 
-### AI/model control
+Creator AI control remains owner-only and preserves these invariants:
+- fetch catalogs without mutating the active cognition binding;
+- never display credential values;
+- stage provider/model candidate server-side;
+- require one minimal real inference probe before Save & Activate;
+- classify bounded provider failures usefully;
+- candidate/test/cancel/navigation never changes binding;
+- only explicit successful Save activates the candidate;
+- provider/model mutation uses reusable AI services, not Telegram SQL;
+- no hard-coded model ids;
+- runtime fallback is independent from the Telegram candidate workflow.
 
-- list providers
-- show only credential presence/absence; never expose credential values
-- refresh provider catalogs without changing the active cognition binding
-- list currently fetched models with bounded pagination
-- show current binding
-- stage one provider/model candidate server-side without embedding arbitrary/full model ids in Telegram callback payloads
-- run one deliberately tiny **real inference probe** against the selected candidate before activation; catalog fetch success alone is not sufficient because it cannot prove current inference quota/rate-limit availability
-- classify common auth/permission, model-unavailable, request-limit, rate/quota and timeout failures in Creator-facing language while retaining bounded provider diagnostics
-- require a successful probe before `Save & Activate`
-- on candidate selection, catalog refresh, probe failure, cancellation, or navigation, preserve the existing cognition binding
-- only explicit `Save & Activate` may enable the selected provider and mutate the character cognition binding
-- change provider/model binding through reusable AI control/binding services rather than Telegram-owned SQL or duplicated runtime logic
-- never hard-code model ids in Telegram
-- do not add automatic provider failover, Telegram secret editing, or model-parameter tuning merely as a side effect of this control slice
+Current production primary/fallback remain runtime configuration, not Telegram-owned state.
 
-A successful probe proves that one minimal inference worked **at that moment** through the selected provider/model and the runtime-compatible structured response path. It does not guarantee future quota availability.
+## Authorization model
 
-### Runtime/world controls
+Roles:
+1. **Owner** — `OBSERVER_TELEGRAM_OWNER_ID`; root Creator authority.
+2. **Allowed user** — `OBSERVER_TELEGRAM_ALLOWED_USER_IDS`; authorized observer surface, but not root Creator mutation authority.
+3. **Unauthorized** — no world data/control; `/whoami` may reveal only caller identity/bootstrap authorization state.
 
-Future controls may include pause/resume/speed, bounded canary, continuous autonomy activation after explicit policy approval, and other safe runtime controls. Telegram must invoke the same control service used by CLI/Actions rather than reimplementing scheduler state mutation.
+Bot token, IDs and provider credentials are secrets and are never displayed as values.
 
-## Query-service boundary
+Every mutation/control callback rechecks authorization server-side.
 
-P2 should introduce a reusable observer/query facade, tentatively `ObserverService` or equivalent, with id-oriented methods such as:
+## Presentation contract
 
-- `runtime_overview()`
-- `list_locations()`
-- `get_location(location_id)`
-- `list_sublocations(location_id)`
-- `list_location_contents(location_id)`
-- `list_items(location_id=None, character_id=None)`
-- `get_item(item_id)`
-- `list_characters()`
-- `get_character_summary(character_id)`
-- `get_character_profile(character_id, section=None)`
-- `recent_events(actor_id=None, location_id=None, limit=...)`
-- `autonomy_status(character_id)`
-- provider/model/binding list and mutation methods delegated to the existing AI backend/control service
-- non-mutating candidate model probe delegated to the AI runtime adapter path
+Telegram is a human-readable mobile observer UI, not a raw runtime log.
 
-The exact Python API can evolve, but the separation is mandatory.
+- runtime timestamps remain canonical ISO internally; presentation formats them at the edge;
+- prefer display names over internal ids in normal views;
+- use compact headers/dividers/icons and concise labels;
+- use readable Yes/No, ON/OFF/status language;
+- default history suppresses control-plane noise unless materially useful;
+- paginate profiles, histories, model catalogs and inventory lists;
+- callback payloads carry stable ids/bounded selection data, not display identity;
+- formatting helpers may transform presentation only, never business semantics.
 
-## Telegram session state
-
-Persist only UI/navigation preferences that are genuinely Telegram-specific, such as:
-
-- authorized Telegram user/chat id
-- currently selected character id
-- currently selected location/sublocation id
-- pagination cursor/page
-- temporary AI provider/model candidate and its latest probe result
-
-Temporary AI candidate state is not a binding. It may contain provider/model ids, probe status, latency and test timestamp, but never API keys or copied world/profile state. Candidate state must be cleared after activation/cancellation and must never override runtime binding resolution by itself.
-
-Do not copy world state into Telegram session storage. World state remains authoritative in the runtime DB.
-
-## Security / authorization
-
-The bot is a private Creator control surface, not a public chatbot.
-
-Authorization has three explicit roles:
-
-1. **Owner** — one privileged Telegram identity configured separately as `OBSERVER_TELEGRAM_OWNER_ID`. The owner is always authorized and does not need to be duplicated in the normal allowlist.
-2. **Allowed user** — identities listed in `OBSERVER_TELEGRAM_ALLOWED_USER_IDS`. They may use the currently exposed observer/control surface but are not the root authority for future user-management changes.
-3. **Unauthorized user** — receives no world data or control access; `/start` and `/whoami` may reveal only the caller's own Telegram id and authorization state for bootstrap.
-
-The bot token, owner id, allowed-user ids and provider API credentials are secrets/config and are never committed, logged, or displayed as values.
-
-Future user-management commands should be owner-only. The intended direction is owner-controlled list/add/remove/role management backed by a persistent authorization store; the initial environment-backed allowlist remains the bootstrap source until that layer is implemented. No allowed user may remove/demote the owner or grant owner authority through ordinary commands.
-
-Control callbacks, AI/provider/model callbacks, and future user-management callbacks must re-check authorization server-side; hidden buttons alone are not authorization.
-
-## Telegram presentation contract
-
-All Creator-facing Telegram commands, callbacks, notifications, menus, and future browse/detail views MUST use one consistent presentation system. Telegram output is a human-readable observer interface, not a raw runtime log.
-
-### Time display
-
-Canonical runtime/DB timestamps remain ISO-8601 internally. Telegram presentation converts simulated timestamps only at the formatting boundary.
-
-Required visible format:
-
+Canonical simulated-time display:
 `dd-mm-yyyy (Day) hh:mm AM/PM`
 
-Example:
+## Telegram Home lifecycle
 
-`01-05-2025 (Thursday) 07:05 AM`
+`/start` Home is a transient mobile navigation surface with manual Close and bounded auto-delete lifecycle. Message deletion is presentation lifecycle only and never changes universe state.
 
-Do not expose raw ISO timestamps in normal Telegram views unless a deliberately technical/debug view is requested later.
+## Query/control service direction
 
-### Human-readable entities
+Reusable id-oriented services may include:
+- runtime overview;
+- list/get locations and contents;
+- list/get characters/profile/history;
+- inventory scopes + `inventory_for_entity(entity_id)` + stack detail;
+- provider/model/binding queries;
+- typed Creator controls such as restore basic stats and replenish an existing inventory stack.
 
-Normal views must prefer display names over internal ids:
+The exact API may evolve; Telegram/backend separation is mandatory.
 
-- `room_gym` -> `Home Gym`
-- `room_living` -> `Living Room`
-- similar conversion for characters, items, locations, providers, models, and future resources where a human-readable name exists.
+## Acceptance principles
 
-Stable ids remain authoritative for callbacks/query lookup and may appear only where technically useful, such as an explicit detail/debug field.
+Telegram observer work passes only when:
+- the Creator can independently inspect live universe state on mobile;
+- read-only navigation does not mutate simulation state;
+- mutation paths are typed, authorized, confirmed where appropriate and audited;
+- presentation remains mobile-scannable;
+- backend semantics remain reusable beyond current Darian/Estate exemplars.
 
-### Scanability and decoration
-
-Messages should use restrained visual structure:
-
-- a clear title/header;
-- short sections separated by whitespace or a light divider;
-- consistent icons for recurring concepts such as location, action, time, needs, autonomy, cognition, items, and navigation;
-- aligned concise labels where practical;
-- limited decoration: enough to scan quickly on mobile, never so much that information becomes noisy.
-
-Prefer `Yes/No`, `ON/OFF`, and friendly status words over Python/raw booleans such as `True/False` in normal user-facing messages.
-
-Use sentence case or readable title case for actions/status labels rather than internal enum casing.
-
-### History and event views
-
-Default history/watch views are narrative/observer views. They should prioritize meaningful character/world activity such as movement, training, eating, drinking, sleeping, interaction, and future world events.
-
-Engine bookkeeping such as `autonomy_control`, canary lifecycle events, scheduler leases, internal retries, or other control-plane noise should be omitted from default history unless it materially affects what the Creator needs to know.
-
-The underlying events remain stored; future `/history technical` or debug views may expose them separately without polluting the normal observer experience.
-
-### Large data and hierarchy
-
-Do not dump giant profiles, location contents, item registries, model catalogs, or histories into one Telegram message.
-
-Use layered views:
-
-- summary -> details
-- universe -> location -> room -> contents -> item
-- characters -> selected character -> profile section -> fields
-- AI -> providers -> paginated models -> candidate -> test -> save
-- history -> bounded page -> next/previous
-
-Inline buttons are preferred where they reduce command typing. Callback payloads carry bounded stable ids or server-side selection indexes; display text carries human-friendly names. Long arbitrary provider model ids should remain server-side rather than being copied directly into callback payloads.
-
-### Reuse and testing
-
-Formatting should be implemented through shared formatter/helper functions rather than duplicated per command. New Telegram features must extend the existing visual vocabulary instead of inventing unrelated output styles.
-
-Relevant tests should cover presentation invariants such as timestamp format, friendly entity naming, safe pagination/length behavior, suppression of internal control noise in default observer views, owner-only AI settings, test-before-save enforcement, and binding preservation on failed probes.
-
-Presentation formatting must never become a second business-logic layer. It may transform labels, time strings, ordering, grouping, and visibility for human consumption, but authoritative state and rules remain in backend/query/control services.
-
-## Message design examples
-
-Prefer concise layered views over giant raw dumps.
-
-Examples:
-
-- summary message -> inline buttons for Details / Profile / Location / History
-- profile overview -> section buttons -> paginated fields
-- location -> Rooms / Characters / Items / Events
-- Creator Settings -> AI Cognition -> Provider -> Model -> Test Model -> Save & Activate
-
-Telegram message limits must never force the data model to become shallow. Large profiles and catalogs are paginated/sectioned at the presentation layer.
-
-## P2 implementation stages
-
-### P2.1 — Mobile Observer MVP
-
-- bot process/service foundation
-- private authorization with separate owner and allowed-user roles
-- generic observer/query service foundation
-- `/start`, `/status`, `/watch`, `/history`
-- generic character summary surfaced initially as `/darian`
-- generic location summary surfaced initially as `/home`
-- pause/resume/speed/status controls
-- live VPS deployment and readback
-- shared human-friendly presentation contract for all Telegram output
-
-### P2.2 — Browse the sandbox
-
-- location list/selection
-- room/sublocation navigation
-- room contents
-- item list/detail
-- character list/selection
-- profile section browsing
-- every new view follows the Telegram presentation contract and uses hierarchical/inline-button navigation where useful
-
-### P2.3 — Creator control expansion
-
-- owner-only user management
-- provider/model catalog browsing and refresh
-- staged provider/model candidate selection
-- runtime-compatible real inference probe before binding activation
-- explicit test-before-save binding selection/change
-- richer runtime controls
-- scoped event/history filters
-- future notification/watch preferences
-- control/configuration views remain visually consistent with observer views while clearly distinguishing mutation actions from read-only navigation
-
-Later phases may add relationships, inventory, physiology dashboards, memory views, world events, additional locations and multiple characters without replacing this architecture.
-
-## Non-goals for P2 MVP
-
-- full graphical universe UI
-- duplicating the entire canonical profile in one Telegram message
-- Telegram-owned simulation rules
-- hard-coded provider/model ids
-- Darian/Home-specific backend contracts
-- public multi-user bot access
-
-## Acceptance principle
-
-P2 MVP passes when the Creator can independently open Telegram and inspect the live sandbox and basic runtime state without relying on ChatGPT narration, while the codebase remains ready for hierarchical universe browsing, multiple characters/resources, and owner-managed users later.
-
-P2.3 AI control passes when the owner can browse/fetch provider catalogs, stage a model, perform one minimal real inference test, observe a useful current provider error if that test fails, and activate the candidate only after a successful test without any pre-save change to the existing cognition binding.
-
-Every P2 acceptance review must also treat presentation quality as functional UX: normal Telegram output must be human-readable, consistently formatted, mobile-scannable, and compliant with the presentation contract above.
+For Inventory Operations v1 specifically, acceptance requires the same Telegram/query path to represent arbitrary location, character and container inventories without Darian/Estate-specialized backend logic, while Owner-only replenishment uses the reusable Creator control service.
