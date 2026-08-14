@@ -1,7 +1,7 @@
 {
   "entity_id": "char_darian",
   "name": "Darian Thorne",
-  "canonical_revision": "darian-canonical-v1",
+  "canonical_revision": "darian-canonical-v2-male-erectile-physiology",
   "profile_schema_version": 1,
   "source_policy": "Reconciled from uploaded historical profiles and later approved canon; conflicting historical values are superseded, not silently merged.",
   "values": {
@@ -87,6 +87,8 @@
 
     "sexual_anatomy.penis_length_in": {"value": 10.0, "mode": "canonical", "authority": "profile_core"},
     "sexual_anatomy.penis_girth_in": {"value": 5.0, "mode": "canonical", "authority": "profile_core"},
+    "sexual_anatomy.baseline_erectile_function": {"value": 95.0, "mode": "static", "authority": "sexual_physiology_engine"},
+    "sexual_anatomy.erection_firmness_cap": {"value": 98.0, "mode": "canonical", "authority": "profile_core"},
 
     "raps_vc.tone_resonance": {"value": 92, "mode": "static", "authority": "social_engine"},
     "raps_vc.wit_humor": {"value": 85, "mode": "static", "authority": "social_engine"},
