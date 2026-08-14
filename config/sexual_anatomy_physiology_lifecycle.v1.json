@@ -1,0 +1,30 @@
+{
+  "revision": "sexual-anatomy-physiology-lifecycle-v1",
+  "settlement_event_type": "sexual_anatomy_physiology_lifecycle_settled",
+  "date_of_birth_field": "identity.date_of_birth",
+  "sex_field": "identity.sex",
+  "minimum_settlement_days": 90.0,
+  "structural": {
+    "maturity_age_years": {"male": 18.0, "default": 18.0},
+    "headroom_realization_fraction_per_year": 0.75,
+    "maximum_fractional_growth_per_year": 0.20,
+    "maximum_abs_change_in_per_settlement": {
+      "sexual_anatomy.penis_length_in": 0.20,
+      "sexual_anatomy.penis_girth_in": 0.10
+    },
+    "fields": {
+      "sexual_anatomy.penis_length_in": "genetics.penis_length_in",
+      "sexual_anatomy.penis_girth_in": "genetics.penis_girth_in"
+    }
+  },
+  "functional": {
+    "baseline_field": "sexual_anatomy.baseline_erectile_function",
+    "cap_field": "sexual_anatomy.erection_firmness_cap",
+    "decline_start_age_years": 40.0,
+    "annual_points_after_start": 0.35,
+    "acceleration_age_years": 70.0,
+    "acceleration_multiplier": 1.75,
+    "minimum_score": 0.0,
+    "maximum_abs_change_per_settlement": 2.0
+  }
+}
