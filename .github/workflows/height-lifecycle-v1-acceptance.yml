@@ -1,0 +1,23 @@
+name: Height Lifecycle v1 Acceptance
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - 'config/height_lifecycle.v1.json'
+      - 'src/observer_sandbox/height_lifecycle.py'
+      - 'src/observer_sandbox/service.py'
+      - 'scripts/validation/validate_height_lifecycle_v1.py'
+      - 'tests/test_height_lifecycle_v1.py'
+      - 'docs/HEIGHT_LIFECYCLE_V1.md'
+      - '.github/workflows/height-lifecycle-v1-acceptance.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  acceptance:
+    uses: ./.github/workflows/reusable-production-copy-validation.yml
+    with:
+      validator_path: scripts/validation/validate_height_lifecycle_v1.py
+    secrets: inherit
