@@ -29,8 +29,10 @@ Roadmap synchronized: 2026-08-14
 - Autonomy: enabled / normal
 - Cognition: Gemini `gemini-3.5-flash-lite`
 - Telegram: connected
-- Latest verified speed: `1.0x` at Deploy #164 readback; speed is Creator-controlled and must be re-read whenever exact cadence matters.
-- Latest deployment: Deploy #164 `31739837957` SUCCESS from PR #53 merge `701599074e9e9824384e624f11c288feb07d0924`.
+- Latest verified speed: `1.0x` at Deploy #165 readback; speed is Creator-controlled and must be re-read whenever exact cadence matters.
+- Latest deployment: Deploy #165 `31765700369` SUCCESS from PR #54 merge `d6742fcbaa06868ca7dbd58bac33ee09430d1a0d`.
+
+Deploy #165 readback was healthy with schema v4 and preserved Gemini/Telegram configuration. Darian was idle in the Training Hall at `2025-05-04T17:18:00+00:00`, fatigue `34.935`. A pre-deploy retry record (`failures=8`, `last_error=ValueError`, no pending action) was still present; re-check only if it persists across fresh post-deploy decisions or causes a visible stall.
 
 ## Completed foundation and observer layers
 
@@ -51,6 +53,7 @@ Roadmap synchronized: 2026-08-14
 - Minimum Training Stimulus v1 — COMPLETE / DEPLOYED.
 - Training Session Load & Recovery Guard v1 — COMPLETE / CI VERIFIED / DEPLOYED.
 - Causal hunger, thirst, energy, sleepiness, cleanliness and fatigue resolution — DEPLOYED.
+- Sleep Pressure & Circadian Need v1 — COMPLETE / DEPLOYED.
 
 ### Training Session Load & Recovery Guard v1
 
@@ -58,7 +61,7 @@ PR #53 tested head `4c8d8f3caa3814f2def3c168e76b9d426bf37416`; CI #570 / run `31
 
 The guard derives training dose from completed action history and existing effective-load evidence rather than treating current systemic fatigue as the whole training-memory model.
 
-Current v1 budgets are deliberately bounded and simple:
+Current v1 budgets:
 - current-session limit: `90` effective minutes;
 - session break: more than `120` simulated minutes without training;
 - rolling 6-hour limit: `120` effective minutes;
@@ -66,7 +69,7 @@ Current v1 budgets are deliberately bounded and simple:
 
 Autonomous cognition receives the derived load status. Train-option duration is capped to the remaining budget; training options disappear when the remaining budget cannot support the minimum legal session; the final model-selected duration is checked again before scheduling.
 
-This means short rest/fatigue recovery does not erase recent training dose. No schema v5, new canonical physiology field, universal injury model, or Mind Engine was introduced.
+Short rest/fatigue recovery therefore does not erase recent training dose. No schema v5, new canonical physiology field, universal injury model, or Mind Engine was introduced.
 
 ## Thorne Estate training environment
 
@@ -81,7 +84,7 @@ Status: COMPLETE / DEPLOYED.
 
 Status: COMPLETE / DEPLOYED.
 
-`config/training_methods.v1.json` provides authored method metadata for current train-capable targets. It now also carries descriptive planning metadata for training methods without changing the canonical evidence source revision `training-method-semantics-v1`.
+`config/training_methods.v1.json` provides authored method metadata for current train-capable targets. It also carries descriptive planning metadata without changing the canonical evidence source revision `training-method-semantics-v1`.
 
 Equipment/method metadata describes workload evidence and planning context only. It does not own attribute progression formulas, recovery, decay or settlement.
 
@@ -91,14 +94,24 @@ Status: COMPLETE / CI VERIFIED / DEPLOYED.
 
 PR #50 merged as `7516f6c09a371803508f67a1575d6ce83a170de2`; CI #557 succeeded; Deploy #161 succeeded.
 
-Current cognition surface now:
-- receives every legal current-room action/resource from the existing capability-driven action-option engine;
-- receives one-hop reachable-location resource and training-method previews for purposeful movement planning;
-- preserves move-first legality, so distant resources are visible for planning but not directly actionable;
-- receives recent action-target usage metadata (`recent_uses`, latest simulated use time, repeated flag) as context rather than a hard repetition block;
-- receives resource-aware autonomy guidance encouraging sensible variety when equivalent choices exist, without introducing a scoring/mind engine or forced rotation.
+Cognition receives every legal current-room action/resource from generic capability matching, one-hop reachable-location previews, move-first legality, and recent action-target usage metadata. Resource awareness encourages sensible variety without a forced-rotation or scoring engine.
 
-Focused tests prove all 10 Home Gym training resources reach cognition, Home Gym resources are visible from the connected Living Room as planning-only affordances, and repeated Free Weights use remains legal while being explicitly signaled as recent repetition.
+## Object Familiarity / Inspect Utility Guard v1
+
+Status: COMPLETE / CI VERIFIED / DEPLOYED.
+
+PR #54 final tested head `674de824acf69fc4209e59e649364d0ece3696f5`; CI #575 / run `31765655658` succeeded; merge `d6742fcbaa06868ca7dbd58bac33ee09430d1a0d`; Deploy #165 / run `31765700369` succeeded; post-merge CI #576 succeeded.
+
+This is a bounded familiarity bridge rather than a full Character Memory Engine.
+
+Current semantics:
+- established functional estate resources are treated as familiar and do not remain generic low-value `inspect` fallbacks;
+- genuinely unknown inspect-only objects can remain available for a first-look inspection;
+- existing interaction/event history can establish familiarity without a schema change;
+- the midday autonomy policy no longer advertises generic equipment checks as productive default behavior;
+- cognition is explicitly allowed to choose ordinary non-training activity or downtime instead of manufacturing fake productivity when training is unavailable.
+
+Focused tests cover the observed room-hopping inspection fallback while preserving discovery of unknown inspect-only objects.
 
 ## Physical progression state
 
@@ -135,7 +148,8 @@ Agility uses authored `speed_agility_drills` evidence from the Speed & Agility S
 
 ## Deferred boundaries
 
-Not yet implemented as complete progression families:
+Not yet implemented as complete families:
+- full Character Memory Engine / richer episodic-semantic memory;
 - Speed progression;
 - Reflexes progression;
 - Endurance progression;
@@ -145,7 +159,7 @@ Not yet implemented as complete progression families:
 - body-measurement grading evaluator;
 - IQ/skills grading evaluators;
 - inventory/resource depletion;
-- richer memory/relationship engines;
+- richer relationship engine;
 - estate exterior / Tahoe traversal;
 - schema v5.
 
@@ -161,10 +175,10 @@ For ordinary work, use focused tests + CI and the standard automatic deploy. Use
 
 ## Exact resume point
 
-Observe natural production behavior after **Training Session Load & Recovery Guard v1**.
+Observe natural production behavior after **Object Familiarity / Inspect Utility Guard v1**.
 
-The immediate question is whether Darian now ends or pauses training when his effective session/recent-load budget is exhausted and stays in recovery/non-training behavior even if systemic fatigue falls quickly afterward.
+The immediate question is whether Darian now avoids room-hopping through familiar equipment for generic inspections when his training-load budget blocks further exercise, and instead chooses meaningful non-training activity or ordinary downtime.
 
-Continue observing resource/method variety at the same time, but do not add forced rotation or a Mind Engine merely to manufacture variety.
+Also verify whether the pre-deploy `ValueError` retry record clears on fresh autonomous decisions. Investigate only if it persists or causes observable stalling.
 
-Speed progression remains a future candidate, but no Speed implementation is authorized by this roadmap state alone.
+Do not build the full Character Memory Engine merely to solve familiarity, and do not start Speed progression without fresh Creator authorization.
