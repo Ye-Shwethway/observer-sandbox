@@ -16,7 +16,8 @@
     "annual_height_fraction": {"male": 0.0009, "female": 0.0013, "default": 0.0010},
     "acceleration_age_years": 70.0,
     "acceleration_multiplier": 1.5,
-    "maximum_loss_in_per_year": 0.20
+    "maximum_loss_in_per_year": 0.20,
+    "maximum_lifetime_decline_fraction_from_activation": 0.08
   },
   "maximum_abs_change_in_per_settlement": 0.08
 }
