@@ -52,6 +52,7 @@ def test_catalog_separates_reusable_methods_from_concrete_target_bindings() -> N
     methods = catalog["methods"]
     bindings = catalog["bindings"]
     assert catalog["revision"] == "training-method-semantics-v2"
+    assert catalog["evidence_revision"] == "training-method-semantics-v1"
     assert set(bindings) == EXPECTED_TARGETS
     assert set(bindings.values()) <= set(methods)
     assert len(methods) == len(set(bindings.values()))
@@ -70,6 +71,7 @@ def test_catalog_separates_reusable_methods_from_concrete_target_bindings() -> N
 def test_same_method_definition_can_bind_to_non_thorne_target_without_duplication() -> None:
     catalog = {
         "revision": "synthetic-training-method-semantics-v2",
+        "evidence_revision": "training-method-semantics-v1",
         "methods": {
             "barbell_strength_work": {
                 "method_name": "Barbell Strength Work",
@@ -90,6 +92,8 @@ def test_same_method_definition_can_bind_to_non_thorne_target_without_duplicatio
     assert thorne["method_id"] == other["method_id"] == "barbell_strength_work"
     assert thorne["target"] != other["target"]
     assert thorne["workload_channels"] == other["workload_channels"] == ["resistance"]
+    assert other["source"] == "training-method-semantics-v1"
+    assert other["catalog_revision"] == "synthetic-training-method-semantics-v2"
 
     evidence = training_method_evidence(
         action_name="train",
@@ -100,6 +104,8 @@ def test_same_method_definition_can_bind_to_non_thorne_target_without_duplicatio
     assert evidence is not None
     assert evidence["method_id"] == "barbell_strength_work"
     assert evidence["target"] == "obj_other_world_public_gym_rack"
+    assert evidence["source"] == "training-method-semantics-v1"
+    assert evidence["catalog_revision"] == "synthetic-training-method-semantics-v2"
     assert evidence["effective_load"]["effective_minutes"] == 48.0
 
 
@@ -118,7 +124,8 @@ def test_cognition_options_expose_authored_training_method(tmp_path) -> None:
         assert method["method_id"] == "steady_state_cardio"
         assert method["family"] == "conditioning"
         assert method["workload_channels"] == ["conditioning"]
-        assert method["source"] == "training-method-semantics-v2"
+        assert method["source"] == "training-method-semantics-v1"
+        assert method["catalog_revision"] == "training-method-semantics-v2"
 
 
 def test_completed_training_events_persist_method_evidence_without_changing_strength_mapping(tmp_path) -> None:
@@ -132,6 +139,8 @@ def test_completed_training_events_persist_method_evidence_without_changing_stre
         ).fetchone()
         treadmill_payload = json.loads(treadmill_event["payload_json"])
         assert treadmill_payload["training_method"]["method_id"] == "steady_state_cardio"
+        assert treadmill_payload["training_method"]["source"] == "training-method-semantics-v1"
+        assert treadmill_payload["training_method"]["catalog_revision"] == "training-method-semantics-v2"
         assert treadmill_payload["training_method"]["effective_load"]["planned_minutes"] == 30
         assert treadmill_payload["training_method"]["workload_channels"] == ["conditioning"]
         assert "training_stimulus" not in treadmill_payload
