@@ -8,7 +8,7 @@ from observer_sandbox.db import connect
 from observer_sandbox.world import seed_home_and_darian
 
 
-EXPECTED_REVISION = "thorne-estate-v3.2-training-environment"
+EXPECTED_REVISION = "thorne-estate-v3.3-physical-attribute-training"
 NEW_OBJECTS = {
     "obj_thorne_estate_training_ai_combat_sim": "loc_thorne_estate_training_hall",
     "obj_thorne_estate_training_obstacle_course": "loc_thorne_estate_training_hall",
@@ -22,6 +22,7 @@ NEW_OBJECTS = {
     "obj_thorne_estate_gym_rowing_ergometer": "loc_thorne_estate_home_gym",
     "obj_thorne_estate_gym_speed_agility_station": "loc_thorne_estate_home_gym",
     "obj_thorne_estate_gym_altitude_chamber": "loc_thorne_estate_home_gym",
+    "obj_thorne_estate_gym_mobility_stretching": "loc_thorne_estate_home_gym",
 }
 
 

@@ -13,182 +13,90 @@ Roadmap synchronized: 2026-08-14
 - Darian is the first richly specified exemplar, not the identity embedded in reusable universe engines.
 - Character-specific profile/policy/world content is data; reusable simulation/cognition/progression/query/control logic must be actor/entity-id driven.
 - Schema v4 remains the current foundation; do not introduce schema v5 without a concrete missing invariant.
-- Prefer minimum runnable slices and reversible changes.
+- Prefer minimum-runnable, reversible slices.
 - Use exemplar-first only for genuinely new invariants; batch structurally equivalent follow-ons.
 - Default development flow:
-  `test -> focused tests + CI -> merge to main -> automatic deploy when runtime-affecting -> read-only production check`.
+  `test -> focused tests + CI -> merge main -> automatic deploy when runtime-affecting -> read-only production check`.
 - Keep only persistent `main` and reusable `test` branches unless a concrete exceptional need requires otherwise.
-- Production-copy validation is optional and reserved for genuinely state-sensitive or migration-heavy changes that local tests/CI cannot cover well enough.
+- Production-copy validation is optional and reserved for genuinely state-sensitive/migration-heavy work.
 - New architecture/control surfaces must update their canonical contract plus this roadmap/bootstrap checkpoint in the same development cycle.
 
-## Current production baseline
+## Current verified production baseline
 
-- Repository: `Ye-Shwethway/observer-sandbox`
-- VPS application: `/opt/observer-sandbox`
-- Production DB: `/var/lib/observer-sandbox/observer.sqlite3`
-- Service: `observer-sandbox`
-- Schema: v4
-- World revision: `thorne-estate-v3.2-training-environment`
-- Autonomy: enabled / normal
-- Cognition: Gemini `gemini-3.1-flash-lite`
-- Telegram: connected
-- Latest verified speed: `3.0x` at Deploy #172 readback.
-- Latest verified runtime-affecting deployment: Deploy #172 `31779629810` SUCCESS from PR #65 merge `20c01b82a1ebacbd05d5a12cdccef009c7284981`.
-- Deploy #172 readback: service active/healthy, schema v4, autonomy enabled/normal, `autonomy_retry=null`, Creator-selected Gemini binding preserved, Telegram API connected, Creator owner configuration present.
-- Post-merge CI #602 / run `31779629861` SUCCESS.
-- PR #62 / Deploy #170 added the next planned action reason to proactive Telegram Character Updates.
+Latest runtime-affecting deployment: **Deploy #173 `31783391862` SUCCESS** from PR #67 merge `2aca8df01f3307d130844f4bcdc7cbbc18b9d66c`.
 
-Post-Deploy169 live acceptance cleared the prior retry-cap stall on a natural decision boundary: cognition `decision_calls` advanced `331 -> 332`, `autonomy_retry` became `null`, and Darian scheduled a 10-minute `rest` action in the Training Hall. By Deploy #172 readback natural cognition had advanced to `decision_calls=352` at sim time `2025-05-04T21:32:00+00:00`; Darian was showering in the Master Bathroom. No production acceleration, direct live state mutation, validation-induced model probe, or intentionally induced provider failure was used for this deployment.
+Deploy #173 readback verified:
+- service active / healthy;
+- schema v4;
+- world revision `thorne-estate-v3.2-training-environment`;
+- configured/default actor projection `char_darian`;
+- autonomy enabled / normal, `paused=false`, `autonomy_retry=null`;
+- speed **`1.0x`**;
+- cognition primary Gemini `gemini-3.1-flash-lite`, preserved through normal deploy bootstrap;
+- configured fallback Groq `qwen/qwen3.6-27b`, tested at `2026-08-14T07:27:42.290743+00:00`;
+- Telegram API connected with owner/allowed-user configuration present;
+- cognition `decision_calls=356` at the readback boundary;
+- Darian was sleeping in the Master Suite with Energy 82.127, Fatigue 11.045, Hunger 50.325, Thirst 21.3, Sleepiness 31.55 and Cleanliness 99.466.
 
-## Completed foundation and observer layers
+No production acceleration, direct live profile/progression mutation, validation-induced model probe or intentionally induced provider failure was used for Deploy #173 acceptance.
+
+## Completed foundation and observer/control layers
 
 - Foundation schema v4 — COMPLETE.
 - P0 Foundation & Remote Control — COMPLETE / LIVE VERIFIED.
-- P0.5 AI Provider Layer foundation — COMPLETE; Gemini plus generic OpenAI-compatible live cognition are deployed.
+- P0.5 dynamic AI provider layer — COMPLETE; Gemini, Groq and generic OpenAI-compatible runtime support are deployed, with OpenAI/OpenRouter/NanoGPT provider surfaces retained.
 - P1 Living Darian Minimum — CONTINUOUS AUTONOMY LIVE.
 - P2 Telegram Observer MVP / browse / profile-control surfaces — COMPLETE / LIVE VERIFIED.
 - Runtime speed control, action ETA, autonomy timing/observability, research/monitor semantics — DEPLOYED.
-- Telegram proactive next-action reason visibility — DEPLOYED via PR #62 / Deploy #170.
+- Telegram proactive next-action cognition reason — DEPLOYED via PR #62 / Deploy #170.
+- P2.3 Telegram Creator AI Control v1 — COMPLETE / CI VERIFIED / DEPLOYED / CREATOR-EXERCISED.
+- Runtime Cognition Fallback v1 — COMPLETE / CI VERIFIED / DEPLOYED / CREATOR-CONFIGURED.
+- Telegram Observer Home Message Lifecycle v1 — COMPLETE / CI VERIFIED / DEPLOYED.
 
-## Universal Character Engine Contract / Pre-Expansion Hardening
+### AI control/fallback invariant
 
-Status: **IMPLEMENTATION IN PROGRESS ON `test`**.
+Canonical contracts: `docs/AI_RUNTIME_FALLBACK.md`, `docs/TELEGRAM_HOME_LIFECYCLE.md`, `docs/TELEGRAM_OBSERVER_ARCHITECTURE.md`.
 
-Canonical contract: `docs/UNIVERSAL_CHARACTER_ENGINE_CONTRACT.md`.
+- Provider catalogs can be fetched without changing bindings.
+- A selected provider/model must pass one explicit real `Test Model` structured inference before save.
+- Browse/refresh/select/test-failure/cancel do not mutate active configuration.
+- Credential values are never displayed.
+- Normal deploy/bootstrap preserves every existing explicit Creator-selected primary binding.
+- One provider/model invocation failure may use the configured single fallback once.
+- Fallback use never permanently rewrites primary cognition.
+- Deterministic action/target/duration/runtime validation failure never triggers provider fallback.
+- If primary and fallback both fail, existing autonomy retry/backoff remains authoritative.
+- CI/deploy acceptance does not consume a model probe.
 
-Purpose:
-- preserve Darian as the first detailed exemplar while ensuring the same runtime engines can later operate on any compatible character;
-- remove named-character assumptions before further profile-simulation expansion makes them expensive to unwind;
-- keep character-specific canonical facts, preferences, routines and authored cognition policy as configuration rather than engine code.
+Explicitly deferred: multi-fallback chains, circuit breakers, provider-health scoring, automatic permanent rebinding, Telegram secret editing and model-parameter tuning.
 
-Current implementation direction:
-- `config/characters/registry.json` registers character-specific canonical/runtime-policy files;
-- reusable cognition loads the selected actor's registered policy and must fail explicitly rather than silently reuse Darian policy for another actor;
-- reusable runtime/control/query/AI surfaces resolve an explicit actor id, then a configured `default_actor_id`, then the sole character only when the universe is genuinely single-character;
-- ambiguous multi-character implicit selection fails closed;
-- legacy singleton actor-runtime migration requires an explicitly resolved actor;
-- simulation core no longer treats the Thorne Estate Master Suite as a missing-location fallback; a character without a current location is invalid runtime state;
-- movement uses the generic dynamic-location relation/setter rather than a Darian-specific mirrored field write;
-- universe resume wakes every enabled idle actor, not only the default/exemplar actor;
-- a synthetic non-Darian regression fixture proves identity leakage is rejected;
-- Darian canonical/config files, Thorne Estate content, `/darian` and other clearly named convenience aliases remain valid exemplar/presentation content and are not themselves engine hard-coding;
-- no schema v5 is required.
-
-This hardening must pass focused tests/full CI and standard deploy/readback before the next progression framework is merged.
-
-## P2.3 Telegram Creator AI Control v1
-
-Status: **COMPLETE / CI VERIFIED / DEPLOYED / CREATOR-EXERCISED**.
-
-Delivery:
-- PR #63 tested head `f2e61d374dce1c3b493d27fb94e1024b9eb5a3fd`;
-- primary CI #595 / run `31769832103` SUCCESS;
-- merged as `d8a3f770dd3c6f4293f5035d1085998ba0562bf7`;
-- Deploy #171 / run `31769893556` SUCCESS;
-- Creator later reported a successful real Gemini model probe and successful activation back to Gemini through Telegram;
-- Deploy #172 independently verified that the selected Gemini binding is `gemini-3.1-flash-lite` and remains preserved across normal deployment bootstrap.
-
-One unrelated Stamina Progression production-copy acceptance workflow failed during PR #63 on an existing eligible-event assertion against the evolving disposable production copy. That control slice did not touch Stamina/progression semantics; primary full CI and Strength acceptance succeeded, and production-copy validation is non-mandatory for non-state-sensitive control-plane changes under current project policy.
-
-Current minimum-runnable surface:
-- owner-only `Creator Settings -> AI Cognition` navigation plus `/settings` and `/ai` entry points;
-- display the current cognition provider/model binding;
-- list built-in providers while revealing only credential presence/absence, never credential values;
-- fetch a provider's live model catalog without changing active cognition configuration as a side effect;
-- cache and paginate fetched models;
-- stage provider/model candidates server-side so arbitrary/full model ids do not need to fit Telegram callback payloads;
-- run one deliberately tiny **real inference probe** through the selected model's actual runtime adapter and structured cognition-response path;
-- report useful auth/permission, model availability, request-limit, rate/quota, timeout, or bounded provider errors;
-- require a successful probe before primary or fallback save becomes available or is accepted server-side;
-- preserve bindings on browse, refresh, candidate selection, test failure, cancellation and navigation;
-- only explicit Creator save changes primary/fallback configuration.
-
-Architecture split:
-- reusable provider/catalog/probe/binding/fallback orchestration lives in `src/observer_sandbox/ai_control.py` plus `src/observer_sandbox/ai_fallback.py`;
-- Telegram candidate session/navigation/presentation lives in `src/observer_sandbox/telegram_ai_control.py`;
-- the existing polling shell is extended through `src/observer_sandbox/telegram_creator_bot.py` rather than duplicating the base bot/runtime;
-- `service.py` routes Telegram polling through that extension;
-- canonical behavior is defined in `docs/TELEGRAM_OBSERVER_ARCHITECTURE.md`, `docs/AI_RUNTIME_FALLBACK.md`, and `docs/TELEGRAM_HOME_LIFECYCLE.md`.
-
-Probe semantics:
-- catalog fetch is not treated as an inference health check;
-- the probe consumes one intentionally minimal real provider inference call and therefore can detect a current quota/rate/auth/model failure before activation;
-- a passing probe proves only that the selected model worked at that moment; it does not guarantee future quota availability;
-- probe execution never mutates world/profile/progression state or the current cognition binding;
-- deployment/CI verification must not invoke the probe; it is an explicit Creator action.
-
-## Runtime Cognition Fallback v1
-
-Status: **COMPLETE / CI VERIFIED / DEPLOYED / CREATOR-CONFIGURED**.
-
-Canonical contract: `docs/AI_RUNTIME_FALLBACK.md`.
-
-Delivery:
-- PR #65 final tested head `ddfcd757fb94d270a5b20db1bd1601d92b050903`;
-- primary CI #601 / run `31779586802` SUCCESS;
-- merge `20c01b82a1ebacbd05d5a12cdccef009c7284981`;
-- Deploy #172 / run `31779629810` SUCCESS;
-- post-merge CI #602 / run `31779629861` SUCCESS;
-- readback verified service health and preservation of Creator-selected Gemini `gemini-3.1-flash-lite` through the legacy Groq bootstrap entry point (`changed=false`, `existing_binding_preserved`).
-
-Creator later selected Groq Qwen 3.6 27B as fallback and reported the required real `Test Model` probe green. This proves the candidate worked through the runtime-compatible structured inference probe at selection time; natural runtime fallback use remains unforced/unverified and must not be induced merely for monitoring.
-
-Current invariant:
-- one ordinary primary cognition binding plus at most one tested fallback provider/model;
-- fallback selection from Telegram uses the same `fetch -> select -> Test Model -> Save Fallback` safety pattern;
-- primary binding never changes merely because fallback is used;
-- provider/model invocation failure may trigger one fallback attempt;
-- deterministic action/target/duration/runtime validation failure never triggers provider fallback;
-- if both primary and fallback fail, existing autonomy retry/backoff remains authoritative;
-- successful fallback use records bounded provider/model/error metadata for observability;
-- normal deploy/bootstrap preserves every existing explicit Creator-selected primary binding; `force=True` remains an explicit administrative migration only;
-- no schema v5; fallback configuration uses runtime control state.
-
-v1 deliberately does **not** add an ordered multi-fallback chain, circuit breaker, provider-health scoring, permanent automatic rebinding, or Telegram API-key editing.
-
-## Telegram Observer Home Message Lifecycle v1
+## Universal Character Engine Contract
 
 Status: **COMPLETE / CI VERIFIED / DEPLOYED**.
 
-Canonical contract: `docs/TELEGRAM_HOME_LIFECYCLE.md`.
+Canonical contract: `docs/UNIVERSAL_CHARACTER_ENGINE_CONTRACT.md`.
 
-Current behavior:
-- `/start` Home board includes `✕ Close`;
-- Close deletes the message rather than editing it into a placeholder;
-- newly sent `/start` Home boards auto-delete after 5 minutes by default;
-- TTL can be configured through `OBSERVER_TELEGRAM_HOME_TTL_SECONDS`, bounded to 30..3600 seconds;
-- the TTL remains active only while the message displays Observer Home; navigating away cancels it and returning Home re-arms it;
-- deletion failures are presentation-only and cannot affect autonomy/simulation;
-- timer state is intentionally in-process, so service restart may forget outstanding timers while manual Close remains available;
-- no persistent world/schema field is added for ephemeral Telegram cleanup.
+Delivery:
+- PR #67 tested head `d668823bb86a7b049fae10f8aab051ed80f11ae1`;
+- primary CI #605 SUCCESS;
+- merge `2aca8df01f3307d130844f4bcdc7cbbc18b9d66c`;
+- post-merge CI #606 SUCCESS;
+- Deploy #173 `31783391862` SUCCESS and live readback verified the default-actor projection and existing single-character behavior.
 
-## Cognition resilience / Groq free-tier recovery
+Current invariant:
+- `config/characters/registry.json` resolves character-specific canonical/runtime-policy files as content, not engine identity;
+- reusable actor selection is explicit actor -> configured valid `default_actor_id` -> sole existing character;
+- ambiguous multi-character implicit selection fails closed;
+- cognition loads the selected character's registered policy; another actor cannot silently inherit Darian's policy;
+- reusable runtime/control/query/AI/simulation paths do not require a literal `char_darian` default;
+- missing character location is invalid runtime state rather than an implicit Thorne Estate Master Suite;
+- movement uses generic dynamic-location semantics;
+- universe resume wakes every enabled idle actor at a decision boundary;
+- synthetic non-Darian regression coverage catches identity leakage;
+- Darian profile/config, Thorne Estate content and clearly named presentation aliases such as `/darian` remain valid exemplar content;
+- no schema v5.
 
-Status: **COMPLETE / CI VERIFIED / DEPLOYED / LIVE VERIFIED**.
-
-The August 14 idle stall had multiple bounded causes rather than a single Gemini quota failure:
-
-1. Runtime-shaped training durations could be narrower than ordinary authored preferred durations, while later normalization could expand the selected duration and repeatedly fail the final training-load check with `ValueError`.
-2. Initial Groq catalog bootstrap returned HTTP 403 until OpenAI-compatible request headers/diagnostics were hardened.
-3. After Groq bound successfully, live cognition returned HTTP 413 because the free/on-demand TPM limit was `8000` while the prompt requested `8645` tokens. The prompt contained duplicated derived runtime metadata.
-
-Delivered corrections:
-- PR #55 — duration-stall correction, generic OpenAI-compatible live decision adapter, Groq provider/bootstrap; CI #579 SUCCESS; merge `fb0e045686b129e5ecadb13e1f55c8fffb60e82f`.
-- Deploy #166 — failed at first Groq catalog bootstrap; did not establish cognition acceptance.
-- PR #56 — catalog request hardening and deploy-resilient provider bootstrap; CI #581 SUCCESS; merge `33f79327e97790f3e3fca4c0317ef87da0eae8db`; Deploy #167 SUCCESS and Groq `openai/gpt-oss-20b` bound.
-- PR #57 — live provider HTTP error detail preservation; CI #583 SUCCESS; merge `cfcd9f03fe660e8438bb2a74e2adac2b041a77f2`; Deploy #168 SUCCESS.
-- PR #58/#59 — read-only latest autonomy-error observability plus workflow syntax correction; current Runtime Read is healthy and does not induce model traffic.
-- PR #60 — semantic-preserving cognition prompt compaction for the `8000` TPM budget; CI #589 SUCCESS; merge `b813913ced1d51733e873b89dca2b04907dad353`; post-merge CI #590 and Deploy #169 SUCCESS.
-
-Current semantics:
-- provider HTTP/quota/transport failures surface as `AIDecisionError` with bounded diagnostics and may use the configured single fallback;
-- authoritative action/target pairs remain strict;
-- runtime-shaped duration bounds remain authoritative during planning and normalization;
-- deterministic training-load validation remains final authority;
-- deterministic validation failures never trigger provider fallback;
-- prompt compaction removes duplicated derived context while preserving decision principles, action authority, top-level load status, resource context, and character grounding.
-
-## Training and physiology
+## Training and physiology foundation
 
 - P3.1 Systemic Training Fatigue / Recovery — COMPLETE / LIVE VERIFIED.
 - P3.2 Targeted Training Session — COMPLETE.
@@ -200,111 +108,71 @@ Current semantics:
 - Causal hunger, thirst, energy, sleepiness, cleanliness and fatigue resolution — DEPLOYED.
 - Sleep Pressure & Circadian Need v1 — COMPLETE / DEPLOYED.
 
-### Training Session Load & Recovery Guard v1
+Training Load Guard v1 budgets remain:
+- current session: 90 effective minutes;
+- session break: >120 simulated minutes without training;
+- rolling 6 hours: 120 effective minutes;
+- rolling 24 hours: 180 effective minutes.
 
-PR #53 tested head `4c8d8f3caa3814f2def3c168e76b9d426bf37416`; CI #570 / run `31739634403` succeeded; merged as `701599074e9e9824384e624f11c288feb07d0924`; Deploy #164 / run `31739837957` succeeded.
+Short fatigue recovery does not erase recent training dose. The model sees the derived remaining budget; deterministic validation remains final authority.
 
-The guard derives training dose from completed action history and existing effective-load evidence rather than treating current systemic fatigue as the whole training-memory model.
+## Training environment and method semantics
 
-Current v1 budgets:
-- current-session limit: `90` effective minutes;
-- session break: more than `120` simulated minutes without training;
-- rolling 6-hour limit: `120` effective minutes;
-- rolling 24-hour limit: `180` effective minutes.
+Current production world: `thorne-estate-v3.2-training-environment`.
 
-Autonomous cognition receives the derived load status. Train-option duration is capped to the remaining budget; training options disappear when the remaining budget cannot support the minimum legal session; the final model-selected duration is checked again before scheduling. Runtime-shaped legal duration bounds now also override ordinary authored planning preferences when tighter.
+Training Hall and Top-Class Home Gym provide the bounded authored training-resource surface. Exterior estate grounds/private lake/outdoor tactical course/Tahoe traversal remain deferred.
 
-Short rest/fatigue recovery therefore does not erase recent training dose. No schema v5, new canonical physiology field, universal injury model, or Mind Engine was introduced.
+`config/training_methods.v1.json` is the canonical Training Method Semantics v1 catalog. Equipment/method metadata describes causal workload/planning evidence; it does not own progression formulas or directly mutate attributes.
 
-## Thorne Estate training environment
-
-Status: COMPLETE / DEPLOYED.
-
-- Interior-first Thorne Estate environment is implemented against `docs/DARIAN_MANSION_REFERENCE.md`.
-- Top-Class Home Gym and Training Hall expose the richer bounded training-equipment surface.
-- World revision is `thorne-estate-v3.2-training-environment`.
-- Exterior estate grounds, private lake traversal, outdoor tactical course and broader Tahoe traversal remain deferred.
-
-## Training Method Semantics v1
-
-Status: COMPLETE / DEPLOYED.
-
-`config/training_methods.v1.json` provides authored method metadata for current train-capable targets. It also carries descriptive planning metadata without changing the canonical evidence source revision `training-method-semantics-v1`.
-
-Equipment/method metadata describes workload evidence and planning context only. It does not own attribute progression formulas, recovery, decay or settlement.
-
-## Dynamic Resource Awareness & Choice Breadth v1
-
-Status: COMPLETE / CI VERIFIED / DEPLOYED.
-
-PR #50 merged as `7516f6c09a371803508f67a1575d6ce83a170de2`; CI #557 succeeded; Deploy #161 succeeded.
-
-Cognition receives every legal current-room action/resource from generic capability matching, one-hop reachable-location previews, move-first legality, and recent action-target usage metadata. Resource awareness encourages sensible variety without a forced-rotation or scoring engine.
-
-## Object Familiarity / Inspect Utility Guard v1
-
-Status: **COMPLETE / CI VERIFIED / DEPLOYED**.
-
-PR #54 final tested head `674de824acf69fc4209e59e649364d0ece3696f5`; CI #575 / run `31765655658` succeeded; merge `d6742fcbaa06868ca7dbd58bac33ee09430d1a0d`; Deploy #165 / run `31765700369` succeeded; post-merge CI #576 succeeded.
-
-This is a bounded familiarity bridge rather than a full Character Memory Engine.
-
-Current semantics:
-- established functional estate resources are treated as familiar and do not remain generic low-value `inspect` fallbacks;
-- genuinely unknown inspect-only objects can remain available for a first-look inspection;
-- existing interaction/event history can establish familiarity without a schema change;
-- the midday autonomy policy no longer advertises generic equipment checks as productive default behavior;
-- cognition is explicitly allowed to choose ordinary non-training activity or downtime instead of manufacturing fake productivity when training is unavailable.
-
-The first healthy post-recovery live decision selected ordinary `rest`, not a generic equipment inspection. This is directionally consistent with the intended guard; longer-run behavior should still be observed naturally before declaring a behavioral distribution.
+Object Familiarity / Inspect Utility Guard v1 and Dynamic Resource Awareness & Choice Breadth v1 are deployed. Familiar functional resources do not remain generic low-value inspect fallbacks; cognition can choose normal downtime instead of manufactured activity.
 
 ## Physical progression state
 
-### Strength
+### Existing proven domains
 
-Status: ACTIVE / DEPLOYED / LIVE-CYCLE VALIDATED.
+**Strength — ACTIVE / DEPLOYED / LIVE-CYCLE VALIDATED.**
+Free Weights remains the deliberate Strength stimulus source. Strength retains its proven level difficulty, saturation, recovery realization, detraining, idempotent settlement and completed-action activation semantics.
 
-Free Weights remains the deliberate Strength stimulus source. Strength has its own level difficulty, saturation, recovery, detraining, idempotent settlement and completed-action activation semantics.
+**Stamina — ACTIVE / DEPLOYED.**
+Pure-conditioning evidence sources remain High-Speed Treadmill / `steady_state_cardio`, Rowing Ergometer / `rowing_conditioning`, and Altitude Training Chamber / `altitude_conditioning`. Mixed movement/combat methods are not silently credited to Stamina.
 
-### Stamina
+**Agility — ACTIVE / DEPLOYED.**
+Agility uses `speed_agility_drills` from the Speed & Agility Station with its proven recovery/saturation/detraining semantics and automatic completed-action activation.
 
-Status: ACTIVE / DEPLOYED.
+## Physical Attribute Progression Framework v1 — CURRENT ACTIVE SLICE
 
-Current pure-conditioning evidence sources:
-- High-Speed Treadmill / `steady_state_cardio`
-- Rowing Ergometer / `rowing_conditioning`
-- Altitude Training Chamber / `altitude_conditioning`
+Canonical contract: `docs/PHYSICAL_ATTRIBUTE_PROGRESSION_FRAMEWORK.md`.
 
-Mixed movement/combat methods are not silently credited to Stamina.
+Status: **IMPLEMENTATION IN PROGRESS ON `test`**.
 
-### Agility
+The proven Strength/Stamina/Agility lifecycle has been reconciled as:
 
-Status: ACTIVE / DEPLOYED.
+`evidence scan -> consumed-event cursor -> recovery gate -> level/saturation gain -> detraining integration -> profile/history write -> settlement event`
 
-Agility uses authored `speed_agility_drills` evidence from the Speed & Agility Station and has its own progression/recovery/saturation/detraining semantics. Agility Automatic Activation v1 is deployed.
+The new framework uses one actor-generic policy-driven engine for the structurally equivalent remaining PA batch rather than four copy-paste engines. Existing Strength/Stamina/Agility implementations remain intact in v1 to avoid unnecessary migration risk.
 
-### Next authorized expansion — Physical Attribute Progression Framework v1
+Target batch and evidence policy:
+- **Speed** — `speed_agility_drills`;
+- **Reflexes** — `ai_combat_simulation` reactive work;
+- **Endurance** — `heavy_bag_rounds`, `obstacle_conditioning`, `combat_pit_drills`; pure aerobic Stamina methods are intentionally excluded;
+- **Flexibility** — new `mobility_stretching` evidence from a bounded Mobility & Stretching Area in the Home Gym.
 
-After Universal Character Engine hardening is green/deployed, continue the already-authorized profile simulation-unlock program without another architectural detour.
-
-Target batch:
-- Speed
-- Reflexes
-- Endurance
-- Flexibility
-
-Rules:
-- first reconcile the proven Strength/Stamina/Agility lifecycle and extract only genuinely shared progression invariants rather than copy-pasting four more near-duplicate engines;
-- the shared form is `actor_id + current profile value + eligible evidence + domain policy + recovery/context + limits -> deterministic settlement + history/event evidence`;
-- attribute-specific physiology/evidence policy remains allowed; character-specific progression branches do not;
-- use the existing completed-action/training-method evidence surface where causally correct;
-- do not silently credit mixed methods to an attribute merely to make the batch easy;
-- Stamina remains cardiovascular/work-capacity reserve; Endurance must represent sustained performance under accumulated workload/fatigue rather than duplicate Stamina;
-- if Flexibility lacks a causally valid current training method, add the smallest reusable mobility/stretching method/equipment capability required rather than inventing evidence;
-- current Darian values are exemplar inputs only;
+Implementation invariants:
+- policies live in `config/physical_attribute_progression.v1.json`;
+- engine receives actor id/current field/evidence/recovery/policy and contains no Darian starting-value branch;
+- first settlement bootstraps by consuming prior historical evidence without score mutation, preventing deployment-time retroactive gains;
+- mature evidence is consumed only when recovery allows realization;
+- each attribute owns distinct recovery/saturation/detraining policy;
+- settlement/history evidence identifies the exact attribute/source;
+- service activation occurs only at completed-action boundaries and creates no extra model calls;
+- candidate world revision is `thorne-estate-v3.3-physical-attribute-training` with one additional train-capable Mobility & Stretching Area;
 - no schema v5.
 
-Once this batch is proven, the next profile-unlock families are planned as: body composition exemplar -> measurement batch -> skill progression exemplar -> compatible skill batch -> intellectual attribute exemplar/batch -> mental/emotion dynamics.
+Validation hardening in the same slice:
+- Minimum Training Stimulus Acceptance stages candidate `config/` alongside `src/`, fixing the prior missing `training_methods.v1.json` false failure;
+- Strength Live Cycle validates each settlement against the profile value immediately before that settlement, fixing the prior evolving-production-copy baseline assertion.
+
+Do not force live training to prove this batch. Deployment should verify health/world/config safely; natural completed actions establish bootstrap settlements, and later natural eligible training/recovery can provide live gain evidence.
 
 ## Grading state
 
@@ -314,39 +182,30 @@ Once this batch is proven, the next profile-unlock families are planned as: body
 - Skills grading/progression remains a separate family.
 - Body composition/measurements remain a separate architecture family.
 
+## Planned profile-unlock sequence after PA completion
+
+1. body composition exemplar;
+2. compatible body-measurement batch;
+3. skill progression exemplar;
+4. compatible skill batch;
+5. intellectual attribute exemplar/batch;
+6. mental/emotion dynamics.
+
 ## Deferred boundaries
 
-Not yet implemented as complete families:
-- full Character Memory Engine / richer episodic-semantic memory;
-- multi-fallback chains, provider circuit breakers and provider-health scoring;
-- Telegram API-key editing and model-parameter tuning;
-- Speed progression;
-- Reflexes progression;
-- Endurance progression;
-- Flexibility progression;
-- skills progression;
-- hypertrophy/body-measurement/body-composition progression;
-- body-measurement grading evaluator;
-- IQ/skills grading evaluators;
-- inventory/resource depletion;
+Not authorized as side effects of the current work:
+- full Character Memory Engine;
+- multi-fallback chains/circuit breakers/provider-health scoring;
+- Telegram API-key editing/model tuning;
+- second production character solely for universalization testing;
+- forced equipment rotation;
+- generalized inventory/resource depletion;
 - richer relationship engine;
-- estate exterior / Tahoe traversal;
+- estate exterior/Tahoe traversal;
 - schema v5.
-
-## Current development policy
-
-Persistent branch model:
-- `main` = canonical/deployed line;
-- `test` = reusable development/CI line.
-
-Do not create feature/release branches by default. After a successful merge/deploy, synchronize `test` back to current `main` before the next slice.
-
-For ordinary work, use focused tests + CI and the standard automatic deploy. Use disposable production-copy validation only when a concrete stateful risk justifies it.
 
 ## Exact resume point
 
-Complete and validate the **Universal Character Engine Contract / pre-expansion hardening** now on `test`. Do not add a second production character as part of this hardening; the synthetic non-Darian fixture exists only to prove engine identity independence.
+Finish **Physical Attribute Progression Framework v1** on `test`: focused regression -> full CI and relevant corrected acceptance checks -> merge -> automatic deploy -> read-only production verification -> synchronize `test` to `main` and finalize canonical deployment evidence.
 
-After the universalization slice is merged/deployed/read back, immediately continue with **Physical Attribute Progression Framework v1** and batch-activate Speed, Reflexes, Endurance and Flexibility under actor-generic policy-driven progression semantics.
-
-Do not build the full Character Memory Engine, multi-fallback chains/circuit breakers, forced equipment rotation, Telegram secret editing, model parameter tuning, or schema v5 as side effects of these slices.
+Then proceed directly to the **body composition progression exemplar** under the same universal actor-generic and minimum-runnable policy.

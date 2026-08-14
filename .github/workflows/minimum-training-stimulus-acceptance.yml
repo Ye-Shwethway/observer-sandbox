@@ -7,6 +7,8 @@ on:
     paths:
       - 'src/observer_sandbox/simulation.py'
       - 'src/observer_sandbox/training_stimulus.py'
+      - 'src/observer_sandbox/training_methods.py'
+      - 'config/training_methods.v1.json'
       - 'tests/test_minimum_training_stimulus_v1.py'
       - 'tests/test_minimum_training_stimulus_no_progression.py'
       - '.github/workflows/minimum-training-stimulus-acceptance.yml'
@@ -35,8 +37,9 @@ jobs:
           VPS_USER: ${{ secrets.VPS_USER }}
           VPS_PORT: ${{ secrets.VPS_PORT || '22' }}
         run: |
-          ssh -p "$VPS_PORT" "$VPS_USER@$VPS_HOST" 'rm -rf /tmp/observer-training-stimulus-v1 && mkdir -p /tmp/observer-training-stimulus-v1'
+          ssh -p "$VPS_PORT" "$VPS_USER@$VPS_HOST" 'rm -rf /tmp/observer-training-stimulus-v1 && mkdir -p /tmp/observer-training-stimulus-v1/config'
           rsync -az -e "ssh -p $VPS_PORT" src/ "$VPS_USER@$VPS_HOST:/tmp/observer-training-stimulus-v1/src/"
+          rsync -az -e "ssh -p $VPS_PORT" config/ "$VPS_USER@$VPS_HOST:/tmp/observer-training-stimulus-v1/config/"
       - name: Dry-run Free Weights strength stimulus on production copy
         env:
           VPS_HOST: ${{ secrets.VPS_HOST }}
@@ -99,6 +102,7 @@ jobs:
                   "ok": True,
                   "disposable": True,
                   "candidate_source": True,
+                  "candidate_config": True,
                   "model_calls": 0,
                   "free_weights_strength_stimulus": True,
                   "heavy_bag_strength_stimulus": False,

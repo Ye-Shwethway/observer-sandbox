@@ -65,4 +65,4 @@ def test_legacy_spatial_ids_are_cleanly_reset_and_runtime_is_remapped(tmp_path):
     result = status(db)
     assert result.runtime_state["paused"] is False
     assert result.runtime_state["world_id"] == "world_observer_universe"
-    assert result.runtime_state["world_identity_revision"] == "thorne-estate-v3.2-training-environment"
+    assert result.runtime_state["world_identity_revision"] == "thorne-estate-v3.3-physical-attribute-training"

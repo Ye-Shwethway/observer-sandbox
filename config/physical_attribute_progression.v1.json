@@ -1,0 +1,76 @@
+{
+  "revision": "physical-attribute-progression-policy-v1",
+  "framework_source": "physical-attribute-progression-framework-v1",
+  "settlement_event_type": "physical_attribute_progression_settled",
+  "detraining_checkpoint_hours": 24.0,
+  "attributes": {
+    "speed": {
+      "field_key": "raps_pa.speed",
+      "method_weights": {"speed_agility_drills": 1.0},
+      "stimulus_minutes_per_unit": 25.0,
+      "natural_ceiling": 100.0,
+      "level_exponent": 1.7,
+      "base_positive_scale": 0.14,
+      "saturation_window_hours": 72.0,
+      "saturation_coefficient": 0.25,
+      "full_recovery_hours": 20.0,
+      "detraining_grace_days": 10.0,
+      "detraining_time_constant_days": 45.0,
+      "detraining_level_exponent": 1.5,
+      "base_detraining_points_per_day": 0.012,
+      "description": "Movement velocity and acceleration from authored speed/agility work."
+    },
+    "reflexes": {
+      "field_key": "raps_pa.reflexes",
+      "method_weights": {"ai_combat_simulation": 1.0},
+      "stimulus_minutes_per_unit": 30.0,
+      "natural_ceiling": 100.0,
+      "level_exponent": 1.8,
+      "base_positive_scale": 0.13,
+      "saturation_window_hours": 48.0,
+      "saturation_coefficient": 0.30,
+      "full_recovery_hours": 18.0,
+      "detraining_grace_days": 14.0,
+      "detraining_time_constant_days": 60.0,
+      "detraining_level_exponent": 1.4,
+      "base_detraining_points_per_day": 0.010,
+      "description": "Reactive response quality from authored reactive simulation work."
+    },
+    "endurance": {
+      "field_key": "raps_pa.endurance",
+      "method_weights": {
+        "heavy_bag_rounds": 0.9,
+        "obstacle_conditioning": 1.0,
+        "combat_pit_drills": 1.0
+      },
+      "stimulus_minutes_per_unit": 40.0,
+      "natural_ceiling": 100.0,
+      "level_exponent": 1.5,
+      "base_positive_scale": 0.15,
+      "saturation_window_hours": 96.0,
+      "saturation_coefficient": 0.20,
+      "full_recovery_hours": 30.0,
+      "detraining_grace_days": 10.0,
+      "detraining_time_constant_days": 50.0,
+      "detraining_level_exponent": 1.5,
+      "base_detraining_points_per_day": 0.014,
+      "description": "Sustained performance under accumulated mixed workload; pure aerobic conditioning is intentionally excluded."
+    },
+    "flexibility": {
+      "field_key": "raps_pa.flexibility",
+      "method_weights": {"mobility_stretching": 1.0},
+      "stimulus_minutes_per_unit": 30.0,
+      "natural_ceiling": 100.0,
+      "level_exponent": 1.4,
+      "base_positive_scale": 0.12,
+      "saturation_window_hours": 48.0,
+      "saturation_coefficient": 0.25,
+      "full_recovery_hours": 12.0,
+      "detraining_grace_days": 14.0,
+      "detraining_time_constant_days": 60.0,
+      "detraining_level_exponent": 1.3,
+      "base_detraining_points_per_day": 0.008,
+      "description": "Range-of-motion capacity from authored mobility and stretching work."
+    }
+  }
+}
