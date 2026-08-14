@@ -3,6 +3,7 @@ from __future__ import annotations
 import json
 import os
 import sqlite3
+import urllib.error
 import urllib.request
 from typing import Any
 
@@ -32,12 +33,25 @@ def _post_json(url: str, *, headers: dict[str, str], payload: dict[str, Any], ti
     request = urllib.request.Request(
         url,
         data=json.dumps(payload).encode("utf-8"),
-        headers={"Content-Type": "application/json", **headers},
+        headers={
+            "Content-Type": "application/json",
+            "User-Agent": "observer-sandbox/0.0.1",
+            **headers,
+        },
         method="POST",
     )
     try:
         with urllib.request.urlopen(request, timeout=timeout) as response:
             return json.loads(response.read().decode("utf-8"))
+    except urllib.error.HTTPError as exc:
+        try:
+            body = exc.read().decode("utf-8", errors="replace").strip()
+        except Exception:
+            body = ""
+        detail = f"HTTP {exc.code}: {exc.reason}"
+        if body:
+            detail = f"{detail}: {body[:1000]}"
+        raise AIDecisionError(detail) from exc
     except Exception as exc:
         raise AIDecisionError(str(exc)) from exc
 
