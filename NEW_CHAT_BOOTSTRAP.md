@@ -21,23 +21,23 @@ Default:
 
 Use production-copy validation for concrete stateful/migration risk. Never accelerate/mutate production merely to manufacture acceptance evidence.
 
-Any new architecture/control invariant updates its canonical contract + ROADMAP + bootstrap in the same development cycle.
+Any new architecture/control/security invariant updates its canonical contract + ROADMAP + bootstrap in the same development cycle.
 
 ## Current verified production checkpoint
 
-Latest deployment: **Deploy #181 `31817900997` SUCCESS**, PR #77 merge `e2c4275cedf1edcdcb36126e525371c86f5ef97c`.
+Latest runtime deployment: **Deploy #182 `31818968380` SUCCESS**, PR #78 merge `ed00f7bdf89b1471fd34c4c4b8a0dd16eefac04f`.
 
-Deploy readback:
+PR #79 merge `e8912d29b2aa2631a396518751cf9cbbe3d6b546` added direct read-only BC-2 evidence to Runtime Read. Runtime Read #11 verified:
 - service active/healthy;
 - schema v5;
-- world `thorne-estate-v3.3-physical-attribute-training`;
-- inventory seed + one-time wealthy reserve marker preserved;
 - autonomy enabled/normal, paused false, retry null, speed 3.0x;
-- sim `2025-05-05T07:00:00+00:00` at readback;
-- Darian naturally continued training in the Home Gym;
-- cognition decision calls advanced naturally to 364;
+- sim `2025-05-05T08:34:00+00:00`;
+- decision calls 372;
 - Gemini `gemini-3.1-flash-lite` primary and Groq `qwen/qwen3.6-27b` fallback preserved;
-- Telegram connected.
+- transient Gemini 503 had been handled by fallback, with current retry null;
+- Weight 215.0 lb and BF 9.0% are live `simulated` `physiology_engine` fields;
+- BC-2 activation boundary `2025-05-05T07:55:00+00:00` is `bootstrapped`, `stat_mutated=false`, old/new identical;
+- derived activation FM 19.35 lb, FFM 195.65 lb, BMI 26.167763.
 
 A historical provider 413 occurred on an 8,645-token cognition request. It is not current retry state; cognition enrichment stays compact.
 
@@ -60,49 +60,53 @@ Body composition:
 - Inventory Operations v1 — PR #73 / Deploy #178.
 - Food Nutrition Semantics & Visibility v1 — PR #74 / Deploy #179.
 - Eating Behavior v1 — PR #76 / Deploy #180.
-- Meal Choice Intelligence v1 — **PR #77 / Deploy #181**.
+- Meal Choice Intelligence v1 — PR #77 / Deploy #181.
 
 Meal Choice Intelligence is a compact enrichment inside the existing single cognition call: same-day intake/macros/meal count, latest meal timing, recent training, recovery, REE reference and character nutrition policy. No broad Mind/Behavior Engine and no extra model call.
 
-Canonical:
-- `docs/EATING_BEHAVIOR_V1.md`
-- `docs/MEAL_CHOICE_INTELLIGENCE_V1.md`
+## BC-2 Body Composition Progression
 
-## BC-2 Body Composition Progression — CURRENT PR #78
+**COMPLETE / DEPLOYED / LIVE-ACTIVATED** via PR #78 / Deploy #182; direct readback via PR #79 / Runtime Read #11.
 
 Canonical:
 - `docs/BODY_COMPOSITION_RESEARCH_FOUNDATION.md`
 - `docs/NUTRITION_ENERGY_EVIDENCE.md`
 - `docs/BODY_COMPOSITION_PROGRESSION_V1.md`
 
-Candidate behavior:
-- first post-deploy completed-action boundary activates Weight/BF simulation ownership while preserving numerical state exactly;
-- no pre-activation history can produce retroactive mutation;
-- 24 simulated-hour windows;
-- incomplete BC-1 evidence produces an audited no-mutation deferred window and advances the cursor, never an artificial deficit;
-- Forbes small-change FFM share `10.4/(10.4+FM_kg)`;
-- Hall tissue-change densities: 39.5 MJ/kg fat, 7.6 MJ/kg lean;
-- passive composition movement capped at 0.5 lb absolute weight change per 24h as a simulation guard;
-- only training evidence whose workload channels include `resistance` may create the separate RT lean-adaptation signal;
-- protein factor saturates at 1.6 g/kg/day policy reference;
-- RT adaptation fades to zero around a 500 kcal/day deficit and is constrained by recovery, resistance effective minutes, genetic FFM headroom and sustainable BF-floor headroom;
+Live contract:
+- activation preserves numerical Weight/BF exactly and establishes a non-retroactive settlement cursor;
+- 24 simulated-hour evidence-complete windows;
+- incomplete evidence creates an audited no-mutation deferred window;
+- Forbes/Hall bounded partition, not fixed 3,500 kcal/lb;
+- separate resistance-only lean adaptation constrained by protein, energy, recovery and genetic headroom;
 - Weight/BF persist together; FM/FFM/BMI remain derived views;
-- coupled profile history + event mutation is atomic;
-- no schema migration, extra model call, Darian branch, BC-3 measurement mutation, fluid/glycogen/endocrine/micronutrient simulation.
+- no schema migration or extra model call.
 
-Validation policy:
-- focused unit regressions including non-resistance training exclusion;
-- full CI;
-- inherited physical-progression acceptances;
-- dedicated Body Composition Progression v1 disposable production-copy acceptance.
+## Current operational slice — Public Readiness Hardening v1
 
-The production-copy validator proves activation numerical preservation plus one complete synthetic 24h settlement while the real production DB remains read-only.
+Creator explicitly approved making `Ye-Shwethway/observer-sandbox` public because the private GitHub Actions monthly allowance is nearly exhausted and public standard GitHub-hosted runners are documented by GitHub as free and unlimited.
 
-## Next slice after BC-2 deploy — BC-3 Body Measurement Progression Batch
+Canonical:
+- `docs/PUBLIC_REPOSITORY_SECURITY.md`
+- `SECURITY.md`
+
+Required hardening before the Creator flips visibility:
+- full reachable Git history is audited with `fetch-depth: 0` for high-confidence secret/token signatures and risky secret filenames;
+- potential secret values are never printed by the audit;
+- `.env`, `secrets.env`, SSH/private-key formats, runtime DBs and backups remain excluded from repository content;
+- `pull_request_target` is prohibited;
+- fork-originated `pull_request` events are explicitly blocked from reusable VPS-backed production-copy validation;
+- disposable validators unset every model credential including Groq and all Telegram credentials;
+- GitHub Actions repository token stays read-only by default;
+- any live credential finding blocks publication and requires rotation/investigation.
+
+After hardening passes and merges, the Creator performs the repository visibility change manually. Immediately re-check Actions fork approval policy, read-only workflow token permissions, Secret scanning/Push protection, and `main` branch/ruleset protection because GitHub documents that push rulesets are disabled by a private-to-public transition.
+
+## Next development slice after public flip — BC-3 Body Measurement Progression Batch
 
 Do not split structurally equivalent circumference fields into repetitive PR/deploy cycles.
 
-BC-3 should unlock the measurement family as a patterned batch after proving any genuinely new measurement invariant:
+BC-3 target family:
 - neck;
 - shoulders;
 - chest;
@@ -118,16 +122,17 @@ Measurements must combine live body composition + regional training/anatomical c
 
 ## Later sequence
 
-1. finish BC-2 PR #78 -> merge/deploy/readback;
-2. BC-3 measurement batch;
-3. skills;
-4. intellectual attributes;
-5. mental/emotion dynamics;
-6. later social/relationship/sexual physiology;
-7. broad Mind/Behavior architecture only after enough feature families exist to justify it.
+1. finish Public Readiness Hardening v1;
+2. Creator changes repo Private -> Public and verifies security/Actions settings;
+3. BC-3 measurement batch;
+4. skills;
+5. intellectual attributes;
+6. mental/emotion dynamics;
+7. later social/relationship/sexual physiology;
+8. broad Mind/Behavior architecture only after enough feature families exist to justify it.
 
 ## Exact resume point
 
-Finish **BC-2 PR #78**, rerun final-head gates, merge/deploy/read back activation, then proceed to **BC-3 Body Measurement Progression Batch**.
+Finish **Public Readiness Hardening v1**, require its full-history audit + CI to pass, merge it, then guide the Creator through the manual Private -> Public change and post-change security checks. After that resume **BC-3 Body Measurement Progression Batch**.
 
 Do not add economy/currency, automatic restocking, deep recipes/crafting, Character Memory, broad Mind/Behavior engines, or a second production character merely for testing as side effects.

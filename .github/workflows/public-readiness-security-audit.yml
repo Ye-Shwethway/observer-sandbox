@@ -1,0 +1,28 @@
+name: Public Readiness Security Audit
+
+on:
+  workflow_dispatch:
+  pull_request:
+    branches: [main]
+    paths:
+      - '.github/workflows/**'
+      - 'scripts/validation/validate_public_readiness_security.py'
+      - '.gitignore'
+      - 'docs/PUBLIC_REPOSITORY_SECURITY.md'
+      - 'ROADMAP.md'
+      - 'NEW_CHAT_BOOTSTRAP.md'
+
+permissions:
+  contents: read
+
+jobs:
+  full-history-security-audit:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout complete repository history
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Validate public-readiness secret and workflow policy
+        run: python scripts/validation/validate_public_readiness_security.py

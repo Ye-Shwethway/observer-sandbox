@@ -22,7 +22,16 @@ permissions:
 
 jobs:
   validate-production-copy:
-    if: ${{ vars.VPS_DEPLOY_ENABLED == 'true' }}
+    # Public-repository safety boundary: fork-originated pull requests never get
+    # a job that can reach production infrastructure, even though GitHub also
+    # withholds repository secrets from forks by default. Same-repository PRs,
+    # main pushes and manual trusted runs retain the existing validation path.
+    if: >-
+      ${{
+        vars.VPS_DEPLOY_ENABLED == 'true' &&
+        (github.event_name != 'pull_request' ||
+         github.event.pull_request.head.repo.full_name == github.repository)
+      }}
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -97,7 +106,8 @@ jobs:
           export OBSERVER_CONFIG_DIR="$ROOT/config"
           export OBSERVER_VALIDATION_DISPOSABLE=1
 
-          unset OBSERVER_GEMINI_API_KEY OBSERVER_NANOGPT_API_KEY OBSERVER_OPENAI_API_KEY OBSERVER_OPENROUTER_API_KEY
+          unset OBSERVER_GEMINI_API_KEY OBSERVER_GROQ_API_KEY OBSERVER_NANOGPT_API_KEY
+          unset OBSERVER_OPENAI_API_KEY OBSERVER_OPENROUTER_API_KEY
           unset OBSERVER_TELEGRAM_BOT_TOKEN OBSERVER_TELEGRAM_OWNER_ID OBSERVER_TELEGRAM_ALLOWED_USER_IDS
 
           /opt/observer-sandbox/.venv/bin/python "$ROOT/$VALIDATOR_PATH"
