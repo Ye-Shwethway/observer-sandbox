@@ -94,9 +94,6 @@ def main() -> int:
     if "/tmp/" not in str(db_path):
         raise RuntimeError("refusing non-temporary validation DB")
 
-    # Exercise the real candidate upgrade path on the disposable production copy.
-    # Re-initialization adds newly authored canonical/static fields while the seed
-    # importer preserves already simulated engine-owned values.
     initialize(db_path)
 
     with connect(db_path) as conn:
@@ -150,9 +147,6 @@ def main() -> int:
             activation_raw = existing_payload.get("activation_sim_time") or existing["sim_time"]
             activation = datetime.fromisoformat(str(activation_raw))
             activated_fields = sorted(before)
-            # Production may naturally advance between validation runs. The
-            # acceptance must validate the candidate against either state rather
-            # than requiring a one-time bootstrap event forever.
             catch_up = maybe_settle_body_measurements(
                 conn,
                 ACTOR,
@@ -225,6 +219,10 @@ def main() -> int:
         assert payload["regional_training_exposure"]["triceps"] == 1.0
         assert payload["regional_training_exposure"].get("calves", 0.0) == 0.0
         assert payload["body_composition_signal"]["rt_ffm_gain_lb"] == 0.20
+        assert payload["regional_detraining"]["source"] == "regional-measurement-detraining-v1"
+        assert payload["regional_detraining"]["suppressed_by_systemic_ffm_loss"] is False
+        assert payload["regional_detraining"]["regions"]["chest"]["pressure"] == 0.0
+        assert payload["projection_detail"]["body.chest_in"]["regional_detraining_delta_in"] == 0.0
         assert payload["deferred_fields"] == []
         assert payload["stat_mutated"] is True
         assert all(abs(float(change["delta"])) <= 0.1500001 for change in changes.values())
@@ -252,6 +250,8 @@ def main() -> int:
             "partial_pre_activation_window_deferred": partial_pre_activation_window_deferred,
             "regional_bench_chest_exposure": payload["regional_training_exposure"]["chest"],
             "regional_bench_triceps_exposure": payload["regional_training_exposure"]["triceps"],
+            "regional_detraining_revision": payload["regional_detraining"]["source"],
+            "recent_chest_detraining_pressure": payload["regional_detraining"]["regions"]["chest"]["pressure"],
             "changed_fields": sorted(changes),
             "model_calls": 0,
             "telegram_calls": 0,
