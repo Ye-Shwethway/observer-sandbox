@@ -1,7 +1,7 @@
 # Observer Sandbox Roadmap
 
 Status: ACTIVE
-Roadmap synchronized: 2026-08-14
+Roadmap synchronized: 2026-08-15
 
 ## Operating principles
 
@@ -20,21 +20,20 @@ Roadmap synchronized: 2026-08-14
 
 ## Current verified production baseline
 
-Latest runtime deployment: **Deploy #182 `31818968380` SUCCESS**, BC-2 PR #78 merge `ed00f7bdf89b1471fd34c4c4b8a0dd16eefac04f`.
+Latest runtime deployment: **Deploy #183 `31826301329` SUCCESS**, BC-3 PR #82 merge `45c29a834828c9afc1f0a7e190b9f5904019e546`.
 
-BC-2 live readback observability was merged separately in PR #79, merge `e8912d29b2aa2631a396518751cf9cbbe3d6b546`. Runtime Read #11 then verified:
+Post-deploy Runtime Read #12 rerun verified:
 - service active/healthy;
 - schema v5;
-- autonomy enabled/normal, paused false, retry null, speed 3.0x;
-- sim `2025-05-05T08:34:00+00:00` at readback;
-- cognition decision calls 372;
+- autonomy enabled/normal, paused false, retry null, speed 1.0x;
+- sim `2025-05-05T11:17:00+00:00`;
+- cognition decision calls 386;
+- current pending action `read` in the Living Room;
 - Gemini `gemini-3.1-flash-lite` primary with tested Groq `qwen/qwen3.6-27b` fallback preserved;
-- a transient Gemini 503 had already been handled through the configured fallback; current retry remained null;
-- Telegram/runtime state continued naturally;
-- `body.weight_lb=215.0` and `body.body_fat_pct=9.0` are live `simulated` fields owned by `physiology_engine`;
-- BC-2 activation boundary is `2025-05-05T07:55:00+00:00`;
-- activation event status `bootstrapped`, `stat_mutated=false`, old/new composition identical;
-- derived activation composition: FM 19.35 lb, FFM 195.65 lb, BMI 26.167763.
+- `body.weight_lb=215.0` and `body.body_fat_pct=9.0` remain live `simulated` `physiology_engine` fields;
+- BC-2 activation boundary remains `2025-05-05T07:55:00+00:00`, `bootstrapped`, `stat_mutated=false`, old/new composition identical;
+- all eleven BC-3 circumference fields are present in production, including `body.hips_in=39.0`;
+- BC-3 fields remained authored/static and no `body_measurement_progression_settled` event existed at readback, so deployment/seed upgrade is verified while natural runtime activation is still pending.
 
 A historical provider 413 occurred on an 8,645-token cognition request. It is not current retry state. Cognition enrichment remains compact rather than copying raw histories.
 
@@ -73,12 +72,13 @@ Canonical:
 - `docs/EATING_BEHAVIOR_V1.md`
 - `docs/MEAL_CHOICE_INTELLIGENCE_V1.md`
 
-## Body Composition Program
+## Body Composition / Measurement Program
 
 Canonical:
 - `docs/BODY_COMPOSITION_RESEARCH_FOUNDATION.md`
 - `docs/NUTRITION_ENERGY_EVIDENCE.md`
 - `docs/BODY_COMPOSITION_PROGRESSION_V1.md`
+- `docs/BODY_MEASUREMENT_PROGRESSION_V1.md`
 
 Research locks:
 - no static universal `3500 kcal = 1 lb` rule;
@@ -88,6 +88,7 @@ Research locks:
 - genetics are character-specific potential envelopes;
 - hunger/energy scores are not kcal;
 - protein/energy availability constrain lean adaptation;
+- circumference progression combines body composition and regional training context rather than scaling every field from body weight;
 - detailed fluid/glycogen/endocrine/micronutrient simulation remains deferred.
 
 ### BC-0 — Simulated Profile Re-seed Safety
@@ -102,7 +103,7 @@ Provides actor-specific resting-energy reference, Compendium-informed action int
 
 ### BC-2 — Body Composition Progression Exemplar
 
-**COMPLETE / DEPLOYED / LIVE-ACTIVATED** via PR #78 / Deploy #182; direct activation readback via PR #79 / Runtime Read #11.
+**COMPLETE / DEPLOYED / LIVE-ACTIVATED** via PR #78 / Deploy #182; direct activation readback via PR #79 / Runtime Read #11 and preserved after Deploy #183.
 
 Invariant:
 `complete bounded BC-1 evidence + current FM/FFM + resistance-training evidence + recovery + genetic envelope -> deterministic 24h settlement -> atomic Weight/BF history + event`
@@ -120,16 +121,34 @@ Live behavior:
 - coupled history/event writes are atomic;
 - no extra LLM call, Darian-specific engine branch or schema migration.
 
+### BC-3 — Body Measurement Progression Batch
+
+**COMPLETE / DEPLOYED / SEEDED / ACTIVATION PENDING NATURAL BOUNDARY** via PR #82 / Deploy #183.
+
+Invariant:
+`BC-2 bounded body-composition settlement + regional resistance evidence + authored anatomy/genetic envelope -> bounded regional measurement settlement -> atomic profile history + event`
+
+BC-3 behavior:
+- covers neck, shoulders, chest, waist, hips, biceps relaxed/flexed, triceps, forearms, thighs and calves in one batched implementation;
+- consumes BC-2 settlement events as its body-composition cadence and does not introduce a second nutrition/composition authority;
+- combines general FM/FFM changes with data-driven regional resistance exposure;
+- small whole-body FFM effects may affect an unexposed region, while regional resistance creates an additional stronger local increment;
+- uses character-specific circumference maxima/targets and activation-relative safety guards;
+- preserves authored circumference values numerically at activation and prevents retroactive progression;
+- changed fields, profile history and causal settlement event are atomic;
+- no schema migration and no extra model call.
+
+Darian's complete authored measurement family now includes `body.hips_in=39.0`. The reusable profile schema includes `genetics.hips_max_in`; Darian's authored hip envelope is 41.0. These values are Darian-specific canon and are not universal character ratios.
+
+PR-head CI #698 passed the full test suite and CLI smoke checks. Disposable production-copy acceptance passed for BC-3 as well as BC-2, Strength and Stamina regression lanes. The BC-3 validator exercises candidate initialization on the production copy, proving the new authored hip fields can be added without clobbering existing engine-owned simulated state.
+
+Post-deploy Runtime Read #12 rerun confirmed all eleven body measurements are present, with hips at 39.0 inches. The first natural BC-3 activation event had not yet occurred at that readback. Production must not be accelerated or directly mutated only to manufacture activation evidence.
+
 ## Public Repository Security — COMPLETE / PUBLIC
 
 Canonical: `docs/PUBLIC_REPOSITORY_SECURITY.md` and `SECURITY.md`.
 
-`Ye-Shwethway/observer-sandbox` is now public. Public Readiness Hardening v1 was merged in PR #80 (`bf5e537cdeceaa6c5a8d4d61f21b67d636f01f20`). After the visibility flip, queued private-quota CI resumed on a standard GitHub-hosted runner and CI #680 completed SUCCESS.
-
-Public Hardening Fixup v1 corrected two audit false positives (`page_token` and `DEFAULT_SECRET_FILE`) without weakening concrete credential signatures. Public Readiness Security Audit #2 then passed with:
-- `PUBLIC_READINESS_SECRET_AUDIT=PASS`;
-- `full_history_high_confidence_secret_findings=0`;
-- `PUBLIC_READINESS_WORKFLOW_POLICY=PASS`.
+`Ye-Shwethway/observer-sandbox` is public. Public Readiness Hardening v1 was merged in PR #80 (`bf5e537cdeceaa6c5a8d4d61f21b67d636f01f20`) and Public Hardening Fixup v1 followed in PR #81. Public Readiness Security Audit on PR #82 also completed SUCCESS.
 
 Security locks:
 - full reachable Git-history scan uses `fetch-depth: 0`;
@@ -140,24 +159,14 @@ Security locks:
 - GitHub additionally withholds repository secrets from fork-originated `pull_request` workflows by default;
 - disposable production-copy validation unsets all model and Telegram credentials;
 - production credentials remain GitHub Actions secrets plus VPS `/var/lib/observer-sandbox/secrets.env` mode `0600`;
-- repository `GITHUB_TOKEN` observed in the public security audit had read-only contents/metadata permissions.
+- repository `GITHUB_TOKEN` observed in public audit/read workflows has read-only contents/metadata permissions.
 
 Post-visibility manual settings still require UI verification where the GitHub App cannot read account-level repository settings: outside-contributor workflow approval, Secret scanning/Push protection, and `main` branch/ruleset protection.
 
-### BC-3 — Body Measurement Progression Batch — NEXT DEVELOPMENT SLICE
-
-After the post-public settings check, resume immediately with BC-3. Do not split structurally equivalent circumference fields into repetitive PR/deploy cycles.
-
-BC-3 direction:
-- neck, shoulders, chest, waist, hips, biceps relaxed/flexed, triceps, forearms, thighs and calves;
-- combine live body composition with regional training stimulus/anatomy and character-specific structural/genetic envelopes;
-- never derive every circumference from body weight alone;
-- prove any genuinely new measurement invariant once, then batch structurally equivalent measurement fields in one PR/deploy cycle.
-
 ## Later profile sequence
 
-1. verify post-public GitHub security settings;
-2. BC-3 measurement progression batch;
+1. observe and verify BC-3 natural production activation;
+2. verify remaining post-public GitHub security settings when convenient;
 3. skill progression family;
 4. intellectual attributes;
 5. mental/emotion dynamics;
@@ -194,4 +203,6 @@ Do not add as side effects:
 
 ## Exact resume point
 
-Finish the post-public GitHub settings verification, then proceed to **BC-3 Body Measurement Progression Batch**.
+Re-read live production first. If a natural eligible action boundary has occurred since post-deploy Runtime Read #12, verify **BC-3 activation** read-only. Do not force or accelerate production for evidence.
+
+After BC-3 activation is naturally verified, proceed to the **skill progression family** unless the Creator gives a newer instruction.
