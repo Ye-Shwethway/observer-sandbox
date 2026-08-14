@@ -26,15 +26,33 @@ Production-copy validation is optional, not mandatory. Use it only for genuinely
 - schema: v4
 - world revision: `thorne-estate-v3.2-training-environment`
 - autonomy: enabled / normal
-- latest verified speed: `1.0x` at Deploy #165 readback; re-read whenever exact cadence matters
-- cognition: Gemini `gemini-3.5-flash-lite`
+- latest verified speed: `1.0x` at Deploy #169 readback
+- cognition: Groq `openai/gpt-oss-20b`
 - Telegram: connected
 
-Latest deployment: **Deploy #165 `31765700369` SUCCESS** from PR #54 merge `d6742fcbaa06868ca7dbd58bac33ee09430d1a0d`.
+Latest runtime-affecting deployment: **Deploy #169 `31767701373` SUCCESS** from PR #60 merge `b813913ced1d51733e873b89dca2b04907dad353`.
 
-Deploy #165 readback verified service active/healthy, schema v4, autonomy enabled/normal, Gemini binding preserved, Telegram connected, and Darian at `2025-05-04T17:18:00+00:00` in the Training Hall, idle, with fatigue `34.935`.
+Post-Deploy169 natural runtime acceptance verified service active/healthy, schema v4, autonomy enabled/normal, Groq credential/binding active, and the stalled retry state cleared on a fresh autonomous decision. Cognition `decision_calls` advanced `331 -> 332`, `autonomy_retry` became `null`, and Darian naturally scheduled a 10-minute `rest` action in the Training Hall with reason `Brief rest to restore energy and reduce fatigue before winding down.` No simulation acceleration or direct live state mutation was used.
 
-The readback also preserved a pre-deploy autonomy retry record (`failures=8`, `last_error=ValueError`, no pending action). Treat that as an observation item rather than evidence of a failed deployment. If it persists across fresh post-deploy decision boundaries, inspect the decision error separately.
+## Cognition resilience / Groq free-tier recovery
+
+Status: **COMPLETE / CI VERIFIED / DEPLOYED / LIVE VERIFIED**.
+
+The long idle stall was not one single provider-quota issue. The investigation found and corrected three bounded failure surfaces:
+
+1. **Training-duration contradiction** — a runtime-shaped legal training duration could be narrower than the ordinary authored preferred duration, while later normalization could expand the model proposal back outside the remaining training-load budget and trigger repeated `ValueError` failures.
+2. **Groq OpenAI-compatible bootstrap compatibility** — the first Groq deploy attempt reached `GET /openai/v1/models` but returned HTTP 403. Standard OpenAI-compatible request headers and better HTTP diagnostics were added, after which catalog fetch succeeded.
+3. **Groq free-tier TPM pressure** — live cognition then reached Groq but returned HTTP 413 because the request was `8645` tokens against the account/model TPM limit of `8000`. The prompt contained duplicated derived metadata. Cognition context is now compacted without weakening authoritative action options or deterministic validation.
+
+Relevant delivery chain:
+- PR #55 — cognition duration-stall correction + generic OpenAI-compatible live decision adapter + Groq provider/bootstrap; CI #579 succeeded; merge `fb0e045686b129e5ecadb13e1f55c8fffb60e82f`.
+- Deploy #166 — failed during first Groq catalog bootstrap; production service was not treated as a cognition acceptance.
+- PR #56 — Groq catalog request hardening and deploy-resilient provider bootstrap; CI #581 succeeded; merge `33f79327e97790f3e3fca4c0317ef87da0eae8db`; Deploy #167 succeeded and bound Groq `openai/gpt-oss-20b`.
+- PR #57 — live provider HTTP error detail preservation; CI #583 succeeded; merge `cfcd9f03fe660e8438bb2a74e2adac2b041a77f2`; Deploy #168 succeeded.
+- PR #58/#59 — read-only latest autonomy-error observability and workflow syntax correction; final Runtime Read workflow is healthy and does not induce model traffic.
+- PR #60 — semantic-preserving cognition prompt compaction for the 8000 TPM free-tier budget; CI #589 succeeded; merge `b813913ced1d51733e873b89dca2b04907dad353`; post-merge CI #590 and Deploy #169 succeeded.
+
+Runtime action/target authority remains strict. Training-load validation remains deterministic. Provider HTTP failures remain `AIDecisionError`; deterministic invalid decisions are not disguised as provider fallback events.
 
 ## Environment and training methods
 
@@ -62,7 +80,7 @@ The guard derives recent training dose from completed action history and persist
 - rolling 6 hours: `120` effective minutes;
 - rolling 24 hours: `180` effective minutes.
 
-Train options are capped/removed based on remaining effective-load budget, and the selected duration is checked again before scheduling. Short-term fatigue recovery therefore does not erase recent training dose. No new schema field, injury model, or Mind Engine was introduced.
+Train options are capped/removed based on remaining effective-load budget, and the selected duration is checked again before scheduling. Runtime-shaped duration bounds are now also authoritative during model planning/normalization, preventing the previously observed retry stall. No new schema field, injury model, or Mind Engine was introduced.
 
 ## Object Familiarity / Inspect Utility Guard v1
 
@@ -70,14 +88,14 @@ Status: **COMPLETE / CI VERIFIED / DEPLOYED**.
 
 PR #54 final tested head `674de824acf69fc4209e59e649364d0ece3696f5`; CI #575 / run `31765655658` succeeded; merge `d6742fcbaa06868ca7dbd58bac33ee09430d1a0d`; Deploy #165 / run `31765700369` succeeded. Post-merge CI #576 also succeeded.
 
-This is a bounded bridge, not a full Character Memory Engine. Cognition now derives inspection familiarity from existing world capabilities plus event history:
+This is a bounded bridge, not a full Character Memory Engine. Cognition derives inspection familiarity from existing world capabilities plus event history:
 - established functional estate resources are treated as familiar and low-value routine `inspect` options are suppressed;
 - genuinely unknown inspect-only objects may still receive a first-look inspection opportunity;
 - prior interaction/history can establish familiarity without adding a new memory schema;
 - the autonomy policy no longer advertises generic equipment checks as default midday productivity;
 - guidance explicitly prefers meaningful non-training activity or ordinary downtime over manufacturing fake productive inspection loops when training is unavailable.
 
-Focused tests cover the observed room-hopping fallback pattern while preserving first-look inspection for an unknown inspect-only object.
+The first healthy post-recovery live decision selected ordinary `rest`, not a generic equipment inspection, which is directionally consistent with the intended guard. Continue observing naturally before claiming a long-run behavioral distribution.
 
 ## Progression state
 
@@ -92,13 +110,16 @@ Focused tests cover the observed room-hopping fallback pattern while preserving 
 - Keep LLM cognition proposal-only; deterministic engines own mutations.
 - Creator controls remain typed/audited and follow `docs/CREATOR_CONTROL_POLICY.md`.
 - Post-deploy verification is read-only unless a concrete live control change is explicitly requested.
+- Do not silently fall back from deterministic validation failures by changing providers.
 
 ## Exact resume point
 
-Observe autonomous behavior after **Object Familiarity / Inspect Utility Guard v1**.
+Continue **natural read-only observation** of autonomous behavior after the cognition-recovery/Groq migration.
 
-Verify naturally that training-load blocking no longer causes Darian to roam through familiar estate resources performing generic equipment inspections. Familiar stable equipment should normally disappear as low-value `inspect` choices, while genuinely novel/unknown inspect-only objects remain discoverable.
+Verify over ordinary decisions that:
+- the old retry-cap stall does not recur;
+- Groq remains healthy under normal free-tier request limits;
+- Object Familiarity continues to prevent familiar-equipment inspect-room-hopping when training is unavailable;
+- Darian naturally uses meaningful non-training activity or downtime where appropriate.
 
-Also watch whether the pre-deploy `ValueError` retry record clears on fresh autonomous decisions. Investigate it only if it persists or causes observable stalls.
-
-Do not build the full Character Memory Engine, forced equipment rotation, or Speed progression without fresh Creator authorization.
+Do not build the full Character Memory Engine, forced equipment rotation, Speed progression, or schema v5 without fresh Creator authorization.
