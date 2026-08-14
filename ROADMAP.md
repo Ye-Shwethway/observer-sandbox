@@ -30,11 +30,12 @@ Roadmap synchronized: 2026-08-14
 - Autonomy: enabled / normal
 - Cognition: Groq `openai/gpt-oss-20b`
 - Telegram: connected
-- Latest verified speed: `1.0x` at the cognition-recovery acceptance checkpoint.
-- Latest verified runtime-affecting deployment before the current AI-control slice: Deploy #170 `31769002006` SUCCESS from PR #62 merge `3de7a38be1d381654b28326a737974e6da2645f1`.
-- PR #62 added the next planned action reason to proactive Telegram Character Updates; post-merge CI #594 also succeeded.
+- Latest verified speed: `1.0x`.
+- Latest verified runtime-affecting deployment: Deploy #171 `31769893556` SUCCESS from PR #63 merge `d8a3f770dd3c6f4293f5035d1085998ba0562bf7`.
+- Deploy #171 readback: service active/healthy, schema v4, autonomy enabled/normal, retry state null, Groq binding preserved, Telegram API connected, Creator owner configuration present.
+- PR #62 / Deploy #170 added the next planned action reason to proactive Telegram Character Updates.
 
-Post-Deploy169 live acceptance cleared the prior retry-cap stall on a natural decision boundary: cognition `decision_calls` advanced `331 -> 332`, `autonomy_retry` became `null`, and Darian scheduled a 10-minute `rest` action in the Training Hall. No production acceleration or direct live state mutation was used.
+Post-Deploy169 live acceptance cleared the prior retry-cap stall on a natural decision boundary: cognition `decision_calls` advanced `331 -> 332`, `autonomy_retry` became `null`, and Darian scheduled a 10-minute `rest` action in the Training Hall. By Deploy #171 readback natural cognition had advanced to `decision_calls=334`; no production acceleration, direct live state mutation, or validation-induced model probe was used.
 
 ## Completed foundation and observer layers
 
@@ -48,10 +49,19 @@ Post-Deploy169 live acceptance cleared the prior retry-cap stall on a natural de
 
 ## P2.3 Telegram Creator AI Control v1
 
-Status: **AUTHORIZED / IMPLEMENTED ON `test` / CI+DEPLOY GATE PENDING**.
+Status: **COMPLETE / CI VERIFIED / DEPLOYED**.
 
-Current minimum-runnable scope:
-- owner-only `Creator Settings -> AI Cognition` navigation;
+Delivery:
+- PR #63 tested head `f2e61d374dce1c3b493d27fb94e1024b9eb5a3fd`;
+- primary CI #595 / run `31769832103` SUCCESS;
+- merged as `d8a3f770dd3c6f4293f5035d1085998ba0562bf7`;
+- Deploy #171 / run `31769893556` SUCCESS;
+- readback confirmed service health, Groq binding preservation, Telegram connectivity and no deployment-triggered model probe.
+
+One unrelated Stamina Progression production-copy acceptance workflow failed on an existing eligible-event assertion against the evolving disposable production copy. This AI-control slice does not touch Stamina/progression semantics; the canonical development policy treats that production-copy workflow as non-blocking for this non-state-sensitive control-plane slice. Primary full CI and Strength acceptance succeeded.
+
+Current minimum-runnable surface:
+- owner-only `Creator Settings -> AI Cognition` navigation plus `/settings` and `/ai` entry points;
 - display the current cognition provider/model binding;
 - list built-in providers while revealing only credential presence/absence, never credential values;
 - fetch a provider's live model catalog without changing the active cognition binding or enabling the provider as a side effect;
@@ -74,7 +84,8 @@ Probe semantics:
 - catalog fetch is not treated as an inference health check;
 - the probe consumes one intentionally minimal real provider inference call and therefore can detect a current quota/rate/auth/model failure before activation;
 - a passing probe proves only that the selected model worked at that moment; it does not guarantee future quota availability;
-- probe execution never mutates world/profile/progression state or the current cognition binding.
+- probe execution never mutates world/profile/progression state or the current cognition binding;
+- deployment/CI verification must not invoke the probe; it is an explicit Creator action.
 
 Explicit non-goals for this slice:
 - automatic runtime provider failover;
@@ -243,8 +254,11 @@ For ordinary work, use focused tests + CI and the standard automatic deploy. Use
 
 ## Exact resume point
 
-Complete the authorized **P2.3 Telegram Creator AI Control v1** through focused CI, merge, automatic deploy, and read-only production readback without inducing a validation model call.
+P2.3 Telegram Creator AI Control v1 is deployed. Resume **natural read-only observation** of autonomous behavior and use the new Telegram AI control only when the Creator intentionally wants to inspect catalogs, test a candidate model, or change cognition provider/model.
 
-After deployment, the Creator can exercise `Creator Settings -> AI Cognition` manually when desired. A model probe is intentionally a real API call and must not be triggered merely for deployment validation.
+Immediate observation questions remain:
+- Does the old retry-cap stall stay cleared across ordinary fresh decision boundaries?
+- Does Groq remain healthy under normal free-tier request limits after prompt compaction?
+- When training load blocks further exercise, does Darian continue to avoid familiar-equipment inspect-room-hopping and instead select meaningful non-training activity or ordinary downtime?
 
-Continue natural read-only autonomy observation in parallel with this control-plane work. Do not build the full Character Memory Engine, automatic provider failover, forced equipment rotation, Speed progression, Telegram secret editing, or schema v5 without fresh Creator authorization.
+Do not trigger a model probe merely for monitoring; it is an explicit Creator action and consumes one minimal inference call. Do not build the full Character Memory Engine, automatic provider failover, forced equipment rotation, Speed progression, Telegram secret editing, model parameter tuning, or schema v5 without fresh Creator authorization.
