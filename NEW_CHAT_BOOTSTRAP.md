@@ -17,6 +17,8 @@ Keep only persistent `main` and reusable `test` branches unless a concrete excep
 
 Production-copy validation is optional, not mandatory. Use it only for genuinely state-sensitive, migration-heavy, or otherwise high-risk changes that local tests/CI cannot cover well enough. Prefer small reversible changes and Git rollback over layered release ceremony.
 
+When a slice introduces a new architecture/control invariant, update the task-relevant canonical contract plus `ROADMAP.md` and this bootstrap checkpoint during the same development cycle.
+
 ## Production baseline
 
 - repo: `Ye-Shwethway/observer-sandbox`
@@ -26,13 +28,45 @@ Production-copy validation is optional, not mandatory. Use it only for genuinely
 - schema: v4
 - world revision: `thorne-estate-v3.2-training-environment`
 - autonomy: enabled / normal
-- latest verified speed: `1.0x` at Deploy #169 readback
+- latest verified speed: `1.0x` at the cognition-recovery acceptance checkpoint
 - cognition: Groq `openai/gpt-oss-20b`
 - Telegram: connected
 
-Latest runtime-affecting deployment: **Deploy #169 `31767701373` SUCCESS** from PR #60 merge `b813913ced1d51733e873b89dca2b04907dad353`.
+Latest verified runtime-affecting deployment before the current AI-control slice: **Deploy #170 `31769002006` SUCCESS** from PR #62 merge `3de7a38be1d381654b28326a737974e6da2645f1`. Post-merge CI #594 also succeeded.
+
+PR #62 added the next planned action's cognition reason to proactive Telegram Character Updates, so the Observer now sees both what is next and why it was selected.
 
 Post-Deploy169 natural runtime acceptance verified service active/healthy, schema v4, autonomy enabled/normal, Groq credential/binding active, and the stalled retry state cleared on a fresh autonomous decision. Cognition `decision_calls` advanced `331 -> 332`, `autonomy_retry` became `null`, and Darian naturally scheduled a 10-minute `rest` action in the Training Hall with reason `Brief rest to restore energy and reduce fatigue before winding down.` No simulation acceleration or direct live state mutation was used.
+
+## Current authorized slice — P2.3 Telegram Creator AI Control v1
+
+Status: **AUTHORIZED / IMPLEMENTED ON `test` / CI+DEPLOY GATE PENDING**.
+
+Creator goal:
+- switch cognition providers/models from Telegram;
+- fetch the selected provider's current model catalog;
+- test the chosen model before changing the saved binding so current auth/quota/model availability failures can be seen first.
+
+Canonical test-before-save invariant:
+- provider browsing, catalog refresh, model selection and a failed/cancelled probe do **not** change the current cognition binding;
+- catalog success alone is not treated as model health because it cannot prove current inference quota/rate availability;
+- `Test Model` performs one deliberately tiny real inference through the same provider adapter and structured cognition-response path used by runtime cognition;
+- `Save & Activate` is unavailable/rejected until that candidate has passed the probe;
+- only `Save & Activate` may enable the candidate provider and write the character cognition binding;
+- API credential values are never shown in Telegram; only presence/absence is exposed;
+- full/arbitrary model ids remain server-side rather than being placed directly in Telegram callback payloads.
+
+Implementation surfaces:
+- `src/observer_sandbox/ai_control.py` — reusable provider/catalog/probe/binding orchestration;
+- `src/observer_sandbox/telegram_ai_control.py` — owner-only Creator AI menu, paging and candidate session;
+- `src/observer_sandbox/telegram_creator_bot.py` — bounded extension of the existing Telegram polling shell;
+- `src/observer_sandbox/service.py` — routes polling through the Creator extension;
+- `docs/TELEGRAM_OBSERVER_ARCHITECTURE.md` — authoritative presentation/control contract;
+- `tests/test_telegram_ai_control_v1.py` — focused safety regression coverage.
+
+Explicit non-goals in this slice: automatic runtime provider failover, fallback-chain editing, Telegram API-key editing, model parameter tuning, schema v5, or world/profile/progression changes.
+
+Deployment verification for this slice must remain read-only. Do **not** trigger `Test Model` merely as a deployment check because the probe is intentionally a real provider call; the Creator can exercise it manually from Telegram when desired.
 
 ## Cognition resilience / Groq free-tier recovery
 
@@ -111,15 +145,12 @@ The first healthy post-recovery live decision selected ordinary `rest`, not a ge
 - Creator controls remain typed/audited and follow `docs/CREATOR_CONTROL_POLICY.md`.
 - Post-deploy verification is read-only unless a concrete live control change is explicitly requested.
 - Do not silently fall back from deterministic validation failures by changing providers.
+- Do not trigger a real AI probe for CI/deployment acceptance; probe execution is an explicit Creator action because it consumes provider inference quota.
 
 ## Exact resume point
 
-Continue **natural read-only observation** of autonomous behavior after the cognition-recovery/Groq migration.
+Complete **P2.3 Telegram Creator AI Control v1** through focused CI, merge, automatic deploy and read-only production verification.
 
-Verify over ordinary decisions that:
-- the old retry-cap stall does not recur;
-- Groq remains healthy under normal free-tier request limits;
-- Object Familiarity continues to prevent familiar-equipment inspect-room-hopping when training is unavailable;
-- Darian naturally uses meaningful non-training activity or downtime where appropriate.
+Then continue natural read-only autonomy observation. The Creator can manually exercise the new `Creator Settings -> AI Cognition` flow when a provider/model switch or quota check is desired.
 
-Do not build the full Character Memory Engine, forced equipment rotation, Speed progression, or schema v5 without fresh Creator authorization.
+Do not build the full Character Memory Engine, automatic provider failover, forced equipment rotation, Speed progression, Telegram secret editing, model parameter tuning, or schema v5 without fresh Creator authorization.
