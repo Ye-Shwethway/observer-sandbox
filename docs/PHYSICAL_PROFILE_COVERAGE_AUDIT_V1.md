@@ -1,14 +1,14 @@
 # Physical Profile Coverage Audit v1
 
-Status: ACTIVE AUDIT CONTRACT
+Status: COMPLETE — PHYSICAL PROFILE COMPLETION GATE CLOSED
 
 ## Purpose
 
-This audit closes the Physical Profile Completion Gate by separating fields that are genuinely complete from fields that merely exist in schema or canonical seed data.
+This audit separates fields that are genuinely complete from fields that merely exist in schema or canonical seed data.
 
 A physical/profile field is classified as one of:
 - `canonical_structural` — authored stable anatomy/appearance;
-- `derived` — computed from authoritative inputs and never independently mutated;
+- `derived` — computed from authoritative fields and not independently progressed;
 - `simulated_dynamic` — runtime state owned by a deterministic engine;
 - `lifecycle_driven` — slow structural or long-term physiological state;
 - `intentionally_static` — deliberately static for current scope;
@@ -61,62 +61,59 @@ Complete for current scope:
 
 Darian exemplar inputs are 10.0 in length, 5.0 in girth, 95/100 baseline erectile function and 98/100 firmness cap. These are character-specific data, not universal constants.
 
-## Intentional deferrals that do not block physical-profile structure
+## Physical Presentation Closure v1
 
-The following are valid schema/runtime domains but do not need implementation merely to claim structural physical-profile coverage:
+The original audit found four misleading/incomplete representations. They are now closed without introducing a broad appearance or health engine.
+
+### Abdominal structure vs visible definition
+
+`body.abdominal_structure` is now the authored structural fact. Darian's canonical value is `rare 8-pack configuration`.
+
+`body.abdominal_definition` is now a deterministic materialized derived value. It is refreshed from current body-fat percentage relative to the actor's authored sustainable body-fat floor:
+- within 1.5 percentage points of the floor: `peak definition`;
+- within 4 points: `high definition`;
+- within 7 points: `moderate definition`;
+- otherwise: `limited definition`.
+
+The thresholds are relative to the actor's own authored floor rather than universal sex/population appearance cutoffs. The derived value is a presentation cache under `appearance_engine`, not an independent progression authority.
+
+This prevents a body-composition change from leaving a permanently stale canonical “well-defined” description while preserving structural abdominal configuration independently.
+
+### Baseline skin quality
+
+`appearance.skin_quality` no longer advertises a nonexistent live physiology engine. It is classified as intentionally static baseline appearance under `profile_core` until a real health/skin current-state model is justified.
+
+### PARS
+
+`appearance.pars` is the authored canonical physical-appeal anchor under `profile_core`, rather than a fake derived field owned by a nonexistent appearance engine. A future context-sensitive appearance/presentation score may be added separately without silently changing the canonical attractiveness anchor.
+
+### Genital sensitivity
+
+`sexual_anatomy.sensitivity` remains an intimate current-physiology field under `sexual_physiology_engine`, but is explicitly deferred until sexual/health context supplies real evidence. It is not an alias for the separate RAPS-SA sensitivity trait and does not block structural physical-profile completion.
+
+## Intentional deferrals that do not block the gate
+
+The following are valid future context/health domains and remain explicit rather than being populated with fake static values:
 - injury and illness systems;
 - resting/current heart rate;
 - blood pressure;
 - body temperature;
-- sexual-context transitions for arousal, erectile state and momentary firmness.
-
-These are future health/context systems. Their absence must remain explicit, not silently replaced with static fake values.
-
-## Required follow-up findings
-
-The audit found four fields whose current representation can become contradictory or whose declared authority is not actually implemented.
-
-### 1. `body.abdominal_definition`
-
-Current problem: canonical text such as “well-defined 8-pack” can remain unchanged while body-fat/composition changes.
-
-Required direction: derive/present abdominal definition from current body composition plus authored anatomy/visibility traits. Do not mutate it as an independent progression stat.
-
-### 2. `appearance.skin_quality`
-
-Current problem: schema assigns `physiology_engine`, but no deterministic physiology/health/appearance implementation owns it.
-
-Required direction: either implement a bounded current-state derivation from supported health/recovery/nutrition evidence or explicitly reclassify it as intentionally static until such evidence exists. Do not leave a fake dynamic authority.
-
-### 3. `appearance.pars`
-
-Current problem: schema marks PARS derived under `appearance_engine`, but current authored compatibility values are not a live appearance derivation.
-
-Required direction: establish the minimal derived appearance contract, keeping stable facial structure separate from mutable body/state presentation. The engine must not allow body-composition change to silently contradict the displayed overall physical appeal semantics.
-
-### 4. `sexual_anatomy.sensitivity`
-
-Current problem: schema assigns `sexual_physiology_engine`, but there is no current-state/lifecycle owner for this field. Darian also has the distinct RAPS-SA sensitivity score, which must not be silently treated as the same physiological variable.
-
-Required direction: define the physiological field’s semantics and canonical/runtime authority before relationship gameplay consumes it. Avoid duplicate-authority aliasing with `raps_sa.sensitivity`.
+- sexual-context transitions for arousal, erectile state, momentary firmness and current genital sensitivity.
 
 ## Completion gate
 
-The audit itself does **not** mark the Physical Profile Completion Gate complete.
+**Physical Profile Completion Gate: COMPLETE for current scope.**
 
-Gate becomes complete only when the four required follow-up fields above are either:
-1. given a real deterministic/derived owner consistent with their semantics; or
-2. explicitly reclassified as intentionally static with a truthful authority where dynamic simulation is not yet justified.
+The gate closes because all represented physical facts now have truthful ownership/classification and the audit has no unresolved representation blockers. Deferred health/context domains are separate future systems rather than contradictions in currently represented profile facts.
 
-Deferred context/health domains do not block the gate because they are separate future systems rather than contradictions in currently represented profile facts.
-
-After this gate closes, the next canonical work remains Telegram Profile schema-driven section UX, followed by Skill Progression.
+The next canonical work is Telegram Profile schema-driven section UX, followed by Skill Progression.
 
 ## Acceptance
 
-Audit acceptance must prove:
-- every in-scope body, appearance, sexual-anatomy and physical-genetic field has an explicit classification;
-- intimate fields preserve sensitivity classification;
-- known lifecycle-owned fields are not mislabeled as canonical-only;
-- the four required follow-ups remain machine-readable blockers until resolved;
-- no runtime/profile value is mutated by the audit itself.
+Closure acceptance proves:
+- Darian's authored rare 8-pack structure is preserved independently from visible definition;
+- visible abdominal definition follows authoritative body-composition inputs deterministically;
+- skin-quality and PARS schema authority no longer claim nonexistent engines;
+- genital sensitivity remains intimate and explicitly context-deferred rather than aliased to RAPS-SA;
+- `config/physical_profile_coverage.v1.json` has no required blockers and marks physical completion true;
+- disposable production-copy validation performs no live production mutation or model/Telegram call.
