@@ -1,10 +1,14 @@
 from __future__ import annotations
 
+import io
 import json
+import urllib.error
 
-from observer_sandbox import ai
+import pytest
+
+from observer_sandbox import ai, ai_runtime
 from observer_sandbox.ai import configure_provider, list_providers, set_binding
-from observer_sandbox.ai_runtime import generate_character_decision
+from observer_sandbox.ai_runtime import AIDecisionError, generate_character_decision
 from observer_sandbox.db import connect
 from observer_sandbox.duration_planning import enrich_action_options
 from observer_sandbox.runtime import initialize
@@ -45,6 +49,28 @@ def test_groq_catalog_uses_standard_openai_compatible_headers(tmp_path, monkeypa
     assert captured["headers"]["Content-Type"] == "application/json"
     assert captured["headers"]["Accept"] == "application/json"
     assert captured["headers"]["User-Agent"].startswith("observer-sandbox/")
+
+
+def test_live_ai_http_error_preserves_bounded_provider_detail(monkeypatch):
+    error = urllib.error.HTTPError(
+        "https://api.groq.com/openai/v1/chat/completions",
+        400,
+        "Bad Request",
+        hdrs=None,
+        fp=io.BytesIO(b'{"error":{"message":"fixture provider detail"}}'),
+    )
+
+    def fake_urlopen(request, timeout=45.0):
+        assert request.get_header("User-agent").startswith("observer-sandbox/")
+        raise error
+
+    monkeypatch.setattr(ai_runtime.urllib.request, "urlopen", fake_urlopen)
+    with pytest.raises(AIDecisionError, match="fixture provider detail"):
+        ai_runtime._post_json(
+            "https://api.groq.com/openai/v1/chat/completions",
+            headers={"Authorization": "Bearer test-key"},
+            payload={"model": "fixture"},
+        )
 
 
 def test_runtime_shaped_duration_overrides_ordinary_training_preference():
