@@ -8,7 +8,9 @@ from dataclasses import dataclass, field
 from datetime import datetime, timedelta, timezone
 from typing import Any, Protocol
 
+from .actor_selection import list_actor_ids, resolve_actor_id
 from .event_log import record_event
+from .location_runtime import current_location, set_dynamic_location
 from .training_modifiers import training_readiness_modifier
 from .training_stimulus import training_stimulus_evidence
 from .world import get_field, set_field
@@ -60,6 +62,8 @@ ACTION_EFFECTS_PER_HOUR: dict[str, dict[str, float]] = {
 TRAINING_FATIGUE_LIMIT = 70.0
 BASELINE_TRAINING_FATIGUE_LIMIT = 55.0
 
+# Thorne Estate ids belong to the legacy deterministic exemplar policy below.
+# Generic runtime functions must not use them as actor/location defaults.
 MASTER_SUITE = "loc_thorne_estate_master_suite"
 MASTER_BATHROOM = "loc_thorne_estate_master_bathroom"
 LIVING_ROOM = "loc_thorne_estate_living_room"
@@ -102,8 +106,16 @@ def ensure_sim_clock(conn: sqlite3.Connection) -> datetime:
     return datetime.fromisoformat(raw)
 
 
-def snapshot(conn: sqlite3.Connection, actor_id: str = "char_darian") -> dict[str, Any]:
-    location = get_field(conn, actor_id, "runtime.location", MASTER_SUITE)
+def _required_actor_location(conn: sqlite3.Connection, actor_id: str) -> str:
+    location = current_location(conn, actor_id)
+    if not location:
+        raise ValueError(f"Character {actor_id} has no current location")
+    return location
+
+
+def snapshot(conn: sqlite3.Connection, actor_id: str | None = None) -> dict[str, Any]:
+    actor_id = resolve_actor_id(conn, actor_id)
+    location = _required_actor_location(conn, actor_id)
     room = conn.execute("SELECT name FROM entities WHERE id=?", (location,)).fetchone()
     return {
         "actor_id": actor_id,
@@ -181,8 +193,9 @@ def reachable_rooms(conn: sqlite3.Connection, room_id: str) -> list[dict[str, st
     return [{"id": row["id"], "name": row["name"]} for row in rows]
 
 
-def action_options(conn: sqlite3.Connection, actor_id: str = "char_darian") -> list[dict[str, Any]]:
+def action_options(conn: sqlite3.Connection, actor_id: str | None = None) -> list[dict[str, Any]]:
     state = snapshot(conn, actor_id)
+    actor_id = str(state["actor_id"])
     room_id = state["location"]
     options: list[dict[str, Any]] = []
     move_def = action_definition(conn, "move")
@@ -230,6 +243,7 @@ def action_options(conn: sqlite3.Connection, actor_id: str = "char_darian") -> l
 
 
 def validate_action(conn: sqlite3.Connection, actor_id: str, action: Action) -> None:
+    actor_id = resolve_actor_id(conn, actor_id)
     definition = action_definition(conn, action.name)
     low, high = definition["min_duration_minutes"], definition["max_duration_minutes"]
     if not low <= action.duration_minutes <= high:
@@ -237,7 +251,7 @@ def validate_action(conn: sqlite3.Connection, actor_id: str, action: Action) -> 
     if action.name == "train" and snapshot(conn, actor_id)["fatigue"] >= TRAINING_FATIGUE_LIMIT:
         raise ValueError("Training is unavailable while systemic fatigue is too high")
 
-    location = get_field(conn, actor_id, "runtime.location", MASTER_SUITE)
+    location = _required_actor_location(conn, actor_id)
     target_mode = definition["target_mode"]
     if target_mode == "location":
         if not action.target or not _connected(conn, location, action.target):
@@ -370,6 +384,7 @@ def ensure_action_instance(
     due_wall_time: float | None = None,
     speed_at_plan: float | None = None,
 ) -> str:
+    actor_id = resolve_actor_id(conn, actor_id)
     action_id = action_id or str(uuid.uuid4())
     before = snapshot(conn, actor_id)
     modifiers = dict(action.modifiers)
@@ -398,10 +413,11 @@ def ensure_action_instance(
 def apply_action(
     conn: sqlite3.Connection,
     action: Action,
-    actor_id: str = "char_darian",
+    actor_id: str | None = None,
     *,
     action_id: str | None = None,
 ) -> dict[str, Any]:
+    actor_id = resolve_actor_id(conn, actor_id)
     if action_id and conn.execute(
         "SELECT 1 FROM action_instances WHERE id=? AND status='completed'", (action_id,)
     ).fetchone():
@@ -427,7 +443,7 @@ def apply_action(
     before["sim_time"] = started.isoformat()
     set_field(conn, actor_id, "runtime.current_action", action.name)
     if action.name == "move" and action.target:
-        set_field(conn, actor_id, "runtime.location", action.target)
+        set_dynamic_location(conn, actor_id, action.target)
     _advance_needs(conn, actor_id, action)
 
     universe_clock = max(current_clock, ended)
@@ -506,6 +522,12 @@ def _move_toward(conn: sqlite3.Connection, location: str, destination: str, reas
 
 
 class BaselineLivingPolicy:
+    """Legacy deterministic Thorne Estate exemplar used by bounded simulation tests.
+
+    Production autonomy uses character-specific model policy through ModelDecisionProvider.
+    This fixture is intentionally not selected implicitly in a multi-character universe.
+    """
+
     def __init__(self, conn: sqlite3.Connection):
         self.conn = conn
 
@@ -538,9 +560,12 @@ def run_until(
     end_time: datetime,
     *,
     decision_provider: DecisionProvider | None = None,
-    actor_id: str = "char_darian",
+    actor_id: str | None = None,
     max_actions: int = 200,
 ) -> list[dict[str, Any]]:
+    actor_id = resolve_actor_id(conn, actor_id)
+    if decision_provider is None and len(list_actor_ids(conn)) != 1:
+        raise ValueError("A decision_provider is required for implicit baseline simulation in a multi-character universe")
     provider = decision_provider or BaselineLivingPolicy(conn)
     trace: list[dict[str, Any]] = []
     for _ in range(max_actions):
@@ -567,6 +592,7 @@ def run_until(
     return trace
 
 
-def run_one_simulated_day(conn: sqlite3.Connection, actor_id: str = "char_darian") -> list[dict[str, Any]]:
+def run_one_simulated_day(conn: sqlite3.Connection, actor_id: str | None = None) -> list[dict[str, Any]]:
+    actor_id = resolve_actor_id(conn, actor_id)
     start = ensure_sim_clock(conn)
     return run_until(conn, start + timedelta(hours=24), actor_id=actor_id)

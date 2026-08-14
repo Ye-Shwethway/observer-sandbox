@@ -3,10 +3,11 @@ from __future__ import annotations
 import json
 import sqlite3
 from datetime import datetime
-from pathlib import Path
 from typing import Any
 
+from .actor_selection import resolve_actor_id
 from .ai_runtime import generate_character_decision
+from .character_config import configured_character_ids, load_character_autonomy_policy
 from .need_resolution import shape_action_options_for_needs
 from .resource_awareness import (
     enrich_options_with_usage,
@@ -21,12 +22,18 @@ from .training_methods import enrich_training_action_options
 from .training_modifiers import training_readiness_modifier
 
 
-REPO_ROOT = Path(__file__).resolve().parents[2]
-DARIAN_AUTONOMY_POLICY_PATH = REPO_ROOT / "config" / "characters" / "darian.autonomy-policy.json"
+def load_autonomy_policy(character_id: str | None = None) -> dict[str, Any]:
+    """Load the selected character's authored policy from the character registry.
 
-
-def load_autonomy_policy(path: str | Path = DARIAN_AUTONOMY_POLICY_PATH) -> dict[str, Any]:
-    return json.loads(Path(path).read_text(encoding="utf-8"))
+    The no-argument form remains convenient while exactly one character config is
+    registered. Once multiple configured characters exist, callers must select one.
+    """
+    if character_id is None:
+        configured = configured_character_ids()
+        if len(configured) != 1:
+            raise ValueError("character_id is required when multiple character configs are registered")
+        character_id = configured[0]
+    return load_character_autonomy_policy(character_id)
 
 
 def _shape_discretionary_repetition(
@@ -65,20 +72,24 @@ def _shape_discretionary_repetition(
 
 
 class ModelDecisionProvider:
-    """Model-backed P1 decision provider. Runtime validation remains authoritative."""
+    """Model-backed decision provider for any registered character.
+
+    Character-specific facts and routine guidance come from config/profile data;
+    runtime cognition and validation remain identity-agnostic.
+    """
 
     def __init__(
         self,
         conn: sqlite3.Connection,
         *,
-        character_id: str = "char_darian",
+        character_id: str | None = None,
         role: str = "cognition",
         policy: dict[str, Any] | None = None,
     ) -> None:
         self.conn = conn
-        self.character_id = character_id
+        self.character_id = resolve_actor_id(conn, character_id)
         self.role = role
-        self.policy = policy if policy is not None else load_autonomy_policy()
+        self.policy = policy if policy is not None else load_autonomy_policy(self.character_id)
 
     def _profile_value(self, field_key: str, default: Any = None) -> Any:
         row = self.conn.execute(
@@ -86,6 +97,13 @@ class ModelDecisionProvider:
             (self.character_id, field_key),
         ).fetchone()
         return default if row is None else json.loads(row[0])
+
+    def _entity_name(self) -> str:
+        row = self.conn.execute(
+            "SELECT name FROM entities WHERE id=? AND entity_type='character'",
+            (self.character_id,),
+        ).fetchone()
+        return str(row[0]) if row is not None and row[0] else self.character_id
 
     def _recent_events(self, limit: int | None = None) -> list[dict[str, Any]]:
         if limit is None:
@@ -127,7 +145,7 @@ class ModelDecisionProvider:
             (self.character_id,),
         ).fetchall()
         return {
-            "name": self._profile_value("identity.full_name", "Darian Thorne"),
+            "name": self._profile_value("identity.full_name", self._entity_name()),
             "traits": self._profile_value("personality.primary_traits", []),
             "primary_motivation": self._profile_value("personality.primary_motivation", ""),
             "complexity_notes": self._profile_value("personality.complexity_notes", ""),
@@ -319,11 +337,12 @@ class ModelDecisionProvider:
 def dry_run_model_decision(
     conn: sqlite3.Connection,
     *,
-    character_id: str = "char_darian",
+    character_id: str | None = None,
     role: str = "cognition",
 ) -> dict[str, Any]:
     """Ask the bound model for one action and validate it without mutating world state."""
     load_runtime_secrets()
+    character_id = resolve_actor_id(conn, character_id)
     before = snapshot(conn, character_id)
     event_count_before = int(conn.execute("SELECT COUNT(*) FROM events").fetchone()[0])
     action = ModelDecisionProvider(conn, character_id=character_id, role=role).choose(before, ACTION_NAMES)

@@ -10,6 +10,8 @@ Roadmap synchronized: 2026-08-14
 - Telegram is a Creator-facing observer/control adapter, not a simulation engine.
 - Preserve the composable runtime contract:
   `Actor(s) + Action + Place + Simulation Time + Conditions/Modifiers + Resources/Targets -> Validation -> State Changes + Events`.
+- Darian is the first richly specified exemplar, not the identity embedded in reusable universe engines.
+- Character-specific profile/policy/world content is data; reusable simulation/cognition/progression/query/control logic must be actor/entity-id driven.
 - Schema v4 remains the current foundation; do not introduce schema v5 without a concrete missing invariant.
 - Prefer minimum runnable slices and reversible changes.
 - Use exemplar-first only for genuinely new invariants; batch structurally equivalent follow-ons.
@@ -48,6 +50,32 @@ Post-Deploy169 live acceptance cleared the prior retry-cap stall on a natural de
 - Runtime speed control, action ETA, autonomy timing/observability, research/monitor semantics — DEPLOYED.
 - Telegram proactive next-action reason visibility — DEPLOYED via PR #62 / Deploy #170.
 
+## Universal Character Engine Contract / Pre-Expansion Hardening
+
+Status: **IMPLEMENTATION IN PROGRESS ON `test`**.
+
+Canonical contract: `docs/UNIVERSAL_CHARACTER_ENGINE_CONTRACT.md`.
+
+Purpose:
+- preserve Darian as the first detailed exemplar while ensuring the same runtime engines can later operate on any compatible character;
+- remove named-character assumptions before further profile-simulation expansion makes them expensive to unwind;
+- keep character-specific canonical facts, preferences, routines and authored cognition policy as configuration rather than engine code.
+
+Current implementation direction:
+- `config/characters/registry.json` registers character-specific canonical/runtime-policy files;
+- reusable cognition loads the selected actor's registered policy and must fail explicitly rather than silently reuse Darian policy for another actor;
+- reusable runtime/control/query/AI surfaces resolve an explicit actor id, then a configured `default_actor_id`, then the sole character only when the universe is genuinely single-character;
+- ambiguous multi-character implicit selection fails closed;
+- legacy singleton actor-runtime migration requires an explicitly resolved actor;
+- simulation core no longer treats the Thorne Estate Master Suite as a missing-location fallback; a character without a current location is invalid runtime state;
+- movement uses the generic dynamic-location relation/setter rather than a Darian-specific mirrored field write;
+- universe resume wakes every enabled idle actor, not only the default/exemplar actor;
+- a synthetic non-Darian regression fixture proves identity leakage is rejected;
+- Darian canonical/config files, Thorne Estate content, `/darian` and other clearly named convenience aliases remain valid exemplar/presentation content and are not themselves engine hard-coding;
+- no schema v5 is required.
+
+This hardening must pass focused tests/full CI and standard deploy/readback before the next progression framework is merged.
+
 ## P2.3 Telegram Creator AI Control v1
 
 Status: **COMPLETE / CI VERIFIED / DEPLOYED / CREATOR-EXERCISED**.
@@ -72,7 +100,7 @@ Current minimum-runnable surface:
 - run one deliberately tiny **real inference probe** through the selected model's actual runtime adapter and structured cognition-response path;
 - report useful auth/permission, model availability, request-limit, rate/quota, timeout, or bounded provider errors;
 - require a successful probe before primary or fallback save becomes available or is accepted server-side;
-- preserve bindings on browse, refresh, candidate selection, test failure, cancellation, and navigation;
+- preserve bindings on browse, refresh, candidate selection, test failure, cancellation and navigation;
 - only explicit Creator save changes primary/fallback configuration.
 
 Architecture split:
@@ -91,7 +119,7 @@ Probe semantics:
 
 ## Runtime Cognition Fallback v1
 
-Status: **COMPLETE / CI VERIFIED / DEPLOYED**.
+Status: **COMPLETE / CI VERIFIED / DEPLOYED / CREATOR-CONFIGURED**.
 
 Canonical contract: `docs/AI_RUNTIME_FALLBACK.md`.
 
@@ -102,6 +130,8 @@ Delivery:
 - Deploy #172 / run `31779629810` SUCCESS;
 - post-merge CI #602 / run `31779629861` SUCCESS;
 - readback verified service health and preservation of Creator-selected Gemini `gemini-3.1-flash-lite` through the legacy Groq bootstrap entry point (`changed=false`, `existing_binding_preserved`).
+
+Creator later selected Groq Qwen 3.6 27B as fallback and reported the required real `Test Model` probe green. This proves the candidate worked through the runtime-compatible structured inference probe at selection time; natural runtime fallback use remains unforced/unverified and must not be induced merely for monitoring.
 
 Current invariant:
 - one ordinary primary cognition binding plus at most one tested fallback provider/model;
@@ -253,6 +283,29 @@ Status: ACTIVE / DEPLOYED.
 
 Agility uses authored `speed_agility_drills` evidence from the Speed & Agility Station and has its own progression/recovery/saturation/detraining semantics. Agility Automatic Activation v1 is deployed.
 
+### Next authorized expansion — Physical Attribute Progression Framework v1
+
+After Universal Character Engine hardening is green/deployed, continue the already-authorized profile simulation-unlock program without another architectural detour.
+
+Target batch:
+- Speed
+- Reflexes
+- Endurance
+- Flexibility
+
+Rules:
+- first reconcile the proven Strength/Stamina/Agility lifecycle and extract only genuinely shared progression invariants rather than copy-pasting four more near-duplicate engines;
+- the shared form is `actor_id + current profile value + eligible evidence + domain policy + recovery/context + limits -> deterministic settlement + history/event evidence`;
+- attribute-specific physiology/evidence policy remains allowed; character-specific progression branches do not;
+- use the existing completed-action/training-method evidence surface where causally correct;
+- do not silently credit mixed methods to an attribute merely to make the batch easy;
+- Stamina remains cardiovascular/work-capacity reserve; Endurance must represent sustained performance under accumulated workload/fatigue rather than duplicate Stamina;
+- if Flexibility lacks a causally valid current training method, add the smallest reusable mobility/stretching method/equipment capability required rather than inventing evidence;
+- current Darian values are exemplar inputs only;
+- no schema v5.
+
+Once this batch is proven, the next profile-unlock families are planned as: body composition exemplar -> measurement batch -> skill progression exemplar -> compatible skill batch -> intellectual attribute exemplar/batch -> mental/emotion dynamics.
+
 ## Grading state
 
 - Strength grading exemplar — COMPLETE / DEPLOYED.
@@ -292,10 +345,8 @@ For ordinary work, use focused tests + CI and the standard automatic deploy. Use
 
 ## Exact resume point
 
-Runtime Cognition Fallback v1 and Telegram Observer Home Message Lifecycle v1 are deployed. Resume **natural read-only observation** of autonomous behavior.
+Complete and validate the **Universal Character Engine Contract / pre-expansion hardening** now on `test`. Do not add a second production character as part of this hardening; the synthetic non-Darian fixture exists only to prove engine identity independence.
 
-The fallback is configuration-ready but should be saved/tested through Telegram only when the Creator intentionally chooses a fallback model. Do not intentionally induce a provider failure or model probe for monitoring; observe fallback use only if an ordinary primary provider/model call naturally fails.
+After the universalization slice is merged/deployed/read back, immediately continue with **Physical Attribute Progression Framework v1** and batch-activate Speed, Reflexes, Endurance and Flexibility under actor-generic policy-driven progression semantics.
 
-Current production readback after Deploy #172: Gemini `gemini-3.1-flash-lite`, autonomy enabled/normal, speed `3.0x`, `autonomy_retry=null`, Telegram connected, decision calls `352`.
-
-Do not build the full Character Memory Engine, multi-fallback chains/circuit breakers, forced equipment rotation, Speed progression, Telegram secret editing, model parameter tuning, or schema v5 without fresh Creator authorization.
+Do not build the full Character Memory Engine, multi-fallback chains/circuit breakers, forced equipment rotation, Telegram secret editing, model parameter tuning, or schema v5 as side effects of these slices.

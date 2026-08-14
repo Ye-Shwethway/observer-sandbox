@@ -5,6 +5,7 @@ import json
 import os
 from pathlib import Path
 
+from .actor_selection import resolve_actor_id
 from .ai import (
     configure_provider,
     list_models,
@@ -55,7 +56,7 @@ def build_parser() -> argparse.ArgumentParser:
     creator = sub.add_parser("creator")
     creator_sub = creator.add_subparsers(dest="creator_command", required=True)
     restore = creator_sub.add_parser("restore-basic-stats")
-    restore.add_argument("--character", default="char_darian")
+    restore.add_argument("--character")
     restore.add_argument("--requested-by", default="sandboxctl")
 
     ai = sub.add_parser("ai")
@@ -68,17 +69,17 @@ def build_parser() -> argparse.ArgumentParser:
     refresh.add_argument("provider")
 
     bootstrap_gemini = ai_sub.add_parser("bootstrap-gemini-cognition")
-    bootstrap_gemini.add_argument("--character", default="char_darian")
+    bootstrap_gemini.add_argument("--character")
     bootstrap_gemini.add_argument("--role", default="cognition")
     bootstrap_gemini.add_argument("--force", action="store_true")
 
     bootstrap_groq = ai_sub.add_parser("bootstrap-groq-cognition")
-    bootstrap_groq.add_argument("--character", default="char_darian")
+    bootstrap_groq.add_argument("--character")
     bootstrap_groq.add_argument("--role", default="cognition")
     bootstrap_groq.add_argument("--force", action="store_true")
 
     dry_run = ai_sub.add_parser("dry-run-decision")
-    dry_run.add_argument("--character", default="char_darian")
+    dry_run.add_argument("--character")
     dry_run.add_argument("--role", default="cognition")
     ai_sub.add_parser("nanogpt-usage")
 
@@ -157,9 +158,10 @@ def main() -> None:
         initialize(args.db)
         with _with_db(args.db) as conn:
             if args.creator_command == "restore-basic-stats":
+                character_id = resolve_actor_id(conn, args.character)
                 result = restore_basic_stats(
                     conn,
-                    args.character,
+                    character_id,
                     authority="creator",
                     requested_by=args.requested_by,
                 )

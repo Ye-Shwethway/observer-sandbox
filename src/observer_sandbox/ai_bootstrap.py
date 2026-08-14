@@ -4,6 +4,7 @@ import re
 import sqlite3
 from typing import Any
 
+from .actor_selection import resolve_actor_id
 from .ai import (
     AIConfigurationError,
     configure_provider,
@@ -114,16 +115,12 @@ def _preserved_existing_binding(
 def bootstrap_gemini_cognition(
     conn: sqlite3.Connection,
     *,
-    character_id: str = "char_darian",
+    character_id: str | None = None,
     role: str = "cognition",
     force: bool = False,
 ) -> dict[str, Any]:
-    """Provision Gemini only when no explicit cognition binding already exists.
-
-    Deploy/bootstrap must preserve Creator-selected bindings. `force=True` remains
-    an explicit administrative migration mechanism and is never used by normal
-    deployment.
-    """
+    """Provision Gemini for the selected/default actor when no explicit binding exists."""
+    character_id = resolve_actor_id(conn, character_id)
     load_runtime_secrets()
     preserved = _preserved_existing_binding(
         conn,
@@ -160,17 +157,16 @@ def bootstrap_gemini_cognition(
 def bootstrap_groq_cognition(
     conn: sqlite3.Connection,
     *,
-    character_id: str = "char_darian",
+    character_id: str | None = None,
     role: str = "cognition",
     force: bool = False,
 ) -> dict[str, Any]:
-    """Provision Groq only when no explicit cognition binding already exists.
+    """Provision Groq for the selected/default actor when no explicit binding exists.
 
-    The earlier one-time Gemini->Groq migration exception is retired now that
-    Creator-facing provider/model control exists. Normal deployment must never
-    overwrite a Creator-selected Gemini or other provider binding. `force=True`
-    remains available only for an explicit administrative migration.
+    Normal deployment must never overwrite a Creator-selected provider binding.
+    `force=True` remains available only for an explicit administrative migration.
     """
+    character_id = resolve_actor_id(conn, character_id)
     load_runtime_secrets()
     preserved = _preserved_existing_binding(
         conn,
