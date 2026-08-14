@@ -120,27 +120,33 @@ Live behavior:
 - coupled history/event writes are atomic;
 - no extra LLM call, Darian-specific engine branch or schema migration.
 
-## Public Repository Security — CURRENT OPERATIONAL SLICE
+## Public Repository Security — COMPLETE / PUBLIC
 
 Canonical: `docs/PUBLIC_REPOSITORY_SECURITY.md` and `SECURITY.md`.
 
-Reason: the private repository is close to its monthly GitHub-hosted Actions minute allowance. GitHub officially documents standard GitHub-hosted runners as free and unlimited for public repositories. The Creator has approved public repository visibility once the security hardening gate passes.
+`Ye-Shwethway/observer-sandbox` is now public. Public Readiness Hardening v1 was merged in PR #80 (`bf5e537cdeceaa6c5a8d4d61f21b67d636f01f20`). After the visibility flip, queued private-quota CI resumed on a standard GitHub-hosted runner and CI #680 completed SUCCESS.
 
-Public Readiness Hardening v1 requires:
-- full reachable Git-history scan for high-confidence credential/token signatures and risky secret files using `fetch-depth: 0`;
-- no secret values printed by the audit;
-- `.env`, `secrets.env`, private-key formats, runtime DBs and backups ignored;
-- `pull_request_target` prohibited;
-- fork-originated PRs explicitly blocked from reusable VPS-backed production-copy validation even though GitHub also withholds repository secrets from public forks by default;
-- all model credentials removed from disposable validator environments, including Groq;
-- GitHub Actions repository token remains read-only by default;
-- private-to-public visibility flip followed immediately by Actions/fork approval, secret scanning/push protection and branch/ruleset re-verification.
+Public Hardening Fixup v1 corrected two audit false positives (`page_token` and `DEFAULT_SECRET_FILE`) without weakening concrete credential signatures. Public Readiness Security Audit #2 then passed with:
+- `PUBLIC_READINESS_SECRET_AUDIT=PASS`;
+- `full_history_high_confidence_secret_findings=0`;
+- `PUBLIC_READINESS_WORKFLOW_POLICY=PASS`.
 
-Publication is blocked by any live-credential finding. Non-secret operational project state/log visibility is accepted under the Creator's current publication decision.
+Security locks:
+- full reachable Git-history scan uses `fetch-depth: 0`;
+- potential secret values are never printed by the audit;
+- `.env`, `secrets.env`, private-key formats, runtime DBs and backups are ignored;
+- `pull_request_target` and `permissions: write-all` are prohibited;
+- reusable production-copy validation retains an explicit same-repository fork guard;
+- GitHub additionally withholds repository secrets from fork-originated `pull_request` workflows by default;
+- disposable production-copy validation unsets all model and Telegram credentials;
+- production credentials remain GitHub Actions secrets plus VPS `/var/lib/observer-sandbox/secrets.env` mode `0600`;
+- repository `GITHUB_TOKEN` observed in the public security audit had read-only contents/metadata permissions.
+
+Post-visibility manual settings still require UI verification where the GitHub App cannot read account-level repository settings: outside-contributor workflow approval, Secret scanning/Push protection, and `main` branch/ruleset protection.
 
 ### BC-3 — Body Measurement Progression Batch — NEXT DEVELOPMENT SLICE
 
-After Public Readiness Hardening is merged and repository visibility is safely changed to Public, resume immediately with BC-3. Do not split structurally equivalent circumference fields into repetitive PR/deploy cycles.
+After the post-public settings check, resume immediately with BC-3. Do not split structurally equivalent circumference fields into repetitive PR/deploy cycles.
 
 BC-3 direction:
 - neck, shoulders, chest, waist, hips, biceps relaxed/flexed, triceps, forearms, thighs and calves;
@@ -150,7 +156,7 @@ BC-3 direction:
 
 ## Later profile sequence
 
-1. Public Readiness Hardening -> Creator changes repository Private to Public -> verify public Actions/security settings;
+1. verify post-public GitHub security settings;
 2. BC-3 measurement progression batch;
 3. skill progression family;
 4. intellectual attributes;
@@ -188,4 +194,4 @@ Do not add as side effects:
 
 ## Exact resume point
 
-Complete **Public Readiness Hardening v1**, require the full-history security audit to pass, merge it, then have the Creator change `Ye-Shwethway/observer-sandbox` from Private to Public and re-verify repository security settings. After that, resume **BC-3 Body Measurement Progression Batch**.
+Finish the post-public GitHub settings verification, then proceed to **BC-3 Body Measurement Progression Batch**.
