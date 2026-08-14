@@ -2,10 +2,10 @@ from __future__ import annotations
 
 """Authored training-method metadata and deterministic evidence derivation.
 
-This layer describes what kind of work a training target represents. It does
-not decide which character attribute progresses, how much stimulus is earned,
-or how progression settles; those remain responsibilities of domain-specific
-progression engines.
+Training methods are reusable definitions. Concrete world targets bind to a
+method id; neither the definition nor this resolver depends on character
+identity. Domain progression engines remain authoritative for what progresses
+and by how much.
 """
 
 import json
@@ -23,6 +23,35 @@ def load_training_method_catalog(path: str | Path = TRAINING_METHODS_PATH) -> di
     return json.loads(Path(path).read_text(encoding="utf-8"))
 
 
+def training_method_definition(
+    method_id: str | None,
+    *,
+    catalog: dict[str, Any] | None = None,
+) -> dict[str, Any] | None:
+    if not method_id:
+        return None
+    source = catalog if catalog is not None else load_training_method_catalog()
+    raw = source.get("methods", {}).get(method_id)
+    if not isinstance(raw, dict):
+        return None
+    method = dict(raw)
+    method["method_id"] = method_id
+    method["source"] = str(source.get("revision", "training-method-semantics-v2"))
+    return method
+
+
+def training_method_id_for_target(
+    target: str | None,
+    *,
+    catalog: dict[str, Any] | None = None,
+) -> str | None:
+    if not target:
+        return None
+    source = catalog if catalog is not None else load_training_method_catalog()
+    raw = source.get("bindings", {}).get(target)
+    return raw if isinstance(raw, str) and raw else None
+
+
 def training_profile_for_target(
     target: str | None,
     *,
@@ -31,13 +60,12 @@ def training_profile_for_target(
     if not target:
         return None
     source = catalog if catalog is not None else load_training_method_catalog()
-    raw = source.get("profiles", {}).get(target)
-    if not isinstance(raw, dict):
+    method_id = training_method_id_for_target(target, catalog=source)
+    method = training_method_definition(method_id, catalog=source)
+    if method is None:
         return None
-    profile = dict(raw)
-    profile["target"] = target
-    profile["source"] = str(source.get("revision", "training-method-semantics-v1"))
-    return profile
+    method["target"] = target
+    return method
 
 
 def enrich_training_action_options(
