@@ -28,12 +28,12 @@ Whenever a slice introduces a new architecture/control invariant, update its can
 
 ## Current verified production baseline
 
-Latest runtime-affecting deployment: **Deploy #173 `31783391862` SUCCESS**, PR #67 merge `2aca8df01f3307d130844f4bcdc7cbbc18b9d66c`.
+Latest runtime-affecting deployment: **Deploy #174 `31787127694` SUCCESS**, PR #68 merge `3bceda924ed0fe18ce1d1360f6e0cc2c62c55f7e`.
 
-Deploy #173 readback:
+Deploy #174 readback:
 - service active / healthy;
 - schema v4;
-- world revision `thorne-estate-v3.2-training-environment`;
+- world revision `thorne-estate-v3.3-physical-attribute-training`;
 - default actor projection `char_darian`;
 - autonomy enabled / normal, `paused=false`, `autonomy_retry=null`;
 - speed **`1.0x`**;
@@ -44,19 +44,12 @@ Deploy #173 readback:
 - cognition `decision_calls=356` at readback;
 - Darian was sleeping in the Master Suite; Energy 82.127, Fatigue 11.045, Hunger 50.325, Thirst 21.3, Sleepiness 31.55, Cleanliness 99.466.
 
-No model probe/provider failure/live-state mutation was induced for Deploy #173 acceptance.
+No model probe/provider failure/live-state mutation was induced for Deploy #174 acceptance.
 
 ## Universal Character Engine Contract
 
 Status: **COMPLETE / CI VERIFIED / DEPLOYED**.
 Canonical contract: `docs/UNIVERSAL_CHARACTER_ENGINE_CONTRACT.md`.
-
-PR #67:
-- tested head `d668823bb86a7b049fae10f8aab051ed80f11ae1`;
-- primary CI #605 SUCCESS;
-- merge `2aca8df01f3307d130844f4bcdc7cbbc18b9d66c`;
-- post-merge CI #606 SUCCESS;
-- Deploy #173 SUCCESS.
 
 Invariant:
 - Darian is exemplar content, not reusable engine identity;
@@ -103,46 +96,103 @@ Deployed:
 - Dynamic Resource Awareness / Choice Breadth;
 - Object Familiarity / Inspect Utility Guard.
 
-Existing physical progression:
-- Strength — deployed/live-cycle validated; Free Weights source;
-- Stamina — deployed; treadmill, rowing ergometer, altitude chamber pure-conditioning sources;
-- Agility — deployed; `speed_agility_drills` source.
+## Physical Attribute Progression Framework v1
 
-## Physical Attribute Progression Framework v1 — CURRENT ACTIVE SLICE
-
+Status: **COMPLETE / CI VERIFIED / DEPLOYED**.
 Canonical contract: `docs/PHYSICAL_ATTRIBUTE_PROGRESSION_FRAMEWORK.md`.
 
-The shared lifecycle reconciled from Strength/Stamina/Agility is:
+All seven core RAPS-PA attributes now have active progression paths:
+- Strength;
+- Stamina;
+- Agility;
+- Speed;
+- Reflexes;
+- Endurance;
+- Flexibility.
 
-`evidence scan -> consumed-event cursor -> recovery gate -> level/saturation gain -> detraining integration -> profile/history write -> settlement event`
+PR #68:
+- final tested head `5ebe50d0752790c1abea7ee6d653be8ebd5a1c2e`;
+- CI #608 SUCCESS;
+- Strength Live Cycle #16 SUCCESS;
+- Strength Progression Activation #8 SUCCESS;
+- Minimum Training Stimulus #9 SUCCESS;
+- Stamina Progression Activation #9 SUCCESS;
+- Training Environment #3 SUCCESS;
+- merge `3bceda924ed0fe18ce1d1360f6e0cc2c62c55f7e`;
+- post-merge CI #609 SUCCESS;
+- Deploy #174 SUCCESS.
 
-Current `test` work implements one actor-generic policy-driven engine for:
-- **Speed** -> `speed_agility_drills`;
-- **Reflexes** -> `ai_combat_simulation`;
-- **Endurance** -> `heavy_bag_rounds`, `obstacle_conditioning`, `combat_pit_drills`;
-- **Flexibility** -> new `mobility_stretching` method from a Mobility & Stretching Area.
-
-Important semantics:
-- Stamina remains cardiovascular/work-capacity reserve; pure aerobic Stamina evidence is not Endurance evidence;
-- Flexibility receives a real authored resource/method rather than fabricated credit from unrelated sessions;
-- policy/config is `config/physical_attribute_progression.v1.json`;
-- engine contains no Darian-specific score branch;
-- first settlement is bootstrap-only: consume historical evidence without retroactive score gain;
-- service activates the four-attribute batch only at completed-action boundaries;
-- existing Strength/Stamina/Agility implementations remain intact in this slice;
-- candidate world revision is `thorne-estate-v3.3-physical-attribute-training`;
+Key semantics:
+- shared actor-generic policy-driven framework handles Speed/Reflexes/Endurance/Flexibility;
+- Stamina remains cardiovascular/work-capacity reserve and does not silently duplicate Endurance;
+- Flexibility has a real Mobility & Stretching Area and `mobility_stretching` method;
+- first activation bootstraps without retroactive gain;
+- existing Strength/Stamina/Agility implementations remain intact;
 - no schema v5 and no extra model calls.
 
-The same slice corrects two validation harness defects discovered during PR #67:
-- Minimum Training Stimulus Acceptance now stages candidate `config/` with `src/` so `training_methods.v1.json` exists;
-- Strength Live Cycle compares a settlement delta to the score immediately before that exact settlement, not to the start of a loop that may contain earlier valid settlements.
+## Body Composition Progression — CURRENT ACTIVE PROGRAM
+
+Canonical research contract: `docs/BODY_COMPOSITION_RESEARCH_FOUNDATION.md`.
+
+Creator explicitly requires realistic human-body behavior with age, sex and genetic potential considered before formulas are frozen. Online evidence was therefore reconciled before implementation.
+
+Evidence-led decisions:
+- do not use a static `3500 kcal = 1 lb` rule as the body-composition engine;
+- model coupled fat mass (FM) and fat-free mass (FFM) over bounded settlement intervals;
+- use Hall/Forbes-style partitioning only as a first-order deterministic approximation, with explicit audit evidence;
+- sex affects typical baseline composition/reference physiology but is **not** a crude universal male-vs-female hypertrophy multiplier;
+- age is a physiological/context input, not a hard response cliff;
+- genetic potential is character-specific canonical/config data with population FFMI/FMI used only as plausibility context, never as a universal hard ceiling;
+- body-fat/weight progression requires real nutrition/energy-balance evidence and must not infer kcal from `needs.hunger` or `needs.energy`;
+- protein/energy availability constrains lean-mass adaptation;
+- action energy expenditure should be actor-scaled and based on authored intensity/MET policy rather than one global kcal/min constant.
+
+Current profile already declares `body.weight_lb`, `body.body_fat_pct`, derived `body.lean_mass_lb`, `body.fat_mass_lb`, `body.bmi`, plus Darian's canonical lean-condition weight range and sustainable body-fat floor. No schema v5 is needed for the first body-composition engine.
+
+### BC-0 — Simulated profile re-seed safety
+
+Status: **IMPLEMENTED ON `test`, VALIDATION PENDING**.
+
+Ordinary canonical re-seeding must initialize inactive profile fields without clobbering a field already activated by a simulation engine (`mode=simulated`). This is a universal reliability prerequisite for body composition and protects already-live attribute progression across deploy/re-init.
+
+Implementation:
+- `profile_seed.import_seed()` preserves existing simulated values/authority/source;
+- non-simulated canonical/static fields can still receive intentional seed revision updates;
+- regression coverage proves re-initialization preserves an engine-owned simulated Strength value while a canonical field remains seed-updatable.
+
+### BC-1 — Minimum Nutrition & Energy Balance Evidence
+
+**NEXT minimum-runnable slice after BC-0 is green/deployed.**
+
+Required substrate:
+- authored nutrition profile catalog for edible targets/meals;
+- kcal/protein evidence associated with completed eating actions or immutable composition settlements;
+- actor-specific resting expenditure estimate using body/demographic evidence;
+- action/training intensity mapping informed by the 2024 Compendium of Physical Activities;
+- bounded aggregation window with evidence coverage checks;
+- no body-composition mutation from abstract hunger/energy scores.
+
+This is part of the body-composition program, not a separate product detour.
+
+### BC-2 — Body Composition Progression Exemplar
+
+After BC-1 is proven:
+- activate coupled `body.weight_lb` + `body.body_fat_pct` through one universal actor-generic engine;
+- derive FM/FFM and BMI consistently;
+- combine energy balance with bounded FM/FFM partitioning;
+- model resistance-training lean adaptation separately, constrained by training evidence, protein/energy availability, current training state and personalized genetic headroom;
+- write both coupled fields atomically with profile history + audit event;
+- bootstrap at activation without retroactive gains;
+- no Darian-specific branch.
+
+### BC-3 — Body Measurement Progression Batch
+
+Only after BC-2 is live/validated. Circumferences must not be derived from weight alone; measurement changes need body composition plus regional training/anatomical policy.
 
 ## Exact resume point
 
-Finish the current PA framework batch on `test`: focused regression -> full CI + relevant corrected acceptance checks -> merge -> deploy -> read-only production verification -> sync `test` to `main` -> finalize deployment evidence in canonical docs.
+Finish **BC-0** now: run full CI, merge/deploy/readback if green, sync `test` to `main`, then immediately implement **BC-1 Minimum Nutrition & Energy Balance Evidence**.
 
-Do not force a live training session merely to prove progression. Natural completed actions will bootstrap the four new attributes first; later natural eligible training/recovery can provide live gain evidence.
+Do not jump directly to weight/BF mutation until nutrition/energy evidence is causal enough to support it.
 
-After PA completion, proceed to **body composition progression exemplar**, then compatible body-measurement batch, skill exemplar/batch, intellectual attributes, and later mental/emotion dynamics.
-
-Do not add full Character Memory, multi-fallback/circuit-breaker architecture, forced equipment rotation, Telegram secret editing/model tuning, a second production character merely for testing, or schema v5 as side effects.
+Do not add full Character Memory, multi-fallback/circuit-breaker architecture, forced equipment rotation, Telegram secret editing/model tuning, a second production character merely for testing, endocrine/micronutrient simulation, or schema v5 as side effects.
