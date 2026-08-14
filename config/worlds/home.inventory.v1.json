@@ -1,0 +1,21 @@
+{
+  "revision": "thorne-estate-inventory-v1",
+  "owner_id": "loc_thorne_estate",
+  "containers": [
+    {"entity_id":"obj_thorne_estate_kitchen_refrigerator","mobility":"fixed","kind":"refrigerated_storage"},
+    {"entity_id":"obj_thorne_estate_kitchen_pantry","mobility":"fixed","kind":"pantry_storage"},
+    {"entity_id":"obj_thorne_estate_food_storage_supply_shelves","mobility":"fixed","kind":"bulk_storage"}
+  ],
+  "stacks": [
+    {"id":"stack_estate_apples","definition_id":"item.food.apple","quantity":12.0,"unit":"piece","container_id":"obj_thorne_estate_kitchen_refrigerator"},
+    {"id":"stack_estate_bananas","definition_id":"item.food.banana","quantity":10.0,"unit":"piece","container_id":"obj_thorne_estate_kitchen_pantry"},
+    {"id":"stack_estate_chicken_breast","definition_id":"item.food.chicken_breast_cooked","quantity":2400.0,"unit":"g","container_id":"obj_thorne_estate_kitchen_refrigerator"},
+    {"id":"stack_estate_white_rice","definition_id":"item.food.white_rice_cooked","quantity":3000.0,"unit":"g","container_id":"obj_thorne_estate_kitchen_refrigerator"},
+    {"id":"stack_estate_eggs","definition_id":"item.food.egg_large","quantity":24.0,"unit":"piece","container_id":"obj_thorne_estate_kitchen_refrigerator"},
+    {"id":"stack_estate_oats","definition_id":"item.food.oats_dry","quantity":1500.0,"unit":"g","container_id":"obj_thorne_estate_kitchen_pantry"},
+    {"id":"stack_estate_greek_yogurt","definition_id":"item.food.greek_yogurt_plain","quantity":2000.0,"unit":"g","container_id":"obj_thorne_estate_kitchen_refrigerator"},
+    {"id":"stack_estate_mixed_vegetables","definition_id":"item.food.mixed_vegetables","quantity":2500.0,"unit":"g","container_id":"obj_thorne_estate_kitchen_refrigerator"},
+    {"id":"stack_estate_olive_oil","definition_id":"item.food.olive_oil","quantity":1000.0,"unit":"g","container_id":"obj_thorne_estate_kitchen_pantry"},
+    {"id":"stack_estate_whey_protein","definition_id":"item.food.whey_protein_powder","quantity":1200.0,"unit":"g","container_id":"obj_thorne_estate_kitchen_pantry"}
+  ]
+}
