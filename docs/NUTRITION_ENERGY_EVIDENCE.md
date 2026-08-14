@@ -1,6 +1,6 @@
 # Minimum Nutrition & Energy Balance Evidence v1
 
-Status: **IMPLEMENTATION CANDIDATE**
+Status: **DEPLOYED + UNIVERSAL ITEM BRIDGE ACTIVE**
 Synchronized: 2026-08-14
 
 ## Purpose
@@ -17,11 +17,15 @@ Later body-composition settlements may aggregate that evidence over bounded simu
 
 BC-1 itself **does not mutate body composition**.
 
-## Nutrition evidence
+## Nutrition authority layers
 
-Canonical content: `config/nutrition_profiles.v1.json`.
+There are now two intentionally distinct nutrition surfaces during the transition from legacy generic meal targets to real inventory foods.
 
-Current generic edible targets receive one authored portion profile containing:
+### 1. Legacy generic action-target nutrition profiles
+
+Canonical transitional content: `config/nutrition_profiles.v1.json`.
+
+These profiles support the pre-inventory `eat` action targets such as generic Estate meal resources. Each authored portion profile contains:
 - energy kcal;
 - protein grams;
 - carbohydrate grams;
@@ -29,11 +33,37 @@ Current generic edible targets receive one authored portion profile containing:
 - human-readable portion label;
 - evidence-source revision.
 
-The current values are simulation meal-content policy for generic Estate resources. They are intentionally separate from the existing hunger/energy effects. Hunger reduction does not mathematically imply calorie content, and calorie content does not directly write the hunger score.
+The values are simulation meal-content policy for those older generic targets. They remain separate from hunger/energy effects. Hunger reduction does not mathematically imply calorie content, and calorie content does not directly write the hunger score.
 
-Completed `eat` events snapshot the selected target's nutrition profile into `payload_json.nutrition_intake`. Historical events are not retroactively re-derived when the catalog changes.
+Completed legacy `eat` events snapshot the selected target's nutrition profile into `payload_json.nutrition_intake`. Historical events are not retroactively re-derived when the catalog changes.
 
-If an edible target has no nutrition profile, the action remains valid for ordinary needs behavior but the corresponding energy-balance window is incomplete for body-composition purposes.
+If a legacy edible target has no nutrition profile, the action remains valid for ordinary needs behavior but the corresponding energy-balance window is incomplete for body-composition purposes.
+
+### 2. Universal inventory-food nutrition definitions
+
+Canonical universal food content: `config/items.v1.json`.
+
+For real inventory foods, nutrition belongs to the **universal item definition**, never to Darian, the Estate, a specific refrigerator, or a specific stack. Concrete inventory stacks reference those reusable definitions.
+
+Each current food definition provides:
+- authored nutrition basis quantity + canonical unit;
+- energy kcal;
+- protein grams;
+- carbohydrate grams;
+- fat grams;
+- default portion quantity.
+
+Deterministic code scales those definition values for requested quantities. The model must never invent or perform authoritative macro arithmetic.
+
+`nutrition_facts.py` provides a definition-scoped projection suitable for observer surfaces and future eating decisions. It is independent of current stock quantity: a depleted stack still has the same food definition and nutrient facts. Actual eating will separately validate that requested stock is available before mutation.
+
+Telegram Inventory item details expose **Nutrient Facts · Default Portion** from the same universal definition semantics. This observer presentation is not a second nutrition database.
+
+Current examples:
+- cooked chicken breast: 100 g basis, default 200 g -> 330 kcal / 62 g protein / 0 g carbohydrate / 7.2 g fat;
+- apple: 1 piece basis/default -> 95 kcal / 0.5 g protein / 25 g carbohydrate / 0.3 g fat.
+
+Until Eating Behavior v1 replaces the old generic meal-target path, both layers may coexist. New natural inventory eating must use universal item definitions; it must **not** bind new food behavior back to the transitional generic meal-target profiles.
 
 ## Resting energy reference
 
@@ -116,7 +146,7 @@ The evidence engine reads the selected actor's persisted profile fields and even
 For another actor:
 - their own age/sex/height/weight drive resting reference;
 - their own action duration/target drives expenditure evidence;
-- the food target's authored nutrition profile drives intake;
+- the consumed universal food definition + quantity will drive new inventory-based intake;
 - missing prerequisites fail evidence coverage rather than falling back to Darian.
 
 ## Relationship to needs
@@ -125,11 +155,24 @@ For another actor:
 
 BC-1 deliberately does not pretend they are kcal stores. A future calibration may connect energy-balance history back into hunger/energy behavior, but that requires its own causal contract and must not be smuggled into body composition.
 
+## Eating Behavior v1 bridge
+
+Eating Behavior v1 should retire dependence on one generic meal target for new natural intake.
+
+Minimum direction:
+- model proposes structured multi-food resources + quantities;
+- engine validates universal definitions, portion policy and current stock;
+- all required inventory quantities are validated before mutation;
+- consumption is atomic across the meal resource list;
+- combined nutrient evidence is deterministic from universal definitions;
+- historical intake evidence snapshots exact foods/quantities/macros;
+- bounded satiety/needs effects are a separate deterministic policy, not a direct kcal-to-hunger identity.
+
 ## BC-2 activation gate
 
-Before `body.weight_lb` or `body.body_fat_pct` are made simulated, observe or dry-run enough BC-1 evidence to answer:
+Before `body.weight_lb` or `body.body_fat_pct` are made simulated, observe or dry-run enough BC-1 + natural inventory-food evidence to answer:
 - does natural action history provide near-complete daily expenditure coverage?
-- are all commonly used edible targets profiled?
+- are all commonly consumed universal food definitions nutritionally complete?
 - is natural meal cadence/intake plausible for the exemplar rather than an artifact of the older abstract hunger loop?
 - are estimated REE and action-energy magnitudes plausible for the actor?
 
@@ -137,14 +180,14 @@ If meal cadence is structurally too low/high, calibrate the behavioral/needs-to-
 
 ## Explicit non-goals
 
-BC-1 does not add:
+This layer does not add:
 - body-weight or body-fat mutation;
 - FM/FFM partitioning;
 - genetic muscle-potential settlement;
 - protein-driven hypertrophy settlement;
 - fluid/glycogen dynamics;
-- micronutrient tracking;
+- detailed micronutrient tracking;
 - endocrine simulation;
-- inventory quantity depletion;
-- schema v5;
-- additional model calls.
+- recipes/cooking;
+- economy/currency/vendors;
+- additional model calls merely to calculate nutrition.
