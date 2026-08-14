@@ -19,7 +19,7 @@ Target family:
 - shoulders;
 - chest;
 - waist;
-- hips when an authored baseline/envelope exists;
+- hips;
 - biceps relaxed/flexed;
 - triceps;
 - forearms;
@@ -27,6 +27,8 @@ Target family:
 - calves.
 
 Darian is the first rich fixture, not the reusable engine identity.
+
+The universal profile schema defines both `body.hips_in` and the BC-3 progression envelope `genetics.hips_max_in`, so future character profiles can author the complete measurement family without a character-specific schema patch.
 
 ## Evidence model
 
@@ -59,13 +61,17 @@ Each measurement policy contains:
 
 Positive general FFM change can use remaining authored muscular headroom. Resistance-specific FFM gain is additionally weighted by the region's training exposure. Negative FFM can reduce muscular circumference according to the field's lean-loss elasticity. Fat-mass change contributes separately using regional adiposity elasticity; waist is intentionally more adiposity-sensitive than limb circumferences.
 
+Because general FFM partition is a whole-body signal, an unexposed region may still receive a small systemic lean-mass circumference change. Regional resistance exposure adds a separate local increment, so trained regions must respond more strongly than otherwise comparable unexposed regions rather than requiring every unexposed circumference to remain flat.
+
 Genetic circumference maxima represent muscular/lean-condition potential rather than a claim that fat-associated circumference can never exceed the number. Final values are still bounded by activation-relative safety guards and per-window clamps.
 
 For waist, `genetics.waist_target_in` acts as the lower lean-condition target when fat mass is falling. Fat gain may increase waist above that target.
 
-## Missing hips evidence
+## Darian hip baseline
 
-The universal profile schema supports `body.hips_in`, but Darian currently has neither an authored hip baseline nor `genetics.hips_max_in`. BC-3 therefore reports hips as deferred and does not fabricate a value. A future character or future canonical Darian update may activate hips once both required facts exist.
+Darian's canonical profile now authors `body.hips_in = 39.0` with `genetics.hips_max_in = 41.0`. The 39-inch baseline preserves his established 33-inch waist and broad 52-inch shoulder frame while keeping the lower body proportionate to his natural-bodybuilder build; the 41-inch envelope leaves bounded room for future lower-body adaptation.
+
+These values are character-specific authored canon. The reusable engine does not derive another character's hip circumference from Darian's ratios.
 
 ## Persistence
 
@@ -79,15 +85,14 @@ No schema migration is required. No LLM call is used. Telegram Profile Body auto
 ## Validation
 
 Focused tests cover:
-- activation preserves authored measurements;
-- absent hips are not invented;
+- activation preserves the complete authored measurement batch, including hips;
 - partial pre-activation BC-2 windows cannot mutate measurements;
 - a full post-activation window combines body composition with regional resistance exposure;
-- upper-body bench evidence affects chest/triceps more than unexposed calves;
+- upper-body bench evidence affects chest/triceps more than unexposed calves while allowing whole-body FFM partition to create a smaller systemic change;
 - waist responds independently to fat-mass change;
 - batched history/event persistence is atomic and bounded.
 
-The stateful acceptance lane runs the candidate code against a disposable production database copy only. It bootstraps BC-3 without numerical change, proves the non-retroactive boundary, injects synthetic future evidence on the copy, verifies one regional settlement, and never mutates production.
+The stateful acceptance lane runs the candidate code against a disposable production database copy only. It bootstraps BC-3 without numerical change, proves the non-retroactive boundary, injects synthetic future evidence on the copy, verifies one regional settlement across the complete authored measurement batch, and never mutates production.
 
 ## Deferred
 
