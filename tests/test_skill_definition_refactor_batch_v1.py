@@ -119,17 +119,24 @@ def test_supporting_navigation_aid_changes_constrained_to_supported_without_gati
     assert supported.status == "supported"
 
 
-def test_required_weapon_resource_remains_a_real_gate() -> None:
+def test_required_bladed_training_resource_remains_a_real_gate() -> None:
     kwargs = dict(
-        skill_id="weapons",
+        skill_id="bladed_weapons",
         application_id="employ_familiar_melee_weapon",
         skill_score=87,
         challenge_class="advanced",
-        context_tags=["weapon_employment_context", "represented_melee_weapon"],
+        context_tags=[
+            "weapon_employment_context",
+            "represented_melee_weapon",
+            "simulation_safe_training_context",
+        ],
         attribute_values={"raps_pa.reflexes": 86, "raps_ma.focus": 92, "raps_pa.agility": 83},
     )
     unsupported = assess_skill_application(resource_capabilities=[], **kwargs)
-    supported = assess_skill_application(resource_capabilities=["usable_melee_weapon"], **kwargs)
+    supported = assess_skill_application(
+        resource_capabilities=["usable_bladed_training_weapon"],
+        **kwargs,
+    )
 
     assert unsupported.status == "unsupported"
     assert "required_resource_capability_missing" in unsupported.reasons
