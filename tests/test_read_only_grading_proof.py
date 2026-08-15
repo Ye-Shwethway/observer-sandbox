@@ -24,7 +24,8 @@ def test_strength_grade_is_derived_without_mutating_raw_value(tmp_path, monkeypa
         assert strength["grade"] == {
             "scheme_id": "raps-100-proof-v1",
             "grade": "S",
-            "label": "Exceptional",
+            "label": "Expert",
+            "value": 90.0,
         }
 
         after = conn.execute(
@@ -34,8 +35,8 @@ def test_strength_grade_is_derived_without_mutating_raw_value(tmp_path, monkeypa
         assert dict(after) == dict(before)
 
         text, _ = _callback_view(conn, 111, "psec:char_darian:attributes")
-        assert "Strength   90 · Grade S" in text
-        assert "Stamina   85 · Grade A" in text
+        assert "Strength   90 (S) · Expert" in text
+        assert "Stamina   85 (A) · Advanced" in text
 
 
 def test_proof_scheme_boundaries_are_deterministic():
@@ -47,3 +48,6 @@ def test_proof_scheme_boundaries_are_deterministic():
     assert evaluate_raps_100(40).grade == "C"
     assert evaluate_raps_100(20).grade == "D"
     assert evaluate_raps_100(0).grade == "E"
+    assert evaluate_raps_100(90).label == "Expert"
+    assert evaluate_raps_100(75).label == "Advanced"
+    assert evaluate_raps_100(0).label == "Beginner"
