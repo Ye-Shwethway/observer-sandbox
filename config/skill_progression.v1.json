@@ -1,5 +1,5 @@
 {
-  "revision": "skill-progression-structured-evidence-v1.1-survival",
+  "revision": "skill-progression-structured-evidence-v1.2-bladed-weapons",
   "skills": {
     "hand_to_hand_combat": {
       "score_cap": 100.0,
@@ -45,6 +45,16 @@
       "eligible_methods": {
         "field_navigation_practice": 1.0,
         "field_sustainment_practice": 1.0
+      }
+    },
+    "bladed_weapons": {
+      "score_cap": 100.0,
+      "base_score_points_per_learning_unit": 0.12,
+      "recent_window_hours": 24.0,
+      "saturation_half_units": 2.0,
+      "compatibility_profile_field": null,
+      "eligible_methods": {
+        "bladed_weapons_handling_practice": 1.0
       }
     }
   }

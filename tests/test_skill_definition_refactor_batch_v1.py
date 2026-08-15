@@ -71,17 +71,21 @@ def test_existing_progression_is_preserved_without_fake_activation() -> None:
     assert definitions["tactical_planning"]["learning_evidence"]["families"] == ["training_method"]
     assert definitions["technology"]["learning_evidence"]["families"] == ["skill_practice"]
     assert set(progression) == {
+        "bladed_weapons",
         "hand_to_hand_combat",
         "survival",
         "tactical_planning",
         "technology",
     }
 
-    # Survival now has an explicit simulation-safe skill-practice producer in the
-    # progression registry. Its definition catalog still retains the broader
-    # supervised-application evidence family; generic application evidence is not
-    # progression authority unless separately whitelisted by the progression config.
+    # Survival and the learned Bladed Weapons component have explicit,
+    # simulation-safe practice producers. The historical umbrella definition
+    # remains compatibility semantics only; ordinary weapon application is not
+    # progression authority.
     assert definitions["survival"]["learning_evidence"]["families"] == ["supervised_application"]
+    assert progression["bladed_weapons"]["eligible_methods"] == {
+        "bladed_weapons_handling_practice": 1.0
+    }
 
     for skill_id in ("weapons", "field_medicine"):
         assert definitions[skill_id]["learning_evidence"]["families"] == ["supervised_application"]
