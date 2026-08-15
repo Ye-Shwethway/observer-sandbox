@@ -10,6 +10,7 @@ from .ai_runtime import generate_character_decision
 from .character_config import configured_character_ids, load_character_autonomy_policy
 from .cognition_capability_awareness import cognition_capability_awareness
 from .eating_behavior import enrich_eating_action_options, validate_proposed_resources
+from .habit_adaptation import habit_dynamics_context
 from .meal_choice_intelligence import meal_choice_context
 from .need_resolution import shape_action_options_for_needs
 from .resource_awareness import (
@@ -144,6 +145,13 @@ class ModelDecisionProvider:
             "SELECT name FROM character_habits WHERE entity_id=? ORDER BY id",
             (self.character_id,),
         ).fetchall()
+        habit_dynamics = habit_dynamics_context(self.conn, self.character_id)
+        dynamic_names = {str(item["name"]) for item in habit_dynamics}
+        established_dynamic_names = [
+            str(item["name"])
+            for item in habit_dynamics
+            if item.get("status") == "established"
+        ]
         skills = self.conn.execute(
             "SELECT skill_key, category, score FROM character_skills WHERE entity_id=? ORDER BY skill_key",
             (self.character_id,),
@@ -177,7 +185,11 @@ class ModelDecisionProvider:
                 for row in preferences
             ],
             "hobbies": [row["name"] for row in hobbies],
-            "habits": [row["name"] for row in habits],
+            "habits": (
+                [row["name"] for row in habits if str(row["name"]) not in dynamic_names]
+                + established_dynamic_names
+            ),
+            "habit_dynamics": habit_dynamics,
             "skills": [
                 {"key": row["skill_key"], "category": row["category"], "score": row["score"]}
                 for row in skills
