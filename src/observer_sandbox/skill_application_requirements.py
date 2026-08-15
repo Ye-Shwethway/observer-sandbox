@@ -1,9 +1,11 @@
 from __future__ import annotations
 
+import copy
 import re
 from typing import Any
 
 from .skill_definitions import get_skill_definition
+from .skill_hierarchy import load_skill_hierarchy_config
 
 
 SEMANTIC_ID_RE = re.compile(r"^[a-z][a-z0-9]*(?:_[a-z0-9]+)*$")
@@ -123,12 +125,116 @@ def validate_application_requirements(
     return definition
 
 
+def _hierarchy_application_binding(
+    skill_id: str,
+    application_id: str,
+) -> tuple[str, str, dict[str, Any]] | None:
+    """Resolve one explicit component application binding from hierarchy config.
+
+    Returns ``(component_skill_id, source_skill_id, authority)`` both when the
+    caller names the component and when it names the legacy source. This lets the
+    resolver make transfer of executable authority explicit instead of allowing
+    the hidden compatibility projection to remain a second capability authority.
+    """
+
+    source = load_skill_hierarchy_config()
+    for hierarchy in (source.get("hierarchies") or {}).values():
+        if not isinstance(hierarchy, dict):
+            continue
+        components = hierarchy.get("components") or {}
+        if not isinstance(components, dict):
+            continue
+        for component_id, component in components.items():
+            if not isinstance(component_id, str) or not isinstance(component, dict):
+                continue
+            authority_map = component.get("application_authority") or {}
+            if not isinstance(authority_map, dict):
+                continue
+            authority = authority_map.get(application_id)
+            if not isinstance(authority, dict) or authority.get("status") != "active":
+                continue
+            source_skill_id = authority.get("source_skill_id")
+            if not isinstance(source_skill_id, str) or not source_skill_id:
+                continue
+            if skill_id in {component_id, source_skill_id}:
+                return component_id, source_skill_id, authority
+    return None
+
+
+def _component_application_definition(
+    component_skill_id: str,
+    source_skill_id: str,
+    application_id: str,
+    authority: dict[str, Any],
+) -> tuple[dict[str, Any], dict[str, Any]]:
+    source_definition = get_skill_definition(source_skill_id)
+    source_application = next(
+        (
+            value
+            for value in (source_definition.get("applications") or [])
+            if isinstance(value, dict) and value.get("application_id") == application_id
+        ),
+        None,
+    )
+    if source_application is None:
+        raise KeyError(
+            f"Hierarchy application source is missing: {source_skill_id}.{application_id}"
+        )
+
+    definition = copy.deepcopy(source_definition)
+    application = copy.deepcopy(source_application)
+    requirements_override = authority.get("requirements_override")
+    if requirements_override is not None:
+        if not isinstance(requirements_override, dict):
+            raise SkillApplicationRequirementError(
+                f"Hierarchy authority {component_skill_id}.{application_id} requirements_override must be an object"
+            )
+        application["requirements"] = copy.deepcopy(requirements_override)
+
+    hierarchy = load_skill_hierarchy_config()
+    component_name = None
+    component_description = None
+    for raw in (hierarchy.get("hierarchies") or {}).values():
+        if not isinstance(raw, dict):
+            continue
+        component = (raw.get("components") or {}).get(component_skill_id)
+        if isinstance(component, dict):
+            component_name = component.get("name")
+            component_description = component.get("description")
+            break
+
+    definition["skill_id"] = component_skill_id
+    if isinstance(component_name, str) and component_name:
+        definition["name"] = component_name
+    if isinstance(component_description, str) and component_description:
+        definition["definition"] = component_description
+    definition["applications"] = [application]
+    validate_application_requirements(definition)
+    return definition, application
+
+
 def get_executable_skill_application(
     skill_id: str,
     application_id: str,
     *,
     config: dict[str, Any] | None = None,
 ) -> tuple[dict[str, Any], dict[str, Any]]:
+    if config is None:
+        binding = _hierarchy_application_binding(skill_id, application_id)
+        if binding is not None:
+            component_skill_id, source_skill_id, authority = binding
+            if skill_id == source_skill_id:
+                raise KeyError(
+                    f"Skill application authority moved to component Skill: "
+                    f"{component_skill_id}.{application_id}"
+                )
+            return _component_application_definition(
+                component_skill_id,
+                source_skill_id,
+                application_id,
+                authority,
+            )
+
     definition = get_skill_definition(skill_id, config=config)
     validate_application_requirements(definition)
     for application in definition["applications"]:
