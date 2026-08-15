@@ -58,38 +58,22 @@ Ability/Attribute != Knowledge != Skill != Task/Application != demonstrated reli
 - `config/represented_skill_tasks.v1.json`
 - `src/observer_sandbox/represented_skill_tasks.py`
 
-Canonical docs:
-- `docs/SKILL_DEFINITION_CAPABILITY_FRAMEWORK_V1.md`
-- `docs/SKILL_CREATION_FORMAT_V1.md`
-- `docs/SKILL_APPLICATION_REQUIREMENTS_V1.md`
-- `docs/SKILL_CAPABILITY_RESOLUTION_V1.md`
-- `docs/ACTOR_SKILL_CAPABILITY_ADAPTER_V1.md`
-- `docs/REPRESENTED_SKILL_TASK_CONTRACT_V1.md`
-- progression/evidence docs referenced by `ROADMAP.md`.
+Canonical docs include the Skill framework/creation/application/capability/actor-adapter docs plus `docs/REPRESENTED_SKILL_TASK_CONTRACT_V1.md` and the progression/evidence docs referenced by `ROADMAP.md`.
 
 ## Technology exemplar
 
-Application: `diagnose_known_system_fault`.
+Technology is the first complete gameplay-grade universal Skill Definition. Its first application is `diagnose_known_system_fault`.
 
 Executable requirements:
 - context all: `technical_system_represented`, `diagnostic_evidence_available`;
 - resource any: `diagnostic_interface` or `diagnostic_instrumentation`;
 - supporting resource: `technical_documentation`;
-- Knowledge mode: `declarative_support_only`.
+- Knowledge mode: `declarative_support_only`;
+- supporting Attributes: `raps_ia.problem_solving`, `raps_ma.focus`.
 
-Supporting Attributes:
-- `raps_ia.problem_solving`
-- `raps_ma.focus`
-
-Legacy `raps_ia.technological_aptitude` is compatibility provenance only, not a second Technology authority.
-
-Pure capability resolution returns `supported / constrained / unsupported`. Definition anchors own challenge support. Knowledge is declarative/non-gating and Attributes are transparent/non-weighted until explicit modifier semantics exist. No probability, action authorization, second competency score, Skill mutation, or LLM deterministic authority.
-
-Actor-backed assessment reads authoritative `character_skills.score` plus only definition-declared Attribute fields and performs no writes/evidence emission.
+Pure capability resolution returns `supported / constrained / unsupported`. Definition anchors own challenge support. Knowledge is declarative/non-gating and Attributes are transparent/non-weighted until explicit modifier semantics exist. Actor-backed assessment reads authoritative Skill/Profile state and is read-only.
 
 ## Represented Skill Task Contract v1
-
-The Skill Definition says what an application means. A Represented Skill Task Definition says how one concrete world task is bounded.
 
 First task:
 `technology_known_system_fault_diagnostic_sim_v1`
@@ -105,13 +89,11 @@ First task:
 - bounded outcomes: feasibility, quality precision, information gained, partial failure recovery
 - application evidence deferred; learning evidence explicitly false.
 
-Validator prevents represented tasks from weakening application requirements, escaping the challenge/effect envelope, embedding actor state, or promoting `skill_practice:*` targets into application authority. Object names and model prose are never target authority.
+Names/model prose are never target authority. Existing Systems Diagnostic Practice Console remains practice/learning evidence only and must not be reused as application authority.
 
-The existing Systems Diagnostic Practice Console remains practice/learning evidence only and must not be reused as application authority.
+## Current Skill audit
 
-## Current broad Skill set
-
-Preserve umbrella Skills until justified decomposition:
+Actor umbrella Skill rows:
 - Hand-to-Hand Combat
 - Weapons
 - Survival
@@ -119,25 +101,44 @@ Preserve umbrella Skills until justified decomposition:
 - Technology
 - Field Medicine
 
-Never fabricate child Skill scores from a parent value. If decomposition is introduced, parent/child authority, score migration, learning evidence, applications, and aggregation semantics must be explicit rather than inferred.
+Current implementation maturity:
+- Technology: complete validator-backed universal definition/application contract plus progression practice;
+- Hand-to-Hand Combat: legitimate progression evidence exists, but no complete universal definition/application contract yet;
+- Tactical Planning: legitimate progression evidence exists, but no complete universal definition/application contract yet;
+- Weapons / Survival / Field Medicine: authoritative actor scores exist, but no complete universal definition and no activated progression evidence path yet.
+
+Therefore broad gameplay integration should not treat the remaining umbrella names/scores as sufficient task semantics.
 
 ## Next canonical slice
 
-**Represented Skill Task Instance Resolver v1 — read-only.**
+**Skill Definition Refactor Batch v1.**
 
-Invariant:
-`actor + task_id + target_entity_id + explicit available resource capabilities -> validate exact target type/definition/capabilities -> derive task challenge/context -> actor-backed Skill capability assessment -> read-only represented-task assessment`
+Batch the five remaining umbrella Skills through the Technology-proven format:
+- `hand_to_hand_combat`
+- `weapons`
+- `survival`
+- `tactical_planning`
+- `field_medicine`
 
-Constraints:
-- exact `definition_id`; no name/prose matching;
-- fail closed on target mismatch;
-- do not reuse the practice console;
-- synthetic target/entity tests are sufficient; no production seed for proof;
-- available resource capabilities remain explicit until represented resource ownership is separately proven;
-- no writes, action authorization, events/evidence, XP, autonomy or Telegram integration.
+Each receives stable meaning/scope, safe Attribute dependencies, E/D/C/B/A/S behavioral anchors, two bounded gameplay application families, executable application context/resource requirements, allowed outcome/risk boundaries, learning-evidence policy, presentation and compatibility provenance.
 
-After this read-only instance binding is proven, reassess whether the next move should be the first bounded Technology action integration or a batched refactor/expansion of the remaining umbrella Skill definitions so gameplay semantics are not built on description-only Skill rows.
+Initial application families:
+- H2H: unarmed striking; grappling/control/escape;
+- Weapons: familiar melee weapon employment; familiar ranged weapon employment;
+- Survival: field navigation; field sustainment;
+- Tactical Planning: tactical situation assessment; tactical maneuver/contingency planning;
+- Field Medicine: field casualty assessment; bounded stabilization/evacuation preparation.
+
+These applications are the initial subskill-like gameplay surface. **Do not create independent child Skill scores yet.** Parent `character_skills.score` remains authoritative.
+
+True scored subskills require independently distinguishable learning evidence, progression/retention ownership, and explicit parent/child aggregation + migration semantics. Never split current parent scores into invented child values.
+
+Existing H2H/Tactical/Technology learning evidence must remain intact. Weapons/Survival/Field Medicine definitions must not invent learning evidence merely for symmetry.
+
+## After the refactor batch
+
+Implement **Represented Skill Task Instance Resolver v1** as the next read-only generic runtime seam, then one distinct Technology simulator/action evidence integration. Apply later task/action integration by proven pattern rather than one PR per Skill.
 
 ## Exact resume point
 
-**Represented Skill Task Contract v1 is complete/deployed through PR #119 / Deploy #203. Next implement one read-only Represented Skill Task Instance Resolver v1, then make an explicit architecture decision on umbrella Skill refactor/subskill expansion before broad gameplay integration.**
+**Represented Skill Task Contract v1 is complete/deployed through PR #119 / Deploy #203. Next implement Skill Definition Refactor Batch v1 for H2H, Weapons, Survival, Tactical Planning and Field Medicine, preserving all existing actor scores and using applications rather than fabricated scored subskills.**
