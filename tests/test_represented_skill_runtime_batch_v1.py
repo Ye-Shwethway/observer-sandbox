@@ -220,4 +220,5 @@ def test_batch_missing_required_resource_fails_closed(tmp_path) -> None:
         )
         assessment = assess_batch_action(conn, "char_darian", spec.action, target)
         assert assessment.status == "unsupported"
-        assert any("required resource" in reason.lower() for reason in assessment.reasons)
+        assert "field_sustainment_materials" not in assessment.recognized_resource_capabilities
+        assert "required_resource_capability_missing" in assessment.reasons
