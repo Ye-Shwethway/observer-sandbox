@@ -14,6 +14,7 @@ from .body_measurement_progression import maybe_settle_body_measurements
 from .db import connect
 from .habit_adaptation import settle_habit_adaptation
 from .height_lifecycle import maybe_settle_height_lifecycle
+from .hobby_interest_lifecycle import settle_hobby_interest_lifecycle
 from .physical_attribute_progression import maybe_settle_physical_attribute_batch
 from .physical_presentation import refresh_physical_presentation
 from .profile_change_observer import capture_profile_change_state, observe_profile_changes
@@ -72,6 +73,26 @@ def main() -> None:
                                 actor_id,
                                 action_name=str(pending_before["action"]),
                                 location_id=str(pending_before["place_id"]),
+                                target_id=(
+                                    str(pending_before["target"])
+                                    if pending_before.get("target") is not None
+                                    else None
+                                ),
+                                ended_sim_time=str(after["sim_time"]),
+                            )
+                            conn.commit()
+                        except Exception:
+                            conn.rollback()
+
+                        # Hobby/interest development uses the same immutable
+                        # completion boundary but a distinct evidence contract.
+                        # Only explicitly eligible voluntary target engagements
+                        # form interests; established interests project to hobbies.
+                        try:
+                            settle_hobby_interest_lifecycle(
+                                conn,
+                                actor_id,
+                                action_name=str(pending_before["action"]),
                                 target_id=(
                                     str(pending_before["target"])
                                     if pending_before.get("target") is not None
