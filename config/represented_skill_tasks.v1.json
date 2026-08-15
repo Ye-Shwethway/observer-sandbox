@@ -1,5 +1,5 @@
 {
-  "revision": "represented-skill-tasks-v1.4",
+  "revision": "represented-skill-tasks-v1.5",
   "tasks": {
     "technology_known_system_fault_diagnostic_sim_v1": {
       "task_id": "technology_known_system_fault_diagnostic_sim_v1",
@@ -238,6 +238,50 @@
       "provenance": {
         "source": "controlled-h2h-interaction-generalization-v1",
         "notes": "Structurally equivalent controlled-H2H follow-on. It reuses explicit participant authorization and colocation while resolving positional control only; persistent restraint, incapacity, injury, and hostile use remain deferred."
+      }
+    },
+    "field_medicine_stabilize_for_evacuation_v1": {
+      "task_id": "field_medicine_stabilize_for_evacuation_v1",
+      "name": "Represented Field Casualty Stabilization for Evacuation",
+      "status": "active",
+      "skill_id": "field_medicine",
+      "application_id": "stabilize_for_evacuation",
+      "challenge_class": "standard",
+      "task_mode": "represented_consequential",
+      "target_contract": {
+        "entity_type": "object",
+        "definition_id": "represented_task:field_medicine_stabilization_session_v1",
+        "required_capabilities_all": ["stabilize", "field_medical_context", "evacuation_or_handoff_needed"]
+      },
+      "context_tags": ["casualty_represented", "field_medical_context", "evacuation_or_handoff_needed"],
+      "resource_contract": {
+        "required_resource_mode": "any",
+        "required_capabilities_any": ["field_medical_supplies"],
+        "supporting_capabilities": ["evacuation_support_equipment"]
+      },
+      "outcome_dimensions": ["feasibility", "quality_precision", "resource_efficiency", "error_probability_severity", "partial_failure_recovery"],
+      "risk_class": "high",
+      "interaction_contract": {
+        "participant_entity_type": "character",
+        "participant_count": 1,
+        "requires_distinct_actor": true,
+        "requires_colocation": true,
+        "required_casualty_state_field": "medical.deterioration_risk",
+        "required_casualty_state_mode": "simulated",
+        "consequence_mode": "reduce_deterioration_risk_only",
+        "allowed_consequence_fields": ["medical.deterioration_risk"],
+        "state_range": [0.0, 100.0],
+        "injury_diagnosis_mutation": false,
+        "definitive_treatment_mutation": false
+      },
+      "evidence_policy": {
+        "application_evidence": "deferred_until_action_integration",
+        "learning_evidence": false,
+        "notes": "Stabilization application and consequence evidence are gameplay evidence only. They do not create diagnosis, definitive treatment, real-world medical authority, or Skill XP."
+      },
+      "provenance": {
+        "source": "field-medicine-stabilization-consequence-v1",
+        "notes": "First real represented consequence consumer. The exact session, one colocated casualty participant, pre-existing simulated casualty deterioration state, and explicit field-medical-supply resource are required before the generic consequence foundation may reduce only the authorized deterioration-risk field."
       }
     }
   }

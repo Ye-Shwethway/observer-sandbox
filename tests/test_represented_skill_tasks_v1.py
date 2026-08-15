@@ -21,6 +21,7 @@ BATCH_TASK_IDS = [
 ]
 H2H_TASK_ID = "h2h_controlled_striking_spar_v1"
 H2H_GRAPPLE_TASK_ID = "h2h_controlled_grapple_spar_v1"
+FIELD_MEDICINE_STABILIZE_TASK_ID = "field_medicine_stabilize_for_evacuation_v1"
 
 
 def config_copy():
@@ -33,13 +34,14 @@ def task(config, task_id=TECH_TASK_ID):
 
 def test_canonical_represented_task_registry_validates() -> None:
     source = validate_represented_skill_tasks()
-    assert source["revision"] == "represented-skill-tasks-v1.4"
+    assert source["revision"] == "represented-skill-tasks-v1.5"
     assert list(source["tasks"]) == [
         TECH_TASK_ID,
         TACTICAL_TASK_ID,
         *BATCH_TASK_IDS,
         H2H_TASK_ID,
         H2H_GRAPPLE_TASK_ID,
+        FIELD_MEDICINE_STABILIZE_TASK_ID,
     ]
 
 
