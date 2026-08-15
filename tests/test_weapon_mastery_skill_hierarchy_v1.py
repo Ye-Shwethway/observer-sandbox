@@ -155,7 +155,7 @@ def test_profile_shows_parent_and_components_but_hides_legacy_projection(tmp_pat
             for item in by_key.values()
             if not item.get("aggregate_exclude") and isinstance(item.get("score"), (int, float))
         ]
-        expected = sum(included_scores) / len(included_scores)
+        expected = round(sum(included_scores) / len(included_scores), 3)
         assert section["section"]["overall_grade"]["value"] == pytest.approx(expected)
 
 
