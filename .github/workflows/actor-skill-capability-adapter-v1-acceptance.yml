@@ -1,0 +1,35 @@
+name: Actor Skill Capability Adapter v1 Acceptance
+
+on:
+  pull_request:
+    paths:
+      - 'src/observer_sandbox/actor_skill_capability.py'
+      - 'src/observer_sandbox/skill_capability.py'
+      - 'src/observer_sandbox/skill_application_requirements.py'
+      - 'src/observer_sandbox/skill_definitions.py'
+      - 'config/skill_definitions.v1.json'
+      - 'tests/test_actor_skill_capability_adapter_v1.py'
+      - 'tests/test_skill_capability_resolution_v1.py'
+      - '.github/workflows/actor-skill-capability-adapter-v1-acceptance.yml'
+  push:
+    branches: [main]
+    paths:
+      - 'src/observer_sandbox/actor_skill_capability.py'
+      - 'src/observer_sandbox/skill_capability.py'
+      - 'src/observer_sandbox/skill_application_requirements.py'
+      - 'src/observer_sandbox/skill_definitions.py'
+      - 'config/skill_definitions.v1.json'
+      - 'tests/test_actor_skill_capability_adapter_v1.py'
+      - 'tests/test_skill_capability_resolution_v1.py'
+      - '.github/workflows/actor-skill-capability-adapter-v1-acceptance.yml'
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - run: python -m pip install -e '.[dev]'
+      - run: pytest -q tests/test_skill_capability_resolution_v1.py tests/test_actor_skill_capability_adapter_v1.py
