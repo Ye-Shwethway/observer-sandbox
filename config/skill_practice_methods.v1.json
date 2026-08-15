@@ -1,5 +1,5 @@
 {
-  "revision": "skill-practice-methods-v1",
+  "revision": "skill-practice-methods-v1.1-survival",
   "methods": {
     "systems_diagnostic_practice": {
       "name": "Systems Diagnostic Practice",
@@ -9,6 +9,24 @@
         "technology": 1.0
       },
       "tags": ["technical", "diagnostic", "simulation_safe"]
+    },
+    "field_navigation_practice": {
+      "name": "Field Navigation Practice",
+      "action": "practice",
+      "min_duration_minutes": 10,
+      "skill_relevance": {
+        "survival": 1.0
+      },
+      "tags": ["survival", "fieldcraft", "navigation", "simulation_safe"]
+    },
+    "field_sustainment_practice": {
+      "name": "Field Sustainment Practice",
+      "action": "practice",
+      "min_duration_minutes": 10,
+      "skill_relevance": {
+        "survival": 1.0
+      },
+      "tags": ["survival", "fieldcraft", "sustainment", "simulation_safe"]
     }
   },
   "targets": {
@@ -17,6 +35,18 @@
       "room": "loc_thorne_estate_comms",
       "capabilities": ["inspect", "practice"],
       "method_id": "systems_diagnostic_practice"
+    },
+    "obj_thorne_estate_training_field_navigation_practice_simulator": {
+      "name": "Field Navigation Practice Simulator",
+      "room": "loc_thorne_estate_training_hall",
+      "capabilities": ["inspect", "practice"],
+      "method_id": "field_navigation_practice"
+    },
+    "obj_thorne_estate_training_field_sustainment_practice_station": {
+      "name": "Field Sustainment Practice Station",
+      "room": "loc_thorne_estate_training_hall",
+      "capabilities": ["inspect", "practice"],
+      "method_id": "field_sustainment_practice"
     }
   }
 }
