@@ -104,9 +104,17 @@ def _fmt_profile_section(data: dict[str, Any]) -> str:
     renderer = str(section.get("renderer") or "fields")
     if renderer == "grouped_attributes":
         return _fmt_attributes(lines, content, section)
+
+    overall = _fmt_grade(section.get("overall_grade"))
+    if overall:
+        lines.extend([f"Overall {overall}", ""])
+
     if renderer == "skills":
         for item in content:
             score = _fmt_number(item.get("score")) if item.get("score") is not None else "Represented"
+            grade = _fmt_grade(item.get("grade"))
+            if grade:
+                score = f"{score} {grade}"
             category = str(item.get("category") or "").replace("_", " ").title()
             suffix = f" · {category}" if category else ""
             lines.append(f"• {item['label']}   {score}{suffix}")
@@ -116,7 +124,11 @@ def _fmt_profile_section(data: dict[str, Any]) -> str:
 
     for item in content:
         label = item.get("label") or str(item.get("field_key", "Field"))
-        lines.append(f"• {label}: {_fmt_profile_value(item)}")
+        value = _fmt_profile_value(item)
+        grade = _fmt_grade(item.get("grade"))
+        if grade:
+            value = f"{value} {grade}"
+        lines.append(f"• {label}: {value}")
     return "\n".join(lines)
 
 
@@ -200,5 +212,5 @@ def _fmt_number(value: Any) -> str:
         return "Yes" if value else "No"
     if isinstance(value, (int, float)):
         number = float(value)
-        return f"{number:.1f}".rstrip("0").rstrip(".")
+        return f"{number:.3f}".rstrip("0").rstrip(".")
     return str(value)
