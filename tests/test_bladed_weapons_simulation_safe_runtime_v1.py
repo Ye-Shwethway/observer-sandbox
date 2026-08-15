@@ -290,9 +290,8 @@ def test_blade_drill_fails_closed_on_wrong_target_missing_resource_or_missing_sk
                 spec.simulator_definition_id,
             ),
         )
-        assessment = assess_batch_action(conn, ACTOR, ACTION, missing_resource)
-        assert assessment.status == "unsupported"
-        assert "required_resource_capability_missing" in assessment.reasons
+        with pytest.raises(Exception, match="missing required task capabilities"):
+            assess_batch_action(conn, ACTOR, ACTION, missing_resource)
 
         conn.execute(
             "DELETE FROM character_skills WHERE entity_id=? AND skill_key=?",
