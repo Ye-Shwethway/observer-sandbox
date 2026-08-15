@@ -48,14 +48,18 @@ def _bad_decision(*args, **kwargs):
     }
 
 
+def _live_freeze_state(conn):
+    set_field(conn, ACTOR, "runtime.location", TRAINING_HALL)
+    set_field(conn, ACTOR, "needs.thirst", 100.0)
+    conn.commit()
+    return snapshot(conn, ACTOR)
+
+
 def test_third_repeated_pair_failure_recovers_from_authoritative_need_shaped_options(tmp_path, monkeypatch):
     db = tmp_path / "observer.sqlite3"
     initialize(db)
     with connect(db) as conn:
-        set_field(conn, ACTOR, "runtime.location", TRAINING_HALL)
-        set_field(conn, ACTOR, "needs.thirst", 100.0)
-        conn.commit()
-        state = snapshot(conn, ACTOR)
+        state = _live_freeze_state(conn)
         _seed_pair_errors(conn, state["sim_time"], 2)
         monkeypatch.setattr("observer_sandbox.model_decision.generate_character_decision", _bad_decision)
 
@@ -71,9 +75,7 @@ def test_watchdog_does_not_replace_an_early_pair_validation_failure(tmp_path, mo
     db = tmp_path / "observer.sqlite3"
     initialize(db)
     with connect(db) as conn:
-        set_field(conn, ACTOR, "runtime.location", TRAINING_HALL)
-        conn.commit()
-        state = snapshot(conn, ACTOR)
+        state = _live_freeze_state(conn)
         _seed_pair_errors(conn, state["sim_time"], 1)
         monkeypatch.setattr("observer_sandbox.model_decision.generate_character_decision", _bad_decision)
 
@@ -85,9 +87,7 @@ def test_watchdog_stays_fail_closed_in_canary_mode(tmp_path, monkeypatch):
     db = tmp_path / "observer.sqlite3"
     initialize(db)
     with connect(db) as conn:
-        set_field(conn, ACTOR, "runtime.location", TRAINING_HALL)
-        conn.commit()
-        state = snapshot(conn, ACTOR)
+        state = _live_freeze_state(conn)
         _seed_pair_errors(conn, state["sim_time"], 2)
         set_actor_runtime(conn, ACTOR, autonomy_mode="canary_once")
         conn.commit()
