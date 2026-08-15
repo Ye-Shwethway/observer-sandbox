@@ -21,6 +21,9 @@ Default to the shortest reliable loop:
 
 Follow `docs/PRODUCTION_VALIDATION_AND_RELEASE_PROTOCOL.md`.
 
+- During implementation, run the smallest task-relevant tests/gates that cover the changed contracts. Do not repeatedly run the full suite while iterating.
+- Use the repository full CI suite as a final code/runtime PR checkpoint, not as the default inner development loop. A second full-suite run requires a concrete reason such as a broad shared-runtime change or unresolved cross-domain regression.
+- Docs-only changes do not require the full Python suite.
 - Do not create extra release PRs, release-marker ceremony, deploy-authorization helpers, or duplicate compatibility gates by default.
 - Disposable production-copy validation is optional. Use it only when a stateful/migration/runtime risk cannot be covered adequately by local tests and CI.
 - When production-copy validation is used, reuse the existing shared helper/workflow instead of inventing new SSH/copy infrastructure.
