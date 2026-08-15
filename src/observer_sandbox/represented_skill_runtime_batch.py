@@ -3,6 +3,7 @@ from __future__ import annotations
 import json
 import sqlite3
 from dataclasses import asdict, dataclass
+from pathlib import Path
 from typing import Any
 
 from .cognitive_performance import assess_actor_cognitive_performance
@@ -14,6 +15,8 @@ from .represented_skill_task_instance import (
 
 SOURCE = "represented-skill-runtime-batch-v1"
 SUPPORT_MULTIPLIER = 0.92
+REPO_ROOT = Path(__file__).resolve().parents[2]
+BLADED_TASK_CONFIG_PATH = REPO_ROOT / "config" / "bladed_weapons_simulation_safe_runtime.v1.json"
 
 
 @dataclass(frozen=True)
@@ -28,6 +31,13 @@ class BatchTaskSpec:
     simulator_definition_id: str
     room_id: str
     capabilities: tuple[str, ...]
+    task_config_path: str | None = None
+    uses_cognitive_performance: bool = True
+    outcome_dimensions: tuple[str, ...] = (
+        "quality_precision",
+        "information_gained",
+        "partial_failure_recovery",
+    )
 
 
 TASK_SPECS = (
@@ -67,6 +77,21 @@ TASK_SPECS = (
         room_id="loc_thorne_estate_training_hall",
         capabilities=("inspect", "sustain", "field_sustainment_materials", "field_toolkit"),
     ),
+    BatchTaskSpec(
+        action="blade_drill",
+        label="Blade Drill",
+        task_id="bladed_weapons_safe_handling_sim_v1",
+        skill_id="bladed_weapons",
+        application_id="employ_familiar_melee_weapon",
+        simulator_id="obj_thorne_estate_training_bladed_weapons_safe_handling_simulator",
+        simulator_name="Bladed Weapons Safe Handling Simulator",
+        simulator_definition_id="represented_task:bladed_weapons_safe_handling_simulator_v1",
+        room_id="loc_thorne_estate_training_hall",
+        capabilities=("inspect", "blade_drill", "usable_bladed_training_weapon"),
+        task_config_path=str(BLADED_TASK_CONFIG_PATH),
+        uses_cognitive_performance=False,
+        outcome_dimensions=("quality_precision", "partial_failure_recovery"),
+    ),
 )
 
 SPEC_BY_ACTION = {spec.action: spec for spec in TASK_SPECS}
@@ -76,6 +101,23 @@ BATCH_ACTIONS = frozenset(SPEC_BY_ACTION)
 
 class RepresentedSkillRuntimeBatchError(ValueError):
     pass
+
+
+def _task_config(spec: BatchTaskSpec) -> dict[str, Any] | None:
+    if spec.task_config_path is None:
+        return None
+    path = Path(spec.task_config_path)
+    try:
+        value = json.loads(path.read_text(encoding="utf-8"))
+    except (OSError, json.JSONDecodeError) as exc:
+        raise RepresentedSkillRuntimeBatchError(
+            f"Cannot load represented Skill task config {path}"
+        ) from exc
+    if not isinstance(value, dict):
+        raise RepresentedSkillRuntimeBatchError(
+            f"Represented Skill task config {path} requires an object root"
+        )
+    return value
 
 
 def seed_represented_skill_runtime_batch(conn: sqlite3.Connection) -> None:
@@ -198,6 +240,7 @@ def assess_batch_action(
         spec.task_id,
         target_id,
         resource_capabilities=_target_capabilities(conn, target_id),
+        task_config=_task_config(spec),
     )
 
 
@@ -235,36 +278,39 @@ def represented_skill_batch_outcome(
         )
     task = validate_batch_action(conn, actor_id, action_name, target_id)
     capability = task.capability
-    performance = assess_actor_cognitive_performance(
-        conn,
-        actor_id,
-        spec.skill_id,
-        spec.application_id,
-    )
     score_factor = max(0.0, min(1.0, float(capability.skill_score) / 100.0))
-    precision = max(
-        0.0,
-        min(1.0, score_factor * performance.multiplier("precision")),
-    )
-    information = max(
-        0.0,
-        min(1.0, score_factor * performance.multiplier("reasoning_quality")),
-    )
-    recovery_multiplier = (
-        performance.multiplier("reasoning_quality")
-        + performance.multiplier("adaptation")
-    ) / 2.0
-    recovery = max(0.0, min(1.0, score_factor * recovery_multiplier))
+
+    performance = None
+    if spec.uses_cognitive_performance:
+        performance = assess_actor_cognitive_performance(
+            conn,
+            actor_id,
+            spec.skill_id,
+            spec.application_id,
+        )
+        raw_indices = {
+            "quality_precision": score_factor * performance.multiplier("precision"),
+            "information_gained": score_factor * performance.multiplier("reasoning_quality"),
+            "partial_failure_recovery": score_factor
+            * (
+                performance.multiplier("reasoning_quality")
+                + performance.multiplier("adaptation")
+            )
+            / 2.0,
+        }
+    else:
+        # No cognitive/Attribute modifier contract is declared for the first
+        # Bladed Weapons exemplar. Learned Skill remains the sole performance
+        # authority rather than inventing a hidden reflex/focus weighting.
+        raw_indices = {dimension: score_factor for dimension in spec.outcome_dimensions}
 
     support_multiplier = SUPPORT_MULTIPLIER if task.status == "constrained" else 1.0
-    precision *= support_multiplier
-    information *= support_multiplier
-    recovery *= support_multiplier
-
     indices = {
-        "quality_precision": round(precision, 6),
-        "information_gained": round(information, 6),
-        "partial_failure_recovery": round(recovery, 6),
+        dimension: round(
+            max(0.0, min(1.0, float(raw_indices[dimension]) * support_multiplier)),
+            6,
+        )
+        for dimension in spec.outcome_dimensions
     }
     minimum = min(indices.values())
     if minimum >= 0.80:
@@ -275,6 +321,21 @@ def represented_skill_batch_outcome(
         outcome_class = "limited"
     else:
         outcome_class = "poor"
+
+    if performance is None:
+        cognitive_performance: dict[str, Any] = {
+            "contract_id": None,
+            "dimensions": [],
+            "principles": [
+                "No cognitive performance modifier contract is declared for this represented task; learned Skill proficiency remains the performance authority."
+            ],
+        }
+    else:
+        cognitive_performance = {
+            "contract_id": performance.contract_id,
+            "dimensions": [asdict(item) for item in performance.dimensions],
+            "principles": list(performance.principles),
+        }
 
     return {
         "source": SOURCE,
@@ -298,11 +359,7 @@ def represented_skill_batch_outcome(
             "status": capability.status,
             "reasons": list(capability.reasons),
         },
-        "cognitive_performance": {
-            "contract_id": performance.contract_id,
-            "dimensions": [asdict(item) for item in performance.dimensions],
-            "principles": list(performance.principles),
-        },
+        "cognitive_performance": cognitive_performance,
         "support_multiplier": support_multiplier,
         "indices": indices,
         "outcome_class": outcome_class,
