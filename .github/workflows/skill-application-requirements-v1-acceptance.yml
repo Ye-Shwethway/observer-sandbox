@@ -1,0 +1,29 @@
+name: Skill Application Requirements v1 Acceptance
+
+on:
+  pull_request:
+    paths:
+      - 'config/skill_definitions.v1.json'
+      - 'src/observer_sandbox/skill_application_requirements.py'
+      - 'src/observer_sandbox/skill_definitions.py'
+      - 'tests/test_skill_application_requirements_v1.py'
+      - '.github/workflows/skill-application-requirements-v1-acceptance.yml'
+  push:
+    branches: [main]
+    paths:
+      - 'config/skill_definitions.v1.json'
+      - 'src/observer_sandbox/skill_application_requirements.py'
+      - 'src/observer_sandbox/skill_definitions.py'
+      - 'tests/test_skill_application_requirements_v1.py'
+      - '.github/workflows/skill-application-requirements-v1-acceptance.yml'
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - run: python -m pip install -e '.[dev]'
+      - run: pytest -q tests/test_skill_definition_format_v1.py tests/test_skill_application_requirements_v1.py
