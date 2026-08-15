@@ -31,9 +31,14 @@ def _metadata(row: sqlite3.Row) -> dict[str, Any]:
     return raw if isinstance(raw, dict) else {}
 
 
-def _dynamic_rows(conn: sqlite3.Connection, actor_id: str) -> list[sqlite3.Row]:
+def _dynamic_interest_rows(conn: sqlite3.Connection, actor_id: str) -> list[sqlite3.Row]:
     rows = conn.execute(
-        "SELECT id,name,enjoyment,metadata_json FROM character_hobbies WHERE entity_id=? ORDER BY id",
+        """
+        SELECT id,preference_type,subject,intensity,metadata_json
+        FROM character_preferences
+        WHERE entity_id=? AND preference_type='interest'
+        ORDER BY id
+        """,
         (actor_id,),
     ).fetchall()
     return [row for row in rows if _metadata(row).get("source") == SOURCE]
@@ -83,6 +88,65 @@ def _status_after_engagement(strength: float, effective: float, distinct_days: i
     return "emerging"
 
 
+def _dynamic_hobby_projection(conn: sqlite3.Connection, actor_id: str, name: str) -> sqlite3.Row | None:
+    rows = conn.execute(
+        "SELECT id,name,enjoyment,frequency,metadata_json FROM character_hobbies WHERE entity_id=? AND name=?",
+        (actor_id, name),
+    ).fetchall()
+    for row in rows:
+        if _metadata(row).get("source") == SOURCE:
+            return row
+    return None
+
+
+def _sync_hobby_projection(
+    conn: sqlite3.Connection,
+    actor_id: str,
+    *,
+    name: str,
+    strength: float,
+    status: str,
+    interest_key: str,
+) -> None:
+    projection = _dynamic_hobby_projection(conn, actor_id, name)
+    if status != "established":
+        if projection is not None:
+            conn.execute("DELETE FROM character_hobbies WHERE id=?", (projection["id"],))
+        return
+
+    metadata = {
+        "source": SOURCE,
+        "projection": "established_interest",
+        "interest_key": interest_key,
+        "status": status,
+    }
+    if projection is None:
+        conn.execute(
+            """
+            INSERT INTO character_hobbies(entity_id,name,proficiency,frequency,enjoyment,metadata_json)
+            VALUES(?,?,?,?,?,?)
+            """,
+            (
+                actor_id,
+                name,
+                None,
+                "established",
+                strength,
+                json.dumps(metadata, ensure_ascii=False, sort_keys=True),
+            ),
+        )
+    else:
+        conn.execute(
+            "UPDATE character_hobbies SET frequency=?,enjoyment=?,metadata_json=? WHERE id=?",
+            (
+                "established",
+                strength,
+                json.dumps(metadata, ensure_ascii=False, sort_keys=True),
+                projection["id"],
+            ),
+        )
+
+
 def _decay_dynamic_interests(
     conn: sqlite3.Connection,
     actor_id: str,
@@ -91,7 +155,7 @@ def _decay_dynamic_interests(
 ) -> list[dict[str, Any]]:
     now = _parse_time(now_sim_time)
     changes: list[dict[str, Any]] = []
-    for row in _dynamic_rows(conn, actor_id):
+    for row in _dynamic_interest_rows(conn, actor_id):
         metadata = _metadata(row)
         last_engaged = metadata.get("last_engaged_sim_time")
         if not isinstance(last_engaged, str) or not last_engaged:
@@ -109,7 +173,7 @@ def _decay_dynamic_interests(
         if decay_days <= 0.0:
             continue
 
-        before = float(row["enjoyment"] or 0.0)
+        before = float(row["intensity"] or 0.0)
         after = max(0.0, round(before - decay_days * DECAY_POINTS_PER_DAY, 3))
         previous_status = str(metadata.get("status") or "emerging")
         status = previous_status
@@ -123,14 +187,22 @@ def _decay_dynamic_interests(
         metadata["status"] = status
         metadata["last_decay_sim_time"] = now_sim_time
         conn.execute(
-            "UPDATE character_hobbies SET enjoyment=?,metadata_json=? WHERE id=?",
+            "UPDATE character_preferences SET intensity=?,metadata_json=? WHERE id=?",
             (after, json.dumps(metadata, ensure_ascii=False, sort_keys=True), row["id"]),
+        )
+        _sync_hobby_projection(
+            conn,
+            actor_id,
+            name=str(row["subject"]),
+            strength=after,
+            status=status,
+            interest_key=str(metadata.get("interest_key") or ""),
         )
         if after != before or status != previous_status:
             changes.append(
                 {
-                    "hobby_id": int(row["id"]),
-                    "name": str(row["name"]),
+                    "interest_id": int(row["id"]),
+                    "name": str(row["subject"]),
                     "interest_strength_before": before,
                     "interest_strength_after": after,
                     "status_before": previous_status,
@@ -149,7 +221,13 @@ def settle_hobby_interest_lifecycle(
     target_id: str | None,
     ended_sim_time: str,
 ) -> dict[str, Any] | None:
-    """Settle hobby/interest state from one completed represented engagement."""
+    """Settle hobby/interest state from one completed represented engagement.
+
+    `character_preferences(type=interest)` is the lifecycle authority. An
+    established interest is materialized into `character_hobbies` as an active
+    projection; dormant/lapsed interests retain their authority/history without
+    remaining in the active hobby projection.
+    """
     decay = _decay_dynamic_interests(conn, actor_id, now_sim_time=ended_sim_time)
     if action_name not in ELIGIBLE_ACTIONS or not target_id:
         return {"source": SOURCE, "decay": decay} if decay else None
@@ -157,7 +235,7 @@ def settle_hobby_interest_lifecycle(
     key = _interest_key(action_name, target_id)
     candidate: sqlite3.Row | None = None
     metadata: dict[str, Any] = {}
-    for row in _dynamic_rows(conn, actor_id):
+    for row in _dynamic_interest_rows(conn, actor_id):
         item = _metadata(row)
         if item.get("interest_key") == key:
             candidate = row
@@ -190,19 +268,18 @@ def settle_hobby_interest_lifecycle(
         }
         cursor = conn.execute(
             """
-            INSERT INTO character_hobbies(entity_id,name,proficiency,frequency,enjoyment,metadata_json)
-            VALUES(?,?,?,?,?,?)
+            INSERT INTO character_preferences(entity_id,preference_type,subject,intensity,metadata_json)
+            VALUES(?,?,?,?,?)
             """,
             (
                 actor_id,
+                "interest",
                 name,
-                None,
-                "emerging",
                 after,
                 json.dumps(metadata, ensure_ascii=False, sort_keys=True),
             ),
         )
-        hobby_id = int(cursor.lastrowid)
+        interest_id = int(cursor.lastrowid)
         status_before = None
     else:
         last_engaged = metadata.get("last_engaged_sim_time")
@@ -210,7 +287,7 @@ def settle_hobby_interest_lifecycle(
             str(last_engaged) if isinstance(last_engaged, str) else None,
             ended_sim_time,
         )
-        before = float(candidate["enjoyment"] or 0.0)
+        before = float(candidate["intensity"] or 0.0)
         engagement_count = int(metadata.get("engagement_count", 0)) + 1
         effective = round(float(metadata.get("effective_engagements", 0.0)) + weight, 3)
         distinct_days = int(metadata.get("distinct_engagement_days", 1))
@@ -231,21 +308,29 @@ def settle_hobby_interest_lifecycle(
             }
         )
         conn.execute(
-            "UPDATE character_hobbies SET frequency=?,enjoyment=?,metadata_json=? WHERE id=?",
+            "UPDATE character_preferences SET intensity=?,metadata_json=? WHERE id=?",
             (
-                status,
                 after,
                 json.dumps(metadata, ensure_ascii=False, sort_keys=True),
                 candidate["id"],
             ),
         )
-        hobby_id = int(candidate["id"])
-        name = str(candidate["name"])
+        interest_id = int(candidate["id"])
+        name = str(candidate["subject"])
+
+    _sync_hobby_projection(
+        conn,
+        actor_id,
+        name=name,
+        strength=after,
+        status=status,
+        interest_key=key,
+    )
 
     return {
         "source": SOURCE,
         "engagement": {
-            "hobby_id": hobby_id,
+            "interest_id": interest_id,
             "name": name,
             "interest_key": key,
             "interest_strength_before": before,
@@ -261,18 +346,21 @@ def settle_hobby_interest_lifecycle(
     }
 
 
-def hobby_dynamics_context(conn: sqlite3.Connection, actor_id: str) -> list[dict[str, Any]]:
-    """Compact read-only developmental hobby/interest context for cognition."""
+def interest_lifecycle_rows(conn: sqlite3.Connection, actor_id: str) -> list[dict[str, Any]]:
+    """Read-only lifecycle state for observation/tests without granting mutation authority."""
     result: list[dict[str, Any]] = []
-    for row in _dynamic_rows(conn, actor_id):
+    for row in _dynamic_interest_rows(conn, actor_id):
         metadata = _metadata(row)
         result.append(
             {
-                "name": str(row["name"]),
-                "interest_strength": round(float(row["enjoyment"] or 0.0), 3),
+                "name": str(row["subject"]),
+                "interest_strength": round(float(row["intensity"] or 0.0), 3),
                 "status": str(metadata.get("status") or "emerging"),
                 "activity": metadata.get("activity"),
                 "subject": metadata.get("target_name"),
+                "engagement_count": int(metadata.get("engagement_count", 0)),
+                "effective_engagements": float(metadata.get("effective_engagements", 0.0)),
+                "distinct_engagement_days": int(metadata.get("distinct_engagement_days", 0)),
             }
         )
     return result
