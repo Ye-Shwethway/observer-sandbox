@@ -10,13 +10,32 @@ This slice is intentionally non-graphic and relationship-independent.
 
 ## Invariant
 
+Current v1 invariant:
+
 `adult actor + authored libido + release recency + current recovery state + authorized private/alone context -> bounded solo-regulation drive -> cognition may propose self_satisfaction -> deterministic validation -> temporary sexual physiology + immutable action evidence -> rolling 7-day count`
 
 The behavior is discretionary. There is no target frequency and no rule that a healthy actor must perform it a fixed number of times per week.
 
+### Multi-factor sexual-drive contract
+
+Sexual desire/behavior must remain multi-factorial. **No single stress, hormone, media/cue, relationship, or frequency variable is a mandatory trigger.**
+
+The long-term architecture is:
+
+`baseline libido + transient sexual arousal/cues + release recency/satiety + current physiological state + later contextual/relationship/endocrine modifiers -> current sexual drive -> cognition may choose among currently legal actions`
+
+This means:
+
+- stress is not a prerequisite for self-satisfaction;
+- a low-stress actor may still experience meaningful sexual drive;
+- future sexual media/content/cue exposure may contribute transient arousal when a real content/event system supplies that evidence;
+- future endocrine state may modulate desire only when an explicit evidence-backed endocrine subsystem exists;
+- relationship/attraction context may later contribute without becoming mandatory for solo behavior;
+- cognition still chooses among authoritative legal actions rather than a deterministic drive automatically forcing behavior.
+
 ## Inputs
 
-Reusable current inputs:
+Reusable current v1 inputs:
 - `raps_sa.libido`;
 - completed `self_satisfaction` action history;
 - current energy, fatigue and sleepiness;
@@ -25,6 +44,8 @@ Reusable current inputs:
 - world `access=private` metadata;
 - resident relation establishing authorized home scope;
 - current character colocation.
+
+Current v1 intentionally does **not** use a stress stat, sexual-media event, relationship state or testosterone value because those authorities do not yet exist.
 
 The engine does **not** infer testosterone from gym attendance, body composition, Strength, or other athletic traits. No testosterone/endocrine engine is introduced by this slice.
 
@@ -78,6 +99,16 @@ At completion:
 
 Later ordinary action boundaries refresh drive and return temporary arousal/erectile presentation to baseline after the bounded subsiding interval.
 
+### Current effect boundary
+
+Solo Regulation v1 does **not** currently apply a special deterministic stress reduction, mood bonus, fatigue reduction, sleep bonus, testosterone change or endocrine cascade.
+
+Any ordinary energy/hunger/thirst/sleepiness drift during the action remains ordinary passage-of-time physiology unless a future explicit mechanism owns a new effect.
+
+A future mental/emotion system may allow bounded contextual relaxation or stress effects when actual stress/tension state exists. Such an effect must be conditional rather than a prerequisite for sexual drive and must not manufacture stress merely so the action can reduce it.
+
+Likewise, future sleep-related effects should be evidence/context dependent rather than a universal sedative bonus.
+
 ## Observer privacy
 
 The action is classified `intimate` at the observer policy layer.
@@ -102,7 +133,10 @@ Still deferred:
 - Relationship System integration;
 - attraction/partner selection;
 - explicit fantasy/content simulation;
+- sexual-media/content cue semantics;
 - testosterone/endocrine simulation;
+- stress/mood feedback integration;
+- sleep-context feedback integration;
 - fertility/reproductive mechanics;
 - clinical sexual-health/pathology modeling;
 - any permanent anatomy change caused by ordinary sexual activity.
