@@ -1,6 +1,6 @@
 # Universal Profile Grading Framework v1
 
-Status: PLANNED / NOT YET IMPLEMENTED
+Status: IMPLEMENTED / PRE-MERGE VALIDATED
 
 ## Purpose
 
@@ -16,7 +16,7 @@ Future career, quest, job, salary and progression systems may consume grade resu
 
 ## Shared vocabulary
 
-Retain the canonical cross-domain vocabulary:
+Canonical cross-domain vocabulary remains:
 
 - E — Beginner
 - D — Novice
@@ -29,123 +29,93 @@ Retain the canonical cross-domain vocabulary:
 - X — Mythic
 - XX — Transcendent
 
-A grading scheme may legitimately expose only a subset. The current 0..100 RAPS scheme remains E..S only; SS..XX must not be artificially squeezed into that scale.
+A grading scheme may expose only a legitimate subset. Current 0..100 RAPS and skill schemes use E..S; SS..XX are not compressed into that range.
 
-## Scheme registry
+## Explicit scheme registry
 
-The grading layer should support explicit named schemes rather than one universal numeric formula.
+`src/observer_sandbox/grading.py` now owns an explicit named registry. Numeric fields do not silently inherit grading.
 
-Initial scheme families:
+Implemented scheme families/IDs:
+- `raps-100-proof-v1` — monotonic 0..100 Attributes;
+- `skill-proficiency-100-v1` — monotonic 0..100 learned-skill proficiency;
+- `body-aesthetic-proportion-v1` — target-range interpretation for selected body ratios;
+- `body-central-adiposity-v1` — target-range health interpretation for waist/height;
+- `body-physique-composite-v1` — read-time composite across compatible body reference grades.
 
-- `monotonic`: higher or lower value has a meaningful ordered interpretation;
-- `target_range`: a bounded desirable/reference interval is meaningful and excessive deviation in either direction can reduce grade;
-- `target_proximity`: grade follows distance from an evidence-backed or explicitly authored target ratio/reference;
-- `composite`: multiple compatible derived metrics combine into a higher-level grade;
-- `reference_distribution`: future percentile/reference grading where a valid population/reference distribution exists.
-
-A numeric field does **not** automatically become gradeable. Membership in a scheme is explicit.
+The architecture remains extensible to later target-proximity/reference-distribution/context-specific schemes without changing authoritative raw state.
 
 ## Attributes
 
-Preserve the proven `raps-100-proof-v1` behavior for explicitly opted-in 0..100 attributes.
+The proven 36-field `raps-100-proof-v1` behavior is preserved unchanged:
+- S >= 90;
+- A >= 75;
+- B >= 60;
+- C >= 40;
+- D >= 20;
+- E >= 0.
 
-- individual values are graded at read time;
-- compatible group/overall aggregates are read-time only;
-- IQ remains excluded from the RAPS scheme because its scale semantics differ;
-- progression engines and grading remain separate authorities.
+IQ remains excluded because its scale semantics differ. Compatible Attribute group/overall grades remain read-time derived values.
 
 ## Skills
 
-Skills are a natural monotonic proficiency domain once their score semantics are confirmed.
+Represented `character_skills.score` values now receive read-time `skill-proficiency-100-v1` grades and a current Skills overall presentation grade.
 
-Planned presentation example:
+Example:
+`Hand To Hand Combat   90 (S) · Expert`
 
-`Hand-to-Hand Combat   90 (S) · Expert`
-
-`character_skills.score` should become the grading input for learned-skill proficiency. Existing persisted `tier` data must not become an independently mutable grade authority; the Skill Progression family will reconcile score/experience/tier ownership before progression is implemented.
-
-Skill grades are intended to be reusable later by career, quest, job and compensation requirements.
+Persisted `tier`, `score`, and `experience` are not mutated by grading. Skill Progression will separately reconcile their progression authority; this slice does not implement learning/progression.
 
 ## Body and physique grading
 
-Body measurements must **not** inherit a simple `larger = better` rule.
+Raw body dimensions remain descriptive and ungraded. v1 grades selected derived relationships instead of applying `larger = better`.
 
-Absolute height, weight and circumferences are descriptive state. Many physique judgments depend on proportional relationships, composition and context rather than raw magnitude.
+Implemented references:
+- `body.waist_to_shoulders_ratio` — 0.55..0.65 reference band, centered around the ~0.6 adult-male preference reported in published attractiveness research;
+- `body.waist_to_hips_ratio` — 0.80..0.90 reference band from adult-male attractiveness research;
+- `body.waist_to_height_ratio` — 0.40..0.49 health-oriented reference from NICE adult central-adiposity guidance;
+- `body.chest_to_waist_ratio` — derived context only in v1; no unsupported exact universal optimum is encoded.
 
-Planned body grading therefore emphasizes derived metrics such as:
+These are bounded reference interpretations, not universal biological beauty laws. No popularized golden-ratio constant is encoded.
 
-- shoulder-to-waist relationship;
-- chest-to-waist relationship;
-- waist-to-height relationship where a health/reference interpretation is intended;
-- waist-to-hip relationship where appropriate;
-- upper/lower-body balance;
-- limb proportionality and bilateral/symmetry-compatible relationships when represented;
-- body-composition/conditioning context;
-- composite physique proportionality.
+Target-range grading is non-linear: values inside the reference band receive the top grade for that scheme, while deviation in either direction reduces the grade. Raw height, weight, chest, waist, shoulders, hips, limbs and other circumferences are not independently quality-graded.
 
-Exact target bands must be evidence-backed and configurable. Do not hard-code a single popularized “golden ratio” as universal biological truth.
+Body overall grade is a read-time composite of compatible derived reference grades. Future general-aesthetic, health, classic-bodybuilding and modelling schemes may interpret the same authoritative body state differently.
 
-### Context-specific interpretation
+## Profile coverage
 
-The same raw body can support multiple later named interpretations, for example:
+Canonical coverage classification: `docs/PROFILE_GRADING_COVERAGE_V1.md`.
 
-- general physique proportionality;
-- health-oriented composition/central-adiposity interpretation;
-- bodybuilding/classic-physique suitability;
-- modelling/presentation suitability.
+Current surfaces are explicitly classified as graded, derived/contextual, or not gradeable so personality, preferences, recovery status, intimate anatomy/activity counts and other numeric fields do not receive meaningless grades by accident.
 
-These are different schemes, not competing mutations of body state.
+## Telegram/query architecture
 
-Future career systems should combine the appropriate contextual grades rather than treating a single circumference as a universal quality score.
+- grading logic lives outside Telegram;
+- profile query attaches derived grade metadata;
+- Telegram renders that metadata generically for Attributes, Skills and applicable Body derived rows;
+- ratios use dedicated display precision without changing ordinary profile numeric formatting;
+- no grade column or grade mutation is introduced.
 
-## Grading eligibility audit
+## Validation
 
-Before closure, current profile surfaces should be classified as one of:
+Final runtime candidate before documentation-only synchronization: `5d893ff58429d9ccc53c57c04c73788319791250`.
 
-- `graded`;
-- `derived-grade candidate`;
-- `contextual-only`;
-- `not gradeable`.
+Green evidence on that candidate:
+- CI #765 / run `31865573821`: SUCCESS;
+- Read-Only Grading Proof Acceptance #28 / run `31865573852`: SUCCESS;
+- Attribute Grading Batch 1 Acceptance #27 / run `31865573805`: SUCCESS on a disposable production copy;
+- Public Readiness Security Audit #52 / run `31865573804`: SUCCESS.
 
-Expected current direction:
-
-- Attributes — graded under explicit compatible schemes;
-- Skills — graded once proficiency-score semantics are locked;
-- Body — partially/compositely graded through derived/contextual schemes;
-- Appearance anchors such as PARS — separate future decision, not silently inherited;
-- IQ — separate future scale/reference scheme;
-- Recovery — status/condition, not a quality grade by default;
-- Personality — not gradeable by default;
-- Preferences/Habits — not gradeable by default;
-- sexual anatomy/current sexual counts — not gradeable merely because they are numeric.
-
-## Telegram and query architecture
-
-The profile query layer should attach derived grade metadata. Telegram consumes that metadata generically.
-
-Do not create field-specific Telegram grade logic when the grading registry can provide the result.
-
-Raw value, grade, label and any derived metric context should remain distinguishable.
-
-## Implementation order
-
-1. grading registry + scheme contract;
-2. preserve/route existing Attribute grading through the registry;
-3. add Skill grading presentation without implementing Skill Progression yet;
-4. research and implement Body/Physique derived grading with explicit contextual schemes;
-5. run a profile-wide grading coverage audit and close relevant presentation gaps;
-6. only then begin Skill Progression Foundation v1.
+The production-copy acceptance proves existing Attribute grading, raw Body non-grading, derived Body grading, separate Skill grading, Telegram rendering, zero model calls, and unchanged profile/skill persisted state. The VPS-backed PR acceptance is restricted to same-repository pull requests.
 
 ## Boundaries
 
-This planning slice does not implement runtime/code/schema changes.
-
-The later grading implementation must not:
-
+v1 does not:
 - persist grades as competing authoritative state;
-- assume every numeric field deserves a grade;
+- grade every numeric field;
 - treat raw body size as linear quality;
 - conflate health, aesthetics, bodybuilding and modelling criteria;
-- invent unsupported universal body-proportion constants;
-- mutate Skill scores while only adding presentation;
-- introduce careers, quests, jobs, salary or economy as side effects.
+- encode an unsupported universal body-proportion constant;
+- mutate Skill scores/tier/experience;
+- introduce careers, quests, jobs, salary, economy, endocrine or relationship systems.
+
+After deployment/closure, the next development family is Skill Progression Foundation v1.

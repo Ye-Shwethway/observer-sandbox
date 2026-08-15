@@ -11,10 +11,16 @@ on:
       - 'src/observer_sandbox/profile_observer.py'
       - 'src/observer_sandbox/telegram_profile_browser.py'
       - 'tests/test_attribute_grading_batch_1.py'
+      - 'tests/test_universal_profile_grading_v1.py'
 
 jobs:
   acceptance:
-    if: ${{ vars.VPS_DEPLOY_ENABLED == 'true' }}
+    if: >-
+      ${{
+        vars.VPS_DEPLOY_ENABLED == 'true' &&
+        (github.event_name != 'pull_request' ||
+         github.event.pull_request.head.repo.full_name == github.repository)
+      }}
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -39,7 +45,7 @@ jobs:
           ssh -p "$VPS_PORT" "$VPS_USER@$VPS_HOST" 'rm -rf /tmp/observer-attribute-grading-batch1 && mkdir -p /tmp/observer-attribute-grading-batch1/config'
           rsync -az -e "ssh -p $VPS_PORT" src/ "$VPS_USER@$VPS_HOST:/tmp/observer-attribute-grading-batch1/src/"
           rsync -az -e "ssh -p $VPS_PORT" config/profile_sections.v1.json "$VPS_USER@$VPS_HOST:/tmp/observer-attribute-grading-batch1/config/profile_sections.v1.json"
-      - name: Dry-run entire attribute grading batch on production copy
+      - name: Dry-run profile grading contracts on production copy
         env:
           VPS_HOST: ${{ secrets.VPS_HOST }}
           VPS_USER: ${{ secrets.VPS_USER }}
@@ -65,23 +71,39 @@ jobs:
 
           db = os.environ["OBSERVER_SANDBOX_DB"]
           with connect(db) as conn:
-              before = {
+              before_profile = {
                   row["field_key"]: (row["value_json"], row["mode"])
                   for row in conn.execute(
                       "SELECT field_key,value_json,mode FROM character_profile_values WHERE entity_id=?",
                       ("char_darian",),
                   ).fetchall()
               }
+              before_skills = [
+                  tuple(row)
+                  for row in conn.execute(
+                      "SELECT skill_key,score,tier,experience FROM character_skills WHERE entity_id=? ORDER BY skill_key",
+                      ("char_darian",),
+                  ).fetchall()
+              ]
+
               attributes = profile_section(conn, "char_darian", "attributes")
               by_key = {item["field_key"]: item for item in attributes["content"]}
               assert len(ATTRIBUTE_RAPS_100_FIELDS) == 36
               assert all("grade" in by_key[key] for key in ATTRIBUTE_RAPS_100_FIELDS)
               assert all(by_key[key]["grade"]["scheme_id"] == "raps-100-proof-v1" for key in ATTRIBUTE_RAPS_100_FIELDS)
               assert "grade" not in by_key["raps_ia.iq"]
+
               body = profile_section(conn, "char_darian", "body")
-              assert all("grade" not in item for item in body["content"])
+              raw_body = [item for item in body["content"] if item.get("kind") == "field"]
+              derived_body = [item for item in body["content"] if item.get("kind") == "derived_grade"]
+              assert raw_body and all("grade" not in item for item in raw_body)
+              assert derived_body
+              assert all(item["grade"]["scheme_id"] != "raps-100-proof-v1" for item in derived_body)
+
               skills = profile_section(conn, "char_darian", "skills")
-              assert all("grade" not in item for item in skills["content"])
+              assert skills["content"]
+              assert all(item["grade"]["scheme_id"] == "skill-proficiency-100-v1" for item in skills["content"])
+
               text = _fmt_profile_section(attributes)
               for key in ("raps_pa.strength", "raps_pa.stamina", "raps_ia.medical_knowledge"):
                   item = by_key[key]
@@ -99,14 +121,30 @@ jobs:
               assert f"Physical ({physical_grade}) · {physical_label}" in text
               assert f"Overall ({overall_grade}) · {overall_label}" in text
               assert "IQ   140 (" not in text
-              after = {
+
+              body_text = _fmt_profile_section(body)
+              skills_text = _fmt_profile_section(skills)
+              assert "Waist / Shoulders" in body_text
+              assert "Waist / Height" in body_text
+              assert "Hand To Hand Combat" in skills_text
+              assert "(S) · Expert" in skills_text
+
+              after_profile = {
                   row["field_key"]: (row["value_json"], row["mode"])
                   for row in conn.execute(
                       "SELECT field_key,value_json,mode FROM character_profile_values WHERE entity_id=?",
                       ("char_darian",),
                   ).fetchall()
               }
-              assert before == after
+              after_skills = [
+                  tuple(row)
+                  for row in conn.execute(
+                      "SELECT skill_key,score,tier,experience FROM character_skills WHERE entity_id=? ORDER BY skill_key",
+                      ("char_darian",),
+                  ).fetchall()
+              ]
+              assert before_profile == after_profile
+              assert before_skills == after_skills
               print(json.dumps({
                   "ok": True,
                   "disposable": True,
@@ -114,9 +152,11 @@ jobs:
                   "model_calls": 0,
                   "graded_attribute_count": len(ATTRIBUTE_RAPS_100_FIELDS),
                   "iq_excluded": True,
-                  "body_excluded": True,
-                  "skills_excluded": True,
+                  "raw_body_ungraded": True,
+                  "derived_body_grading": True,
+                  "skills_separate_scheme": True,
                   "raw_profile_unchanged": True,
+                  "raw_skills_unchanged": True,
                   "telegram_rendered": True,
                   "physical_grade": physical,
                   "overall_grade": overall
