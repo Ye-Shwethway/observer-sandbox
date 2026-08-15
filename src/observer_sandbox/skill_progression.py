@@ -8,6 +8,7 @@ from pathlib import Path
 from typing import Any
 
 from .event_log import record_event
+from .skill_hierarchy import reconcile_skill_hierarchies
 from .skill_practice import skill_practice_evidence_from_event
 from .training_methods import training_method_evidence_from_event
 
@@ -364,6 +365,11 @@ def settle_skill_progression(
         },
     )
     conn.commit()
+    # Learned component Skills are authoritative. If this settlement changed a
+    # component that belongs to a derived hierarchy, immediately refresh the
+    # parent summary and hidden legacy compatibility projection. The hierarchy
+    # reconciler never grants parent XP and is a no-op for unrelated Skills.
+    reconcile_skill_hierarchies(conn, actor_id)
     return {
         "settled": True,
         "bootstrap": False,
