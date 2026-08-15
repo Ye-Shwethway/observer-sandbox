@@ -9,7 +9,7 @@
       "skill_id": "technology",
       "name": "Technology",
       "aliases": ["technical systems"],
-      "revision": "technology-definition-v1",
+      "revision": "technology-definition-v1.1",
       "status": "active",
       "category": "technical",
       "skill_type": "technical",
@@ -85,6 +85,27 @@
             "diagnostic interface or instrumentation",
             "relevant system documentation"
           ],
+          "requirements": {
+            "context_tags_all": [
+              "technical_system_represented",
+              "diagnostic_evidence_available"
+            ],
+            "resource_capabilities_any": [
+              "diagnostic_interface",
+              "diagnostic_instrumentation"
+            ],
+            "supporting_resource_capabilities": [
+              "technical_documentation"
+            ],
+            "knowledge": {
+              "mode": "declarative_support_only",
+              "supporting_keys": [
+                "technical_systems_fundamentals",
+                "diagnostic_procedures",
+                "technical_documentation_interpretation"
+              ]
+            }
+          },
           "gameplay_effects": [
             "feasibility",
             "quality_precision",
@@ -178,7 +199,7 @@
           "legacy_profile_fields": ["raps_ia.technological_aptitude"]
         },
         "historical_evidence_policy": "Existing Technology score/experience and already-consumed Systems Diagnostic Practice evidence remain authoritative actor state. This definition does not retroactively reinterpret generic historical actions as learning evidence.",
-        "migration_notes": "No actor score, experience, tier, or grade is stored in this universal Skill Definition."
+        "migration_notes": "v1.1 adds machine-readable application requirements only. No actor score, experience, tier, grade, or historical learning evidence is reinterpreted."
       }
     }
   }
