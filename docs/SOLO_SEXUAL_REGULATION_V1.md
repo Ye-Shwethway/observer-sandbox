@@ -1,6 +1,6 @@
 # Solo Sexual Regulation v1
 
-Status: IMPLEMENTED / PRE-MERGE VALIDATED
+Status: COMPLETE / DEPLOYED
 
 ## Purpose
 
@@ -126,18 +126,34 @@ Acceptance proves on disposable state/production-copy evidence:
 - no model call is needed for deterministic settlement;
 - live production is never accelerated merely to manufacture a natural occurrence.
 
-Final pre-merge validation head: `3b2fcb91fed60634434a527f100d7ec54aecad8d`.
+## Final deployment evidence
 
-Validated gates on that head:
-- Solo Regulation v1 Acceptance #6 / run `31860253449`: SUCCESS on a disposable production copy;
-- Strength Live Cycle Validation v1 #22 / run `31860253441`: SUCCESS;
-- Sexual Anatomy Physiology Lifecycle v1 Acceptance #14 / run `31860253511`: SUCCESS;
-- Minimum Training Stimulus Acceptance #23 / run `31860253384`: SUCCESS;
-- Attribute Grading Batch 1 Acceptance #22 / run `31860253398`: SUCCESS;
-- Read-Only Grading Proof Acceptance #23 / run `31860253359`: SUCCESS;
-- Eating Behavior v1 Acceptance #23 / run `31860253562`: SUCCESS;
-- Inventory Foundation v1 Acceptance #25 / run `31860253504`: SUCCESS;
-- Public Readiness Security Audit #45 / run `31860253408`: SUCCESS;
-- CI #754 / run `31860253428`: SUCCESS, including full pytest and CLI init/status.
+Final tested PR #97 head: `6904171d59b5b022f902ce837916a4654d597845`.
 
-Earlier failed runs were resolved without weakening runtime contracts: Strength validation had stale candidate-config staging; one Eating acceptance attempt lost the VPS SSH connection before validation; CI exposed a missing optional-domain no-op for a synthetic profile-less actor and a stale duration-catalog count.
+Validated gates on the final candidate include:
+- Solo Regulation v1 Acceptance #8 / run `31860327100`: SUCCESS on a disposable production copy;
+- Strength Live Cycle Validation v1 run `31860327058`: SUCCESS after transient retry;
+- Sexual Anatomy Physiology Lifecycle v1 Acceptance #16 / run `31860327174`: SUCCESS;
+- Minimum Training Stimulus Acceptance #25 / run `31860327035`: SUCCESS;
+- Attribute Grading Batch 1 Acceptance #24 / run `31860327087`: SUCCESS;
+- Read-Only Grading Proof Acceptance #25 / run `31860327032`: SUCCESS;
+- Eating Behavior v1 Acceptance #25 / run `31860327243`: SUCCESS;
+- Inventory Foundation v1 Acceptance #27 / run `31860327217`: SUCCESS;
+- Public Readiness Security Audit #47 / run `31860327029`: SUCCESS;
+- CI #756 / run `31860327090`: SUCCESS.
+
+Merged via PR #97 as `60e1e3949631e1284e41ae0940a03fb02421fef8`.
+
+Production deployment:
+- Deploy #193 / run `31860951081`: SUCCESS;
+- post-merge main CI #757 / run `31860951093`: SUCCESS;
+- service health readback: healthy/active;
+- autonomy: enabled, normal mode, speed 1.0x;
+- current production state at deploy readback: Darian sleeping in the Master Suite at sim time `2025-05-05T19:49:00+00:00`;
+- Telegram API: connected;
+- primary cognition binding: Gemini `gemini-3.1-flash-lite`, preserved;
+- tested fallback evidence: Groq `qwen/qwen3.6-27b`.
+
+No live production time or action was forced to manufacture a Solo Regulation occurrence.
+
+Earlier failed runs were resolved without weakening runtime contracts: Strength validation had stale candidate-config staging; one Eating acceptance attempt lost the VPS SSH connection before validation; CI exposed a missing optional-domain no-op for a synthetic profile-less actor and a stale duration-catalog count. A post-merge Research Action Semantics acceptance also exposed an obsolete exact-singleton target assumption; its validator is generalized separately so additional future research-capable targets remain legal while the Research Desk stays valid and the Bookshelf stays invalid.

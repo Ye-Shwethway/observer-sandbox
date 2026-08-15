@@ -2,6 +2,17 @@ name: Research Action Semantics Acceptance
 
 on:
   workflow_dispatch:
+  pull_request:
+    branches: [main]
+    paths:
+      - '.github/workflows/research-action-semantics-acceptance.yml'
+      - 'config/worlds/home.v1.json'
+      - 'src/observer_sandbox/composition_schema.py'
+      - 'src/observer_sandbox/model_decision.py'
+      - 'src/observer_sandbox/duration_planning.py'
+      - 'tests/test_research_action_semantics.py'
+      - 'tests/test_model_action_vocabulary.py'
+      - 'tests/test_minimum_action_timing.py'
   push:
     branches: [main]
     paths:
@@ -16,7 +27,12 @@ on:
 
 jobs:
   acceptance:
-    if: ${{ vars.VPS_DEPLOY_ENABLED == 'true' }}
+    if: >-
+      ${{
+        vars.VPS_DEPLOY_ENABLED == 'true' &&
+        (github.event_name != 'pull_request' ||
+         github.event.pull_request.head.repo.full_name == github.repository)
+      }}
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -63,9 +79,9 @@ jobs:
           import os
           from observer_sandbox.db import connect
           from observer_sandbox.duration_planning import normalize_duration
+          from observer_sandbox.location_runtime import set_dynamic_location
           from observer_sandbox.runtime import initialize
           from observer_sandbox.simulation import Action, action_options, apply_action, validate_action
-          from observer_sandbox.world import set_field
 
           db = os.environ["OBSERVER_SANDBOX_DB"]
           initialize(db)
@@ -74,11 +90,12 @@ jobs:
           shelf = "obj_thorne_estate_library_bookshelf"
 
           with connect(db) as conn:
-              set_field(conn, "char_darian", "runtime.location", library)
+              set_dynamic_location(conn, "char_darian", library)
               conn.commit()
               options = action_options(conn)
               research = [o for o in options if o["action"] == "research"]
-              assert [(o["target"], o["target_name"]) for o in research] == [(desk, "Research Desk")]
+              assert any(o["target"] == desk for o in research)
+              assert all(o["target"] != shelf for o in research)
               validate_action(conn, "char_darian", Action("research", 45, desk, "review estate records"))
               try:
                   validate_action(conn, "char_darian", Action("research", 45, shelf, "invalid research target"))
@@ -104,6 +121,8 @@ jobs:
               "preferred_duration": [30, 90],
               "first_class_completion": True,
               "unsupported_bookshelf_rejected": True,
+              "additional_research_targets_allowed": True,
+              "authoritative_dynamic_location": True,
           }, indent=2, sort_keys=True))
           PY
             export OBSERVER_SANDBOX_DB=/var/lib/observer-sandbox/observer.sqlite3
