@@ -11,6 +11,13 @@ from .controlled_h2h_runtime import (
     controlled_h2h_application_evidence,
     controlled_h2h_outcome,
 )
+from .field_medicine_assessment import (
+    ASSESS_ACTION as FIELD_MEDICINE_ASSESS_ACTION,
+    SESSION_DEFINITION_ID as FIELD_MEDICINE_ASSESSMENT_DEFINITION_ID,
+    action_participants as field_medicine_assessment_participants,
+    field_medicine_assessment_application_evidence,
+    field_medicine_assessment_outcome,
+)
 from .field_medicine_stabilization import (
     STABILIZE_ACTION,
     enrich_completed_stabilization_action,
@@ -25,6 +32,7 @@ from .represented_skill_runtime_batch import (
 from .skill_practice import skill_practice_evidence
 from .tactical_assessment_runtime import (
     ASSESS_ACTION,
+    SIMULATOR_DEFINITION_ID as TACTICAL_ASSESSMENT_DEFINITION_ID,
     tactical_assessment_application_evidence,
     tactical_assessment_outcome,
 )
@@ -114,6 +122,16 @@ def _persist_represented_skill_evidence(
     return enriched
 
 
+def _target_definition_id(conn: sqlite3.Connection, target_id: str) -> str | None:
+    row = conn.execute(
+        "SELECT definition_id FROM entities WHERE id=?",
+        (target_id,),
+    ).fetchone()
+    if row is None or not row["definition_id"]:
+        return None
+    return str(row["definition_id"])
+
+
 def _enrich_technology_diagnostic(
     conn: sqlite3.Connection,
     payload: dict[str, Any],
@@ -177,6 +195,10 @@ def _enrich_tactical_assessment(
     if not isinstance(target, str) or not isinstance(duration, (int, float)):
         conn.rollback()
         raise ValueError("Completed assess action requires target and duration")
+    # `assess` is shared action vocabulary. Exact represented target definition,
+    # not the verb or prose, selects the domain consumer.
+    if _target_definition_id(conn, target) != TACTICAL_ASSESSMENT_DEFINITION_ID:
+        return payload
 
     try:
         assessment = tactical_assessment_outcome(conn, actor_id, target)
@@ -191,6 +213,56 @@ def _enrich_tactical_assessment(
             payload,
             action_id=action_id,
             outcome=assessment,
+            evidence=evidence,
+        )
+    except Exception:
+        conn.rollback()
+        raise
+
+
+def _enrich_field_medicine_assessment(
+    conn: sqlite3.Connection,
+    payload: dict[str, Any],
+    event_type: str,
+    *,
+    actor_id: str | None,
+    action_id: str | None,
+) -> dict[str, Any]:
+    if (
+        event_type != "action_completed"
+        or payload.get("action") != FIELD_MEDICINE_ASSESS_ACTION
+        or not actor_id
+        or not action_id
+        or "skill_application" in payload
+    ):
+        return payload
+    target = payload.get("target")
+    duration = payload.get("duration_minutes")
+    if not isinstance(target, str) or not isinstance(duration, (int, float)):
+        conn.rollback()
+        raise ValueError("Completed Field Medicine assess action requires target and duration")
+    if _target_definition_id(conn, target) != FIELD_MEDICINE_ASSESSMENT_DEFINITION_ID:
+        return payload
+
+    try:
+        participants = field_medicine_assessment_participants(conn, action_id)
+        outcome = field_medicine_assessment_outcome(
+            conn,
+            actor_id,
+            target,
+            participants,
+        )
+        evidence = field_medicine_assessment_application_evidence(
+            outcome,
+            action_id=action_id,
+            actor_id=actor_id,
+            duration_minutes=int(duration),
+        )
+        return _persist_represented_skill_evidence(
+            conn,
+            payload,
+            action_id=action_id,
+            outcome=outcome,
             evidence=evidence,
         )
     except Exception:
@@ -407,6 +479,13 @@ def record_event(
         action_id=action_id,
     )
     event_payload = _enrich_tactical_assessment(
+        conn,
+        event_payload,
+        event_type,
+        actor_id=actor_id,
+        action_id=action_id,
+    )
+    event_payload = _enrich_field_medicine_assessment(
         conn,
         event_payload,
         event_type,
