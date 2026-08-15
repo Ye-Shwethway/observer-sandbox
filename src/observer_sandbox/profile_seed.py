@@ -20,6 +20,9 @@ MALE_REQUIRED_SEXUAL_PROFILE_FIELDS = (
 )
 
 
+BASELINE_SOURCE = "canonical_seed"
+
+
 def load_seed(path: str | Path) -> dict[str, Any]:
     return json.loads(Path(path).read_text(encoding="utf-8"))
 
@@ -76,6 +79,113 @@ def _skill_progression_active(row: sqlite3.Row | None) -> bool:
     return metadata_active or row["experience"] is not None
 
 
+def _metadata_dict(raw: str | None) -> dict[str, Any]:
+    parsed = json.loads(raw or "{}")
+    return parsed if isinstance(parsed, dict) else {}
+
+
+def _mark_canonical_baseline(metadata: dict[str, Any], revision: str | None) -> dict[str, Any]:
+    merged = dict(metadata)
+    merged["canonical_baseline"] = True
+    merged["canonical_source"] = BASELINE_SOURCE
+    if revision:
+        merged["canonical_revision"] = revision
+    return merged
+
+
+def _seed_preferences(
+    conn: sqlite3.Connection,
+    *,
+    entity_id: str,
+    seed: dict[str, Any],
+    revision: str | None,
+) -> None:
+    for kind, items in seed.get("preferences", {}).items():
+        preference_type = "like" if kind == "likes" else "dislike" if kind == "dislikes" else kind
+        for subject in items:
+            row = conn.execute(
+                """
+                SELECT id,metadata_json FROM character_preferences
+                WHERE entity_id=? AND preference_type=? AND subject=?
+                """,
+                (entity_id, preference_type, subject),
+            ).fetchone()
+            if row is None:
+                metadata = _mark_canonical_baseline({}, revision)
+                conn.execute(
+                    """
+                    INSERT INTO character_preferences(entity_id,preference_type,subject,metadata_json)
+                    VALUES(?,?,?,?)
+                    """,
+                    (
+                        entity_id,
+                        preference_type,
+                        subject,
+                        json.dumps(metadata, ensure_ascii=False, sort_keys=True),
+                    ),
+                )
+                continue
+            metadata = _mark_canonical_baseline(_metadata_dict(row["metadata_json"]), revision)
+            conn.execute(
+                "UPDATE character_preferences SET metadata_json=? WHERE id=?",
+                (json.dumps(metadata, ensure_ascii=False, sort_keys=True), row["id"]),
+            )
+
+
+def _seed_hobbies(
+    conn: sqlite3.Connection,
+    *,
+    entity_id: str,
+    seed: dict[str, Any],
+    revision: str | None,
+) -> None:
+    for hobby in seed.get("hobbies", []):
+        row = conn.execute(
+            "SELECT id,metadata_json FROM character_hobbies WHERE entity_id=? AND name=?",
+            (entity_id, hobby),
+        ).fetchone()
+        if row is None:
+            metadata = _mark_canonical_baseline({}, revision)
+            conn.execute(
+                "INSERT INTO character_hobbies(entity_id,name,metadata_json) VALUES(?,?,?)",
+                (entity_id, hobby, json.dumps(metadata, ensure_ascii=False, sort_keys=True)),
+            )
+            continue
+        metadata = _mark_canonical_baseline(_metadata_dict(row["metadata_json"]), revision)
+        conn.execute(
+            "UPDATE character_hobbies SET metadata_json=? WHERE id=?",
+            (json.dumps(metadata, ensure_ascii=False, sort_keys=True), row["id"]),
+        )
+
+
+def _seed_habits(
+    conn: sqlite3.Connection,
+    *,
+    entity_id: str,
+    seed: dict[str, Any],
+    revision: str | None,
+) -> None:
+    for habit in seed.get("habits", []):
+        row = conn.execute(
+            "SELECT id,metadata_json FROM character_habits WHERE entity_id=? AND name=?",
+            (entity_id, habit),
+        ).fetchone()
+        if row is None:
+            metadata = _mark_canonical_baseline({}, revision)
+            conn.execute(
+                "INSERT INTO character_habits(entity_id,name,metadata_json) VALUES(?,?,?)",
+                (entity_id, habit, json.dumps(metadata, ensure_ascii=False, sort_keys=True)),
+            )
+            continue
+        # Preserve learned strength/status/evidence on a row that also happens to
+        # be a canonical baseline. Initialization marks provenance only.
+        metadata = _mark_canonical_baseline(_metadata_dict(row["metadata_json"]), revision)
+        conn.execute(
+            "UPDATE character_habits SET metadata_json=? WHERE id=?",
+            (json.dumps(metadata, ensure_ascii=False, sort_keys=True), row["id"]),
+        )
+
+
 def import_seed(conn: sqlite3.Connection, seed: dict[str, Any]) -> None:
     """Import canonical/static character data without clobbering live simulation state.
 
@@ -89,6 +199,10 @@ def import_seed(conn: sqlite3.Connection, seed: dict[str, Any]) -> None:
     its current score/experience/metadata. Extra learned skills that are not
     present in the canonical seed are preserved instead of being deleted on
     initialization.
+
+    Preferences, hobbies and habits are adaptive surfaces. Canonical entries are
+    ensured as starting baselines, but initialization never deletes extra learned
+    rows and never resets dynamic strength/evidence metadata.
     """
     validate_seed(conn, seed)
     entity_id = seed["entity_id"]
@@ -152,28 +266,9 @@ def import_seed(conn: sqlite3.Connection, seed: dict[str, Any]) -> None:
             (entity_id, field_key, value_json, record["mode"], record["authority"], revision),
         )
 
-    conn.execute("DELETE FROM character_preferences WHERE entity_id=?", (entity_id,))
-    for kind, items in seed.get("preferences", {}).items():
-        preference_type = "like" if kind == "likes" else "dislike" if kind == "dislikes" else kind
-        for subject in items:
-            conn.execute(
-                "INSERT INTO character_preferences(entity_id, preference_type, subject) VALUES (?, ?, ?)",
-                (entity_id, preference_type, subject),
-            )
-
-    conn.execute("DELETE FROM character_hobbies WHERE entity_id=?", (entity_id,))
-    for hobby in seed.get("hobbies", []):
-        conn.execute(
-            "INSERT INTO character_hobbies(entity_id, name) VALUES (?, ?)",
-            (entity_id, hobby),
-        )
-
-    conn.execute("DELETE FROM character_habits WHERE entity_id=?", (entity_id,))
-    for habit in seed.get("habits", []):
-        conn.execute(
-            "INSERT INTO character_habits(entity_id, name) VALUES (?, ?)",
-            (entity_id, habit),
-        )
+    _seed_preferences(conn, entity_id=entity_id, seed=seed, revision=revision)
+    _seed_hobbies(conn, entity_id=entity_id, seed=seed, revision=revision)
+    _seed_habits(conn, entity_id=entity_id, seed=seed, revision=revision)
 
     for skill in seed.get("skills", []):
         skill_key = str(skill["key"])
