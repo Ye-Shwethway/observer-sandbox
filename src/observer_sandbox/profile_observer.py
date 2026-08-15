@@ -6,7 +6,15 @@ import sqlite3
 from pathlib import Path
 from typing import Any
 
-from .grading import GradeResult, aggregate_raps_100, evaluate_attribute_field
+from .grading import (
+    GradeResult,
+    aggregate_body_grades,
+    aggregate_raps_100,
+    aggregate_skill_100,
+    derive_body_grade_items,
+    evaluate_profile_field,
+    evaluate_skill_score,
+)
 from .simulation import snapshot
 from .strength_progression_observer import strength_progression_profile_items
 from .training_modifiers import training_readiness_modifier
@@ -165,6 +173,7 @@ def profile_section(conn: sqlite3.Connection, character_id: str, section_id: str
 
     sensitivities = _allowed_sensitivities(section, role)
     collection = section.get("collection")
+    body_grade_items: list[dict[str, Any]] = []
     if collection == "skills":
         content = _skills(conn, character_id)
     elif collection == "preferences":
@@ -187,6 +196,18 @@ def profile_section(conn: sqlite3.Connection, character_id: str, section_id: str
         )
         seen: set[str] = set()
         content = [item for item in content if not (str(item.get("field_key") or "") in seen or seen.add(str(item.get("field_key") or "")))]
+        if "body" in tuple(section.get("domains") or ()):
+            body_values = {
+                str(item["field_key"]): item.get("value")
+                for item in content
+                if item.get("kind") == "field" and item.get("domain") == "body"
+            }
+            body_grade_items = derive_body_grade_items(body_values)
+            for item in body_grade_items:
+                result = item.pop("grade_result", None)
+                if isinstance(result, GradeResult):
+                    item["grade"] = _grade_payload(result)
+            content.extend(body_grade_items)
 
     section_result: dict[str, Any] = {
         "id": section["id"],
@@ -198,6 +219,25 @@ def profile_section(conn: sqlite3.Connection, character_id: str, section_id: str
         overall, groups = _attribute_grade_summaries(content)
         section_result["overall_grade"] = overall
         section_result["group_grades"] = groups
+    elif collection == "skills":
+        section_result["overall_grade"] = _skill_grade_summary(content)
+    elif body_grade_items:
+        reconstructed: list[dict[str, Any]] = []
+        for item in body_grade_items:
+            grade = item.get("grade") or {}
+            if grade.get("grade"):
+                reconstructed.append(
+                    {
+                        **item,
+                        "grade_result": GradeResult(
+                            scheme_id=str(grade["scheme_id"]),
+                            grade=str(grade["grade"]),
+                            label=str(grade["label"]),
+                            value=float(grade["value"]),
+                        ),
+                    }
+                )
+        section_result["overall_grade"] = _grade_payload(aggregate_body_grades(reconstructed))
 
     return {"character": character, "section": section_result, "content": content}
 
@@ -298,7 +338,7 @@ def _profile_values(
             "unit": row["unit"],
             "mode": row["mode"],
         }
-        result = evaluate_attribute_field(str(row["field_key"]), value)
+        result = evaluate_profile_field(str(row["field_key"]), value)
         if result is not None:
             item["grade"] = _grade_payload(result)
         content.append(item)
@@ -339,6 +379,23 @@ def _attribute_grade_summaries(content: list[dict[str, Any]]) -> tuple[dict[str,
     return _grade_payload(aggregate_raps_100(all_results)), groups
 
 
+def _skill_grade_summary(content: list[dict[str, Any]]) -> dict[str, Any] | None:
+    results: list[GradeResult] = []
+    for item in content:
+        grade = item.get("grade") or {}
+        if not grade.get("grade"):
+            continue
+        results.append(
+            GradeResult(
+                scheme_id=str(grade["scheme_id"]),
+                grade=str(grade["grade"]),
+                label=str(grade["label"]),
+                value=float(grade["value"]),
+            )
+        )
+    return _grade_payload(aggregate_skill_100(results))
+
+
 def _skills(conn: sqlite3.Connection, character_id: str) -> list[dict[str, Any]]:
     rows = conn.execute(
         """
@@ -349,8 +406,9 @@ def _skills(conn: sqlite3.Connection, character_id: str) -> list[dict[str, Any]]
         """,
         (character_id,),
     ).fetchall()
-    return [
-        {
+    content: list[dict[str, Any]] = []
+    for row in rows:
+        item: dict[str, Any] = {
             "kind": "skill",
             "key": row["skill_key"],
             "label": str(row["skill_key"]).replace("_", " ").title(),
@@ -359,8 +417,10 @@ def _skills(conn: sqlite3.Connection, character_id: str) -> list[dict[str, Any]]
             "tier": row["tier"],
             "experience": row["experience"],
         }
-        for row in rows
-    ]
+        if isinstance(row["score"], (int, float)):
+            item["grade"] = _grade_payload(evaluate_skill_score(row["score"]))
+        content.append(item)
+    return content
 
 
 def _preferences(conn: sqlite3.Connection, character_id: str) -> list[dict[str, Any]]:
