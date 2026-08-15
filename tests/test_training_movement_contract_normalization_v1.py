@@ -28,6 +28,8 @@ def test_explicit_movement_contract_still_accepts_only_catalog_ids() -> None:
         validate_training_movements_for_target(FREE_WEIGHTS, ["sparring"])
 
 
-def test_missing_or_unbound_target_has_no_movement_contract() -> None:
-    assert validate_training_movements_for_target(None, ["invented_label"]) == ()
-    assert validate_training_movements_for_target("obj_unknown", ["invented_label"]) == ()
+def test_missing_or_unbound_target_remains_fail_closed() -> None:
+    with pytest.raises(ValueError, match="not allowed for the selected method"):
+        validate_training_movements_for_target(None, ["invented_label"])
+    with pytest.raises(ValueError, match="not allowed for the selected method"):
+        validate_training_movements_for_target("obj_unknown", ["invented_label"])
