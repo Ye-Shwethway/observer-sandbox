@@ -12,6 +12,7 @@ from .actor_selection import list_actor_ids, resolve_actor_id
 from .event_log import record_event
 from .location_runtime import current_location, set_dynamic_location
 from .solo_sexual_regulation import (
+    begin_self_satisfaction_action,
     self_satisfaction_action_option,
     settle_solo_sexual_regulation,
     validate_self_satisfaction_action,
@@ -402,7 +403,7 @@ def ensure_action_instance(
     modifiers = dict(action.modifiers)
     if action.name == "train" and "training_readiness" not in modifiers:
         modifiers["training_readiness"] = training_readiness_modifier(before)
-    conn.execute(
+    inserted = conn.execute(
         """INSERT OR IGNORE INTO action_instances(
         id,action_type,actor_id,place_id,target_id,status,duration_minutes,intent,participants_json,resources_json,
         conditions_json,modifiers_json,planned_sim_time,started_sim_time,planned_wall_time,due_wall_time,speed_at_plan
@@ -413,7 +414,9 @@ def ensure_action_instance(
             json.dumps(action.conditions), json.dumps(modifiers), before["sim_time"],
             before["sim_time"] if status == "in_progress" else None, planned_wall_time, due_wall_time, speed_at_plan,
         ),
-    )
+    ).rowcount
+    if inserted and status == "in_progress" and action.name == "self_satisfaction":
+        begin_self_satisfaction_action(conn, actor_id, state=before)
     for participant in action.participants:
         conn.execute(
             "INSERT OR IGNORE INTO action_participants(action_id,entity_id,role) VALUES(?,?,?)",
@@ -492,11 +495,12 @@ def apply_action(
         ended_sim_time=ended.isoformat(),
         state=after,
     )
-    outcome["solo_sexual_regulation"] = sexual_regulation
-    conn.execute(
-        "UPDATE action_instances SET outcome_json=?,updated_at=CURRENT_TIMESTAMP WHERE id=?",
-        (json.dumps(outcome, ensure_ascii=False), action_id),
-    )
+    if action.name == "self_satisfaction":
+        outcome["solo_sexual_regulation"] = sexual_regulation
+        conn.execute(
+            "UPDATE action_instances SET outcome_json=?,updated_at=CURRENT_TIMESTAMP WHERE id=?",
+            (json.dumps(outcome, ensure_ascii=False), action_id),
+        )
 
     participants = [{"entity_id": participant, "role": "participant"} for participant in action.participants]
     payload: dict[str, Any] = {
@@ -510,8 +514,9 @@ def apply_action(
         "after": after,
         "action_started_sim_time": started.isoformat(),
         "action_ended_sim_time": ended.isoformat(),
-        "solo_sexual_regulation": sexual_regulation,
     }
+    if action.name == "self_satisfaction":
+        payload["solo_sexual_regulation"] = sexual_regulation
     if training_load is not None:
         payload["training_load"] = training_load
     if training_stimulus is not None:
