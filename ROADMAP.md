@@ -19,13 +19,13 @@ Roadmap synchronized: 2026-08-15
 
 ## Current verified deployment baseline
 
-Latest runtime deployment: **Deploy #192 / run `31856295920` SUCCESS**, Telegram Profile Schema-Driven UX + Grading Display, PR #95 merge `78037276a8ebceb96dc1784f60e1f3bf6a2fe1c5`.
+Latest runtime deployment: **Deploy #193 / run `31860951081` SUCCESS**, Solo Sexual Regulation v1, PR #97 merge `60e1e3949631e1284e41ae0940a03fb02421fef8`.
 
-Post-merge main **CI #746 / run `31856295912` SUCCESS**.
+Post-merge main **CI #757 / run `31860951093` SUCCESS**.
 
-The immediately preceding physical/profile runtime checkpoint is Physical Presentation Closure v1, PR #94 merge `acfbd0b4a25b3ea1c4a587c9be9a2f4898bcc92b`, Deploy #191 SUCCESS.
+Deploy readback verified service healthy/active, autonomy enabled in normal mode at 1.0x, Darian sleeping in the Master Suite at sim time `2025-05-05T19:49:00+00:00`, Telegram API connected, Gemini primary cognition preserved and Groq fallback available.
 
-Sensitive production profile values are intentionally not dumped into public GitHub Actions evidence. Runtime deployment health is green; intimate-value correctness/visibility is covered by local/disposable validation and the owner-only Telegram query contract.
+Sensitive production profile/action values are intentionally not dumped into public GitHub Actions evidence. Do not accelerate production merely to manufacture a Solo Regulation occurrence.
 
 ## Completed foundations
 
@@ -53,7 +53,8 @@ Sensitive production profile values are intentionally not dumped into public Git
 - Male Erectile Physiology Canonical Contract;
 - Physical Profile Coverage Audit v1;
 - Physical Presentation Closure v1;
-- Telegram Profile Schema-Driven UX + dynamic grading presentation.
+- Telegram Profile Schema-Driven UX + dynamic grading presentation;
+- **Solo Sexual Regulation v1**.
 
 ## Universal Item / Eating Program
 
@@ -119,15 +120,13 @@ Reusable methods/movements contain no actor identity. Historical method-level fa
 
 ## Physical Profile Completion Gate — COMPLETE FOR CURRENT SCOPE
 
-The earlier gate is closed. Physical/profile mechanics were intentionally completed before crossing into Skill Progression because body composition, structural growth, circumferences, sexual physiology and skills require materially different evidence/lifecycle rules.
-
 Authority map:
 - Weight/BF/FM/FFM — BC-2;
 - circumferences — BC-3 + Training Anatomy + Regional Detraining;
 - structural Height — Height Lifecycle;
 - male structural sexual anatomy — Sexual Anatomy Lifecycle;
 - long-term erectile baseline — Sexual Physiology Lifecycle/canonical male profile contract;
-- current sexual state — context-driven runtime state, intentionally not invented without evidence;
+- current sexual state — context-driven runtime physiology, now with Solo Regulation as the first implemented explicit behavior driver;
 - composition-linked visible abdominal definition — derived presentation;
 - stable appearance anchors remain canonical until a real dynamic owner exists;
 - broader health vitals/injury/illness are explicit future domains, not fake static simulation.
@@ -137,32 +136,18 @@ Male canonical profiles require structural sexual anatomy/genetic targets plus l
 Relevant completed slices:
 - Male Erectile Physiology Canonical Contract — PR #92 / Deploy #189;
 - Physical Profile Coverage Audit — PR #93;
-- Physical Presentation Closure — PR #94 / Deploy #191.
-
-Canonical: `docs/PHYSICAL_PROFILE_COVERAGE_AUDIT_V1.md`.
+- Physical Presentation Closure — PR #94 / Deploy #191;
+- Telegram Profile Schema-Driven UX — PR #95 / Deploy #192;
+- Solo Sexual Regulation v1 — PR #97 / Deploy #193.
 
 ## Telegram Profile Schema-Driven UX — COMPLETE / DEPLOYED
 
 Canonical: `docs/TELEGRAM_PROFILE_SCHEMA_DRIVEN_UX.md`.
 
-PR #95 / Deploy #192 replaced the fixed profile section registry with `config/profile_sections.v1.json` metadata:
-
+`config/profile_sections.v1.json` externalizes:
 `domain/collection -> section id + label + icon + order + visibility + renderer kind + sensitivity`
 
-Acceptance proves a new ordinary section can be added through config metadata without a Telegram handler branch. Special renderers format genuinely different shapes but do not own section existence.
-
-### Sexual Anatomy & Physiology section
-
-An owner-only Telegram profile section now exposes represented sexual-anatomy/long-term physiology/RAPS-SA information and any genuinely materialized current sexual state.
-
-Security is enforced below the button layer:
-- owner-only section visibility;
-- allowed non-owner menu omission;
-- direct non-owner callback fails closed;
-- private/intimate sensitivity is authoritative;
-- no momentary erection/arousal values are invented merely to fill a UI.
-
-Do not expose intimate production values in public CI logs merely for evidence.
+Ordinary sections are metadata-driven. The owner-only Sexual Anatomy & Physiology section exposes represented sexual anatomy/long-term physiology/RAPS-SA information and genuinely materialized current sexual state. Non-owner direct access fails closed.
 
 ## Read-Only Grading / Telegram Grading Presentation
 
@@ -180,34 +165,49 @@ Shared vocabulary:
 - X — Mythic
 - XX — Transcendent
 
-The accepted `raps-100-proof-v1` scheme preserves its existing 0..100 thresholds and legitimately reaches E through S only. Higher tiers remain available for future named schemes with appropriate scale semantics; they are not squeezed into 0..100.
+The accepted `raps-100-proof-v1` scheme preserves its 0..100 E..S thresholds; higher tiers remain available for future schemes with appropriate scale semantics. Telegram rows use `Strength 90 (S) · Expert`. Compatible group/overall values are arithmetic means evaluated at read time; IQ is excluded because its scale differs. Grades are never persisted state.
 
-Telegram row format:
-`Strength 90 (S) · Expert`
+## Solo Sexual Regulation v1 — COMPLETE / DEPLOYED
 
-Attributes also display read-time group and overall grades. Compatible values are averaged arithmetically and the mean is evaluated through the same named scheme. IQ remains visible but excluded from this aggregate because its scale differs.
+Canonical: `docs/SOLO_SEXUAL_REGULATION_V1.md`.
 
-No individual/group/overall grade is persisted; values are recomputed on every read.
+Invariant:
+`adult actor + authored libido + release recency + recovery state + authorized private/alone context -> bounded solo-regulation drive -> cognition may propose self_satisfaction -> deterministic validation -> temporary sexual physiology + immutable action evidence -> rolling 7-day count`
 
-PR #95 tested fixture evidence:
-- Strength 90 -> S · Expert;
-- Physical mean 86.538 -> A · Advanced;
-- compatible Attributes overall mean 86.583 -> A · Advanced.
+Key boundaries:
+- adult-only;
+- private authored location + resident authorization + no colocated represented character;
+- bounded drive threshold and anti-loop pacing guard;
+- no fixed weekly quota;
+- no testosterone surrogate inferred from training/body composition;
+- no partnered sexual behavior or Relationship System dependency;
+- no structural anatomy or long-term erectile-capacity mutation from ordinary sexual activity.
 
-These are tested read-time values, not immutable labels.
+Cognition receives current drive, release recency, trailing-seven-day evidence, current private/aloneness status and reachable safe private rooms. Prompting explicitly permits the behavior as discretionary when authoritative `action_options` expose it and permits ordinary movement toward a reachable private room when context supports that choice. Stronger safety/physiology needs remain higher priority.
 
-Final PR #95 evidence:
-- tested head `2683f7f9ced8ee43c14088912b85f709cc2747d5`;
-- CI #745 / `31856247078` SUCCESS;
-- Read-Only Grading Proof #17 / `31856247076` SUCCESS;
-- Attribute Grading Batch 1 #16 / `31856247111` SUCCESS;
-- Public Readiness Security Audit #38 / `31856247097` SUCCESS;
-- Inventory Operations Acceptance #30 / `31856247203` SUCCESS;
-- merge `78037276a8ebceb96dc1784f60e1f3bf6a2fe1c5`;
-- Deploy #192 / `31856295920` SUCCESS;
-- main CI #746 / `31856295912` SUCCESS.
+At validated action start, deterministic runtime may materialize current arousal/erectile physiology; completion moves it through bounded subsiding state and updates `raps_sa.self_satisfaction_weekly` from completed action evidence. Later ordinary action boundaries refresh drive and return temporary physiology toward baseline.
 
-Grading production-copy acceptances are now state-aware instead of assuming Strength remains fixed at 90 after progression.
+Actors without represented adult sexual-profile data remain composable; this domain is a no-op for them rather than inventing missing sexual facts.
+
+Observer privacy:
+- action sensitivity is `intimate`;
+- owner can inspect appropriate owner-only profile/current/history/pending surfaces and receive eligible notifications;
+- allowed non-owner history/recent-location views omit the action;
+- non-owner current/pending state is redacted to `Private Activity`;
+- public validation must not print intimate production values.
+
+PR #97 evidence:
+- final candidate head `6904171d59b5b022f902ce837916a4654d597845`;
+- candidate CI #756 / `31860327090` SUCCESS;
+- Solo Regulation Acceptance #8 / `31860327100` SUCCESS;
+- Sexual Anatomy Physiology Lifecycle Acceptance #16 / `31860327174` SUCCESS;
+- Public Readiness Security Audit #47 / `31860327029` SUCCESS;
+- Strength Live Cycle Validation run `31860327058` retry SUCCESS;
+- merge `60e1e3949631e1284e41ae0940a03fb02421fef8`;
+- Deploy #193 / `31860951081` SUCCESS;
+- main CI #757 / `31860951093` SUCCESS.
+
+A legacy Research Action Semantics acceptance surfaced an obsolete exact-singleton target assumption on the post-merge main matrix. The reusable invariant is that the Research Desk remains valid and the Bookshelf remains invalid; the world is allowed to gain additional research-capable targets. The checkpoint sync generalizes that validator rather than constraining future composition.
 
 ## Public Repository Security — COMPLETE / PUBLIC
 
@@ -220,7 +220,7 @@ Public hardening is complete. Manual UI verification remains opportunistic where
 1. **Skill Progression Family**;
 2. intellectual attributes;
 3. mental/emotion dynamics;
-4. broader relationship/social systems, including context-driven sexual physiology where justified;
+4. broader relationship/social systems and partnered/contextual sexual behavior;
 5. broad Mind/Behavior architecture only after enough real feature signals justify it.
 
 Post-public GitHub settings verification remains opportunistic and non-blocking.
@@ -253,12 +253,13 @@ Do not add as side effects:
 - second production character solely for testing;
 - automatic restocking, deep recipes, economy/currency, generalized crafting;
 - detailed endocrine/micronutrient/organ simulation;
+- partnered sexual behavior / relationship sexual mechanics before that family is explicitly entered;
 - estate exterior/Tahoe traversal.
 
 ## Exact resume point
 
 Re-read live production and current canonical repository first.
 
-**Physical Profile Completion and Telegram Profile Schema-Driven UX are complete/deployed. The next canonical development family is Skill Progression.**
+**Physical Profile Completion, Telegram Profile Schema-Driven UX, and Solo Sexual Regulation v1 are complete/deployed. The next canonical development family remains Skill Progression.**
 
 Start by establishing skill-specific evidence/progression semantics from existing schema and action evidence rather than copying body/attribute progression formulas by convenience.
