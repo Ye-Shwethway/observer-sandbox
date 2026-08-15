@@ -82,11 +82,7 @@ def test_fresh_initialize_migrates_legacy_weapons_into_components_and_derived_pa
             assert provenance["legacy_skill_key"] == LEGACY
             assert provenance["legacy_score"] == pytest.approx(87.0)
             assert provenance["distinct_historical_specialization_evidence"] is False
-
-        # Bladed progression is now explicitly activated while Firearms remains
-        # a learned component with no progression producer yet.
-        assert bladed_meta["progression_active"] is True
-        assert firearms_meta["progression_active"] is False
+            assert metadata["progression_active"] is True
 
         legacy_meta = _metadata(legacy)
         assert legacy_meta["compatibility_projection"] is True
@@ -123,8 +119,6 @@ def test_existing_component_learning_is_preserved_and_parent_rederives(tmp_path)
         assert float(parent["score"]) == pytest.approx(89.0)
         assert float(legacy["score"]) == pytest.approx(89.0)
 
-        # Reconciliation itself is idempotent and cannot convert the hidden
-        # compatibility projection back into component learning evidence.
         reconcile_skill_hierarchies(conn, ACTOR)
         assert float(_skill(conn, BLADED)["score"]) == pytest.approx(91.0)
         assert float(_skill(conn, PARENT)["score"]) == pytest.approx(89.0)
@@ -153,8 +147,6 @@ def test_profile_shows_parent_and_components_but_hides_legacy_projection(tmp_pat
         assert by_key[BLADED]["mode"] == "learned"
         assert by_key[FIREARMS]["mode"] == "learned"
 
-        # Overall grade uses independently learned leaf Skills and excludes the
-        # derived parent so Weapon Mastery is not double-counted.
         included_scores = [
             float(item["score"])
             for item in by_key.values()
@@ -183,7 +175,7 @@ def test_cognition_sees_hierarchy_semantics_not_hidden_legacy_projection(tmp_pat
         assert by_id[FIREARMS]["hierarchy"]["parent_skill"] == PARENT
 
 
-def test_weapon_hierarchy_keeps_parent_and_firearms_non_progressing(tmp_path) -> None:
+def test_weapon_hierarchy_keeps_parent_non_progressing_while_components_progress(tmp_path) -> None:
     db = tmp_path / "observer.sqlite3"
     initialize(db)
     with connect(db) as conn:
@@ -196,6 +188,6 @@ def test_weapon_hierarchy_keeps_parent_and_firearms_non_progressing(tmp_path) ->
         }
         assert PARENT not in progression_keys
         assert BLADED in progression_keys
-        assert FIREARMS not in progression_keys
+        assert FIREARMS in progression_keys
         assert _metadata(_skill(conn, PARENT))["direct_application"] is False
         assert _skill(conn, PARENT)["experience"] is None
