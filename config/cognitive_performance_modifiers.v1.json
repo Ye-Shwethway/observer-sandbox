@@ -1,5 +1,5 @@
 {
-  "revision": "cognitive-performance-modifiers-v1",
+  "revision": "cognitive-performance-modifiers-v1.1",
   "normalization_profiles": {
     "raps_100_centered_v1": {
       "kind": "centered_linear",
@@ -63,6 +63,52 @@
         "These modifiers shape bounded performance dimensions only after deterministic Skill/task feasibility has been established.",
         "High IQ cannot create Technology proficiency, technical Knowledge, target access, required resources, or unsupported challenge capability.",
         "Stress-related factors are intentionally absent from the first low-risk simulation contract and should be added only when task context explicitly represents meaningful pressure."
+      ]
+    },
+    "tactical_planning.assess_tactical_situation": {
+      "contract_id": "tactical_situation_assessment_cognitive_performance_v1",
+      "skill_id": "tactical_planning",
+      "application_id": "assess_tactical_situation",
+      "status": "active",
+      "feasibility_policy": "never_modify",
+      "missing_input_policy": "neutral_zero_no_renormalization",
+      "knowledge_policy": "do_not_infer_or_create_knowledge",
+      "dimensions": {
+        "reasoning_quality": {
+          "base_multiplier": 1.0,
+          "max_abs_effect": 0.12,
+          "outcome_effects": ["information_gained", "partial_failure_recovery"],
+          "factors": [
+            {"field_key": "raps_ia.problem_solving", "normalization": "raps_100_centered_v1", "weight": 0.45},
+            {"field_key": "raps_ia.iq", "normalization": "iq_reasoning_context_v1", "weight": 0.30},
+            {"field_key": "raps_ma.focus", "normalization": "raps_100_centered_v1", "weight": 0.25}
+          ]
+        },
+        "precision": {
+          "base_multiplier": 1.0,
+          "max_abs_effect": 0.10,
+          "outcome_effects": ["quality_precision", "error_probability_severity"],
+          "factors": [
+            {"field_key": "raps_ma.focus", "normalization": "raps_100_centered_v1", "weight": 0.50},
+            {"field_key": "raps_ia.problem_solving", "normalization": "raps_100_centered_v1", "weight": 0.35},
+            {"field_key": "raps_ia.iq", "normalization": "iq_reasoning_context_v1", "weight": 0.15}
+          ]
+        },
+        "adaptation": {
+          "base_multiplier": 1.0,
+          "max_abs_effect": 0.10,
+          "outcome_effects": ["partial_failure_recovery", "time_speed"],
+          "factors": [
+            {"field_key": "raps_ma.adaptability", "normalization": "raps_100_centered_v1", "weight": 0.55},
+            {"field_key": "raps_ia.problem_solving", "normalization": "raps_100_centered_v1", "weight": 0.30},
+            {"field_key": "raps_ia.iq", "normalization": "iq_reasoning_context_v1", "weight": 0.15}
+          ]
+        }
+      },
+      "notes": [
+        "Tactical Planning Skill proficiency remains the learned-capability authority; these factors only shape bounded assessment quality after feasibility is established.",
+        "IQ is general reasoning context only and cannot create Tactical Planning proficiency, hidden tactical Knowledge, represented information, or command authority.",
+        "Legacy raps_ia.tactical_thinking is intentionally excluded so the canonical Tactical Planning Skill is not double-counted as a second proficiency authority."
       ]
     }
   }
