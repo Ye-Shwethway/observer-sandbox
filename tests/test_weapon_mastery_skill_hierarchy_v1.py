@@ -73,15 +73,20 @@ def test_fresh_initialize_migrates_legacy_weapons_into_components_and_derived_pa
         assert parent_meta["direct_application"] is False
         assert parent_meta["aggregate_exclude"] is True
 
-        for row in (bladed, firearms):
-            metadata = _metadata(row)
+        bladed_meta = _metadata(bladed)
+        firearms_meta = _metadata(firearms)
+        for metadata in (bladed_meta, firearms_meta):
             assert metadata["hierarchy_role"] == "component"
             assert metadata["parent_skill"] == PARENT
-            assert metadata["progression_active"] is False
             provenance = metadata["baseline_provenance"]
             assert provenance["legacy_skill_key"] == LEGACY
             assert provenance["legacy_score"] == pytest.approx(87.0)
             assert provenance["distinct_historical_specialization_evidence"] is False
+
+        # Bladed progression is now explicitly activated while Firearms remains
+        # a learned component with no progression producer yet.
+        assert bladed_meta["progression_active"] is True
+        assert firearms_meta["progression_active"] is False
 
         legacy_meta = _metadata(legacy)
         assert legacy_meta["compatibility_projection"] is True
@@ -178,7 +183,7 @@ def test_cognition_sees_hierarchy_semantics_not_hidden_legacy_projection(tmp_pat
         assert by_id[FIREARMS]["hierarchy"]["parent_skill"] == PARENT
 
 
-def test_weapon_hierarchy_does_not_activate_progression_or_weapon_runtime(tmp_path) -> None:
+def test_weapon_hierarchy_keeps_parent_and_firearms_non_progressing(tmp_path) -> None:
     db = tmp_path / "observer.sqlite3"
     initialize(db)
     with connect(db) as conn:
@@ -190,6 +195,7 @@ def test_weapon_hierarchy_does_not_activate_progression_or_weapon_runtime(tmp_pa
             ).fetchall()
         }
         assert PARENT not in progression_keys
-        assert BLADED not in progression_keys
+        assert BLADED in progression_keys
         assert FIREARMS not in progression_keys
         assert _metadata(_skill(conn, PARENT))["direct_application"] is False
+        assert _skill(conn, PARENT)["experience"] is None
