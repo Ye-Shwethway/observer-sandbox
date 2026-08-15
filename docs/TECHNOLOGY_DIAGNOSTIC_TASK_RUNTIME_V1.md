@@ -1,39 +1,37 @@
 # Technology Represented Diagnostic Task Runtime v1
 
-Status: implementation candidate
+Status: **COMPLETE / DEPLOYED**
+Date: 2026-08-15
+Implementation: PR #126
+Merge: `6009fe5805843418d3590c2929476f600dfcadea`
+Deployment: Deploy #208 SUCCESS
 
 ## Purpose
 
-This slice is the first end-to-end gameplay consumer of the Skill Definition / Capability foundation. It turns the previously read-only Technology diagnostic exemplar into a represented, selectable, deterministic simulation action without making model prose or raw Skill scores state-mutation authority.
+This slice is the first end-to-end gameplay consumer of the Skill Definition / Capability foundation. It turns the read-only Technology diagnostic exemplar into a represented selectable deterministic simulation action without making model prose or raw Skill scores state-mutation authority.
 
 ## Runtime exemplar
 
 Task:
-
 `technology_known_system_fault_diagnostic_sim_v1`
 
 Action:
-
 `diagnose`
 
 Purpose-built target:
-
 `obj_thorne_estate_intel_known_fault_diagnostic_simulator`
 
 Exact definition:
-
 `represented_task:technology_known_fault_diagnostic_simulator_v1`
 
 Location:
-
 `loc_thorne_estate_intelligence_hub`
 
-The simulator advertises:
-
+Capabilities:
 - `inspect`
 - `diagnose`
 - `diagnostic_interface`
-- `technical_documentation`
+- `technical_documentation`.
 
 The integrated interface/documentation are represented resources for this first low-risk exemplar. External inventory/tool capability resolution remains future work.
 
@@ -47,88 +45,64 @@ The integrated interface/documentation are represented resources for this first 
 → `bounded Cognitive / Performance Modifier resolution`
 → `deterministic diagnostic outcome`
 → `action_completed`
-→ `immutable skill_application_evidence`
+→ `immutable skill_application_evidence`.
 
 The model may choose a displayed `diagnose` option, but cannot invent a target or bypass deterministic task/Skill settlement.
 
 ## Deterministic outcome v1
 
-V1 intentionally uses no random success roll.
+V1 uses no random success roll.
 
-After the represented task is `supported` or `constrained`, authoritative Technology proficiency is converted to a bounded base factor:
-
+After the represented task is supported or constrained, authoritative Technology proficiency becomes a bounded base factor:
 `base = Technology score / 100`
 
-The already-declared Cognitive / Performance Modifier contract shapes only allowed outcome dimensions:
-
+Declared cognitive/performance dimensions shape only allowed outcome fields:
 - `quality_precision = base × precision multiplier`
 - `information_gained = base × reasoning_quality multiplier`
-- `partial_failure_recovery = base × mean(reasoning_quality, adaptation multipliers)`
+- `partial_failure_recovery = base × mean(reasoning_quality, adaptation multipliers)`.
 
-All indices are clamped to `0..1`.
+Indices clamp to `0..1`.
 
-If a task is `constrained` solely because a supporting resource is absent, this specific represented runtime applies an explicit `0.92` support multiplier to outcome indices. This does not modify the learned Skill score and does not turn a missing required resource into a pass.
+If the task is constrained solely by absent supporting resource, this represented runtime uses explicit support multiplier `0.92`. This does not modify learned Skill and cannot bypass a missing required resource.
 
 Outcome class is deterministic from the minimum resolved index:
+- `strong` >= 0.80
+- `solid` >= 0.65
+- `limited` >= 0.45
+- otherwise `poor`.
 
-- `strong` at or above `0.80`
-- `solid` at or above `0.65`
-- `limited` at or above `0.45`
-- otherwise `poor`
+These are task-result labels, not Skill grades or a second competency score.
 
-These are gameplay result labels, not new Skill grades or competency scores.
+## IQ / supporting-factor boundary
 
-## IQ and supporting factors
+IQ participates only through the explicit Technology modifier contract. It cannot create Technology proficiency/Knowledge, satisfy missing target/resource/context requirements, upgrade unsupported capability, or create action access.
 
-IQ participates only through the explicit Technology cognitive-performance contract. It cannot:
-
-- create Technology proficiency;
-- create technical Knowledge;
-- satisfy missing task/resource/target requirements;
-- upgrade an unsupported task to supported;
-- create a new action option by itself.
-
-A very high-IQ actor with no authoritative Technology Skill row must fail closed.
+A high-IQ actor with no authoritative Technology Skill row fails closed.
 
 ## Evidence
 
 A completed valid diagnostic action records:
+1. normal immutable `action_completed`, enriched with represented-task outcome and `skill_application` payload;
+2. distinct immutable `skill_application_evidence` linked to the same action/completion event.
 
-1. the normal immutable `action_completed` event, enriched with the represented-task outcome and `skill_application` payload;
-2. a distinct immutable `skill_application_evidence` event linked to the same action and caused by the completion event.
+Evidence includes task identity/revision, Skill/application, exact target, challenge, capability status, outcome class/indices and duration.
 
-The application evidence contains task identity/revision, Skill/application, target identity/definition, challenge class, capability status, outcome class/indices, and duration.
-
-`learning_evidence` is explicitly `false`.
-
-This slice does not award XP, change Technology score, reinterpret historical actions, or activate implicit progression from generic application evidence.
+`learning_evidence` is explicitly false. This runtime does not award XP, modify Technology score, reinterpret historical actions, or turn generic application into progression.
 
 ## Transaction safety
 
-Technology represented-task settlement occurs before the action completion transaction commits. Invalid exact target binding or missing authoritative Skill capability causes an explicit rollback so action-instance, simulation-time, physiology, and evidence mutations are not persisted.
+Represented-task settlement occurs before action completion commits. Invalid exact target binding or unsupported Skill capability causes rollback so action-instance, time, physiology and evidence mutations are not persisted.
 
-Reusing an already completed `action_id` remains idempotent through the existing action lifecycle and does not duplicate application evidence.
+Completed `action_id` retries remain idempotent and do not duplicate application evidence.
 
 ## Cognition boundary
 
-Cognition already receives full Skill/application semantics, current behavioral anchors, supporting Attributes, and general reasoning context from Cognition Capability Awareness v1. When the actor is colocated with the simulator, the ordinary authoritative `action_options` surface exposes `diagnose` against the exact target.
+Cognition receives semantic Skill/application awareness and reasoning context. A concrete legal `diagnose` action appears only when the actor is colocated with the exact represented target. In-world reasons remain natural rather than exposing hidden scores/grades.
 
-The character therefore has both:
+## Production verification
 
-- semantic awareness of what the represented Technology application means;
-- a concrete legal world action when the relevant target is physically available.
-
-In-world reasons should remain natural rather than referring to hidden game scores/grades.
-
-## Production safety
-
-Deployment may seed the simulator/action definition, but validation must not move the live actor or force a diagnostic action. Production verification is read-only: service health, seeded object/action presence where available, unchanged Skill state, and intact autonomy/cognition configuration.
+Deploy #208 seeded the simulator/action without moving the live actor or forcing a diagnostic action. Later sanitized readback confirmed the simulator/action remained present through Deploy #209. Parent Skill values remained unchanged.
 
 ## Follow-on direction
 
-After this exemplar is proven:
-
-1. close the runtime/docs checkpoint;
-2. generalize the represented Skill application settlement pattern where structural equivalence is proven;
-3. batch additional low-risk represented Skill tasks by pattern rather than repeating bespoke one-off plumbing;
-4. consider true scored child Skills only when application-level evidence demonstrates independent progression/retention needs.
+Technology is now the proven first represented gameplay exemplar. The next slice is Tactical Planning `assess_tactical_situation`, using a distinct represented tactical scenario/simulator. It should reuse only structurally proven runtime seams, declare its own relevant cognitive factors/outcomes, keep application evidence separate from learning evidence, and avoid child Skill creation or forced production action proof.
