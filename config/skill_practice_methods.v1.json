@@ -11,7 +11,12 @@
       "tags": ["technical", "diagnostic", "simulation_safe"]
     }
   },
-  "target_bindings": {
-    "obj_thorne_estate_comms_secure_terminal": "systems_diagnostic_practice"
+  "targets": {
+    "obj_thorne_estate_comms_diagnostic_practice_console": {
+      "name": "Systems Diagnostic Practice Console",
+      "room": "loc_thorne_estate_comms",
+      "capabilities": ["inspect", "practice"],
+      "method_id": "systems_diagnostic_practice"
+    }
   }
 }
