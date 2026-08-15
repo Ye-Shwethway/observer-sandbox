@@ -22,89 +22,77 @@ Use **exemplar-first, then batch-by-pattern**. Never manipulate production merel
 
 ## Active direction
 
-Development is currently **profile-first**. Current Character Profile focus: **Skills**.
+Development is **profile-first**. Current Character Profile focus: **Skills**.
 
 Relationship/casualty-handoff expansion remains deferred until additional represented-character work resumes.
 
 ## Current verified deployment
 
-Latest runtime deployment: **Deploy #221 / run `31889659349` SUCCESS**, Bladed Weapons Simulation-Safe Runtime v1, PR #152 merge `ce77b0a9a78684283c69daa3357df1dcd4d9aeb6`.
+Latest runtime deployment: **Deploy #222 / run `31890490349` SUCCESS**, Bladed Weapons Progression Producer v1, PR #154 merge `11ee97f093c7bc5a7439742f3f691f87b6b915de`.
 
-Final tested PR head: `44f70f8f9768665851858a16bc198c962d9b512a`.
+Final tested head: `148884966ded63559806101cffbeb891efbe96dd`.
 
 Validation:
-- **CI #902 / run `31889534085` SUCCESS**;
-- **513 tests passed in 42.24s**;
-- fresh DB init/status succeeded;
-- schema remains v5;
-- relevant Skill Definition/Application/Capability/Represented Task/Cognition/Technology/Strength gates green.
+- **CI #908 / run `31890299802` SUCCESS — 518 passed in 191.64s**;
+- fresh DB init/status healthy; schema v5;
+- relevant Skill Progression/Evidence/Definition/Tactical/Strength gates green;
+- post-merge **CI #909 / run `31890490342` SUCCESS**.
 
-Production readback after Deploy #221:
+Production readback after Deploy #222:
 - service active/healthy; production init succeeded;
-- autonomy enabled, normal mode, **10x**, retry `null`, pending action present;
-- Gemini `gemini-3.1-flash-lite` primary cognition binding preserved;
+- autonomy enabled, normal mode, **10x**, retry null, pending action present;
+- Gemini `gemini-3.1-flash-lite` primary preserved;
 - Groq `qwen/qwen3.6-27b` fallback healthy;
 - Telegram token/API/owner/allowed-user configuration healthy;
-- sim time naturally reached `2025-05-06T14:18:00+00:00`;
-- Darian was naturally reading in the Living Room;
+- sim time `2025-05-06T17:18:00+00:00`;
+- Darian naturally resting in Darian's Master Suite;
 - Bladed Weapons 87/A, Firearms 87/A, Weapon Mastery 87/A, overall Skills A / 85.167;
-- no production `blade_drill` or other weapon action was fabricated for proof.
+- no production practice or weapon action was fabricated for proof.
 
-Exact application/evidence/no-XP behavior is CI/fixture evidence. Production deployment proves safe loading and continuity only.
+The unchanged scores are expected: initialization uses a zero-gain progression bootstrap. Learning behavior is CI/fixture evidence.
 
 ## Weapon Mastery checkpoint
 
-Canonical hierarchy:
-
-`Weapon Mastery` — derived parent
+`Weapon Mastery` — derived/non-executable parent
 - `Bladed Weapons` — learned component
 - `Firearms` — learned component
 
-Authority rules:
-- learned components own proficiency;
-- parent is equal-weight derived summary only;
-- parent cannot receive direct XP or authorize a represented task;
-- historical `weapons = 87` was only a compatibility baseline, not proof of distinct specialization measurements;
-- old `weapons` remains temporarily as hidden compatibility projection while historical paths are retired.
+Parent rules:
+- equal-weight mean of components;
+- no direct application or XP;
+- excluded from overall Skills aggregation;
+- hidden legacy `weapons` remains only a compatibility projection;
+- component progression re-derives parent/legacy score without granting parent experience.
 
-### Bladed Weapons — represented runtime active
+### Bladed Weapons — application + progression complete
 
-Executable melee application authority is now:
-`bladed_weapons.employ_familiar_melee_weapon`
-
-The hidden legacy `weapons` projection no longer executes that application.
-
-Represented task:
-- `bladed_weapons_safe_handling_sim_v1`;
+Application runtime:
+- `bladed_weapons.employ_familiar_melee_weapon`;
 - action `blade_drill`;
-- exact target definition `represented_task:bladed_weapons_safe_handling_simulator_v1`;
-- exact resource/target capability `usable_bladed_training_weapon`;
-- Training Hall, solo-compatible, simulation-safe, low risk.
+- exact simulation-safe target/resource capability `usable_bladed_training_weapon`;
+- low risk, solo-compatible;
+- application evidence only; no automatic XP/harm.
 
-Deterministic behavior:
-- Bladed learned score is the performance authority;
-- no extra cognitive/Attribute modifier contract was invented;
-- completion emits application evidence only;
-- `learning_evidence=false`;
-- no automatic XP, injury, casualty, hostile-use, weapon-consumption, or real-world technique semantics.
+Learning producer:
+- `bladed_weapons_handling_practice`;
+- action `practice`, minimum 10 minutes;
+- exact relevance `{ "bladed_weapons": 1.0 }`;
+- dedicated Training Hall practice simulator distinct from `blade_drill`;
+- only explicit whitelisted practice evidence progresses Bladed Weapons.
+
+See `docs/BLADED_WEAPONS_PROGRESSION_V1.md`.
 
 ### Firearms
 
-Firearms remains a learned component with no active represented runtime or progression producer yet.
+Firearms remains a learned component with no represented runtime or progression producer yet.
 
 ## Other Skill coverage
 
-- H2H: represented controlled striking/grapple + progression; sparring requires another consenting colocated character. No hierarchy rewrite now.
-- Survival: represented navigation/sustainment + explicit solo progression active.
-- Tactical Planning: represented assessment/planning + progression active.
-- Technology: represented diagnostic runtime + explicit practice progression active.
-- Field Medicine: represented assessment/stabilization active but requires casualty context; progression/lifecycle continuation deferred.
-
-## Preserved casualty foundation
-
-`typed represented fall -> casualty lifecycle state -> read-only Field Medicine assessment -> optional bounded stabilization -> explicit lifecycle-end event required for clear`
-
-Risk reaching zero never auto-clears and never asserts healing. No broad Injury/Hazard/diagnosis/treatment/death system is implied.
+- H2H: controlled striking/grapple + progression; sparring needs another consenting colocated character.
+- Survival: represented navigation/sustainment + explicit solo progression.
+- Tactical Planning: represented assessment/planning + progression.
+- Technology: represented diagnostic + explicit practice progression.
+- Field Medicine: represented assessment/stabilization; casualty context required; progression/lifecycle continuation deferred.
 
 ## Hard boundaries
 
@@ -119,12 +107,12 @@ Risk reaching zero never auto-clears and never asserts healing. No broad Injury/
 
 ## Next canonical direction
 
-**Bladed Weapons Progression Producer v1 — REVIEW NEXT / not yet implemented.**
+**Firearms Simulation-Safe Runtime v1 — REVIEW NEXT / not yet implemented.**
 
-Add one explicit simulation-safe Bladed learning producer using the existing progression machinery where possible. Ordinary `blade_drill` represented application evidence must remain non-learning evidence. Component learning may re-derive Weapon Mastery, but the parent never receives direct XP.
+Reuse the proven Bladed pattern: component-owned represented application, exact safe target/context, exact represented training resource capability, deterministic application evidence, and no automatic XP. Keep hidden legacy Weapons and Weapon Mastery parent non-executable. No hostile/lethal/casualty semantics or real-world technique instructions.
 
-After Bladed application + progression is complete, apply the proven pattern to **Firearms Simulation-Safe Runtime v1** rather than inventing another architecture.
+After the safe Firearms application invariant is proven, review **Firearms Progression Producer v1**. After Firearms application + progression, perform the **Skills section completion review** before choosing the next Character Profile section.
 
 ## Exact resume point
 
-**Bladed Weapons Simulation-Safe Runtime v1 is complete through PR #152 final tested head `44f70f8f9768665851858a16bc198c962d9b512a`, merge `ce77b0a9a78684283c69daa3357df1dcd4d9aeb6`, CI #902 / run `31889534085` with 513 passing tests plus fresh-DB init/status and all relevant gates green, and Deploy #221 / run `31889659349` SUCCESS. Bladed Weapons now owns executable simulation-safe melee application authority through `blade_drill` plus exact `usable_bladed_training_weapon`; Weapon Mastery remains derived/non-executable, Firearms remains inactive, application evidence does not award XP, and no production proof action was forced. Review Bladed Weapons Progression Producer v1 next.**
+**Bladed Weapons Progression Producer v1 is complete through PR #154 final tested head `148884966ded63559806101cffbeb891efbe96dd`, merge `11ee97f093c7bc5a7439742f3f691f87b6b915de`, CI #908 / run `31890299802` with 518 passing tests plus fresh-DB init/status and relevant gates green, post-merge CI #909 SUCCESS, and Deploy #222 / run `31890490349` SUCCESS. Explicit `bladed_weapons_handling_practice` now provides learning evidence; ordinary `blade_drill` remains non-learning application evidence; Weapon Mastery stays derived/non-executable; Firearms remains inactive. Review Firearms Simulation-Safe Runtime v1 next.**
