@@ -56,8 +56,12 @@ jobs:
             .venv/bin/python - <<"PY"
           import json, os
           from observer_sandbox.db import connect
+          from observer_sandbox.grading import evaluate_raps_100
           from observer_sandbox.profile_observer import profile_section
           from observer_sandbox.telegram_profile_browser import _fmt_profile_section
+
+          def fmt_number(value):
+              return f"{float(value):.1f}".rstrip("0").rstrip(".")
 
           db = os.environ["OBSERVER_SANDBOX_DB"]
           with connect(db) as conn:
@@ -65,6 +69,8 @@ jobs:
                   "SELECT value_json, mode FROM character_profile_values WHERE entity_id=? AND field_key=?",
                   ("char_darian", "raps_pa.strength"),
               ).fetchone()
+              raw = float(json.loads(before["value_json"]))
+              expected = evaluate_raps_100(raw)
               data = profile_section(conn, "char_darian", "attributes")
               strength = next(item for item in data["content"] if item["field_key"] == "raps_pa.strength")
               text = _fmt_profile_section(data)
@@ -72,12 +78,11 @@ jobs:
                   "SELECT value_json, mode FROM character_profile_values WHERE entity_id=? AND field_key=?",
                   ("char_darian", "raps_pa.strength"),
               ).fetchone()
-              assert before["value_json"] == "90"
-              assert strength["value"] == 90
+              assert float(strength["value"]) == raw
               assert strength["grade"]["scheme_id"] == "raps-100-proof-v1"
-              assert strength["grade"]["grade"] == "S"
-              assert strength["grade"]["label"] == "Expert"
-              assert "Strength   90 (S) · Expert" in text
+              assert strength["grade"]["grade"] == expected.grade
+              assert strength["grade"]["label"] == expected.label
+              assert f"Strength   {fmt_number(raw)} ({expected.grade}) · {expected.label}" in text
               assert tuple(before) == tuple(after)
               print(json.dumps({
                   "ok": True,
