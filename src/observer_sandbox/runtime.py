@@ -15,6 +15,7 @@ from .profile_schema import seed_profile_field_definitions
 from .profile_schema_source_union import seed_source_union_extensions
 from .sexual_state_schema import seed_sexual_state_fields
 from .simulation import ensure_sim_clock
+from .skill_practice import seed_skill_practice_foundation
 from .skill_progression import maybe_settle_skill_progression
 from .world import seed_home_and_darian
 
@@ -48,6 +49,10 @@ def _initialize_conn(conn) -> None:
     sim_clock = ensure_sim_clock(conn)
     seed_home_inventory(conn)
     seed_action_definitions(conn)
+    # Skill-practice semantics own their bounded action definition and
+    # purpose-built practice targets. Ordinary use/inspect/research targets are
+    # intentionally not reinterpreted as learning evidence.
+    seed_skill_practice_foundation(conn)
     defaults = {
         "paused": False,
         "speed": 1.0,
