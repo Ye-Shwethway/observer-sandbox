@@ -5,8 +5,13 @@ import sqlite3
 from typing import Any
 
 from .grading import evaluate_skill_score
+from .skill_application_requirements import get_executable_skill_application
 from .skill_definitions import load_skill_definition_config
-from .skill_hierarchy import hierarchy_cognition_awareness, hierarchy_profile_metadata
+from .skill_hierarchy import (
+    hierarchy_cognition_awareness,
+    hierarchy_profile_metadata,
+    hierarchy_skill_descriptor,
+)
 
 
 COGNITIVE_FACTOR_FIELDS: tuple[tuple[str, str], ...] = (
@@ -150,6 +155,52 @@ def _skill_awareness(
     }
 
 
+def _hierarchy_awareness_with_active_applications(
+    conn: sqlite3.Connection,
+    actor_id: str,
+    row: sqlite3.Row,
+) -> dict[str, Any] | None:
+    awareness = hierarchy_cognition_awareness(row)
+    if awareness is None:
+        return None
+    descriptor = hierarchy_skill_descriptor(str(row["skill_key"]))
+    if descriptor is None or descriptor.get("hierarchy_role") != "component":
+        return awareness
+
+    applications: list[dict[str, Any]] = []
+    definitions: list[dict[str, Any]] = []
+    for application_id in descriptor.get("legacy_application_family") or []:
+        try:
+            definition, application = get_executable_skill_application(
+                str(row["skill_key"]),
+                str(application_id),
+            )
+        except (KeyError, ValueError):
+            continue
+        applications.append(_application_awareness(application))
+        definitions.append(definition)
+
+    if not applications:
+        return awareness
+
+    enriched = dict(awareness)
+    enriched["applications"] = applications
+    # All currently activated applications for one hierarchy component are derived
+    # from one canonical semantic source. Keep support context read-only and avoid
+    # inventing a separate Knowledge state for the component.
+    definition = definitions[0]
+    enriched["supporting_attributes"] = _supporting_attributes(conn, actor_id, definition)
+    enriched["knowledge_context"] = {
+        "mode": "declarative_only_not_actor_knowledge_state",
+        "keys": [
+            item.get("knowledge_key")
+            for item in (definition.get("knowledge_requirements") or [])
+            if isinstance(item, dict) and isinstance(item.get("knowledge_key"), str)
+        ],
+    }
+    return enriched
+
+
 def cognition_capability_awareness(
     conn: sqlite3.Connection,
     actor_id: str,
@@ -187,7 +238,11 @@ def cognition_capability_awareness(
         if isinstance(definition, dict):
             skills.append(_skill_awareness(conn, actor_id, row, definition))
             continue
-        hierarchy_awareness = hierarchy_cognition_awareness(row)
+        hierarchy_awareness = _hierarchy_awareness_with_active_applications(
+            conn,
+            actor_id,
+            row,
+        )
         if hierarchy_awareness is not None:
             skills.append(hierarchy_awareness)
             continue
