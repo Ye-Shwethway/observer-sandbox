@@ -12,25 +12,26 @@ from observer_sandbox.represented_skill_tasks import (
 )
 
 
-TASK_ID = "technology_known_system_fault_diagnostic_sim_v1"
+TECH_TASK_ID = "technology_known_system_fault_diagnostic_sim_v1"
+TACTICAL_TASK_ID = "tactical_situation_assessment_sim_v1"
 
 
 def config_copy():
     return copy.deepcopy(load_represented_skill_tasks())
 
 
-def task(config):
-    return config["tasks"][TASK_ID]
+def task(config, task_id=TECH_TASK_ID):
+    return config["tasks"][task_id]
 
 
 def test_canonical_represented_task_registry_validates() -> None:
     source = validate_represented_skill_tasks()
-    assert source["revision"] == "represented-skill-tasks-v1"
-    assert list(source["tasks"]) == [TASK_ID]
+    assert source["revision"] == "represented-skill-tasks-v1.1"
+    assert list(source["tasks"]) == [TECH_TASK_ID, TACTICAL_TASK_ID]
 
 
 def test_technology_task_is_exact_definition_bound_and_simulation_safe() -> None:
-    value = represented_skill_task(TASK_ID)
+    value = represented_skill_task(TECH_TASK_ID)
 
     assert value["skill_id"] == "technology"
     assert value["application_id"] == "diagnose_known_system_fault"
@@ -41,6 +42,27 @@ def test_technology_task_is_exact_definition_bound_and_simulation_safe() -> None
         "entity_type": "object",
         "definition_id": "represented_task:technology_known_fault_diagnostic_simulator_v1",
         "required_capabilities_all": ["inspect"],
+    }
+    assert value["resource_contract"]["required_resource_mode"] == "any"
+    assert value["resource_contract"]["required_capabilities_any"] == ["diagnostic_interface"]
+    assert value["evidence_policy"]["learning_evidence"] is False
+
+
+def test_tactical_task_preserves_no_hard_resource_application_semantics() -> None:
+    value = represented_skill_task(TACTICAL_TASK_ID)
+
+    assert value["skill_id"] == "tactical_planning"
+    assert value["application_id"] == "assess_tactical_situation"
+    assert value["challenge_class"] == "standard"
+    assert value["task_mode"] == "simulation_safe"
+    assert value["risk_class"] == "low"
+    assert value["target_contract"]["definition_id"] == (
+        "represented_task:tactical_situation_assessment_simulator_v1"
+    )
+    assert value["resource_contract"] == {
+        "required_resource_mode": "none",
+        "required_capabilities_any": [],
+        "supporting_capabilities": ["situational_intelligence"],
     }
     assert value["evidence_policy"]["learning_evidence"] is False
 
@@ -74,6 +96,35 @@ def test_task_required_resource_must_narrow_application_declared_capabilities() 
     task(source)["resource_contract"]["required_capabilities_any"] = ["generic_computer"]
 
     with pytest.raises(RepresentedSkillTaskValidationError, match="must narrow"):
+        validate_represented_skill_tasks(source)
+
+
+def test_task_resource_mode_must_preserve_application_mode() -> None:
+    source = config_copy()
+    task(source, TACTICAL_TASK_ID)["resource_contract"]["required_resource_mode"] = "any"
+    task(source, TACTICAL_TASK_ID)["resource_contract"]["required_capabilities_any"] = [
+        "situational_intelligence"
+    ]
+
+    with pytest.raises(RepresentedSkillTaskValidationError, match="must preserve application mode"):
+        validate_represented_skill_tasks(source)
+
+
+def test_none_resource_mode_cannot_publish_a_hidden_hard_resource() -> None:
+    source = config_copy()
+    task(source, TACTICAL_TASK_ID)["resource_contract"]["required_capabilities_any"] = [
+        "situational_intelligence"
+    ]
+
+    with pytest.raises(RepresentedSkillTaskValidationError, match="must be empty"):
+        validate_represented_skill_tasks(source)
+
+
+def test_any_resource_mode_must_keep_a_nonempty_required_resource_list() -> None:
+    source = config_copy()
+    task(source)["resource_contract"]["required_capabilities_any"] = []
+
+    with pytest.raises(RepresentedSkillTaskValidationError, match="must not be empty"):
         validate_represented_skill_tasks(source)
 
 

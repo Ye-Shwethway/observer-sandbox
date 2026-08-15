@@ -17,6 +17,7 @@ from .sexual_state_schema import seed_sexual_state_fields
 from .simulation import ensure_sim_clock
 from .skill_practice import seed_skill_practice_foundation
 from .skill_progression import maybe_settle_skill_progression
+from .tactical_assessment_runtime import seed_tactical_assessment_runtime
 from .technology_diagnostic_runtime import seed_technology_diagnostic_runtime
 from .world import seed_home_and_darian
 
@@ -57,6 +58,10 @@ def _initialize_conn(conn) -> None:
     # Represented Technology gameplay uses a separate purpose-built target and
     # action. Practice targets are never promoted into application authority.
     seed_technology_diagnostic_runtime(conn)
+    # The second represented gameplay exemplar is a distinct Tactical assessment
+    # target/action. Existing Tactical training targets remain learning evidence
+    # only and are never promoted into application authority.
+    seed_tactical_assessment_runtime(conn)
     defaults = {
         "paused": False,
         "speed": 1.0,

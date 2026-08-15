@@ -16,6 +16,7 @@ TASK_ID_RE = re.compile(r"^[a-z][a-z0-9]*(?:_[a-z0-9]+)*$")
 ALLOWED_STATUSES = {"active", "experimental", "deprecated"}
 ALLOWED_TASK_MODES = {"simulation_safe", "represented_low_risk", "represented_consequential"}
 ALLOWED_TARGET_ENTITY_TYPES = {"object", "location", "character"}
+ALLOWED_REQUIRED_RESOURCE_MODES = {"any", "none"}
 FORBIDDEN_ACTOR_STATE_KEYS = {"score", "experience", "tier", "grade", "actor_id", "entity_id"}
 
 
@@ -124,12 +125,26 @@ def _validate_against_application(task: dict[str, Any], path: str) -> None:
     resource = task.get("resource_contract")
     if not isinstance(resource, dict):
         raise RepresentedSkillTaskValidationError(f"{path}.resource_contract: expected object")
+    resource_mode = _required_string(resource, "required_resource_mode", f"{path}.resource_contract")
+    if resource_mode not in ALLOWED_REQUIRED_RESOURCE_MODES:
+        raise RepresentedSkillTaskValidationError(
+            f"{path}.resource_contract.required_resource_mode: unsupported {resource_mode!r}"
+        )
+    application_mode = str(requirements.get("required_resource_mode") or "any")
+    if resource_mode != application_mode:
+        raise RepresentedSkillTaskValidationError(
+            f"{path}.resource_contract.required_resource_mode: must preserve application mode {application_mode!r}"
+        )
     required_any = _string_list(
         resource.get("required_capabilities_any"),
         f"{path}.resource_contract.required_capabilities_any",
-        nonempty=True,
+        nonempty=resource_mode == "any",
     )
     application_required_any = set(requirements.get("resource_capabilities_any") or [])
+    if resource_mode == "none" and required_any:
+        raise RepresentedSkillTaskValidationError(
+            f"{path}.resource_contract.required_capabilities_any: must be empty when required_resource_mode is 'none'"
+        )
     if not set(required_any).issubset(application_required_any):
         raise RepresentedSkillTaskValidationError(
             f"{path}.resource_contract.required_capabilities_any: must narrow the application's declared required-any capabilities"
