@@ -1,0 +1,49 @@
+{
+  "revision": "represented-skill-tasks-v1",
+  "tasks": {
+    "technology_known_system_fault_diagnostic_sim_v1": {
+      "task_id": "technology_known_system_fault_diagnostic_sim_v1",
+      "name": "Known System Fault Diagnostic Simulation",
+      "status": "active",
+      "skill_id": "technology",
+      "application_id": "diagnose_known_system_fault",
+      "challenge_class": "standard",
+      "task_mode": "simulation_safe",
+      "target_contract": {
+        "entity_type": "object",
+        "definition_id": "represented_task:technology_known_fault_diagnostic_simulator_v1",
+        "required_capabilities_all": [
+          "inspect"
+        ]
+      },
+      "context_tags": [
+        "technical_system_represented",
+        "diagnostic_evidence_available"
+      ],
+      "resource_contract": {
+        "required_capabilities_any": [
+          "diagnostic_interface"
+        ],
+        "supporting_capabilities": [
+          "technical_documentation"
+        ]
+      },
+      "outcome_dimensions": [
+        "feasibility",
+        "quality_precision",
+        "information_gained",
+        "partial_failure_recovery"
+      ],
+      "risk_class": "low",
+      "evidence_policy": {
+        "application_evidence": "deferred_until_action_integration",
+        "learning_evidence": false,
+        "notes": "Completing or assessing this represented task must not become Skill learning evidence unless a later explicit learning-evidence contract authorizes it."
+      },
+      "provenance": {
+        "source": "represented-technology-task-contract-v1",
+        "notes": "First bounded represented-task exemplar. The target binding is exact definition-id based; names and model prose are never task authority."
+      }
+    }
+  }
+}
