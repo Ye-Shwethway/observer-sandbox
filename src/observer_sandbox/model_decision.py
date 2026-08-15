@@ -149,10 +149,29 @@ class ModelDecisionProvider:
             (self.character_id,),
         ).fetchall()
         return {
-            "name": self._profile_value("identity.full_name", self._entity_name()),
-            "traits": self._profile_value("personality.primary_traits", []),
-            "primary_motivation": self._profile_value("personality.primary_motivation", ""),
-            "complexity_notes": self._profile_value("personality.complexity_notes", ""),
+            "identity": {
+                "name": self._profile_value("identity.full_name", self._entity_name()),
+                "date_of_birth": self._profile_value("identity.date_of_birth", None),
+                "sex": self._profile_value("identity.sex", None),
+                "gender": self._profile_value("identity.gender", None),
+                "current_status": self._profile_value("identity.current_status", None),
+            },
+            "appearance": {
+                "distinctive_features": self._profile_value("appearance.distinctive_features", []),
+                "eye_color": self._profile_value("appearance.eye_color", None),
+                "hair_color": self._profile_value("appearance.hair_color", None),
+                "hair_style": self._profile_value("appearance.hair_style", None),
+                "facial_hair": self._profile_value("appearance.facial_hair", None),
+                "pars": self._profile_value("appearance.pars", None),
+            },
+            "personality": {
+                "traits": self._profile_value("personality.primary_traits", []),
+                "primary_motivation": self._profile_value("personality.primary_motivation", ""),
+                "complexity_notes": self._profile_value("personality.complexity_notes", ""),
+            },
+            "background": {
+                "origins": self._profile_value("background.origins", ""),
+            },
             "preferences": [
                 {"type": row["preference_type"], "subject": row["subject"]}
                 for row in preferences
