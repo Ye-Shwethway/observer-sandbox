@@ -36,6 +36,12 @@ def main() -> int:
             "DELETE FROM action_instances WHERE actor_id=? AND action_type='self_satisfaction'",
             (ACTOR,),
         )
+        # Reset the derived rolling metric so this validation proves that the
+        # candidate completion path rewrites it under the current authority.
+        conn.execute(
+            "UPDATE character_profile_values SET value_json='0' WHERE entity_id=? AND field_key='raps_sa.self_satisfaction_weekly'",
+            (ACTOR,),
+        )
         set_dynamic_location(conn, ACTOR, PRIVATE_ROOM)
         set_field(conn, ACTOR, "needs.energy", 100.0, authority="validation_fixture", source="solo-regulation-acceptance")
         set_field(conn, ACTOR, "needs.sleepiness", 0.0, authority="validation_fixture", source="solo-regulation-acceptance")
