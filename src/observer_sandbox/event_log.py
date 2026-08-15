@@ -241,8 +241,13 @@ def _enrich_field_medicine_assessment(
     if not isinstance(target, str) or not isinstance(duration, (int, float)):
         conn.rollback()
         raise ValueError("Completed Field Medicine assess action requires target and duration")
-    if _target_definition_id(conn, target) != FIELD_MEDICINE_ASSESSMENT_DEFINITION_ID:
-        return payload
+    definition_id = _target_definition_id(conn, target)
+    if definition_id != FIELD_MEDICINE_ASSESSMENT_DEFINITION_ID:
+        conn.rollback()
+        raise ValueError(
+            "Assess target definition is not an authorized represented assessment target; "
+            f"expected {TACTICAL_ASSESSMENT_DEFINITION_ID!r} or {FIELD_MEDICINE_ASSESSMENT_DEFINITION_ID!r}"
+        )
 
     try:
         participants = field_medicine_assessment_participants(conn, action_id)
