@@ -25,11 +25,12 @@ def test_technology_application_has_executable_requirement_contract() -> None:
     )
 
     requirements = application["requirements"]
-    assert definition["revision"] == "technology-definition-v1.1"
+    assert definition["revision"] == "technology-definition-v1.2"
     assert requirements["context_tags_all"] == [
         "technical_system_represented",
         "diagnostic_evidence_available",
     ]
+    assert requirements["required_resource_mode"] == "any"
     assert set(requirements["resource_capabilities_any"]) == {
         "diagnostic_interface",
         "diagnostic_instrumentation",
@@ -57,12 +58,45 @@ def test_context_and_resource_tokens_must_be_stable_semantic_ids() -> None:
         validate_application_requirements(definition)
 
 
-def test_required_resource_capability_choice_cannot_be_empty() -> None:
+def test_required_resource_any_mode_requires_nonempty_choices() -> None:
     config = canonical()
     definition = config["skills"]["technology"]
     definition["applications"][0]["requirements"]["resource_capabilities_any"] = []
 
     with pytest.raises(SkillApplicationRequirementError, match="must not be empty"):
+        validate_application_requirements(definition)
+
+
+def test_required_resource_none_mode_allows_empty_choices() -> None:
+    config = canonical()
+    definition, application = get_executable_skill_application(
+        "hand_to_hand_combat",
+        "engage_unarmed_striking",
+        config=config,
+    )
+    requirements = application["requirements"]
+    assert definition["skill_id"] == "hand_to_hand_combat"
+    assert requirements["required_resource_mode"] == "none"
+    assert requirements["resource_capabilities_any"] == []
+    validate_application_requirements(definition)
+
+
+def test_required_resource_none_mode_rejects_required_choices() -> None:
+    config = canonical()
+    definition = config["skills"]["hand_to_hand_combat"]
+    requirements = definition["applications"][0]["requirements"]
+    requirements["resource_capabilities_any"] = ["invented_required_tool"]
+
+    with pytest.raises(SkillApplicationRequirementError, match="must be empty"):
+        validate_application_requirements(definition)
+
+
+def test_unknown_required_resource_mode_is_rejected() -> None:
+    config = canonical()
+    definition = config["skills"]["technology"]
+    definition["applications"][0]["requirements"]["required_resource_mode"] = "all"
+
+    with pytest.raises(SkillApplicationRequirementError, match="required_resource_mode"):
         validate_application_requirements(definition)
 
 

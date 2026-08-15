@@ -8,6 +8,7 @@ from .skill_definitions import get_skill_definition
 
 SEMANTIC_ID_RE = re.compile(r"^[a-z][a-z0-9]*(?:_[a-z0-9]+)*$")
 KNOWLEDGE_MODES = {"declarative_support_only"}
+REQUIRED_RESOURCE_MODES = {"any", "none"}
 
 
 class SkillApplicationRequirementError(ValueError):
@@ -74,11 +75,20 @@ def validate_application_requirements(
             f"{path}.requirements.context_tags_all",
             nonempty=True,
         )
+        resource_mode = requirements.get("required_resource_mode")
+        if resource_mode not in REQUIRED_RESOURCE_MODES:
+            raise SkillApplicationRequirementError(
+                f"{path}.requirements.required_resource_mode: expected one of {sorted(REQUIRED_RESOURCE_MODES)!r}"
+            )
         resource_any = _semantic_list(
-            requirements.get("resource_capabilities_any"),
+            requirements.get("resource_capabilities_any", []),
             f"{path}.requirements.resource_capabilities_any",
-            nonempty=True,
+            nonempty=resource_mode == "any",
         )
+        if resource_mode == "none" and resource_any:
+            raise SkillApplicationRequirementError(
+                f"{path}.requirements.resource_capabilities_any: must be empty when required_resource_mode is 'none'"
+            )
         supporting_resources = _semantic_list(
             requirements.get("supporting_resource_capabilities", []),
             f"{path}.requirements.supporting_resource_capabilities",
