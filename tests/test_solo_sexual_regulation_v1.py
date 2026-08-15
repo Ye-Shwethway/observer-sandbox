@@ -196,9 +196,11 @@ def test_intimate_action_is_owner_only_across_observer_surfaces(tmp_path):
         assert any(row.get("action") == "self_satisfaction" for row in owner_room["recent_activity"])
         assert all(row.get("action") != "self_satisfaction" for row in allowed_room["recent_activity"])
 
-        # A fresh in-progress sensitive action is redacted from non-owner runtime status.
+        # The pacing cooldown is a minimum guard, while drive recovery is the
+        # stronger availability criterion. Advance far enough for the current
+        # drive to become legal again before testing pending-action redaction.
         now = datetime.fromisoformat(snapshot(conn, ACTOR)["sim_time"])
-        set_runtime_value(conn, "sim_time", (now + timedelta(hours=7)).isoformat())
+        set_runtime_value(conn, "sim_time", (now + timedelta(hours=48)).isoformat())
         conn.commit()
         pending = Action("self_satisfaction", 15, None, "private self-regulation")
         validate_action(conn, ACTOR, pending)
