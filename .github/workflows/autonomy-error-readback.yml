@@ -1,0 +1,89 @@
+name: Autonomy Error Readback
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths:
+      - '.github/workflows/autonomy-error-readback.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  read-errors:
+    if: ${{ vars.VPS_DEPLOY_ENABLED == 'true' }}
+    runs-on: ubuntu-latest
+    steps:
+      - name: Configure SSH
+        env:
+          VPS_SSH_KEY: ${{ secrets.VPS_SSH_KEY }}
+          VPS_HOST: ${{ secrets.VPS_HOST }}
+          VPS_PORT: ${{ secrets.VPS_PORT || '22' }}
+        run: |
+          test -n "$VPS_HOST"
+          test -n "$VPS_SSH_KEY"
+          install -m 700 -d ~/.ssh
+          printf '%s\n' "$VPS_SSH_KEY" > ~/.ssh/id_ed25519
+          chmod 600 ~/.ssh/id_ed25519
+          ssh-keyscan -p "$VPS_PORT" -H "$VPS_HOST" >> ~/.ssh/known_hosts
+
+      - name: Read sanitized autonomy errors
+        env:
+          VPS_HOST: ${{ secrets.VPS_HOST }}
+          VPS_USER: ${{ secrets.VPS_USER }}
+          VPS_PORT: ${{ secrets.VPS_PORT || '22' }}
+        run: |
+          # Strictly read-only: SQLite mode=ro, no model call, no runtime mutation.
+          ssh -p "$VPS_PORT" "$VPS_USER@$VPS_HOST" '
+            set -euo pipefail
+            cd /opt/observer-sandbox
+            sudo -n /usr/bin/systemctl is-active observer-sandbox
+            .venv/bin/python - <<"PY"
+          import json, sqlite3
+
+          db = sqlite3.connect("file:/var/lib/observer-sandbox/observer.sqlite3?mode=ro", uri=True)
+          db.row_factory = sqlite3.Row
+          rows = db.execute(
+              "SELECT id,sim_time,payload_json FROM events "
+              "WHERE actor_id=? AND event_type=? ORDER BY id DESC LIMIT 5",
+              ("char_darian", "autonomy_error"),
+          ).fetchall()
+          errors = []
+          for row in rows:
+              payload = json.loads(row["payload_json"] or "{}")
+              errors.append({
+                  "event_id": row["id"],
+                  "sim_time": row["sim_time"],
+                  "stage": payload.get("stage"),
+                  "error_type": payload.get("error_type"),
+                  "message": payload.get("message"),
+                  "retry_seconds": payload.get("retry_seconds"),
+              })
+          retry_row = db.execute(
+              "SELECT retry_json,pending_action_id FROM actor_runtime WHERE actor_id=?",
+              ("char_darian",),
+          ).fetchone()
+          retry = json.loads(retry_row["retry_json"] or "null") if retry_row else None
+          seed = db.execute(
+              "SELECT id,definition_id,capabilities_json FROM entities WHERE id=?",
+              ("obj_thorne_estate_intel_known_fault_diagnostic_simulator",),
+          ).fetchone()
+          action = db.execute(
+              "SELECT action_type,target_mode,required_capability FROM action_definitions WHERE action_type=?",
+              ("diagnose",),
+          ).fetchone()
+          detail = {
+              "recent_autonomy_errors": errors,
+              "current_retry": retry,
+              "pending_action_id": None if retry_row is None else retry_row["pending_action_id"],
+              "technology_runtime_seed": None if seed is None else {
+                  "id": seed["id"],
+                  "definition_id": seed["definition_id"],
+                  "capabilities": json.loads(seed["capabilities_json"] or "[]"),
+              },
+              "diagnose_action": None if action is None else dict(action),
+          }
+          print("AUTONOMY_DIAGNOSTIC=" + json.dumps(detail, sort_keys=True))
+          PY
+          '
