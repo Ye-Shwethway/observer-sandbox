@@ -89,7 +89,7 @@ def _prepare(conn, *, state_mode: str = "simulated", include_supplies: bool = Tr
 
 def test_registry_adds_one_bounded_represented_stabilization_task() -> None:
     config = load_represented_skill_tasks()
-    assert config["revision"] == "represented-skill-tasks-v1.5"
+    assert config["revision"] == "represented-skill-tasks-v1.6"
     task = config["tasks"][TASK_ID]
     assert task["skill_id"] == SKILL_ID
     assert task["application_id"] == APPLICATION_ID
