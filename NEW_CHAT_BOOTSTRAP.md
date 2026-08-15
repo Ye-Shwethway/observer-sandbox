@@ -5,12 +5,12 @@ Last synchronized: 2026-08-15
 
 ## Startup / authority
 
-Read and reconcile in this order:
+Read and reconcile in order:
 1. `AGENTS.md`
 2. this file
 3. `ROADMAP.md`
-4. task-relevant canonical contracts/source files
-5. verified current live production before implementation decisions.
+4. task-relevant canonical docs/source
+5. verified current production before runtime implementation decisions.
 
 Authority:
 `current Creator instruction > current repo contracts/config/schema > verified live runtime/DB > CI/deploy evidence > bootstrap > remembered chat`.
@@ -20,141 +20,82 @@ Authority:
 Default:
 `branch -> focused tests + CI -> merge main -> automatic deploy when runtime-affecting -> read-only production check`
 
-Use disposable production-copy validation for concrete stateful/migration risk. Never accelerate or directly mutate production merely to manufacture acceptance evidence.
+Use **exemplar-first, then batch-by-pattern**. Do not force production movement, training, practice or acceleration merely for evidence. Darian/Thorne Estate remain exemplars, not reusable-engine identity.
 
-Use **exemplar-first, then batch-by-pattern**: one bounded exemplar proves a genuinely new invariant; structurally equivalent follow-ons are batched rather than split into repetitive PR/deploy cycles.
+## Current verified deployment
 
-Darian/Thorne Estate are exemplars, never reusable-engine identity. Reusable mechanics are actor/entity/definition-id driven.
+Latest runtime deployment: **Deploy #198 / run `31870737488` SUCCESS**, Skill Evidence Semantics v1 / Technology practice exemplar, PR #108 merge `3cd35cb1480533c0c2258ee72d2726cfe24b586b`.
 
-## Current verified deployment checkpoint
+Verified:
+- CI #798 SUCCESS;
+- Skill Evidence Acceptance #2 SUCCESS;
+- Tactical Planning Acceptance #4 SUCCESS;
+- service healthy, schema v5, autonomy normal 1.0x;
+- Telegram/cognition bindings preserved;
+- Technology remained `82.0 / A Advanced` after activation, with no retroactive score gain.
 
-Latest runtime deployment: **Deploy #198 / run `31870737488` SUCCESS**, Skill Evidence Semantics v1 with Technology Systems Diagnostic Practice exemplar, PR #108 merge `3cd35cb1480533c0c2258ee72d2726cfe24b586b`.
+## Current Skill authority
 
-Post-merge:
-- CI #798 / run `31870737278`: SUCCESS;
-- Skill Evidence Semantics Acceptance #2 / run `31870737515`: SUCCESS;
-- Tactical Planning Acceptance #4 / run `31870737546`: SUCCESS.
-
-Readback verified:
-- service healthy/active;
-- schema v5;
-- autonomy enabled, normal mode, 1.0x;
-- Gemini `gemini-3.1-flash-lite` primary preserved;
-- Groq `qwen/qwen3.6-27b` tested fallback preserved;
-- Telegram connected with owner/allowed-user configuration;
-- Technology remained represented at `82.0 / A Advanced`, proving no retroactive activation jump.
-
-Do not force live practice to demonstrate progression. Natural future eligible practice may supply occurrence evidence.
-
-## Universal invariants
-
-Cognition:
-`deterministic state/context -> one model proposal -> authoritative validation -> deterministic mutation`
-
-Training:
-`concrete target -> reusable method -> optional movement pattern(s) -> effective load -> immutable structured evidence -> independent downstream progression engines`
-
-Profile grading:
-`authoritative current value(s) + explicit named grading scheme + scheme-specific context -> derived grade metadata -> generic consumers`
-
-Profile change observability:
-`authoritative mutation/history -> cumulative domain-aware delta -> significance/grade-transition check -> Profile delta UX + eligible aggregated notification`
-
-Skill progression:
-`completed skill-relevant structured evidence + effective duration + explicit relevance + current proficiency + recent-practice saturation -> effective learning units -> bounded score/experience settlement + immutable audit event`
-
-Skill evidence:
-`validated domain-specific practice target + explicit practice method + bounded duration/context -> immutable structured skill-practice evidence -> existing generic Skill Progression settlement`
-
-## Completed major foundations
-
-Current major completed families include:
-- runtime/provider foundation, continuous autonomy, Telegram Observer/Profile/Control + Creator AI Control;
-- cognition fallback, Universal Character Engine, choice/resource awareness, object familiarity/inspect utility;
-- fatigue/recovery, targeted training, readiness/effectiveness/effective load, minimum stimulus and load/recovery guards;
-- causal needs + sleep/circadian behavior;
-- Physical Attribute Progression Framework v1;
-- inventory/eating/nutrition through Meal Choice Intelligence;
-- BC-2 Body Composition / BC-3 Body Measurements;
-- Training Method Semantics v2 + Training Anatomy/Movement Semantics;
-- Regional Measurement Detraining + Height Lifecycle;
-- Sexual Anatomy/Physiology + Solo Sexual Regulation v1;
-- Physical Profile Coverage/Presentation + Telegram Profile Schema-Driven UX;
-- Universal Profile Grading Framework v1 — PR #100 / Deploy #194;
-- Character Change Observability & Notification Foundation v1 — PR #102 / Deploy #195;
-- Hand-to-Hand Skill Progression Foundation v1 — PR #104 / Deploy #196;
-- Tactical Planning Skill Progression v1 — PR #106 / Deploy #197;
-- **Skill Evidence Semantics v1 / Technology exemplar — PR #108 / Deploy #198**.
-
-Detailed semantics/evidence are in the feature docs referenced by `ROADMAP.md`.
-
-## Current Skill authority map
-
-- `character_skills.score` = authoritative current proficiency;
-- `character_skills.experience` = accumulated legitimate post-activation learning evidence;
+- `character_skills.score` = authoritative current learned proficiency;
+- `character_skills.experience` = accumulated legitimate learning evidence;
 - persisted `tier` = legacy compatibility only;
 - grade = read-time `skill-proficiency-100-v1`;
-- RAPS skill-like fields are not independent mutable Skill truth;
-- model prose, action reason text and Telegram never directly mutate proficiency.
+- RAPS skill-like fields are not independent mutable Skill state;
+- model prose/Telegram do not mutate proficiency.
 
-Live-enabled progression:
-- Hand-to-Hand Combat — structured combat Training Method evidence;
-- Tactical Planning — direct `vr_tactical_drills` plus reduced mixed `ai_combat_simulation` evidence;
-- Technology — purpose-built `Systems Diagnostic Practice Console` / `systems_diagnostic_practice` Skill Evidence.
+Current progression/evidence:
+- Hand-to-Hand Combat — Training Method evidence;
+- Tactical Planning — tactical Training Method evidence;
+- Technology — explicit purpose-built `systems_diagnostic_practice` evidence.
 
-Ordinary `use`, `inspect`, `research`, `monitor` or generic terminal/medical-station activity does not become XP.
+Canonical progression/evidence docs:
+- `docs/SKILL_PROGRESSION_FOUNDATION_V1.md`
+- `docs/SKILL_PROGRESSION_TACTICAL_V1.md`
+- `docs/SKILL_EVIDENCE_SEMANTICS_V1.md`
 
-Canonical:
-- `docs/SKILL_PROGRESSION_FOUNDATION_V1.md`;
-- `docs/SKILL_PROGRESSION_TACTICAL_V1.md`;
-- `docs/SKILL_EVIDENCE_SEMANTICS_V1.md`.
+## Skill Definition & Capability Framework v1
 
-## Important newly identified gap — Skill meaning itself
+Canonical design:
+- `docs/SKILL_DEFINITION_CAPABILITY_FRAMEWORK_V1.md`
 
-The current engine can store, grade and progress a named Skill, but there is no canonical reusable **Skill Definition / Creation Format** that tells the runtime what the skill actually means.
+Research basis: O*NET, NIST NICE, ESCO and SFIA, adapted to the Observer Sandbox runtime rather than copied literally.
 
-Current `character_skills` storage is largely:
-- `skill_key`;
-- broad `category`;
-- `score`;
-- legacy `tier`;
-- `experience`;
-- free-form metadata.
+Canonical ontology:
+- **Ability / Attribute** — underlying capacity influencing learning/performance;
+- **Knowledge** — facts/concepts/procedures known;
+- **Skill** — learned capacity to apply relevant knowledge/abilities to observable task families;
+- **Task / Application** — work attempted with its own challenge/context/resources/risk;
+- **Competency / Demonstrated Capability** — evidence of reliable real-context application, not a second competing score;
+- **Learning Evidence** — immutable evidence eligible under an explicit progression policy;
+- **Proficiency** — actor `character_skills.score`, generically graded but behaviorally interpreted by each Skill Definition.
 
-Current character seeds similarly provide skill key/category/score without authoritative task scope, prerequisites, component skills, difficulty/capability semantics, deterministic gameplay effects, acquisition rules, transfer rules or failure/consequence boundaries.
+Capability direction:
+`Task Definition + Skill Definition + actor Skill state + relevant Knowledge/Abilities + tools/resources + context + reliability evidence -> deterministic capability resolution -> outcome + immutable evidence`
 
-As a result, a score such as Technology 82 or Field Medicine 75 currently has a grade/proficiency value but not a complete generic deterministic answer to **what the actor can reliably do with it**.
+A Skill score alone must not become the whole gameplay authority.
 
-Do **not** add more Field Medicine, Survival or Weapons progression mappings before this semantic foundation is designed and accepted.
+## Skill Creation Format v1 — required semantic coverage
 
-## Next canonical priority
+Every first-class Skill Definition must support:
+1. stable identity/taxonomy/revision/status/reusability;
+2. definition + explicit included/excluded scope;
+3. parent/component/related-skill relations;
+4. knowledge dependencies;
+5. ability/attribute dependencies;
+6. observable task/application families;
+7. Skill-specific E/D/C/B/A/S behavioral capability anchors;
+8. challenge classes: routine / standard / challenging / advanced / extreme;
+9. allowed gameplay outcome dimensions;
+10. risk/failure/consequence boundaries;
+11. legitimate learning evidence families;
+12. explicit bounded transfer/cross-training;
+13. future retention/reacquisition hooks;
+14. grading/observability metadata;
+15. provenance/compatibility/migration rules.
 
-**Skill Definition & Capability Framework — research + canonical design.**
+Current E–S grading thresholds remain presentation/proficiency interpretation. Capability anchors add domain-specific behavioral meaning; SS+ is not available on the current 0..100 scale.
 
-Research first, then design a minimum reusable Skill Creation Format that can express:
-1. identity/taxonomy;
-2. definition + explicit scope boundaries;
-3. parent/category and optional child/component relations;
-4. prerequisite knowledge/skills/attributes;
-5. action/task/application domains;
-6. proficiency-level behavioral/capability descriptors;
-7. difficulty/challenge semantics;
-8. deterministic gameplay effects and limits;
-9. legitimate acquisition/practice/application evidence families;
-10. learning/transfer/saturation/retention hooks;
-11. risk/failure/consequence semantics where relevant;
-12. grading/observability/presentation metadata;
-13. version/revision/source provenance.
-
-The design should explicitly separate:
-- **knowledge** — facts/concepts/procedures known;
-- **skill** — ability to apply knowledge and perform tasks;
-- **competency / demonstrated capability** — reliable application in contextual/operational conditions;
-- **attributes/abilities** — underlying capacities that influence learning/performance but are not the skill itself.
-
-Do not build a giant universal engine immediately. First produce the research-backed canonical contract/format and validation rules. Then migrate one bounded existing skill as the exemplar. Once proven, batch equivalent current skills.
-
-Current represented skills needing semantic-definition review:
+Current broad Skill review set:
 - Hand-to-Hand Combat
 - Weapons
 - Survival
@@ -162,27 +103,28 @@ Current represented skills needing semantic-definition review:
 - Technology
 - Field Medicine
 
-Existing progression/evidence remains valid unless later semantic migration explicitly demonstrates a conflict. Never silently reinterpret historical evidence.
+Do not explode these into speculative child Skills or fabricate child scores. Decompose only when real gameplay/evidence requires it.
 
-## Next development sequence
+## Next canonical slice
 
-1. **Skill Definition & Capability Framework research/design — NEXT**;
-2. minimum Skill Creation Format + validation rules;
-3. one bounded exemplar migration;
-4. batch remaining current skill definitions by pattern;
-5. resume missing Skill Evidence/Progression coverage;
-6. Skill Retention / Reacquisition after semantic/evidence coverage is broad enough;
-7. intellectual attributes;
-8. mental/emotion dynamics;
-9. broader relationship/social systems and partnered/contextual sexual behavior;
-10. broad Mind/Behavior architecture only after enough real feature families justify it.
+**Skill Creation Format v1 + validator — Technology definition exemplar.**
+
+Provisional registry: `config/skill_definitions.v1.json`.
+
+The validator should reject invalid/duplicate identities, missing scope, broken/cyclic relations, incomplete E–S capability anchors, meaningless task families, missing high-risk consequence boundaries, unknown learning-evidence references, implicit prose/action-name XP, unsupported SS+ anchors, actor state embedded in universal definitions, score-fabricating transfer rules and silent semantic reinterpretation of historical evidence.
+
+Technology should be the first complete definition because its typed practice evidence is already proven. This next slice should establish a machine-readable registry + validation only; do **not** change live task capability resolution yet.
+
+After the registry/validator is proven:
+1. wire one bounded Technology application into deterministic capability resolution;
+2. batch remaining current Skill definitions;
+3. resume missing Field Medicine/Survival/Weapons evidence/progression;
+4. add Retention/Reacquisition only after semantic/evidence coverage is broad enough.
 
 ## Deferred boundaries
 
-Do not add economy/currency, careers/jobs/quests/salary, automatic restocking, deep crafting, Character Memory, broad Mind/Behavior, partnered sexual behavior, detailed endocrine simulation, a second production character solely for testing, or Tahoe exterior traversal as side effects.
+Do not add a full Knowledge Engine, second competency score, giant Skill tree, careers/jobs/quests/economy, broad Mind/Behavior, deep crafting, partnered sexual behavior, detailed endocrine simulation, second production character solely for testing, or Tahoe exterior traversal as side effects.
 
 ## Exact resume point
 
-First re-read verified production and current canonical repository.
-
-**Skill Evidence Semantics v1 is complete/deployed/live-activated through PR #108 / Deploy #198. Technology proves the explicit-practice evidence path. The next priority is no longer immediate Field Medicine/Survival progression coverage; it is research/design of the reusable Skill Definition & Capability Framework so current and future skills have explicit meaning, scope, prerequisites, capability/application semantics and learning evidence rules.**
+**Skill Definition & Capability Framework v1 research/ontology/design is the current canonical design. Next implement only the machine-readable Skill Creation Format v1 + validator with one Technology definition; runtime capability resolution remains the following exemplar slice.**
