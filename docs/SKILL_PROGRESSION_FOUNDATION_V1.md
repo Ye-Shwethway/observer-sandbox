@@ -28,9 +28,11 @@ The historical RAPS skill-like fields such as `raps_pa.combat_skill`, `raps_pa.w
 
 Canonical skill seeds are initialization baselines, not periodic resets.
 
-`import_seed()` no longer deletes and recreates all character skill rows. A progression-active skill preserves its current score, experience and progression metadata across ordinary initialize/deploy/status paths. Extra learned skills absent from the canonical seed are also preserved.
+`import_seed()` no longer deletes and recreates all character skill rows. A progression-active skill preserves its current score, experience and progression metadata across ordinary initialize/deploy/status paths. A non-null legacy `experience` value is also treated as learned-state evidence and preserved even if it predates the explicit activation marker. Extra learned skills absent from the canonical seed are preserved.
 
-The first Skill Progression settlement is a non-progressing bootstrap. It consumes all already-existing eligible historical action evidence and marks the represented skill progression-active without inventing historical XP or retroactively changing the authored score.
+Skill Progression bootstraps at the normal initialization/deploy boundary. The zero-gain bootstrap consumes all already-existing eligible historical action evidence and marks the represented skill progression-active without inventing historical XP or retroactively changing the authored score. Because activation occurs before future autonomous actions, the first genuinely post-deploy eligible combat practice is not accidentally swallowed as historical evidence.
+
+Bootstrap and later settlement receipts remain immutable audit events, but user-facing Recent Activity is action history and excludes these internal engine receipts.
 
 ## Exemplar: Hand-to-Hand Combat
 
@@ -104,6 +106,17 @@ Therefore a legitimate `character_skills.score` change automatically inherits:
 - aggregated Character Progression pushes.
 
 No Skill-specific Telegram subsystem is added.
+
+## Acceptance
+
+The focused acceptance runs on a disposable copy of production. It proves:
+
+- initialization bootstrap leaves represented score/experience unchanged;
+- historical eligible evidence is cursor-consumed without retroactive gain;
+- a synthetic future Heavy-Bag session on the disposable copy produces legitimate score and experience gain from Training Method evidence;
+- the same action event cannot be credited twice;
+- re-initialization preserves the earned disposable-copy skill state;
+- production itself is not moved, trained, accelerated or otherwise mutated for evidence.
 
 ## Deferred
 
