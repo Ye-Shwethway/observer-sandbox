@@ -13,6 +13,7 @@ from .db import connect, get_runtime_state, migrate
 from .inventory import seed_home_inventory
 from .profile_schema import seed_profile_field_definitions
 from .profile_schema_source_union import seed_source_union_extensions
+from .represented_skill_runtime_batch import seed_represented_skill_runtime_batch
 from .sexual_state_schema import seed_sexual_state_fields
 from .simulation import ensure_sim_clock
 from .skill_practice import seed_skill_practice_foundation
@@ -62,6 +63,10 @@ def _initialize_conn(conn) -> None:
     # target/action. Existing Tactical training targets remain learning evidence
     # only and are never promoted into application authority.
     seed_tactical_assessment_runtime(conn)
+    # Equivalent low-risk applications now enter through one declarative batch
+    # runtime. The seeded simulators produce application evidence only; they do
+    # not execute movement, consume represented resources, or award Skill XP.
+    seed_represented_skill_runtime_batch(conn)
     defaults = {
         "paused": False,
         "speed": 1.0,
