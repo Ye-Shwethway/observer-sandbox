@@ -20,12 +20,12 @@ Roadmap synchronized: 2026-08-15
 
 ## Current verified deployment baseline
 
-Latest runtime deployment: **Deploy #197 / run `31870118116` SUCCESS**, Tactical Planning Skill Progression v1, PR #106 merge `fc0fb067681f1b6481eab330a21cc902ed44b497`.
+Latest runtime deployment: **Deploy #198 / run `31870737488` SUCCESS**, Skill Evidence Semantics v1 with Technology Systems Diagnostic Practice exemplar, PR #108 merge `3cd35cb1480533c0c2258ee72d2726cfe24b586b`.
 
 Post-merge:
-- main CI #794 / run `31870118123`: SUCCESS;
-- Tactical Planning Acceptance #2 / run `31870118233`: SUCCESS;
-- Hand-to-Hand Skill Progression Foundation Acceptance #5 / run `31870118205`: SUCCESS.
+- main CI #798 / run `31870737278`: SUCCESS;
+- Skill Evidence Semantics Acceptance #2 / run `31870737515`: SUCCESS;
+- Tactical Planning Acceptance #4 / run `31870737546`: SUCCESS.
 
 Deploy readback verified:
 - service healthy/active;
@@ -34,9 +34,9 @@ Deploy readback verified:
 - Telegram connected with owner/allowed-user configuration present;
 - Gemini `gemini-3.1-flash-lite` primary cognition preserved;
 - Groq `qwen/qwen3.6-27b` tested fallback preserved;
-- live Tactical Planning remained at represented `92.0 / S Expert` after activation, proving no retroactive score jump.
+- live Technology remained at represented `82.0 / A Advanced` after activation, proving no retroactive score jump.
 
-No live Tactical/Combat practice was forced or accelerated for evidence.
+No live Technology practice was forced or accelerated for evidence.
 
 ## Completed foundations
 
@@ -59,8 +59,9 @@ Major completed families include:
 - Solo Sexual Regulation v1 — PR #97 / Deploy #193;
 - Universal Profile Grading Framework v1 — PR #100 / Deploy #194;
 - Character Change Observability & Notification Foundation v1 — PR #102 / Deploy #195;
-- Skill Progression Foundation v1 — Hand-to-Hand Combat — PR #104 / Deploy #196;
-- **Tactical Planning Skill Progression v1 — PR #106 / Deploy #197**.
+- Hand-to-Hand Skill Progression Foundation v1 — PR #104 / Deploy #196;
+- Tactical Planning Skill Progression v1 — PR #106 / Deploy #197;
+- **Skill Evidence Semantics v1 / Technology exemplar — PR #108 / Deploy #198**.
 
 Detailed contracts and historical validation evidence live in the corresponding canonical feature docs.
 
@@ -81,7 +82,8 @@ Skills:
 - `character_skills.experience` — accumulated legitimate post-activation learning evidence;
 - persisted `tier` — legacy/compatibility only;
 - grade — read-time `skill-proficiency-100-v1`;
-- RAPS skill-like fields (`combat_skill`, `weapons_proficiency`, `survival_skill`, etc.) are not independent live progression authorities.
+- RAPS skill-like fields are not independent live progression authorities;
+- model prose, action reason text and Telegram are never Skill progression authority.
 
 ## Profile grading / change observability
 
@@ -90,89 +92,84 @@ Universal grading vocabulary remains:
 
 Current 0..100 RAPS/Skill schemes legitimately reach E..S only. Grades are never persisted competing truth. Raw body dimensions remain descriptive rather than `larger = better`.
 
-Change observability remains generic:
-- Skill/RAPS significance `0.10` cumulative;
-- body circumference `0.05 in`, Height `0.10 in`, Weight `0.25 lb`, Body Fat `0.10` pp, ratios `0.01`;
-- grade transitions immediately significant;
-- Profile `▲/▼`; benefit color only where semantics justify it;
-- ordinary push debounce 5 real minutes per recipient/character;
-- `/statnotify` + Character toggle provide per-character notification control.
+Change observability remains generic: Skill/RAPS `0.10` cumulative significance, body circumference `0.05 in`, Height `0.10 in`, Weight `0.25 lb`, Body Fat `0.10` pp and ratio `0.01`; grade transitions are immediately significant; ordinary push debounce is 5 real minutes per recipient/character.
 
-Canonical: `docs/UNIVERSAL_PROFILE_GRADING_FRAMEWORK_V1.md`, `docs/PROFILE_GRADING_COVERAGE_V1.md`, `docs/CHARACTER_CHANGE_OBSERVABILITY_V1.md`.
-
-## Skill Progression family
+## Skill Progression + Skill Evidence
 
 Canonical:
 - `docs/SKILL_PROGRESSION_FOUNDATION_V1.md`;
-- `docs/SKILL_PROGRESSION_TACTICAL_V1.md`.
+- `docs/SKILL_PROGRESSION_TACTICAL_V1.md`;
+- `docs/SKILL_EVIDENCE_SEMANTICS_V1.md`.
 
-Proven invariant:
-`completed skill-relevant structured evidence + effective duration + explicit method relevance + current proficiency + recent-practice saturation -> effective learning units -> bounded score/experience settlement + immutable audit event`
+Progression invariant:
+`completed skill-relevant structured evidence + effective duration + explicit relevance + current proficiency + recent-practice saturation -> effective learning units -> bounded score/experience settlement + immutable audit event`
+
+Skill Evidence invariant:
+`validated domain-specific practice target + explicit practice method + bounded duration/context -> immutable structured skill-practice evidence -> existing generic Skill Progression settlement`
 
 Shared behavior:
-- zero-gain initialize/deploy bootstrap consumes historical eligible evidence without retroactive XP/score;
-- future eligible practice may progress score/experience;
+- initialize/deploy zero-gain bootstrap consumes historical eligible evidence without retroactive XP/score;
+- future eligible evidence may progress score/experience;
 - 24-sim-hour saturation + current-proficiency diminishing returns bound growth;
 - consumed action event IDs cannot be credited twice;
-- reseeding preserves progression-active/experienced and extra learned skills;
+- reseeding preserves progression-active/experienced skill state;
 - authoritative score changes inherit generic grading/Profile deltas/notifications;
 - no skill-specific Telegram subsystem.
 
-Current live-enabled skills:
-- Hand-to-Hand Combat — structured combat Training Method evidence;
-- Tactical Planning — `vr_tactical_drills` direct evidence and mixed `ai_combat_simulation` cross-training.
+Current live-enabled progression:
+- Hand-to-Hand Combat — structured Training Method evidence;
+- Tactical Planning — `vr_tactical_drills` direct evidence + reduced mixed `ai_combat_simulation` evidence;
+- Technology — purpose-built `Systems Diagnostic Practice Console` / `systems_diagnostic_practice` typed Skill Evidence.
+
+The explicit generic `practice` action is object-targeted, colocated and capability-gated. Only purpose-built registered practice targets advertise it. Ordinary `use`, `inspect`, `research`, `monitor` or generic terminal/medical-station activity does not become XP.
 
 ## Remaining skill evidence gap
 
-Represented skills still lacking sufficiently specific structured learning evidence:
-- **Weapons** — current Armory affordances are inspect/use, not weapon-practice evidence;
+Represented skills not yet enabled:
+- **Field Medicine** — current Diagnostic Station use is not treatment/practice evidence;
 - **Survival** — current obstacle work is conditioning/movement, not fieldcraft evidence;
-- **Technology** — terminal/workstation use and generic Research do not encode a technical task/topic/work product;
-- **Field Medicine** — Diagnostic Station use does not encode medical practice/treatment evidence.
+- **Weapons** — current Armory affordances are inspect/use, not weapon-practice evidence.
 
-Generic `research` has no topic/domain semantics and was explicitly introduced without skill progression. Do not infer XP from action names or model reason prose.
+Generic `research` has no topic/domain semantics and remains non-XP. Do not infer learning from action names or model prose.
 
 ## Next development sequence
 
-1. **Skill Evidence Semantics v1 — one bounded safe exemplar — NEXT**;
-2. batch remaining skills by proven evidence pattern where structurally equivalent;
+1. **Skill Practice Coverage Batch v1 — Field Medicine + Survival — NEXT**;
+2. Weapons evidence only if a clean abstract/simulation-safe mapping is justified without unnecessary operational scope;
 3. Skill Retention / Reacquisition after acquisition-evidence coverage is broader;
 4. intellectual attributes;
 5. mental/emotion dynamics;
 6. broader relationship/social systems and partnered/contextual sexual behavior;
 7. broad Mind/Behavior architecture only after enough real feature families justify it.
 
-## Skill Evidence Semantics v1 — NEXT
+## Skill Practice Coverage Batch v1 — NEXT
 
-Purpose: create a reusable structured contract for legitimate skill-improving practice/task evidence that current Training Method semantics do not cover.
+The new `practice` evidence invariant is proven. The next slice should batch structurally equivalent simulation-safe mappings rather than introducing new engines.
 
-Minimum invariant candidate:
-`validated domain-specific practice/task + explicit skill relevance + bounded duration/quality/context -> immutable structured learning evidence -> existing generic Skill Progression settlement`
+Planned bounded batch:
+- **Field Medicine** — purpose-built medical scenario/simulation practice target in the existing Medical Bay; explicit `field_medicine` relevance;
+- **Survival** — purpose-built fieldcraft scenario/simulation practice target in an existing appropriate training space; explicit `survival` relevance.
+
+Both should reuse exactly:
+`practice action -> registered practice target -> typed skill_practice evidence -> existing Skill Progression`.
 
 Constraints:
-- one safe exemplar first; do not simultaneously invent four unrelated evidence families;
-- no learning from generic `use`, `inspect`, `research` or free-form model prose;
-- no actor-specific hard-coding;
-- no second Skill score/XP authority;
-- existing Skill Progression formula/bootstrap/idempotency/reseed/observability must be reused;
-- do not add Retention/Decay in this slice;
-- if an exemplar needs a new object/action definition, keep it abstract, simulation-safe and minimum-runnable.
+- no ordinary Diagnostic Station/Obstacle Course reinterpretation;
+- no model-prose XP;
+- no new score/XP formula;
+- no new Telegram path;
+- no Skill Retention/Decay;
+- purpose-built targets remain simulation/training abstractions rather than claims that ordinary object use constitutes expertise;
+- one focused regression suite + one disposable production-copy batch validator should cover every batched mapping.
 
-After the exemplar proves the evidence contract, structurally equivalent evidence mappings should be batched.
+Weapons remains deferred unless the existing abstraction can support it without broadening into operational weapon mechanics.
 
 ## Deferred boundaries
 
-Do not add as side effects:
-- economy/currency, careers/jobs/quests/salary;
-- automatic restocking, deep crafting;
-- Character Memory or broad Mind/Behavior;
-- partnered sexual behavior;
-- detailed endocrine/micronutrient/organ simulation;
-- second production character solely for testing;
-- Tahoe exterior traversal.
+Do not add economy/currency, careers/jobs/quests/salary, automatic restocking, deep crafting, Character Memory, broad Mind/Behavior, partnered sexual behavior, detailed endocrine simulation, a second production character solely for testing, or Tahoe exterior traversal as side effects.
 
 ## Exact resume point
 
 Re-read current live production and canonical repository first.
 
-**Tactical Planning Skill Progression v1 is complete/deployed/live-activated through PR #106 / Deploy #197. Hand-to-Hand and Tactical Planning now prove the generic Skill Progression engine. The next canonical slice is Skill Evidence Semantics v1 using one bounded safe exemplar for a remaining skill whose current runtime lacks legitimate structured practice evidence.**
+**Skill Evidence Semantics v1 is complete/deployed/live-activated through PR #108 / Deploy #198. Technology now proves the generic purpose-built `practice` evidence path. The next canonical slice is Skill Practice Coverage Batch v1 for Field Medicine + Survival using the proven pattern, while Weapons stays deferred unless a clean safe abstraction is justified.**
