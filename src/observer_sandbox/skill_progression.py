@@ -8,6 +8,7 @@ from pathlib import Path
 from typing import Any
 
 from .event_log import record_event
+from .skill_practice import skill_practice_evidence_from_event
 from .training_methods import training_method_evidence_from_event
 
 
@@ -92,12 +93,21 @@ def _eligible_training_events(
             continue
         payload = json.loads(row["payload_json"] or "{}")
         method = training_method_evidence_from_event(payload)
+        evidence_kind = "training_method"
+        if not isinstance(method, dict):
+            method = skill_practice_evidence_from_event(payload)
+            evidence_kind = "skill_practice"
         if not isinstance(method, dict):
             continue
         method_id = str(method.get("method_id") or "")
         weight = eligible_methods.get(method_id)
         if not isinstance(weight, (int, float)) or float(weight) <= 0.0:
             continue
+        if evidence_kind == "skill_practice":
+            relevance = method.get("skill_relevance") or {}
+            skill_relevance = relevance.get(skill_key) if isinstance(relevance, dict) else None
+            if not isinstance(skill_relevance, (int, float)) or float(skill_relevance) <= 0.0:
+                continue
         load = method.get("effective_load") or {}
         effective_minutes = load.get("effective_minutes")
         if not isinstance(effective_minutes, (int, float)) or float(effective_minutes) <= 0.0:
@@ -106,6 +116,7 @@ def _eligible_training_events(
             {
                 "event_id": int(row["id"]),
                 "sim_time": str(row["sim_time"]),
+                "evidence_kind": evidence_kind,
                 "method_id": method_id,
                 "method_name": method.get("method_name"),
                 "method_weight": float(weight),
@@ -289,6 +300,7 @@ def settle_skill_progression(
         evidence_rows.append(
             {
                 "action_event_id": int(event["event_id"]),
+                "evidence_kind": event.get("evidence_kind", "training_method"),
                 "method_id": event["method_id"],
                 "method_weight": round(float(event["method_weight"]), 6),
                 "effective_minutes": round(float(event["effective_minutes"]), 6),

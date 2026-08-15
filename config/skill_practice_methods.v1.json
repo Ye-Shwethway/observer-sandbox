@@ -1,0 +1,22 @@
+{
+  "revision": "skill-practice-methods-v1",
+  "methods": {
+    "systems_diagnostic_practice": {
+      "name": "Systems Diagnostic Practice",
+      "action": "practice",
+      "min_duration_minutes": 10,
+      "skill_relevance": {
+        "technology": 1.0
+      },
+      "tags": ["technical", "diagnostic", "simulation_safe"]
+    }
+  },
+  "targets": {
+    "obj_thorne_estate_comms_diagnostic_practice_console": {
+      "name": "Systems Diagnostic Practice Console",
+      "room": "loc_thorne_estate_comms",
+      "capabilities": ["inspect", "practice"],
+      "method_id": "systems_diagnostic_practice"
+    }
+  }
+}
