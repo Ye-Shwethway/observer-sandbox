@@ -12,39 +12,38 @@ Roadmap synchronized: 2026-08-15
 - Use minimum-runnable reversible slices and **exemplar-first, then batch-by-pattern**.
 - Never manipulate production merely to manufacture evidence.
 
+## Current development direction
+
+The active roadmap is **profile-first**: make Character Profile sections meaningfully participate in simulation before expanding relationship or broader multi-character systems.
+
+Current focus: **Skills**.
+
+Relationship-oriented expansion and the previously proposed casualty handoff/lifecycle-end producer are deferred until additional represented-character work resumes. Existing participant, consent, colocation, casualty, and lifecycle primitives remain valid reusable foundations.
+
 ## Current verified deployment
 
-Latest runtime deployment: **Deploy #218 / run `31884823120` SUCCESS**, Field Medicine Assessment Read-Only Runtime v1, PR #146 merge `14274e409b36242eef376356f025d11749819e0f`.
+Latest runtime deployment: **Deploy #219 / run `31885774198` SUCCESS**, Survival Skill Progression Producer v1, PR #148 merge `8e094c542d1664f09deb6492ff7dbcb357f95111`.
 
-Final tested PR head: `34708ef13076640e71ff5727f5444a2da3468ab9`.
+Final tested PR head: `159afdb3ccda6fd1745148f160954c8c1c7a71d9`.
 
 Validation:
-- **CI #883 / run `31884762399` SUCCESS**;
-- full suite: **494 passed in 36.93s**;
-- fresh DB `sandboxctl init` succeeded;
-- fresh DB `sandboxctl status` healthy;
+- **CI #888 / run `31885722183` SUCCESS**;
+- full suite: **500 passed in 34.75s**;
+- fresh DB init/status succeeded;
 - schema remains v5;
-- represented-task, Skill, Strength, eating, and nutrition acceptance gates all passed.
+- Skill Progression Foundation, Skill Evidence Semantics, Skill Definition, Tactical Planning progression, and Strength validation gates passed.
 
-Verified production readback after Deploy #218:
+Verified production readback after Deploy #219:
 - service active/healthy; production init succeeded; schema v5;
-- autonomy enabled, normal mode, 1x, retry `null`, pending action present;
+- autonomy enabled, normal mode, 1x, retry null, pending action present;
 - Gemini `gemini-3.1-flash-lite` primary cognition binding preserved;
 - Groq `qwen/qwen3.6-27b` fallback healthy;
 - Telegram bot/API/owner/allowed-user configuration healthy;
-- live sim time advanced naturally to `2025-05-06T10:10:00+00:00`;
-- Darian was naturally `shower`ing in the Master Bathroom;
-- no production casualty, accident, assessment session/action, or stabilization was fabricated or forced for proof.
+- live sim time was `2025-05-06T10:33:00+00:00`;
+- Darian was naturally moving while located in the Kitchen;
+- Survival remained `85 / A`; no production practice was forced merely to prove progression.
 
-Exact assessment semantics are CI/ephemeral-fixture evidence. Production deployment proves safe install/init/service continuity only.
-
-Production parent Skills remain authoritative:
-- H2H `90 / S`
-- Weapons `87 / A`
-- Survival `85 / A`
-- Tactical Planning `92 / S`
-- Technology `82 / A`
-- Field Medicine `75 / A`.
+Exact Survival learning semantics are CI/fixture evidence. Production deployment proves safe loading and continuity only.
 
 ## Skill authority / ontology
 
@@ -55,93 +54,73 @@ Production parent Skills remain authoritative:
 
 Ability/Attribute != Knowledge != Skill != Task/Application != demonstrated reliability. Runtime application/consequence/lifecycle evidence is not automatically learning evidence.
 
-## Completed recent execution chain
+Production parent Skills:
+- H2H `90 / S`
+- Weapons `87 / A`
+- Survival `85 / A`
+- Tactical Planning `92 / S`
+- Technology `82 / A`
+- Field Medicine `75 / A`.
 
-1. Represented Consequence State Foundation v1 — PR #138 / Deploy #214
-2. Field Medicine Stabilization Consequence Consumer v1 — PR #140 / Deploy #215
-3. Casualty State Origin & Lifecycle Contract v1 — PR #142 / Deploy #216
-4. Represented Accident Casualty Producer v1 — PR #144 / Deploy #217
-5. **Field Medicine Assessment Read-Only Runtime v1 — PR #146 / Deploy #218.**
+## Current Skills coverage
 
-## Current casualty flow
+### Hand-to-Hand Combat
+- represented controlled striking/grapple applications exist;
+- progression exists through structured Training Method evidence;
+- represented sparring currently requires a second distinct consenting colocated character;
+- no injury/casualty production from controlled H2H.
 
-### 1. Typed casualty origin
+### Weapons
+- capability/application definitions exist for familiar melee and ranged weapon employment;
+- **represented runtime is still missing**;
+- progression producer is still missing;
+- lethality, hostile use, and casualty generation remain deferred.
 
-`record_represented_accident_casualty(...)` currently supports exactly one accident kind: `represented_fall`.
+### Survival
+- represented application runtimes exist for field navigation and field sustainment;
+- **explicit solo-usable progression now exists** through:
+  - `field_navigation_practice`;
+  - `field_sustainment_practice`.
+- both are purpose-built simulation-safe `practice` targets in the Training Hall;
+- ordinary obstacle-course use and represented Survival application evidence do not automatically grant Survival XP;
+- settlement uses the existing generic idempotent Skill progression engine.
 
-Finite abstract initialization classes:
-- `low -> 25`
-- `moderate -> 50`
-- `high -> 75`
+### Tactical Planning
+- represented assess and maneuver-planning runtimes exist;
+- structured progression exists.
 
-Canonical path:
-`typed represented fall -> represented_accident_occurred with casualty role -> initialize_casualty_state(...) -> simulated medical.deterioration_risk`
+### Technology
+- represented known-fault diagnostic runtime exists;
+- explicit `systems_diagnostic_practice` progression exists.
 
-The producer requires stable incident identity, exact represented casualty and location, explicit sim time, finite accident/risk classes, and uses an atomic savepoint. It does not accept free-form accident prose or create wounds, diagnoses, incapacity, death, or treatment state.
+### Field Medicine
+- read-only casualty assessment and bounded stabilization runtimes exist;
+- both require a represented casualty character/context;
+- progression producer remains deferred;
+- casualty handoff/lifecycle-end producer remains deferred with multi-character work.
 
-### 2. Read-only Field Medicine assessment
+## Current casualty foundation — preserved but not active priority
 
-Task: `field_medicine_assess_field_casualty_v1`
-Application: `field_medicine.assess_field_casualty`
-Action: shared `assess`
-Exact target definition: `represented_task:field_medicine_casualty_assessment_session_v1`
+Existing bounded flow remains:
 
-Requirements:
-- exact assessment-session target;
-- one distinct represented casualty participant;
-- actor/casualty colocation;
-- existing numeric simulated `medical.deterioration_risk` in `0..100`.
+`typed represented fall -> casualty lifecycle state -> read-only Field Medicine assessment -> optional bounded stabilization -> explicit lifecycle-end event still required for clear`
 
-The runtime reads existing deterioration state and maps it only to an abstract pressure band:
-- `0 -> none`
-- `>0..33 -> low`
-- `>33..66 -> moderate`
-- `>66..100 -> high`
-
-It emits represented Skill application evidence only. It cannot create/mutate casualty state, diagnose, treat, settle a consequence, or award Field Medicine XP. Darian's current Field Medicine 75/A maps to `solid` assessment effectiveness.
-
-`assess` is reusable vocabulary rather than domain identity. Exact represented target definition selects the consumer:
-- tactical assessment target -> Tactical Planning;
-- Field Medicine assessment target -> Field Medicine;
-- unknown `assess` target -> fail closed.
-
-Ordinary actor physiology still progresses normally during actions. `read_only` is scoped to the casualty medical domain.
-
-### 3. Bounded stabilization consequence
-
-Task: `field_medicine_stabilize_for_evacuation_v1`
-Action: `stabilize`
-
-Requires one distinct colocated casualty with pre-existing simulated deterioration state plus explicit represented `field_medical_supplies`. It can reduce only `medical.deterioration_risk` through the generic represented consequence foundation. Darian's current 75/A Field Medicine maps to `solid`, reducing risk by 20 points in v1.
-
-No diagnosis, definitive treatment, medical-supply depletion, or XP is implied.
-
-### 4. Casualty lifecycle end
-
-`clear_casualty_state(...)` already exists and only clears lifecycle-owned deterioration state after a separate explicit casualty-bound source event with resolution kind:
-- `evacuated_or_handed_off`
-- `casualty_context_resolved`
-
-Risk reaching zero does not auto-clear and does not assert healing.
-
-## Explicit boundaries
-
-No Injury Engine, broad Hazard Engine, wounds/bleeding taxonomy, diagnosis engine, definitive-treatment graph, death/incapacity model, automatic deterioration/recovery, autonomous random accidents, Weapons lethality, controlled-H2H injury generation, medical-resource depletion, automatic Field Medicine XP, or synthetic production casualty fixtures.
+Risk reaching zero does not auto-clear and does not assert healing. No Injury Engine, wound taxonomy, diagnosis engine, definitive treatment, death/incapacity, random accidents, or automatic Field Medicine XP is implied.
 
 ## Next development sequence
 
-1. **Represented Casualty Handoff / Lifecycle-End Consumer v1 — REVIEW NEXT / not yet implemented.**
-2. Reconcile the lifecycle clear API and current event/world primitives.
-3. Select the smallest typed represented handoff/context-resolution producer that emits an explicit source event binding the casualty and invokes `clear_casualty_state(...)`.
-4. Handoff/context resolution must not imply healing, diagnosis resolution, or definitive treatment.
-5. Do not clear merely because deterioration risk reaches zero.
-6. Keep lifecycle/application/consequence evidence separate from learning evidence; no automatic XP.
-7. Do not create/force a production casualty merely for validation.
+1. **Weapons Simulation-Safe Runtime v1 — REVIEW NEXT / not yet implemented.**
+2. Reconcile existing Weapons definitions, represented task patterns, available represented weapon/training resources, and safe target primitives.
+3. Implement the smallest solo-usable represented training/simulation application for familiar weapon employment.
+4. Prefer one bounded exemplar; batch a structurally equivalent melee/ranged follow-on only when the shared invariant is proven.
+5. Keep the runtime training/simulation-safe: no hostile target, lethality, injury, casualty generation, or non-consensual combat.
+6. Application evidence must remain separate from learning evidence; do not award Weapons XP merely for use.
+7. After safe represented Weapons application coverage is proven, review **Weapons Progression Producer v1** as the next Skills-section gap.
 
 ## Deferred boundaries
 
-No hostile/non-consensual Combat Engine, Weapons lethality system, broad casualty simulator, universal Hazard/Injury Engine, bleeding/wound taxonomy, definitive-treatment engine, automatic random-accident scheduler, universal active-modifier evaluator, full Knowledge Engine, second competency score, economy/jobs/quests, or synthetic production actor/casualty fixtures as side effects of the next slice.
+No relationship system expansion, casualty handoff consumer, hostile/non-consensual Combat Engine, Weapons lethality, broad casualty simulator, universal Hazard/Injury Engine, bleeding/wound taxonomy, definitive-treatment engine, random-accident scheduler, full Knowledge Engine, second competency score, economy/jobs/quests, or synthetic production actors/targets solely for proof.
 
 ## Exact resume point
 
-**Field Medicine Assessment Read-Only Runtime v1 is complete through PR #146 final tested head `34708ef13076640e71ff5727f5444a2da3468ab9`, merge `14274e409b36242eef376356f025d11749819e0f`, CI #883 / run `31884762399` with 494 passing tests plus fresh-DB init/status and all relevant acceptance gates green, and Deploy #218 / run `31884823120` SUCCESS. The casualty stack now supports typed represented-fall origin -> lifecycle-owned simulated deterioration state -> exact-target read-only Field Medicine assessment -> existing bounded stabilization consequence; shared `assess` dispatch is target-definition-authoritative and unknown targets fail closed. No live casualty or assessment was fabricated. Review a real represented handoff/lifecycle-end producer next.**
+**Survival Skill Progression Producer v1 is complete through PR #148 final tested head `159afdb3ccda6fd1745148f160954c8c1c7a71d9`, merge `8e094c542d1664f09deb6492ff7dbcb357f95111`, CI #888 / run `31885722183` with 500 passing tests plus fresh-DB init/status and all relevant Skill/Strength gates green, and Deploy #219 / run `31885774198` SUCCESS. Survival now has explicit simulation-safe navigation and sustainment practice producers using the existing structured `skill_practice` evidence and idempotent Skill settlement path; generic activity and represented application evidence remain non-learning evidence. No live practice was forced for proof. Review Weapons Simulation-Safe Runtime v1 next.**
