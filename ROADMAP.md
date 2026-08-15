@@ -11,6 +11,7 @@ Roadmap synchronized: 2026-08-15
 - Preserve: `Actor(s) + Action + Place + Simulation Time + Conditions/Modifiers + Resources/Targets -> Validation -> State Changes + Events`.
 - Use minimum-runnable reversible slices and **exemplar-first, then batch-by-pattern**.
 - Never manipulate production merely to manufacture evidence.
+- Development verification is focused-first: use task-relevant tests/gates while iterating and reserve the full suite for the final code/runtime PR checkpoint unless broader risk justifies another run. Docs-only changes do not need the full Python suite.
 
 ## Current development direction
 
@@ -20,29 +21,29 @@ Relationship-oriented expansion and casualty handoff/lifecycle-end work remain d
 
 ## Current verified deployment
 
-Latest runtime deployment: **Deploy #222 / run `31890490349` SUCCESS**, Bladed Weapons Progression Producer v1, PR #154 merge `11ee97f093c7bc5a7439742f3f691f87b6b915de`.
+Latest runtime deployment: **Deploy #223 / run `31891128059` SUCCESS**, Firearms Simulation-Safe Runtime v1, PR #156 merge `ea5dad4fb49180e37eaff5435bd82c8f0c4a487e`.
 
-Final tested PR head: `148884966ded63559806101cffbeb891efbe96dd`.
+Final tested PR head: `33c52000595f00f36687afef670ebf105dd5f9c2`.
 
 Validation:
-- **CI #908 / run `31890299802` SUCCESS**;
-- full suite: **518 passed in 191.64s**;
+- **CI #912 / run `31891065742` SUCCESS**;
+- final full-suite checkpoint: **525 passed in 31.20s**;
 - fresh DB init/status succeeded; schema remains v5;
-- Skill Progression, Skill Evidence, Skill Definition, Tactical Planning, and Strength acceptance lanes passed;
-- post-merge **CI #909 / run `31890490342` SUCCESS**.
+- Strength Live Cycle Validation #67 / run `31891065783` succeeded on a disposable production copy;
+- no iterative full-suite reruns were used for this slice.
 
-Verified production readback after Deploy #222:
+Verified production readback after Deploy #223:
 - service active/healthy; production init succeeded; schema v5;
-- autonomy enabled, normal mode, **10x**, retry null, pending action present;
+- autonomy enabled, normal mode, **5x**, retry null, pending action present;
 - Gemini `gemini-3.1-flash-lite` primary cognition binding preserved;
 - Groq `qwen/qwen3.6-27b` fallback healthy;
 - Telegram bot/API/owner/allowed-user configuration healthy;
-- live sim time was `2025-05-06T17:18:00+00:00`;
-- Darian was naturally resting in Darian's Master Suite;
+- live sim time was `2025-05-06T18:56:00+00:00`;
+- Darian was naturally sleeping in Darian's Master Suite;
 - Bladed Weapons remained 87/A, Firearms 87/A, Weapon Mastery 87/A, overall Skills A / 85.167;
-- no production `practice`, `blade_drill`, or other weapon proof action was fabricated.
+- no production `firearm_drill`, practice, or other weapon proof action was fabricated.
 
-The unchanged production score is expected: initialization activates Bladed progression with a zero-gain bootstrap. Exact score gain, evidence consumption, hierarchy re-derivation, and no-application-XP behavior are CI/fresh-fixture evidence.
+The unchanged production scores are expected. Exact Firearms application, evidence, fail-closed, idempotency, and no-XP behavior are CI/fresh-fixture evidence; deployment proves safe loading and runtime continuity only.
 
 ## Skill authority / ontology
 
@@ -66,7 +67,7 @@ Rules:
 - parent is excluded from overall Skills aggregation;
 - historical `weapons = 87` initialized both components only as a compatibility baseline;
 - legacy `weapons` remains a hidden compatibility projection;
-- component learning immediately re-derives the parent and legacy projection without granting either direct XP;
+- component learning re-derives the parent and legacy projection without granting either direct XP;
 - no deep knife/sword/handgun/rifle tree until simulation needs it.
 
 ### Bladed Weapons — application + progression complete
@@ -88,7 +89,26 @@ Explicit learning producer:
 - dedicated Training Hall practice simulator distinct from the `blade_drill` application simulator;
 - ordinary `blade_drill` never becomes learning evidence merely by succeeding.
 
-See `docs/BLADED_WEAPONS_PROGRESSION_V1.md` for the canonical checkpoint.
+See `docs/BLADED_WEAPONS_PROGRESSION_V1.md`.
+
+### Firearms — represented application active
+
+Represented application:
+- executable authority `firearms.employ_familiar_ranged_weapon`;
+- hidden legacy `weapons` no longer executes the ranged application;
+- task `firearms_safe_handling_sim_v1`;
+- action `firearm_drill`;
+- exact target `represented_task:firearms_safe_handling_simulator_v1`;
+- exact capability `usable_firearms_training_weapon`;
+- context includes `weapon_employment_context`, `represented_ranged_weapon`, and `simulation_safe_training_context`;
+- simulation-safe, low risk, solo-compatible;
+- Firearms learned score is the sole performance authority for this exemplar; no cognitive/Attribute bonus contract was invented;
+- completion emits application evidence with `learning_evidence=false`;
+- no ammunition consumption, hostile target, injury, casualty, lethality, or real-world technique semantics.
+
+Firearms progression remains inactive pending the next slice.
+
+See `docs/FIREARMS_SIMULATION_SAFE_RUNTIME_V1.md`.
 
 ## Current Skills coverage
 
@@ -99,9 +119,9 @@ See `docs/BLADED_WEAPONS_PROGRESSION_V1.md` for the canonical checkpoint.
 
 ### Weapon Mastery / Bladed / Firearms
 - hierarchy foundation complete;
-- Bladed represented safe application complete;
-- Bladed explicit progression complete;
-- Firearms represented runtime and progression remain missing;
+- Bladed represented safe application + explicit progression complete;
+- Firearms represented safe application complete;
+- Firearms progression remains missing;
 - Weapon Mastery parent remains derived/non-executable;
 - hostile use, lethality, injury, casualty generation, and automatic use=>XP remain deferred.
 
@@ -127,14 +147,22 @@ Risk reaching zero does not auto-clear or assert healing. No Injury Engine, woun
 
 ## Next development sequence
 
-1. **Firearms Simulation-Safe Runtime v1 — REVIEW NEXT / not yet implemented.**
-2. Reuse the proven Bladed component-owned represented-task pattern rather than inventing another architecture.
-3. Move the historical familiar-ranged application semantics onto `firearms`, leaving hidden legacy `weapons` non-executable.
-4. Add the smallest solo-usable simulation-safe target/context plus an exact represented Firearms training-resource capability.
-5. Keep application evidence separate from learning evidence; no Firearms XP merely for use.
-6. No hostile target, lethality, injury, casualty generation, non-consensual combat, ammunition/weapon-consumption expansion, or real-world weapon instructions.
-7. Only after the safe Firearms application invariant is proven, review **Firearms Progression Producer v1**.
-8. After Firearms application + progression, perform a **Skills section completion review** before moving to another Character Profile section.
+1. **Firearms Progression Producer v1 — REVIEW NEXT / not yet implemented.**
+2. Reuse the proven Bladed explicit-practice progression pattern rather than treating `firearm_drill` application evidence as learning.
+3. Add one dedicated simulation-safe Firearms practice method/target with explicit whitelisted learning evidence.
+4. Progress only the `firearms` component; do not mutate Bladed Weapons as a sibling side effect.
+5. Re-derive Weapon Mastery and the hidden legacy projection after legitimate Firearms component learning, while granting neither parent direct XP.
+6. Preserve exact safe resource/target semantics and no ammunition/harm side effects.
+7. After Firearms application + progression are complete, perform a **Skills section completion review** before moving to another Character Profile section.
+
+## CI cadence
+
+The canonical CI loop is now designed to avoid redundant full-suite runs:
+- focused task-relevant tests/gates during implementation;
+- one full CI suite on code/runtime pull requests as the final checkpoint;
+- no automatic second full-suite run merely because the already-tested PR merged to `main`;
+- docs-only pull requests skip the full Python suite;
+- manual `workflow_dispatch` remains available when a deliberate full rerun is warranted.
 
 ## Deferred boundaries
 
@@ -142,4 +170,4 @@ No relationship system expansion, casualty handoff consumer, hostile/non-consens
 
 ## Exact resume point
 
-**Bladed Weapons Progression Producer v1 is complete through PR #154 final tested head `148884966ded63559806101cffbeb891efbe96dd`, merge `11ee97f093c7bc5a7439742f3f691f87b6b915de`, CI #908 / run `31890299802` with 518 passing tests plus fresh-DB init/status and relevant acceptance lanes green, post-merge CI #909 SUCCESS, and Deploy #222 / run `31890490349` SUCCESS. `bladed_weapons_handling_practice` is the explicit learning producer; `blade_drill` remains application-only; component score changes re-derive Weapon Mastery/legacy projection without parent XP; Firearms remains inactive. Review Firearms Simulation-Safe Runtime v1 next.**
+**Firearms Simulation-Safe Runtime v1 is complete through PR #156 final tested head `33c52000595f00f36687afef670ebf105dd5f9c2`, merge `ea5dad4fb49180e37eaff5435bd82c8f0c4a487e`, CI #912 / run `31891065742` with 525 passing tests plus fresh-DB init/status, Strength Live Cycle Validation #67 green, and Deploy #223 / run `31891128059` SUCCESS. `firearms.employ_familiar_ranged_weapon` now owns the simulation-safe `firearm_drill` application requiring exact `usable_firearms_training_weapon`; Weapon Mastery remains derived/non-executable; application evidence remains non-learning; production stayed healthy at 5x with Darian naturally sleeping and no proof action forced. Review Firearms Progression Producer v1 next.**
