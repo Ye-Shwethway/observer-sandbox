@@ -1,6 +1,6 @@
 # Skill Evidence Semantics v1
 
-Status: IMPLEMENTED CANDIDATE / VALIDATION PENDING
+Status: COMPLETE / DEPLOYED / LIVE-ACTIVATED
 
 ## Purpose
 
@@ -61,34 +61,27 @@ Purpose-built target:
 
 The console represents a safe diagnostic/troubleshooting simulation fixture, not a production terminal side effect. The ordinary Secure Communications Terminal remains an ordinary `use` target and does not emit Skill Evidence.
 
-## Evidence payload
+## Evidence payload / dual gate
 
-A completed registered practice action emits `action_completed.skill_practice` with:
-- source/revision;
-- method id/name;
-- target id;
-- planned/effective minutes;
-- bounded quality placeholder (`1.0` in this minimal exemplar);
-- explicit positive `skill_relevance` mapping;
-- semantic tags.
+A completed registered practice action emits `action_completed.skill_practice` with source/revision, method identity, target identity, planned/effective minutes, bounded quality, positive `skill_relevance`, and semantic tags.
 
-Skill Progression consumes practice evidence only when both conditions hold:
-1. the evidence positively names the skill in `skill_relevance`;
-2. that method is explicitly whitelisted for the skill in `skill_progression.v1.json`.
+Skill Progression consumes practice evidence only when:
+1. the evidence positively names the skill in `skill_relevance`; and
+2. the method is explicitly whitelisted for that skill in `skill_progression.v1.json`.
 
-This dual gate prevents arbitrary payloads from granting XP.
+This dual gate prevents arbitrary payloads or generic object actions from granting XP.
 
 ## Technology progression
 
-Technology is added to the existing Skill Progression config with `systems_diagnostic_practice = 1.0`.
+Technology is enabled only from `systems_diagnostic_practice = 1.0`.
 
-All existing progression behavior is reused unchanged:
-- raw units from effective duration × configured method weight;
+All existing Skill Progression behavior is reused unchanged:
+- effective duration × configured method weight;
 - 24-sim-hour saturation;
 - proficiency diminishing returns;
 - score cap 100;
 - cumulative experience;
-- consumed action-event idempotency;
+- consumed-action-event idempotency;
 - reseed persistence;
 - Profile/grade/change-notification inheritance.
 
@@ -98,33 +91,48 @@ No Technology-specific XP formula or Telegram subsystem exists.
 
 Deployment/initialize performs a zero-gain Technology bootstrap:
 - represented Technology score/experience are preserved;
-- any pre-existing eligible evidence is cursor-consumed without retroactive gain;
+- pre-existing eligible evidence is cursor-consumed without retroactive gain;
 - only genuinely future registered practice may progress the skill.
 
-Because the `practice` action and purpose-built console are new in this slice, production cannot contain historical legitimate practice actions from before activation.
+Because the `practice` action and purpose-built console were introduced with this slice, production had no historical legitimate practice actions to reinterpret.
 
-## Acceptance requirements
+## Acceptance / deployment evidence
 
-Focused tests and disposable production-copy validation must prove:
-- practice action + purpose-built target are seeded generically;
-- only the explicit practice console surfaces `practice` in its room;
-- ordinary Secure Communications Terminal use emits no `skill_practice` evidence and no Technology progression;
-- future valid diagnostic practice emits typed evidence and progresses Technology;
-- sub-minimum practice is rejected;
-- the same evidence cannot be double-counted;
-- reinitialize preserves earned state;
-- production itself is not moved, practiced, accelerated or otherwise manipulated for validation.
+PR #108 final tested head: `66354c2f5f783a231321dcf8f67b950a5554f231`.
 
-## Deferred
+PR validation:
+- CI #797 / run `31870663425`: SUCCESS;
+- Skill Evidence Semantics v1 Acceptance #1 / run `31870663517`: SUCCESS on disposable production copy;
+- Hand-to-Hand Skill Progression Foundation Acceptance #6 / run `31870663472`: SUCCESS;
+- Tactical Planning Acceptance #3 / run `31870663487`: SUCCESS;
+- Public Readiness Security Audit #62 / run `31870663365`: SUCCESS;
+- Inventory Foundation #36, Eating Behavior #26, Nutrition & Energy Evidence #16: SUCCESS;
+- Strength Live Cycle #35 / run `31870663376`: SUCCESS on retry after an infra-only SSH staging reset before validator execution.
 
-Not in this exemplar:
+Merged as `3cd35cb1480533c0c2258ee72d2726cfe24b586b`.
+
+Deployment:
+- Deploy #198 / run `31870737488`: SUCCESS;
+- post-merge CI #798 / run `31870737278`: SUCCESS;
+- post-merge Skill Evidence Semantics Acceptance #2 / run `31870737515`: SUCCESS;
+- post-merge Tactical Planning Acceptance #4 / run `31870737546`: SUCCESS.
+
+Deploy readback verified service healthy, schema v5, autonomy normal at 1.0x, cognition bindings preserved, Telegram connected, and live **Technology remained `82.0 / A Advanced`** after activation. This proves deployment caused no retroactive Technology score jump. Production was not moved, practiced, accelerated or otherwise manipulated to manufacture an occurrence.
+
+## Proven extension policy
+
+The new structural evidence invariant is now proven. Structurally equivalent simulation-safe practice targets/methods should be added by batch-by-pattern rather than one new architecture or PR per skill.
+
+Good candidates are skills that can use the exact same explicit `practice` action + purpose-built simulation/training target + typed skill relevance contract. Skills requiring qualitatively different real-world evidence should remain deferred until their evidence family exists.
+
+## Deferred / next coverage
+
+Not yet enabled:
 - Weapons practice evidence;
 - Survival/fieldcraft evidence;
-- Field Medicine treatment/practice evidence;
+- Field Medicine practice evidence;
 - topic-aware general research/knowledge acquisition;
 - variable practice quality/challenge scoring;
-- Skill Retention/Decay/Reacquisition;
-- careers/jobs/quests;
-- broad Mind/Behavior architecture.
+- Skill Retention/Decay/Reacquisition.
 
-After this invariant is proven, structurally equivalent safe practice targets/methods should be batched by pattern instead of creating one new architecture per skill.
+The next minimum-runnable follow-on should batch only structurally equivalent safe practice mappings. Weapons remains optional/deferred if a clean abstract simulation target would add unnecessary scope or operational semantics.
