@@ -6,6 +6,7 @@ on:
     branches: [main]
     paths:
       - '.github/workflows/read-only-grading-proof-acceptance.yml'
+      - 'config/profile_sections.v1.json'
       - 'src/observer_sandbox/grading.py'
       - 'src/observer_sandbox/profile_observer.py'
       - 'src/observer_sandbox/telegram_profile_browser.py'
@@ -35,8 +36,9 @@ jobs:
           VPS_USER: ${{ secrets.VPS_USER }}
           VPS_PORT: ${{ secrets.VPS_PORT || '22' }}
         run: |
-          ssh -p "$VPS_PORT" "$VPS_USER@$VPS_HOST" 'rm -rf /tmp/observer-grading-proof && mkdir -p /tmp/observer-grading-proof'
+          ssh -p "$VPS_PORT" "$VPS_USER@$VPS_HOST" 'rm -rf /tmp/observer-grading-proof && mkdir -p /tmp/observer-grading-proof/config'
           rsync -az -e "ssh -p $VPS_PORT" src/ "$VPS_USER@$VPS_HOST:/tmp/observer-grading-proof/src/"
+          rsync -az -e "ssh -p $VPS_PORT" config/profile_sections.v1.json "$VPS_USER@$VPS_HOST:/tmp/observer-grading-proof/config/profile_sections.v1.json"
       - name: Prove derived grade on disposable production copy
         env:
           VPS_HOST: ${{ secrets.VPS_HOST }}
@@ -74,7 +76,8 @@ jobs:
               assert strength["value"] == 90
               assert strength["grade"]["scheme_id"] == "raps-100-proof-v1"
               assert strength["grade"]["grade"] == "S"
-              assert "Strength   90 · Grade S" in text
+              assert strength["grade"]["label"] == "Expert"
+              assert "Strength   90 (S) · Expert" in text
               assert tuple(before) == tuple(after)
               print(json.dumps({
                   "ok": True,
