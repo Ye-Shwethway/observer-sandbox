@@ -15,20 +15,20 @@ Roadmap synchronized: 2026-08-15
 
 ## Current verified deployment
 
-Latest runtime deployment: **Deploy #212 / run `31879753891` SUCCESS**, Controlled H2H Sparring Runtime v1, PR #134 merge `a4f8f8f84f71d77e87f7208bbac9546b3bdc4ca9`.
+Latest runtime deployment: **Deploy #213 / run `31880471063` SUCCESS**, Controlled H2H Interaction Pattern Generalization v1, PR #136 merge `be34324e87e68c54c5d6f80f9448bf5f24381172`.
 
 Verified post-deploy production evidence:
 - service active/healthy; schema v5;
 - autonomy enabled, normal mode, 1x, retry `null`;
 - a pending autonomous action exists;
-- cognition binding was preserved/resolved;
+- cognition binding remained `gemini-3.1-flash-lite`; Groq fallback bootstrap remained healthy;
 - Telegram API connectivity remained healthy;
-- production `sandboxctl init` succeeded with the controlled-H2H action vocabulary seed path present in deployed code;
-- live state continued naturally at `train` in the Home Gym;
+- production `sandboxctl init` succeeded with the generalized controlled-H2H action vocabulary/config active;
+- live state continued naturally at `train` in the Home Gym at sim time `2025-05-06T08:05:00+00:00`;
 - no live `spar` action was forced for validation;
-- no production sparring partner or represented sparring-session fixture was fabricated solely for proof.
+- no production sparring/grappling partner or represented session fixture was fabricated solely for proof.
 
-The exact production `spar` action-definition row was not separately queried in a dedicated read-only workflow. Full CI/fresh-DB tests prove exact action/task/participant behavior; production deployment/init proves that the candidate code path deployed successfully. Keep those evidence claims distinct.
+Exact grappling-session runtime behavior is proven by full CI, fresh-DB `init`/`status`, and focused ephemeral-fixture tests. Production deployment/init proves the generalized code/config path loaded successfully; production does not contain a fabricated grappling session merely to permit a live action proof. Keep those evidence claims distinct.
 
 Production parent Skill state remains authoritative:
 - H2H `90 / S`
@@ -37,8 +37,6 @@ Production parent Skill state remains authoritative:
 - Tactical Planning `92 / S`
 - Technology `82 / A`
 - Field Medicine `75 / A`.
-
-Relevant general reasoning context remains IQ 140, Problem Solving 88, Focus 92, Adaptability 85. These are supporting context, not replacement Skill scores.
 
 ## Skill authority / ontology
 
@@ -69,17 +67,16 @@ Ability/Attribute != Knowledge != Skill != Task/Application != demonstrated reli
 16. Training Movement Contract Normalization v1 — PR #129 / Deploy #209
 17. Tactical Planning Represented Assessment Runtime v1 — PR #131 / Deploy #210
 18. Represented Skill Runtime Batch v1 — PR #133 / Deploy #211
-19. Controlled H2H Sparring Runtime v1 — PR #134 / Deploy #212.
+19. Controlled H2H Sparring Runtime v1 — PR #134 / Deploy #212
+20. Controlled H2H Interaction Pattern Generalization v1 — PR #136 / Deploy #213.
 
 Canonical execution stack now includes:
 - Skill definition/application/capability + actor adapter;
 - represented Skill task registry + exact instance resolver;
 - cognition capability-awareness projection;
 - bounded cognitive/performance modifier resolver;
-- Technology diagnostic runtime;
-- Tactical situation-assessment runtime;
-- generic low-risk represented-Skill batch runtime;
-- first bounded multi-actor controlled-H2H authorization/runtime exemplar;
+- generic low-risk represented-Skill runtime reuse;
+- generalized controlled-H2H multi-actor authorization/runtime path;
 - immutable application-evidence path separate from learning evidence.
 
 ## Current six gameplay-grade umbrella Skills
@@ -94,63 +91,39 @@ Applications:
 
 ## Represented Skill runtime state
 
-### Technology exemplar — complete
+### Low-risk represented pattern — complete and batched
 
-Task: `technology_known_system_fault_diagnostic_sim_v1`
-Application: `technology.diagnose_known_system_fault`
-Action: `diagnose`
-Target definition: `represented_task:technology_known_fault_diagnostic_simulator_v1`
+Technology diagnostic and Tactical assessment established the initial `required_resource_mode: any|none` exemplars. PR #133 then applied the proven pattern in one batch to Tactical maneuver planning plus both Survival applications. These remain simulation/application evidence only with no movement execution, shelter mutation, represented-resource consumption, consequence-state mutation, or automatic XP.
 
-This proved a tool/resource-centric represented runtime with `required_resource_mode: any` plus supporting documentation.
+### Controlled H2H interaction pattern — complete for current H2H application surface
 
-### Tactical Planning second exemplar — complete
+PR #134 proved the first bounded multi-actor authorization invariant with controlled striking. PR #136 generalized that exemplar instead of creating a second bespoke engine.
 
-Task: `tactical_situation_assessment_sim_v1`
-Application: `tactical_planning.assess_tactical_situation`
-Action: `assess`
-Target definition: `represented_task:tactical_situation_assessment_simulator_v1`
+Shared action: `spar`.
 
-This proved a cognitively heavy represented runtime with `required_resource_mode: none` plus supporting `situational_intelligence`.
+Exact represented session target selects the H2H application:
+- striking task `h2h_controlled_striking_spar_v1` -> `hand_to_hand_combat.engage_unarmed_striking` -> consequence `scored_contact_only`;
+- grappling task `h2h_controlled_grapple_spar_v1` -> `hand_to_hand_combat.control_unarmed_grapple` -> consequence `scored_positional_control_only`.
 
-### Represented Skill Runtime Batch v1 — complete
-
-PR #133 / Deploy #211 proved batch-by-pattern reuse for:
-- Tactical Planning `plan_tactical_maneuver`;
-- Survival `navigate_field_environment`;
-- Survival `establish_field_sustainment`.
-
-The batch reused the task registry, exact instance resolver, action lifecycle, cognition awareness, bounded modifier resolver, deterministic outcome path and immutable application evidence. It added no movement execution, shelter mutation, resource consumption, combat consequence or automatic XP.
-
-Represented-task resource contracts support `required_resource_mode: any|none` and preserve the underlying Skill application's mode. Supporting resources may distinguish constrained vs supported but never become hidden hard gates.
-
-## Controlled H2H consequential exemplar — complete
-
-Task: `h2h_controlled_striking_spar_v1`
-Application: `hand_to_hand_combat.engage_unarmed_striking`
-Action: `spar`
-Session definition: `represented_task:h2h_controlled_striking_sparring_session_v1`
-
-PR #134 / Deploy #212 introduced the first bounded represented-consequential interaction invariant:
-- the exact represented session remains the object target;
-- exactly one opponent is supplied through `Action.participants`;
+Shared deterministic interaction boundaries:
+- represented session remains the exact object target;
+- exactly one opponent is carried in `Action.participants`;
 - opponent must be a distinct represented character;
-- opponent must be colocated with the actor;
+- opponent must be colocated;
 - opponent must explicitly expose `controlled_sparring_consent`;
-- authorization is deterministic and cannot be created by Skill score, model prose, IQ or a modifier;
-- outcome is deterministic **scored contact only** in v1;
-- no injury state or participant target state is mutated;
-- no hostile/non-consensual combat behavior is authorized;
-- no production partner/session was seeded solely for validation.
+- authorization is deterministic and separate from Skill/performance scoring;
+- target definition selects exactly one authorized controlled-H2H task/application;
+- no hostile/non-consensual use is authorized;
+- no injury, incapacity, persistent restraint, or participant target-state mutation occurs;
+- no production partner/session fixture is seeded solely for validation.
 
-H2H performance modifiers use bounded Reflexes + Agility + Focus only after Skill/task/participant feasibility. IQ is intentionally absent, and legacy `raps_pa.combat_skill` is excluded so H2H Skill is not double-counted.
+H2H Skill score remains parent learned-capability authority. Striking and grappling each have exact bounded performance contracts using Reflexes + Agility + Focus only. IQ is intentionally absent and legacy `raps_pa.combat_skill` remains excluded.
 
 ## Cognition and IQ boundary
 
 Cognition receives a read-only semantic projection of actor Skill state plus canonical Skill definitions/applications, behavioral anchors, supported challenges, context/resource expectations, and explicit limits.
 
-IQ/supporting Attributes are task-specific performance context only when a declared modifier contract names them. They cannot create Knowledge, proficiency, missing resources/context, consent, authorization, supported challenge capability or consequences.
-
-Tactical represented tasks may use bounded IQ where explicitly declared. Survival and controlled H2H deliberately do not use IQ because their canonical task-relevant factors name other Attributes.
+IQ/supporting Attributes are task-specific performance context only when a declared modifier contract names them. They cannot create Knowledge, proficiency, missing resources/context, consent, authorization, supported challenge capability, restraint authority, injury state, or consequences.
 
 ## Subskill policy
 
@@ -171,11 +144,9 @@ Active legitimate progression remains:
 - Tactical Planning — VR Tactical Drills / AI Combat Simulation evidence;
 - Technology — `systems_diagnostic_practice`.
 
-Represented task application evidence, including controlled sparring application evidence, remains immutable application evidence only and does not automatically become XP.
+Controlled striking/grappling application evidence remains immutable application evidence only and does not automatically become H2H XP.
 
-Weapons, Survival and Field Medicine have semantic definitions but no active progression producer. Do not invent progression merely because represented gameplay is added.
-
-PR #134 also made the Skill Progression Foundation acceptance validator history-safe: the durable invariant is that the original zero-gain progression bootstrap exists, not that it must remain the latest H2H settlement after legitimate future training settlements occur.
+Weapons, Survival and Field Medicine have semantic definitions but no active progression producer. Do not invent progression merely because represented gameplay exists.
 
 ## Training movement operational correction
 
@@ -184,23 +155,21 @@ PR #129 remains the production contract:
 - explicit movement subcatalog -> strict exact movement-id validation;
 - unknown/unbound target -> fail closed.
 
-Do not regress this boundary while expanding Skill gameplay.
-
 ## Next development sequence
 
-1. **Controlled H2H Pattern Expansion v1 — NEXT**.
-2. Re-read the exact live `hand_to_hand_combat.control_unarmed_grapple` contract against the newly proven controlled-striking interaction invariant.
-3. Reuse the participant channel, distinct-character requirement, colocation, explicit authorization, Skill authority, bounded modifiers, deterministic outcome and immutable application-evidence path wherever structurally equivalent.
-4. If grapple introduces genuinely new restraint/control, injury, release, incapacity or authorization semantics, isolate that new invariant in one bounded exemplar rather than hiding it inside a nominal follow-on.
-5. Do not pull Weapons or Field Medicine into the same slice merely for completeness; their weapon-resource/lethality and casualty/treatment consequences remain separate structural questions.
-6. Keep application evidence separate from learning evidence and do not auto-award XP.
-7. Do not add independently scored child Skills.
-8. Continue to avoid synthetic production characters/actions solely to manufacture validation evidence.
+1. **Represented Consequence State Foundation v1 — PROPOSED NEXT / not yet implemented.**
+2. First inspect current state/effect/event primitives and define the smallest generic boundary between a validated represented-task outcome and a deterministic consequence/state transition.
+3. Do not build a giant Combat Engine or full Injury Engine. The foundation should be domain-neutral enough to support later bounded consumers while remaining explicit about target, state field/effect, duration/lifecycle where relevant, validation, mutation ownership, and emitted evidence/events.
+4. Preserve the distinction between performance outcome and consequence. High Skill or a strong outcome must not independently authorize or manufacture a state mutation.
+5. Prefer one bounded, low-complexity exemplar if a genuinely new state-transition invariant is required; batch structurally equivalent consequence consumers only after that invariant is proven.
+6. A likely later sequence is consequence-state foundation -> Field Medicine consequence consumer -> Weapons safety/resource exemplar, but each remains subject to exact live-contract inspection before implementation.
+7. Keep application evidence separate from learning evidence and do not auto-award XP.
+8. Do not add independently scored child Skills or fabricate production characters/actions for proof.
 
 ## Deferred boundaries
 
-No hostile/non-consensual combat engine, full injury engine, Weapons lethality system, Field Medicine casualty-state mutation, full Knowledge Engine, second competency score, giant Skill tree, economy/jobs/quests, broad Mind/Behavior rewrite, deep crafting, detailed endocrine expansion, second production character solely for testing, or Tahoe exterior traversal as side effects of this slice.
+No hostile/non-consensual combat engine, full injury engine, persistent restraint/incapacity system, Weapons lethality system, Field Medicine casualty-treatment mutation, full Knowledge Engine, second competency score, giant Skill tree, economy/jobs/quests, broad Mind/Behavior rewrite, deep crafting, detailed endocrine expansion, second production character solely for testing, or Tahoe exterior traversal as side effects of the next foundation slice.
 
 ## Exact resume point
 
-**Represented Skill Runtime Batch v1 is complete through PR #133 / Deploy #211. Controlled H2H Sparring Runtime v1 is complete through PR #134 merge `a4f8f8f84f71d77e87f7208bbac9546b3bdc4ca9` / Deploy #212 run `31879753891` SUCCESS. The first multi-actor explicit-authorization/scored-contact invariant is now proven without injury mutation or automatic XP. Next inspect `control_unarmed_grapple` for structural equivalence; reuse the pattern if equivalent, otherwise isolate any genuinely new restraint/control/consequence invariant.**
+**Controlled H2H Interaction Pattern Generalization v1 is complete through PR #136 merge `be34324e87e68c54c5d6f80f9448bf5f24381172` / Deploy #213 run `31880471063` SUCCESS. Both current H2H applications now reuse one exact-target-driven `spar` interaction path with explicit participant consent/colocation and application-specific bounded outcomes, without injury/restraint mutation or automatic XP. The proposed next architectural seam is Represented Consequence State Foundation v1: inspect existing state/effect/event primitives, then design the smallest generic validated outcome -> consequence/state-change boundary before adding Field Medicine or Weapons consequence consumers.**
