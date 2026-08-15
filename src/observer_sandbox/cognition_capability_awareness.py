@@ -257,7 +257,7 @@ def cognition_capability_awareness(
     }
 
     return {
-        "revision": "cognition-capability-awareness-v1.1-hierarchy-applications",
+        "revision": "cognition-capability-awareness-v1",
         "actor_id": actor_id,
         "skills": skills,
         "unresolved_skills": unresolved_skills,
