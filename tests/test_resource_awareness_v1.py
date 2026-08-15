@@ -42,24 +42,26 @@ def test_home_gym_exposes_all_training_resources_to_cognition(tmp_path):
         assert all("recent_usage" in option for option in train_options)
 
 
-def test_reachable_room_preview_exposes_resources_but_does_not_make_them_directly_actionable(tmp_path):
+def test_reachable_room_preview_exposes_resources_but_keeps_actionable_ids_authoritative(tmp_path):
     db = tmp_path / "observer.sqlite3"
     initialize(db)
     with connect(db) as conn:
         set_field(conn, "char_darian", "runtime.location", LIVING_ROOM)
         conn.commit()
         enriched = _provider_state(conn)
-        previews = {item["location"]: item for item in enriched["resource_awareness"]["reachable_locations"]}
-        gym = previews[HOME_GYM]
-        resource_ids = {item["id"] for item in gym["resources"]}
-        assert "obj_thorne_estate_gym_rowing_ergometer" in resource_ids
-        assert "obj_thorne_estate_gym_speed_agility_station" in resource_ids
+        previews = {
+            item["location_name"]: item
+            for item in enriched["resource_awareness"]["reachable_locations"]
+        }
+        gym = previews["Top-Class Home Gym"]
+        resource_names = {item["name"] for item in gym["resources"]}
+        assert "Rowing Ergometer" in resource_names
+        assert "Speed & Agility Station" in resource_names
+        assert gym["planning_only"] is True
+        assert "location" not in gym
+        assert all(item["planning_only"] is True and "id" not in item for item in gym["resources"])
         assert "train" in gym["available_actions_after_move"]
         assert any(option["action"] == "move" and option["target"] == HOME_GYM for option in enriched["action_options"])
-        assert not any(
-            option["action"] == "train" and option["target"] in resource_ids
-            for option in enriched["action_options"]
-        )
 
 
 def test_recent_training_usage_is_context_not_a_hard_block(tmp_path):

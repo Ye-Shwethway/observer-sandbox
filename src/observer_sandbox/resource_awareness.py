@@ -22,7 +22,15 @@ def _action_definitions(conn: sqlite3.Connection) -> list[dict[str, Any]]:
 
 
 def reachable_location_awareness(conn: sqlite3.Connection, room_id: str) -> list[dict[str, Any]]:
-    """Describe one-hop destinations without making distant objects directly actionable."""
+    """Describe one-hop destinations as planning-only previews.
+
+    The preview deliberately omits location/object IDs. Those IDs are actionable
+    authority and belong only to the current ``action_options`` surface, which may
+    be narrowed by physiological-need or other deterministic choice shaping after
+    raw room reachability is computed. Keeping advisory IDs here can otherwise
+    contradict that final authoritative surface and tempt cognition to emit a
+    currently disallowed action/target pair.
+    """
     definitions = _action_definitions(conn)
     result: list[dict[str, Any]] = []
     for room in reachable_rooms(conn, room_id):
@@ -40,9 +48,9 @@ def reachable_location_awareness(conn: sqlite3.Connection, room_id: str) -> list
             if not supported:
                 continue
             item: dict[str, Any] = {
-                "id": obj["id"],
                 "name": obj["name"],
                 "actions": sorted(supported),
+                "planning_only": True,
             }
             training = training_profile_for_target(obj["id"])
             if training is not None and "train" in supported:
@@ -59,13 +67,16 @@ def reachable_location_awareness(conn: sqlite3.Connection, room_id: str) -> list
                 })
             resources.append(item)
         result.append({
-            "location": room["id"],
             "location_name": room["name"],
             "available_actions_after_move": sorted(action_names),
             "training_families": sorted(training_families),
             "training_methods": training_methods,
             "resources": resources,
-            "instruction": "Move here first before selecting any listed resource.",
+            "planning_only": True,
+            "instruction": (
+                "Planning preview only. Do not copy a target from this preview into a decision. "
+                "A move or resource action is legal only when its exact target ID appears in current action_options."
+            ),
         })
     return result
 
