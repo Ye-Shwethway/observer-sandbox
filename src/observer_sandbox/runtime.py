@@ -9,6 +9,7 @@ from .actor_runtime import actor_runtime, migrate_legacy_actor_runtime
 from .actor_selection import ensure_default_actor_id, resolve_actor_id
 from .ai import seed_builtin_providers
 from .composition_schema import seed_action_definitions
+from .controlled_h2h_runtime import seed_controlled_h2h_runtime
 from .db import connect, get_runtime_state, migrate
 from .inventory import seed_home_inventory
 from .profile_schema import seed_profile_field_definitions
@@ -67,6 +68,10 @@ def _initialize_conn(conn) -> None:
     # runtime. The seeded simulators produce application evidence only; they do
     # not execute movement, consume represented resources, or award Skill XP.
     seed_represented_skill_runtime_batch(conn)
+    # Controlled H2H registers reusable action vocabulary only. It deliberately
+    # does not fabricate a production sparring partner or session; those must be
+    # explicitly represented and authorized in live world state before use.
+    seed_controlled_h2h_runtime(conn)
     defaults = {
         "paused": False,
         "speed": 1.0,
