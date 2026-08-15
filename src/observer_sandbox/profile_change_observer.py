@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-import json
 import sqlite3
 from typing import Any
 
@@ -45,14 +44,13 @@ def _entry_key(section_id: str, item: dict[str, Any]) -> str | None:
 
 
 def capture_profile_change_state(conn: sqlite3.Connection, actor_id: str) -> dict[str, dict[str, Any]]:
-    """Capture only current profile surfaces intended for progression observability.
-
-    Sexual/current-recovery/personality/preference sections are deliberately excluded.
-    The snapshot is read-only and derives grades through the normal profile query layer.
-    """
+    """Capture represented progression surfaces; actors without a profile no-op."""
     captured: dict[str, dict[str, Any]] = {}
     for section_id in _TRACKED_SECTIONS:
-        data = profile_section(conn, actor_id, section_id, role="owner")
+        try:
+            data = profile_section(conn, actor_id, section_id, role="owner")
+        except (KeyError, PermissionError):
+            continue
         for item in data.get("content") or []:
             key = _entry_key(section_id, item)
             raw_value = item.get("score") if section_id == "skills" else item.get("value")
@@ -150,12 +148,9 @@ def observe_profile_changes(
     *,
     sim_time: str,
 ) -> list[dict[str, Any]]:
-    """Accumulate microscopic changes and retain the latest meaningful display delta.
-
-    The display ledger is presentation state only. Authoritative profile/history tables
-    remain the source of truth. A grade transition is always meaningful even when the
-    numeric delta is smaller than the field's normal visibility threshold.
-    """
+    """Accumulate microscopic changes and retain latest meaningful display deltas."""
+    if not before and not after:
+        return []
     key = f"{DISPLAY_LEDGER_PREFIX}{actor_id}"
     ledger = runtime_value(conn, key, None)
     if not isinstance(ledger, dict):
@@ -224,7 +219,6 @@ def reset_stat_notification_baseline(
 
 
 def set_stat_notifications(conn: sqlite3.Connection, user_id: int, actor_id: str, enabled: bool) -> bool:
-    # Reset on both transitions. OFF->ON therefore never replays a historical backlog.
     set_runtime_value(conn, f"{STAT_PREF_PREFIX}{user_id}:{actor_id}", bool(enabled))
     reset_stat_notification_baseline(conn, user_id, actor_id)
     conn.commit()
@@ -236,8 +230,7 @@ def reset_all_stat_notification_baselines(conn: sqlite3.Connection, user_id: int
         "SELECT entity_id FROM character_profiles WHERE status='active' ORDER BY entity_id"
     ).fetchall()
     for row in rows:
-        actor_id = str(row["entity_id"])
-        reset_stat_notification_baseline(conn, user_id, actor_id)
+        reset_stat_notification_baseline(conn, user_id, str(row["entity_id"]))
     conn.commit()
 
 
@@ -250,6 +243,8 @@ def pending_stat_notification_changes(
     *,
     sim_time: str,
 ) -> list[dict[str, Any]]:
+    if not before and not current:
+        return []
     stored = runtime_value(conn, _baseline_key(user_id, actor_id), None)
     baselines = dict(stored) if isinstance(stored, dict) else _serialize_snapshot(before or current)
     if not isinstance(stored, dict):
