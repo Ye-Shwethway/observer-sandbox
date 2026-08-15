@@ -1,5 +1,5 @@
 {
-  "revision": "skill-practice-methods-v1.2-bladed-weapons",
+  "revision": "skill-practice-methods-v1.3-firearms",
   "methods": {
     "systems_diagnostic_practice": {
       "name": "Systems Diagnostic Practice",
@@ -36,6 +36,15 @@
         "bladed_weapons": 1.0
       },
       "tags": ["bladed_weapons", "weapon_handling", "simulation_safe"]
+    },
+    "firearms_handling_practice": {
+      "name": "Firearms Handling Practice",
+      "action": "practice",
+      "min_duration_minutes": 10,
+      "skill_relevance": {
+        "firearms": 1.0
+      },
+      "tags": ["firearms", "weapon_handling", "simulation_safe"]
     }
   },
   "targets": {
@@ -62,6 +71,12 @@
       "room": "loc_thorne_estate_training_hall",
       "capabilities": ["inspect", "practice"],
       "method_id": "bladed_weapons_handling_practice"
+    },
+    "obj_thorne_estate_training_firearms_practice_simulator": {
+      "name": "Firearms Practice Simulator",
+      "room": "loc_thorne_estate_training_hall",
+      "capabilities": ["inspect", "practice"],
+      "method_id": "firearms_handling_practice"
     }
   }
 }

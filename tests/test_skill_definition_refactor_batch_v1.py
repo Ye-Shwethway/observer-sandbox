@@ -72,19 +72,23 @@ def test_existing_progression_is_preserved_without_fake_activation() -> None:
     assert definitions["technology"]["learning_evidence"]["families"] == ["skill_practice"]
     assert set(progression) == {
         "bladed_weapons",
+        "firearms",
         "hand_to_hand_combat",
         "survival",
         "tactical_planning",
         "technology",
     }
 
-    # Survival and the learned Bladed Weapons component have explicit,
+    # Survival and both learned Weapon Mastery components have explicit,
     # simulation-safe practice producers. The historical umbrella definition
     # remains compatibility semantics only; ordinary weapon application is not
     # progression authority.
     assert definitions["survival"]["learning_evidence"]["families"] == ["supervised_application"]
     assert progression["bladed_weapons"]["eligible_methods"] == {
         "bladed_weapons_handling_practice": 1.0
+    }
+    assert progression["firearms"]["eligible_methods"] == {
+        "firearms_handling_practice": 1.0
     }
 
     for skill_id in ("weapons", "field_medicine"):
