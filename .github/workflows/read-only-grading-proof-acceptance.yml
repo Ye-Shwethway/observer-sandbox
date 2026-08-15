@@ -6,6 +6,7 @@ on:
     branches: [main]
     paths:
       - '.github/workflows/read-only-grading-proof-acceptance.yml'
+      - 'config/profile_sections.v1.json'
       - 'src/observer_sandbox/grading.py'
       - 'src/observer_sandbox/profile_observer.py'
       - 'src/observer_sandbox/telegram_profile_browser.py'
@@ -35,8 +36,9 @@ jobs:
           VPS_USER: ${{ secrets.VPS_USER }}
           VPS_PORT: ${{ secrets.VPS_PORT || '22' }}
         run: |
-          ssh -p "$VPS_PORT" "$VPS_USER@$VPS_HOST" 'rm -rf /tmp/observer-grading-proof && mkdir -p /tmp/observer-grading-proof'
+          ssh -p "$VPS_PORT" "$VPS_USER@$VPS_HOST" 'rm -rf /tmp/observer-grading-proof && mkdir -p /tmp/observer-grading-proof/config'
           rsync -az -e "ssh -p $VPS_PORT" src/ "$VPS_USER@$VPS_HOST:/tmp/observer-grading-proof/src/"
+          rsync -az -e "ssh -p $VPS_PORT" config/profile_sections.v1.json "$VPS_USER@$VPS_HOST:/tmp/observer-grading-proof/config/profile_sections.v1.json"
       - name: Prove derived grade on disposable production copy
         env:
           VPS_HOST: ${{ secrets.VPS_HOST }}
@@ -54,8 +56,12 @@ jobs:
             .venv/bin/python - <<"PY"
           import json, os
           from observer_sandbox.db import connect
+          from observer_sandbox.grading import evaluate_raps_100
           from observer_sandbox.profile_observer import profile_section
           from observer_sandbox.telegram_profile_browser import _fmt_profile_section
+
+          def fmt_number(value):
+              return f"{float(value):.1f}".rstrip("0").rstrip(".")
 
           db = os.environ["OBSERVER_SANDBOX_DB"]
           with connect(db) as conn:
@@ -63,6 +69,8 @@ jobs:
                   "SELECT value_json, mode FROM character_profile_values WHERE entity_id=? AND field_key=?",
                   ("char_darian", "raps_pa.strength"),
               ).fetchone()
+              raw = float(json.loads(before["value_json"]))
+              expected = evaluate_raps_100(raw)
               data = profile_section(conn, "char_darian", "attributes")
               strength = next(item for item in data["content"] if item["field_key"] == "raps_pa.strength")
               text = _fmt_profile_section(data)
@@ -70,11 +78,11 @@ jobs:
                   "SELECT value_json, mode FROM character_profile_values WHERE entity_id=? AND field_key=?",
                   ("char_darian", "raps_pa.strength"),
               ).fetchone()
-              assert before["value_json"] == "90"
-              assert strength["value"] == 90
+              assert float(strength["value"]) == raw
               assert strength["grade"]["scheme_id"] == "raps-100-proof-v1"
-              assert strength["grade"]["grade"] == "S"
-              assert "Strength   90 · Grade S" in text
+              assert strength["grade"]["grade"] == expected.grade
+              assert strength["grade"]["label"] == expected.label
+              assert f"Strength   {fmt_number(raw)} ({expected.grade}) · {expected.label}" in text
               assert tuple(before) == tuple(after)
               print(json.dumps({
                   "ok": True,

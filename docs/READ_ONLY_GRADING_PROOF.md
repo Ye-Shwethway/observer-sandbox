@@ -1,12 +1,12 @@
 # Read-Only Grading — Exemplar + Attribute Batch 1
 
-Status: COMPLETE / ACCEPTANCE VERIFIED / DEPLOYED
+Status: COMPLETE / ACCEPTANCE VERIFIED / DEPLOYED; TELEGRAM PRESENTATION EXTENSION VALIDATION PENDING
 
 ## Purpose
 
 Prove grading as a derived cross-domain layer without making grades authoritative state, then expand the proven same-scale pattern in one batch.
 
-The underlying profile value remains authoritative. No grade column is added to profile tables and schema v4 is unchanged.
+The underlying profile value remains authoritative. No grade column is added to profile tables.
 
 ## Exemplar
 
@@ -14,19 +14,33 @@ First proof:
 
 `Darian raps_pa.strength raw value -> named evaluator -> derived grade -> Telegram Attributes display`
 
-Darian's authoritative Strength value remains `90`; the evaluator derives `Grade S` without mutating that stored value or its mode.
+Darian's authoritative Strength value remains `90`; the evaluator derives `S · Expert` without mutating that stored value or its mode.
 
 Scheme ID: `raps-100-proof-v1`.
 
-Current proof bands:
-- S: 90..100
-- A: 75..<90
-- B: 60..<75
-- C: 40..<60
-- D: 20..<40
-- E: 0..<20
+Current proof bands remain:
+- S: 90..100 — Expert
+- A: 75..<90 — Advanced
+- B: 60..<75 — Skilled
+- C: 40..<60 — Capable
+- D: 20..<40 — Novice
+- E: 0..<20 — Beginner
 
-This remains a named proof scheme for explicitly opted-in 0..100 attributes. It does **not** freeze a universal cross-domain grading vocabulary for every future domain.
+The thresholds are unchanged from the accepted 0..100 proof. The human-readable labels are aligned with the shared grade vocabulary.
+
+The complete shared vocabulary is:
+- E — Beginner
+- D — Novice
+- C — Capable
+- B — Skilled
+- A — Advanced
+- S — Expert
+- SS — Elite
+- SSS — Master
+- X — Mythic
+- XX — Transcendent
+
+The current 0..100 RAPS proof scheme legitimately reaches only E through S. Higher tiers remain available to future named schemes whose underlying scale/semantics support them; they are not artificially compressed into 0..100.
 
 Exemplar evidence:
 - PR #12 merge `d0bdabc1faaede8adb6c3e8dd29a9b5ff9ba3cb3`;
@@ -58,13 +72,31 @@ Batch evidence:
 - release `d14cae7ef88fc9e157caa5fa0b930f36aba3cf77`;
 - Deploy #139 / `31684009154` SUCCESS.
 
+## Telegram presentation extension
+
+The schema-driven Telegram profile slice extends presentation without changing grading authority.
+
+Individual graded fields render as:
+
+`Strength   90 (S) · Expert`
+
+The profile query also derives current aggregate grading for the Attributes display:
+- each compatible domain/group uses the arithmetic mean of its current participating values and evaluates that mean through `raps-100-proof-v1`;
+- the overall Attributes grade uses the same process across all current participating values;
+- values from incompatible schemes/scales are excluded rather than coerced.
+
+For the current Darian profile, the represented RAPS-PA values average approximately `86.54`, therefore the current Physical group evaluates to `A · Advanced`, while Strength itself remains `S · Expert` at 90. These are read-time results, not authored labels.
+
+No aggregate grade is persisted. If an underlying authoritative value changes, individual/group/overall grades are recomputed on the next read.
+
 ## Architecture boundary
 
 - grading logic lives outside Telegram presentation;
 - profile query attaches derived grade metadata;
 - Telegram consumes derived metadata;
 - raw authoritative values remain untouched;
-- no progression, persisted grade state, or schema v5 is introduced.
+- aggregate grades are not persisted state;
+- progression engines remain independent of display grading.
 
 ## Body grading boundary
 

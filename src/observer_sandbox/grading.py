@@ -1,6 +1,8 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
+from statistics import fmean
+from typing import Iterable
 
 
 @dataclass(frozen=True)
@@ -18,17 +20,36 @@ class GradeResult:
     value: float
 
 
-# Current proof scheme for explicitly opted-in 0..100 RAPS-style attributes.
-# It proves the derived-grading architecture without freezing the future
-# universal cross-domain tier vocabulary.
+# Canonical shared vocabulary. Individual grading schemes may expose only a
+# bounded subset when their underlying scale cannot legitimately reach the
+# higher tiers.
+GRADE_VOCABULARY: tuple[tuple[str, str], ...] = (
+    ("E", "Beginner"),
+    ("D", "Novice"),
+    ("C", "Capable"),
+    ("B", "Skilled"),
+    ("A", "Advanced"),
+    ("S", "Expert"),
+    ("SS", "Elite"),
+    ("SSS", "Master"),
+    ("X", "Mythic"),
+    ("XX", "Transcendent"),
+)
+
+GRADE_LABELS = dict(GRADE_VOCABULARY)
+
+
+# Current 0..100 RAPS scheme. Preserve its proven thresholds; only the labels
+# are aligned with the canonical cross-domain vocabulary. Higher tiers remain
+# available to future schemes with wider/higher-cap scales.
 RAPS_100_PROOF_SCHEME_ID = "raps-100-proof-v1"
 RAPS_100_PROOF_BANDS: tuple[GradeBand, ...] = (
-    GradeBand(90.0, "S", "Exceptional"),
-    GradeBand(75.0, "A", "Advanced"),
-    GradeBand(60.0, "B", "Strong"),
-    GradeBand(40.0, "C", "Capable"),
-    GradeBand(20.0, "D", "Developing"),
-    GradeBand(0.0, "E", "Foundational"),
+    GradeBand(90.0, "S", GRADE_LABELS["S"]),
+    GradeBand(75.0, "A", GRADE_LABELS["A"]),
+    GradeBand(60.0, "B", GRADE_LABELS["B"]),
+    GradeBand(40.0, "C", GRADE_LABELS["C"]),
+    GradeBand(20.0, "D", GRADE_LABELS["D"]),
+    GradeBand(0.0, "E", GRADE_LABELS["E"]),
 )
 
 # Explicit batch membership prevents future fields from silently inheriting a
@@ -94,3 +115,11 @@ def evaluate_attribute_field(field_key: str, value: object) -> GradeResult | Non
     if field_key not in ATTRIBUTE_RAPS_100_FIELDS or not isinstance(value, (int, float)) or isinstance(value, bool):
         return None
     return evaluate_raps_100(value)
+
+
+def aggregate_raps_100(results: Iterable[GradeResult]) -> GradeResult | None:
+    """Grade the arithmetic mean of compatible current attribute evaluations."""
+    values = [float(result.value) for result in results if result.scheme_id == RAPS_100_PROOF_SCHEME_ID]
+    if not values:
+        return None
+    return evaluate_raps_100(fmean(values))

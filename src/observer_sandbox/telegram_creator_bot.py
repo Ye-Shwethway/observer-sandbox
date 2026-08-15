@@ -11,6 +11,7 @@ from .db import connect, migrate
 from .telegram_ai_control import callback_view as ai_callback_view
 from .telegram_ai_control import home_view as ai_home_view
 from .telegram_inventory import inventory_callback_view, inventory_command_view
+from .telegram_profile_browser import profile_callback_view
 
 _ORIGINAL_API = base._api
 _ORIGINAL_SEND = base._send
@@ -132,6 +133,13 @@ def _callback_view(conn, user_id: int, callback_data: str):
                 [[{"text": "⌂ Observer Home", "callback_data": "nav:home"}]],
             )
         return ai_callback_view(conn, user_id, callback_data)
+    if callback_data.startswith(("prof:", "psec:")):
+        role = base._user_role(user_id)
+        if role == "unauthorized":
+            return "Not authorized.", None
+        view = profile_callback_view(conn, callback_data, role=role)
+        if view is not None:
+            return view
     return _ORIGINAL_CALLBACK_VIEW(conn, user_id, callback_data)
 
 

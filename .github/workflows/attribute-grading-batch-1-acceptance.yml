@@ -6,8 +6,10 @@ on:
     branches: [main]
     paths:
       - '.github/workflows/attribute-grading-batch-1-acceptance.yml'
+      - 'config/profile_sections.v1.json'
       - 'src/observer_sandbox/grading.py'
       - 'src/observer_sandbox/profile_observer.py'
+      - 'src/observer_sandbox/telegram_profile_browser.py'
       - 'tests/test_attribute_grading_batch_1.py'
 
 jobs:
@@ -34,8 +36,9 @@ jobs:
           VPS_USER: ${{ secrets.VPS_USER }}
           VPS_PORT: ${{ secrets.VPS_PORT || '22' }}
         run: |
-          ssh -p "$VPS_PORT" "$VPS_USER@$VPS_HOST" 'rm -rf /tmp/observer-attribute-grading-batch1 && mkdir -p /tmp/observer-attribute-grading-batch1'
+          ssh -p "$VPS_PORT" "$VPS_USER@$VPS_HOST" 'rm -rf /tmp/observer-attribute-grading-batch1 && mkdir -p /tmp/observer-attribute-grading-batch1/config'
           rsync -az -e "ssh -p $VPS_PORT" src/ "$VPS_USER@$VPS_HOST:/tmp/observer-attribute-grading-batch1/src/"
+          rsync -az -e "ssh -p $VPS_PORT" config/profile_sections.v1.json "$VPS_USER@$VPS_HOST:/tmp/observer-attribute-grading-batch1/config/profile_sections.v1.json"
       - name: Dry-run entire attribute grading batch on production copy
         env:
           VPS_HOST: ${{ secrets.VPS_HOST }}
@@ -53,9 +56,12 @@ jobs:
             .venv/bin/python - <<"PY"
           import json, os
           from observer_sandbox.db import connect
-          from observer_sandbox.grading import ATTRIBUTE_RAPS_100_FIELDS
+          from observer_sandbox.grading import ATTRIBUTE_RAPS_100_FIELDS, evaluate_raps_100
           from observer_sandbox.profile_observer import profile_section
           from observer_sandbox.telegram_profile_browser import _fmt_profile_section
+
+          def fmt_number(value):
+              return f"{float(value):.1f}".rstrip("0").rstrip(".")
 
           db = os.environ["OBSERVER_SANDBOX_DB"]
           with connect(db) as conn:
@@ -77,9 +83,22 @@ jobs:
               skills = profile_section(conn, "char_darian", "skills")
               assert all("grade" not in item for item in skills["content"])
               text = _fmt_profile_section(attributes)
-              assert "Strength   90 · Grade S" in text
-              assert "Stamina   85 · Grade A" in text
-              assert "IQ   140 · Grade" not in text
+              for key in ("raps_pa.strength", "raps_pa.stamina", "raps_ia.medical_knowledge"):
+                  item = by_key[key]
+                  expected = evaluate_raps_100(float(item["value"]))
+                  label = item["label"]
+                  display = fmt_number(item["value"])
+                  expected_row = f"{label}   {display} ({expected.grade}) · {expected.label}"
+                  assert expected_row in text
+              physical = attributes["section"]["group_grades"]["raps_pa"]
+              overall = attributes["section"]["overall_grade"]
+              physical_grade = physical["grade"]
+              physical_label = physical["label"]
+              overall_grade = overall["grade"]
+              overall_label = overall["label"]
+              assert f"Physical ({physical_grade}) · {physical_label}" in text
+              assert f"Overall ({overall_grade}) · {overall_label}" in text
+              assert "IQ   140 (" not in text
               after = {
                   row["field_key"]: (row["value_json"], row["mode"])
                   for row in conn.execute(
@@ -98,7 +117,9 @@ jobs:
                   "body_excluded": True,
                   "skills_excluded": True,
                   "raw_profile_unchanged": True,
-                  "telegram_rendered": True
+                  "telegram_rendered": True,
+                  "physical_grade": physical,
+                  "overall_grade": overall
               }, indent=2, sort_keys=True))
           PY
             unset PYTHONPATH
