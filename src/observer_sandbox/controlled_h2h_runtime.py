@@ -11,14 +11,18 @@ from .represented_skill_task_instance import (
     RepresentedSkillTaskInstanceAssessment,
     assess_represented_skill_task_instance,
 )
+from .represented_skill_tasks import load_represented_skill_tasks, represented_skill_task
 
 
-SOURCE = "controlled-h2h-sparring-runtime-v1"
+SOURCE = "controlled-h2h-interaction-generalization-v1"
 SPAR_ACTION = "spar"
 TASK_ID = "h2h_controlled_striking_spar_v1"
+GRAPPLE_TASK_ID = "h2h_controlled_grapple_spar_v1"
 SKILL_ID = "hand_to_hand_combat"
 APPLICATION_ID = "engage_unarmed_striking"
+GRAPPLE_APPLICATION_ID = "control_unarmed_grapple"
 CONSENT_CAPABILITY = "controlled_sparring_consent"
+CONTROLLED_H2H_TASK_IDS = (TASK_ID, GRAPPLE_TASK_ID)
 
 
 class ControlledH2HRuntimeError(ValueError):
@@ -26,11 +30,12 @@ class ControlledH2HRuntimeError(ValueError):
 
 
 def seed_controlled_h2h_runtime(conn: sqlite3.Connection) -> None:
-    """Register the controlled H2H action without fabricating a live partner/session.
+    """Register controlled H2H action vocabulary without fabricating live fixtures.
 
-    Production receives only the reusable action vocabulary. A represented sparring
-    session and a consenting colocated character must already exist in the world
-    before cognition can see or execute the action.
+    One generic ``spar`` action is intentionally reused across exact represented
+    striking and grappling session targets. The target definition selects the
+    application contract; a consenting colocated character participant must
+    already exist before cognition can see or execute the action.
     """
 
     conn.execute(
@@ -61,7 +66,13 @@ def seed_controlled_h2h_runtime(conn: sqlite3.Connection) -> None:
             json.dumps({}),
             json.dumps({}),
             json.dumps({}),
-            json.dumps({"source": SOURCE, "task_id": TASK_ID}, sort_keys=True),
+            json.dumps(
+                {
+                    "source": SOURCE,
+                    "task_ids": list(CONTROLLED_H2H_TASK_IDS),
+                },
+                sort_keys=True,
+            ),
         ),
     )
     conn.commit()
@@ -110,10 +121,36 @@ def action_participants(
     return tuple(values)
 
 
-def _interaction_contract() -> dict[str, Any]:
-    from .represented_skill_tasks import represented_skill_task
+def _controlled_h2h_task_for_target(
+    conn: sqlite3.Connection,
+    target_id: str,
+) -> dict[str, Any]:
+    row = conn.execute(
+        "SELECT entity_type,definition_id FROM entities WHERE id=?",
+        (target_id,),
+    ).fetchone()
+    if row is None:
+        raise ControlledH2HRuntimeError(f"Controlled H2H target {target_id!r} does not exist")
 
-    task = represented_skill_task(TASK_ID)
+    definition_id = str(row["definition_id"] or "")
+    source = load_represented_skill_tasks()
+    matches: list[dict[str, Any]] = []
+    for task_id in CONTROLLED_H2H_TASK_IDS:
+        task = represented_skill_task(task_id, config=source)
+        target = task.get("target_contract") or {}
+        if (
+            target.get("entity_type") == row["entity_type"]
+            and target.get("definition_id") == definition_id
+        ):
+            matches.append(task)
+    if len(matches) != 1:
+        raise ControlledH2HRuntimeError(
+            "Controlled H2H target must match exactly one authorized represented session definition"
+        )
+    return matches[0]
+
+
+def _interaction_contract(task: dict[str, Any]) -> dict[str, Any]:
     contract = task.get("interaction_contract")
     if not isinstance(contract, dict):
         raise ControlledH2HRuntimeError("Controlled H2H task lacks interaction contract")
@@ -124,9 +161,12 @@ def validate_sparring_participant(
     conn: sqlite3.Connection,
     actor_id: str,
     participant_id: str,
+    *,
+    task: dict[str, Any] | None = None,
 ) -> dict[str, Any]:
-    contract = _interaction_contract()
-    if participant_id == actor_id:
+    resolved_task = task or represented_skill_task(TASK_ID)
+    contract = _interaction_contract(resolved_task)
+    if bool(contract.get("requires_distinct_actor")) and participant_id == actor_id:
         raise ControlledH2HRuntimeError("Controlled sparring participant must differ from actor")
 
     row = conn.execute(
@@ -172,20 +212,26 @@ def assess_controlled_h2h_action(
     actor_id: str,
     target_id: str,
     participant_ids: Iterable[str],
-) -> tuple[RepresentedSkillTaskInstanceAssessment, dict[str, Any]]:
+) -> tuple[RepresentedSkillTaskInstanceAssessment, dict[str, Any], dict[str, Any]]:
+    task = _controlled_h2h_task_for_target(conn, target_id)
     participants = tuple(participant_ids)
-    contract = _interaction_contract()
+    contract = _interaction_contract(task)
     expected_count = int(contract.get("participant_count") or 0)
     if len(participants) != expected_count:
         raise ControlledH2HRuntimeError(
             f"Controlled sparring requires exactly {expected_count} participant"
         )
 
-    authorization = validate_sparring_participant(conn, actor_id, participants[0])
+    authorization = validate_sparring_participant(
+        conn,
+        actor_id,
+        participants[0],
+        task=task,
+    )
     assessment = assess_represented_skill_task_instance(
         conn,
         actor_id,
-        TASK_ID,
+        str(task["task_id"]),
         target_id,
         resource_capabilities=_capabilities(conn, target_id),
     )
@@ -194,7 +240,7 @@ def assess_controlled_h2h_action(
             "Actor does not meet controlled H2H application contract: "
             + ", ".join(assessment.reasons)
         )
-    return assessment, authorization
+    return assessment, authorization, task
 
 
 def controlled_h2h_outcome(
@@ -203,20 +249,21 @@ def controlled_h2h_outcome(
     target_id: str,
     participant_ids: Iterable[str],
 ) -> dict[str, Any]:
-    """Resolve deterministic scored-contact sparring without injury mutation."""
+    """Resolve exact represented controlled-H2H performance without injury mutation."""
 
-    task, authorization = assess_controlled_h2h_action(
+    task_assessment, authorization, task = assess_controlled_h2h_action(
         conn,
         actor_id,
         target_id,
         participant_ids,
     )
-    capability = task.capability
+    capability = task_assessment.capability
+    application_id = str(task["application_id"])
     performance = assess_actor_cognitive_performance(
         conn,
         actor_id,
         SKILL_ID,
-        APPLICATION_ID,
+        application_id,
     )
 
     score_factor = max(0.0, min(1.0, float(capability.skill_score) / 100.0))
@@ -248,15 +295,15 @@ def controlled_h2h_outcome(
     else:
         outcome_class = "poor"
 
-    contract = _interaction_contract()
+    contract = _interaction_contract(task)
     return {
         "source": SOURCE,
         "task": {
-            "task_id": task.task_id,
-            "task_revision": task.task_revision,
-            "status": task.status,
-            "target_entity_id": task.target_entity_id,
-            "target_definition_id": task.target_definition_id,
+            "task_id": task_assessment.task_id,
+            "task_revision": task_assessment.task_revision,
+            "status": task_assessment.status,
+            "target_entity_id": task_assessment.target_entity_id,
+            "target_definition_id": task_assessment.target_definition_id,
         },
         "capability": {
             "skill_id": capability.skill_id,

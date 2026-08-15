@@ -1,5 +1,5 @@
 {
-  "revision": "represented-skill-tasks-v1.3",
+  "revision": "represented-skill-tasks-v1.4",
   "tasks": {
     "technology_known_system_fault_diagnostic_sim_v1": {
       "task_id": "technology_known_system_fault_diagnostic_sim_v1",
@@ -196,6 +196,48 @@
       "provenance": {
         "source": "controlled-h2h-sparring-runtime-v1",
         "notes": "First bounded multi-actor authorization exemplar. The session target is exact-definition bound and the opponent must be an explicitly consenting colocated character participant. V1 resolves scored contact only and does not mutate injury or participant state."
+      }
+    },
+    "h2h_controlled_grapple_spar_v1": {
+      "task_id": "h2h_controlled_grapple_spar_v1",
+      "name": "Controlled Unarmed Grappling Sparring",
+      "status": "active",
+      "skill_id": "hand_to_hand_combat",
+      "application_id": "control_unarmed_grapple",
+      "challenge_class": "standard",
+      "task_mode": "represented_consequential",
+      "target_contract": {
+        "entity_type": "object",
+        "definition_id": "represented_task:h2h_controlled_grappling_session_v1",
+        "required_capabilities_all": ["spar", "controlled_grappling_session"]
+      },
+      "context_tags": ["unarmed_combat_context", "close_contact_control_context"],
+      "resource_contract": {
+        "required_resource_mode": "none",
+        "required_capabilities_any": [],
+        "supporting_capabilities": []
+      },
+      "outcome_dimensions": ["feasibility", "quality_precision", "error_probability_severity", "partial_failure_recovery"],
+      "risk_class": "moderate",
+      "interaction_contract": {
+        "participant_entity_type": "character",
+        "participant_count": 1,
+        "requires_distinct_actor": true,
+        "requires_colocation": true,
+        "required_participant_capabilities_all": ["controlled_sparring_consent"],
+        "authorization_mode": "explicit_participant_capability",
+        "consequence_mode": "scored_positional_control_only",
+        "injury_state_mutation": false,
+        "target_state_mutation": false
+      },
+      "evidence_policy": {
+        "application_evidence": "deferred_until_action_integration",
+        "learning_evidence": false,
+        "notes": "Controlled grappling application evidence records bounded positional-control or escape performance only. It does not create restraint state, injury state, or H2H XP."
+      },
+      "provenance": {
+        "source": "controlled-h2h-interaction-generalization-v1",
+        "notes": "Structurally equivalent controlled-H2H follow-on. It reuses explicit participant authorization and colocation while resolving positional control only; persistent restraint, incapacity, injury, and hostile use remain deferred."
       }
     }
   }
