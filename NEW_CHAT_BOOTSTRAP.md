@@ -63,8 +63,14 @@ Training:
 Profile presentation:
 `profile schema + section metadata + current represented values + caller role/sensitivity -> generic profile query -> read-only derived grading/presentation -> Telegram`
 
-Solo sexual regulation:
+Profile grading target architecture:
+`authoritative current value(s) + explicit named grading scheme + scheme-specific context -> derived grade metadata -> generic consumers`
+
+Solo sexual regulation v1:
 `adult actor + authored libido + release recency + recovery state + authorized private/alone context -> bounded drive -> cognition may propose self_satisfaction -> deterministic validation -> temporary sexual physiology + immutable action evidence -> rolling 7-day count`
+
+Long-term sexual-drive architecture:
+`baseline libido + transient sexual arousal/cues + release recency/satiety + current physiological state + later contextual/relationship/endocrine modifiers -> current sexual drive -> cognition may choose among legal actions`
 
 ## Physical/profile family — COMPLETE FOR CURRENT SCOPE
 
@@ -94,9 +100,9 @@ Body/height/sexual authority summary:
 
 Canonical: `docs/SOLO_SEXUAL_REGULATION_V1.md`.
 
-The runtime now has a bounded adult-only solo sexual-behavior loop independent of the future Relationship System.
+The runtime has a bounded adult-only solo sexual-behavior loop independent of the future Relationship System.
 
-Eligibility requires:
+Current v1 eligibility requires:
 - age >= 18 at current simulation time;
 - authored libido/current drive support;
 - authored `access=private` location;
@@ -104,7 +110,11 @@ Eligibility requires:
 - no colocated represented character;
 - bounded anti-loop cooldown elapsed.
 
-Cognition receives structured `solo_sexual_regulation` context containing current drive, recent trailing-seven-day evidence, private/aloneness state and reachable authorized private rooms. Prompt guidance explicitly states that the behavior is legitimate but discretionary, never a quota, and subordinate to stronger safety/physiological needs. If drive is meaningful while the current room is not suitable, movement to a reachable private room may be considered first.
+Current drive uses authored libido, release recency and immediate recovery state. **Stress is not a prerequisite.** No single hormone, sexual-media/cue, relationship or frequency variable is a mandatory trigger.
+
+Future sexual media/content/cue exposure may modulate transient arousal only when a real content/event system supplies evidence. Future endocrine modulation requires an explicit endocrine authority; do not infer testosterone from training, physique or Strength. Relationship/attraction context may later contribute without becoming mandatory for solo behavior.
+
+Cognition receives structured `solo_sexual_regulation` context containing current drive, recent trailing-seven-day evidence, private/aloneness state and reachable authorized private rooms. Prompt guidance states that the behavior is legitimate but discretionary, never a quota, and subordinate to stronger safety/physiological needs.
 
 `self_satisfaction` appears in authoritative `action_options` only when currently legal. The model never mutates physiology directly.
 
@@ -114,7 +124,9 @@ At action start, deterministic runtime may materialize owner-only temporary:
 - `sexual_anatomy.erection_firmness`;
 - `sexual_anatomy.erectile_state`.
 
-Completion produces bounded subsiding physiology and immutable action evidence. `raps_sa.self_satisfaction_weekly` is now a rolling trailing-seven-day metric derived from completed action evidence rather than a fixed weekly target. Structural anatomy and long-term erectile capacity do not change from ordinary sexual activity.
+Completion produces bounded subsiding physiology and immutable action evidence. `raps_sa.self_satisfaction_weekly` is a rolling trailing-seven-day metric derived from completed action evidence rather than a target. Structural anatomy and long-term erectile capacity do not change from ordinary sexual activity.
+
+Current v1 does **not** apply a special deterministic stress reduction, mood/fatigue/sleep bonus, testosterone change or endocrine cascade. Future mental/emotion feedback may add contextual bounded effects when a real stress/mood authority exists, without making stress a trigger requirement.
 
 Actors without represented adult sexual-profile data remain valid composable actors; the solo-regulation settlement layer is a no-op for them rather than inventing sexual data.
 
@@ -137,8 +149,6 @@ Final PR #97 candidate evidence:
 - Deploy #193 / `31860951081` SUCCESS;
 - main CI #757 / `31860951093` SUCCESS.
 
-A legacy Research Action Semantics acceptance exposed a stale exact-singleton assumption after merge. Its real invariant is Research Desk supported + Bookshelf unsupported; additional future research-capable targets are legal. The workflow is generalized in the checkpoint sync slice rather than constraining the universal world back to one research target.
-
 ## Telegram Profile Schema-Driven UX — COMPLETE / DEPLOYED
 
 Canonical: `docs/TELEGRAM_PROFILE_SCHEMA_DRIVEN_UX.md`.
@@ -153,6 +163,22 @@ Grading vocabulary remains:
 
 The current `raps-100-proof-v1` scheme legitimately uses E..S on 0..100. Telegram renders rows such as `Strength 90 (S) · Expert`; compatible group/overall values are read-time arithmetic means evaluated through the same scheme. IQ is excluded because its scale differs. Grades are not persisted and recompute from current values.
 
+## Universal Profile Grading Framework v1 — NEXT
+
+Canonical planning contract: `docs/UNIVERSAL_PROFILE_GRADING_FRAMEWORK_V1.md`.
+
+This work now deliberately precedes Skill Progression.
+
+Required direction:
+- build an explicit grading-scheme registry;
+- preserve current Attribute behavior through the registry;
+- add Skills grading presentation from authoritative proficiency scores without mutating progression;
+- implement Body/Physique grading through evidence-backed proportional/contextual derived metrics rather than raw `larger = better` rules;
+- permit separate future health, general-aesthetic, bodybuilding and modelling schemes over the same raw body state;
+- do not hard-code a popularized golden ratio as universal truth;
+- perform a profile-wide grading eligibility audit: `graded`, `derived-grade candidate`, `contextual-only`, `not gradeable`;
+- keep grades read-only derived metadata reusable by future career/quest/job/salary systems.
+
 ## Public repository security checkpoint
 
 `Ye-Shwethway/observer-sandbox` is PUBLIC. Intimate production values must not be dumped into public CI logs merely for acceptance evidence.
@@ -161,18 +187,21 @@ Manual GitHub UI verification remains opportunistic for outside-contributor work
 
 ## Later sequence
 
-1. **Skill Progression Family**;
-2. intellectual attributes;
-3. mental/emotion dynamics;
-4. broader relationship/social systems and partnered/contextual sexual behavior;
-5. broad Mind/Behavior architecture only after enough real feature families justify it.
+1. **Universal Profile Grading Framework v1**;
+2. **Profile Grading Coverage Closure**;
+3. **Skill Progression Foundation v1**;
+4. Skill Progression follow-on batches/retention as justified;
+5. intellectual attributes;
+6. mental/emotion dynamics, including later contextual Solo Regulation stress/mood feedback;
+7. broader relationship/social systems and partnered/contextual sexual behavior;
+8. broad Mind/Behavior architecture only after enough real feature families justify it.
 
 ## Exact resume point
 
 First re-read current live production and canonical repository.
 
-Physical/profile completion, Telegram schema-driven profile UX, and Solo Sexual Regulation v1 are complete/deployed for current scope. **The next canonical development family remains Skill Progression.**
+Physical/profile completion, Telegram schema-driven profile UX, and Solo Sexual Regulation v1 are complete/deployed for current scope. **The next canonical development slice is Universal Profile Grading Framework v1, followed by Profile Grading Coverage Closure. Skill Progression begins only after grading closure.**
 
-Before implementing it, inspect existing `character_skills`, current Skills/Profile UX, training/action/research evidence contracts, current `score`/`tier`/`experience` semantics, grading-versus-progression boundaries, and retention/decay semantics. Preserve exemplar-first-then-batch and generic actor/skill IDs.
+Before implementing grading, inspect current `grading.py`, profile query/renderers, Skills collection, body/profile fields and measurement semantics. Research exact Body/Physique target bands before encoding them. Preserve raw-value authority, explicit scheme membership, and generic actor/domain logic.
 
-Do not add economy/currency, automatic restocking, deep recipes/crafting, Character Memory, broad Mind/Behavior engines, partnered sexual behavior, or a second production character merely for testing as side effects.
+Do not add economy/currency, careers, quests, salary, automatic restocking, deep recipes/crafting, Character Memory, broad Mind/Behavior engines, partnered sexual behavior, endocrine simulation, or a second production character merely as side effects of the grading slice.
