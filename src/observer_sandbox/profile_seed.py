@@ -69,7 +69,11 @@ def _skill_progression_active(row: sqlite3.Row | None) -> bool:
     if row is None:
         return False
     metadata = json.loads(row["metadata_json"] or "{}")
-    return isinstance(metadata, dict) and bool(metadata.get("progression_active"))
+    metadata_active = isinstance(metadata, dict) and bool(metadata.get("progression_active"))
+    # A non-null experience value is already learned-state evidence from a prior
+    # skill owner/version. Preserve it even if legacy metadata predates the
+    # explicit progression_active marker.
+    return metadata_active or row["experience"] is not None
 
 
 def import_seed(conn: sqlite3.Connection, seed: dict[str, Any]) -> None:
@@ -81,9 +85,10 @@ def import_seed(conn: sqlite3.Connection, seed: dict[str, Any]) -> None:
     re-initialization/deployment and is not reset from the seed.
 
     Skills follow the same initialization rule. Seed rows may refresh an
-    unactivated skill baseline, but a progression-active skill keeps its current
-    score/experience/metadata. Extra learned skills that are not present in the
-    canonical seed are preserved instead of being deleted on initialization.
+    unactivated skill baseline, but a progression-active/experienced skill keeps
+    its current score/experience/metadata. Extra learned skills that are not
+    present in the canonical seed are preserved instead of being deleted on
+    initialization.
     """
     validate_seed(conn, seed)
     entity_id = seed["entity_id"]
@@ -119,9 +124,6 @@ def import_seed(conn: sqlite3.Connection, seed: dict[str, Any]) -> None:
             (entity_id, field_key),
         ).fetchone()
 
-        # Re-seeding is initialization, not an engine reset. A domain engine that
-        # has activated a field owns the persisted simulated value until an
-        # explicit migration/control operation says otherwise.
         if old is not None and old["mode"] == "simulated":
             continue
 
@@ -183,8 +185,6 @@ def import_seed(conn: sqlite3.Connection, seed: dict[str, Any]) -> None:
             (entity_id, skill_key),
         ).fetchone()
         if _skill_progression_active(old_skill):
-            # Category remains authored classification; progression-owned score,
-            # experience and metadata survive ordinary initialization/deployment.
             conn.execute(
                 "UPDATE character_skills SET category=? WHERE entity_id=? AND skill_key=?",
                 (skill.get("category"), entity_id, skill_key),
