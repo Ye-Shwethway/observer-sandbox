@@ -15,17 +15,18 @@ Roadmap synchronized: 2026-08-15
 
 ## Current verified deployment
 
-Latest runtime deployment: **Deploy #209 / run `31877214780` SUCCESS**, Training Movement Contract Normalization v1, PR #129 merge `17dd3363467e82fb0fdf099316f619b0757ca5b5`.
+Latest runtime deployment: **Deploy #210 / run `31878236282` SUCCESS**, Tactical Planning Represented Assessment Runtime v1, PR #131 merge `aef123dc7840b69091c7264988b744c69d955396`.
 
-Verified production state after natural retry recovery:
+Verified post-deploy production evidence:
 - service active/healthy; schema v5;
-- autonomy enabled in normal mode at 1x;
-- the pre-existing `training_movements` ValueError retry loop recovered naturally without a manual retry reset;
-- read-only post-deploy check showed `current_retry: null` and a newly planned pending action;
-- no newer autonomy error replaced the historical movement-mismatch events at that recovery boundary;
-- cognition binding and Telegram connectivity remained intact;
-- Technology diagnostic simulator/action seed remained present;
-- no live diagnostic/tactical action was forced for proof.
+- autonomy enabled, normal mode, 1x, retry `null`;
+- a pending autonomous action exists;
+- cognition binding was preserved/resolved;
+- Telegram API connectivity remained healthy;
+- production `sandboxctl init` succeeded with the Tactical seed path present in deployed code;
+- no live Tactical action was forced for validation.
+
+The exact Tactical seed row was not separately queried read-only in this checkpoint. Full CI/fresh-DB tests prove exact seed/action behavior; production deployment/init proves the code path deployed successfully. Keep those evidence claims distinct.
 
 Production parent Skill state remains authoritative:
 - H2H `90 / S`
@@ -35,7 +36,7 @@ Production parent Skill state remains authoritative:
 - Technology `82 / A`
 - Field Medicine `75 / A`.
 
-Relevant reasoning context remains present, including IQ 140, problem solving 88, focus 92, and adaptability 85. These values are not replacement Skill scores.
+Relevant general reasoning context remains IQ 140, Problem Solving 88, Focus 92, Adaptability 85. These are supporting context, not replacement Skill scores.
 
 ## Skill authority / ontology
 
@@ -64,19 +65,16 @@ Ability/Attribute != Knowledge != Skill != Task/Application != demonstrated reli
 14. Technology Represented Diagnostic Task Runtime v1 — PR #126 / Deploy #208
 15. Sanitized Autonomy Error Readback — PR #127, corrected by PR #128
 16. Training Movement Contract Normalization v1 — PR #129 / Deploy #209
+17. Tactical Planning Represented Assessment Runtime v1 — PR #131 / Deploy #210.
 
-Canonical execution stack now includes:
-- `config/skill_definitions.v1.json`
-- `src/observer_sandbox/skill_definitions.py`
-- `src/observer_sandbox/skill_application_requirements.py`
-- `src/observer_sandbox/skill_capability.py`
-- `src/observer_sandbox/actor_skill_capability.py`
-- `config/represented_skill_tasks.v1.json`
-- `src/observer_sandbox/represented_skill_tasks.py`
-- `src/observer_sandbox/represented_skill_task_instance.py`
+Canonical execution stack includes:
+- Skill definition/application/capability + actor adapter;
+- represented Skill task registry + instance resolver;
 - cognition capability-awareness projection;
 - bounded cognitive/performance modifier resolver;
-- Technology represented diagnostic runtime/application-evidence path.
+- Technology diagnostic runtime;
+- Tactical situation-assessment runtime;
+- immutable application-evidence path separate from learning evidence.
 
 Canonical docs include:
 - `docs/SKILL_DEFINITION_CAPABILITY_FRAMEWORK_V1.md`
@@ -89,7 +87,8 @@ Canonical docs include:
 - `docs/SKILL_DEFINITION_REFACTOR_BATCH_V1.md`
 - `docs/COGNITION_CAPABILITY_AWARENESS_V1.md`
 - `docs/COGNITIVE_PERFORMANCE_MODIFIER_CONTRACT_V1.md`
-- `docs/TECHNOLOGY_DIAGNOSTIC_TASK_RUNTIME_V1.md`.
+- `docs/TECHNOLOGY_DIAGNOSTIC_TASK_RUNTIME_V1.md`
+- `docs/TACTICAL_ASSESSMENT_TASK_RUNTIME_V1.md`.
 
 ## Current six gameplay-grade umbrella Skills
 
@@ -101,56 +100,45 @@ Applications:
 - Technology: `diagnose_known_system_fault`
 - Field Medicine: `assess_field_casualty`, `stabilize_for_evacuation`.
 
-Application resource requirements support `required_resource_mode: any|none`; supporting resources may change an eligible result from constrained to supported without becoming hidden hard gates.
+## Represented-task foundation after second exemplar
 
-## Cognition and IQ boundary
+Represented-task resource contracts now support `required_resource_mode: any|none` and must preserve the underlying Skill application's resource mode.
 
-Cognition now receives a read-only semantic projection of actor Skill state plus canonical Skill definitions/applications, current behavioral anchors, supported challenges, context/resource expectations, and explicit limits.
-
-IQ and supporting Attributes are task-specific reasoning/performance context only when a declared modifier contract names them. They must not:
-- create Knowledge;
-- create or increase learned Skill proficiency;
-- satisfy missing target/context/resource requirements;
-- upgrade an unsupported task to supported;
-- become a universal unrelated-task bonus.
-
-The first Technology modifier contract uses bounded reasoning/precision/adaptation dimensions. V1 modifier effects are explicit and capped; deterministic task outcome remains final authority.
-
-## Represented Skill runtime state
+Supporting resources may distinguish constrained from supported outcomes but do not become hidden hard gates. Exact target definition/capability, context, actor Skill state and challenge support remain deterministic authority.
 
 ### Technology exemplar — complete
 
-`technology_known_system_fault_diagnostic_sim_v1`
+Task: `technology_known_system_fault_diagnostic_sim_v1`
+Application: `technology.diagnose_known_system_fault`
+Action: `diagnose`
+Target definition: `represented_task:technology_known_fault_diagnostic_simulator_v1`
 
-Runtime flow:
-`cognition awareness -> legal diagnose action option -> exact represented target binding -> Technology capability -> bounded cognitive modifiers -> deterministic outcome -> action completion -> immutable skill_application_evidence`
+This proved a tool/resource-centric represented runtime with one hard resource-any requirement plus supporting documentation.
 
-Purpose-built production target:
-`obj_thorne_estate_intel_known_fault_diagnostic_simulator`
+### Tactical Planning second exemplar — complete
 
-Exact definition:
-`represented_task:technology_known_fault_diagnostic_simulator_v1`
+Task: `tactical_situation_assessment_sim_v1`
+Application: `tactical_planning.assess_tactical_situation`
+Action: `assess`
+Target definition: `represented_task:tactical_situation_assessment_simulator_v1`
 
-The existing Systems Diagnostic Practice Console remains practice/learning evidence only and is not application authority.
+This proved a cognitively heavy represented runtime with `required_resource_mode: none` plus supporting `situational_intelligence`. The simulator is distinct from Tactical learning/practice targets.
 
-Application evidence is separate from learning evidence. The Technology runtime does not grant XP merely because an application completed.
+The second exemplar demonstrates that the core runtime structure generalizes across materially different resource shapes. Under the expansion policy, the next structurally equivalent follow-ons should therefore be batched rather than implemented as one bespoke exemplar per Skill.
 
-## Training movement operational correction
+## Cognition and IQ boundary
 
-Production exposed a pre-existing cognition retry loop when a valid authored training method with no movement/anatomy subcatalog received a human-semantic auxiliary label such as `sparring`.
+Cognition receives a read-only semantic projection of actor Skill state plus canonical Skill definitions/applications, behavioral anchors, supported challenges, context/resource expectations, and explicit limits.
 
-PR #129 established the contract:
-- authored method + no movement subcatalog -> auxiliary `training_movements` canonicalizes to empty;
-- explicit movement subcatalog -> strict exact movement-id validation;
-- unknown/unbound training target -> fail closed.
+IQ/supporting Attributes are task-specific performance context only when a declared modifier contract names them. They cannot create Knowledge, proficiency, missing resources/context, authorization, or supported challenge capability.
 
-This changes no action target, method, duration, progression formula, or evidence authority. Production naturally recovered after the previous retry backoff expired.
+Tactical assessment uses bounded IQ + Problem Solving + Focus + Adaptability modifiers. Legacy `raps_ia.tactical_thinking` is intentionally excluded so Tactical Planning Skill is not double-counted.
 
 ## Subskill policy
 
-Current application families are the initial **subskill-like gameplay surface**, not independently scored child Skills.
+Current application families are the initial subskill-like gameplay surface, not independently scored child Skills.
 
-Do not split current parent scores into invented child values. Promote a true child Skill only when:
+Do not split parent scores into invented child values. Promote a true child Skill only when:
 1. the task family is meaningfully separable;
 2. legitimate learning evidence can distinguish it;
 3. progression/retention can be independently owned;
@@ -165,39 +153,31 @@ Active legitimate progression remains:
 - Tactical Planning — VR Tactical Drills / AI Combat Simulation evidence;
 - Technology — `systems_diagnostic_practice`.
 
-Weapons, Survival, and Field Medicine have semantic definitions but no active progression producer. Generic actions, names, model prose, or application evidence must not silently become XP.
+Represented task application evidence remains immutable application evidence only and does not automatically become XP.
+
+Weapons, Survival and Field Medicine have semantic definitions but no active progression producer. Do not invent progression merely because represented gameplay is added.
+
+## Training movement operational correction
+
+PR #129 remains the production contract:
+- authored method + no movement subcatalog -> auxiliary movement labels canonicalize to empty;
+- explicit movement subcatalog -> strict exact movement-id validation;
+- unknown/unbound target -> fail closed.
+
+Production recovered naturally after its previous retry backoff. Do not regress this boundary while expanding Skill gameplay.
 
 ## Next development sequence
 
-1. **Tactical Planning Represented Assessment Runtime v1 — NEXT**;
-2. use `tactical_planning.assess_tactical_situation` as the second represented gameplay exemplar;
-3. seed a distinct low-risk represented tactical assessment simulator/scenario rather than reusing Tactical training/practice targets;
-4. reuse proven represented-task/action/application-evidence structure where structurally equivalent;
-5. declare only task-relevant cognitive factors (likely IQ/problem solving/focus/adaptability/tactical reasoning) with bounded modifier effects;
-6. emit immutable application evidence separate from existing Tactical learning evidence;
-7. do not auto-award XP from application evidence;
-8. after the second exemplar, decide which equivalent Skill runtimes can be batched rather than creating one bespoke PR per Skill;
-9. add Weapons/Survival/Field Medicine progression only when legitimate represented learning evidence exists;
-10. later address retention/reacquisition and justified true subskill promotion.
-
-## Tactical Planning Represented Assessment Runtime v1 — NEXT
-
-Target application:
-`tactical_planning.assess_tactical_situation`
-
-Required invariants:
-- purpose-built represented target with exact definition binding;
-- simulation-safe / low-risk first exemplar;
-- cognition sees both semantic Tactical capability and a concrete legal action only when physically/contextually available;
-- deterministic Skill capability remains feasibility authority;
-- IQ and supporting Attributes shape only explicitly declared performance dimensions;
-- no random `Skill score = success percent` shortcut;
-- immutable application evidence on actual completion;
-- application evidence != learning evidence;
-- no child Skill creation;
-- no production action forced for validation.
-
-The second exemplar is intended to prove that the runtime pattern is generic beyond a tool-heavy Technology task before broader batch-by-pattern integration.
+1. **Represented Skill Runtime Batch v1 — NEXT**.
+2. Re-read remaining current Skill applications and group only structurally equivalent low-risk / simulation-safe candidates that fit the now-proven task/action/evidence pattern.
+3. Prefer one branch / PR / focused regression set / merge / deploy-readback for the batch.
+4. Reuse the represented-task registry, exact instance resolver, action lifecycle, cognition awareness, bounded modifier contracts and immutable application-evidence path rather than creating domain-specific parallel engines.
+5. Add task-specific cognitive/physical factors only where canonical Skill definitions justify them; do not apply a universal IQ bonus.
+6. Keep application evidence separate from learning evidence and do not auto-award XP.
+7. Do not add independently scored child Skills.
+8. Do not include higher-risk consequential H2H/Weapons use merely to complete a checklist; new safety/consequence invariants require their own bounded exemplar if genuinely novel.
+9. Survival / Field Medicine / remaining Tactical applications may be candidates only after checking their exact live contracts and whether they introduce new structural invariants.
+10. Later: add Weapons/Survival/Field Medicine progression only when legitimate represented learning evidence exists; address retention/reacquisition and justified true subskill promotion separately.
 
 ## Deferred boundaries
 
@@ -205,4 +185,4 @@ No full Knowledge Engine, second competency score, giant Skill tree, economy/job
 
 ## Exact resume point
 
-**Technology represented gameplay, cognition capability awareness, bounded IQ/supporting-factor performance modifiers, and production autonomy recovery are complete through PR #129 / Deploy #209. Next implement one distinct Tactical Planning `assess_tactical_situation` represented runtime exemplar; do not reuse Tactical training targets, do not create child scores, and do not turn application evidence into XP.**
+**Technology diagnostic and Tactical assessment represented runtimes are complete through PR #131 / Deploy #210. The two-exemplar pattern is proven across `required_resource_mode: any` and `none`. Next reconcile live definitions and implement one bounded batch of structurally equivalent low-risk represented Skill applications; keep Skill authority, exact task binding, bounded modifiers, application-vs-learning evidence separation, and no-child-score invariants intact.**
