@@ -356,10 +356,17 @@ def recent_history(
     limit: int = 8,
     role: str = "owner",
 ) -> list[dict[str, Any]]:
+    """Return user-facing completed character actions, not internal engine receipts."""
     character_id = resolve_actor_id(conn, character_id)
     limit = max(1, min(int(limit), 50))
     rows = conn.execute(
-        "SELECT id, sim_time, event_type, payload_json FROM events WHERE actor_id=? ORDER BY id DESC LIMIT ?",
+        """
+        SELECT id, sim_time, event_type, payload_json
+        FROM events
+        WHERE actor_id=? AND event_type='action_completed'
+        ORDER BY id DESC
+        LIMIT ?
+        """,
         (character_id, max(limit * 3, limit)),
     ).fetchall()
     result: list[dict[str, Any]] = []
