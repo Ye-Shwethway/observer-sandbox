@@ -9,6 +9,7 @@ from observer_sandbox.location_runtime import set_dynamic_location
 from observer_sandbox.runtime import initialize
 from observer_sandbox.simulation import Action, apply_action, snapshot
 from observer_sandbox.skill_progression import (
+    SETTLEMENT_EVENT_TYPE,
     proficiency_factor,
     saturation_factor,
     settle_skill_progression,
@@ -31,11 +32,40 @@ def _skill(conn):
     return row
 
 
+def _skill_settlements(conn):
+    rows = conn.execute(
+        "SELECT id,payload_json FROM events WHERE actor_id=? AND event_type=? ORDER BY id",
+        (ACTOR, SETTLEMENT_EVENT_TYPE),
+    ).fetchall()
+    return [
+        (row["id"], json.loads(row["payload_json"] or "{}"))
+        for row in rows
+        if json.loads(row["payload_json"] or "{}").get("skill_key") == SKILL
+    ]
+
+
 def _train(conn, target: str, minutes: int = 30) -> str:
     set_dynamic_location(conn, ACTOR, HOME_GYM)
     conn.commit()
     apply_action(conn, Action("train", minutes, target, "bounded progression test"), ACTOR)
     return str(snapshot(conn, ACTOR)["sim_time"])
+
+
+def test_initialize_bootstraps_skill_without_changing_score_or_inventing_xp(tmp_path):
+    db = tmp_path / "observer.sqlite3"
+    initialize(db)
+    with connect(db) as conn:
+        row = _skill(conn)
+        settlements = _skill_settlements(conn)
+        assert float(row["score"]) == pytest.approx(90.0)
+        assert row["experience"] is None
+        assert len(settlements) == 1
+        payload = settlements[0][1]
+        assert payload["bootstrap"] is True
+        assert payload["score_delta"] == 0.0
+        assert payload["experience_gain"] == 0.0
+        metadata = json.loads(row["metadata_json"] or "{}")
+        assert metadata["progression_active"] is True
 
 
 def test_reinitialize_preserves_progression_active_and_extra_learned_skills(tmp_path):
@@ -60,38 +90,64 @@ def test_reinitialize_preserves_progression_active_and_extra_learned_skills(tmp_
         row = _skill(conn)
         assert float(row["score"]) == pytest.approx(91.25)
         assert float(row["experience"]) == pytest.approx(2.5)
+        assert len(_skill_settlements(conn)) == 1
         assert conn.execute(
             "SELECT score FROM character_skills WHERE entity_id=? AND skill_key='learned_future_skill'",
             (ACTOR,),
         ).fetchone() is not None
 
 
-def test_first_settlement_bootstraps_without_retroactive_progression(tmp_path):
+def test_reinitialize_preserves_legacy_nonnull_experience_without_marker(tmp_path):
     db = tmp_path / "observer.sqlite3"
     initialize(db)
     with connect(db) as conn:
-        as_of = _train(conn, HEAVY_BAG, 30)
-        before = _skill(conn)
-        result = settle_skill_progression(conn, ACTOR, SKILL, as_of_sim_time=as_of)
-        after = _skill(conn)
+        conn.execute(
+            "UPDATE character_skills SET score=90.5,experience=1.25,metadata_json='{}' WHERE entity_id=? AND skill_key=?",
+            (ACTOR, SKILL),
+        )
+        conn.commit()
+    initialize(db)
+    with connect(db) as conn:
+        row = _skill(conn)
+        assert float(row["score"]) == pytest.approx(90.5)
+        assert float(row["experience"]) == pytest.approx(1.25)
 
-        assert result["settled"] is True
-        assert result["bootstrap"] is True
-        assert result["consumed_action_event_ids"]
-        assert float(after["score"]) == pytest.approx(float(before["score"]))
-        assert after["experience"] is None
-        metadata = json.loads(after["metadata_json"] or "{}")
-        assert metadata["progression_active"] is True
+
+def test_activation_migration_consumes_preexisting_combat_evidence_without_retroactive_gain(tmp_path):
+    db = tmp_path / "observer.sqlite3"
+    initialize(db)
+    with connect(db) as conn:
+        # Simulate a pre-v1 production database: remove the v1 activation marker
+        # and settlement receipt, then create legitimate historical combat evidence.
+        conn.execute("DELETE FROM events WHERE actor_id=? AND event_type=?", (ACTOR, SETTLEMENT_EVENT_TYPE))
+        conn.execute(
+            "UPDATE character_skills SET experience=NULL,metadata_json='{}' WHERE entity_id=? AND skill_key=?",
+            (ACTOR, SKILL),
+        )
+        historical_event_time = _train(conn, HEAVY_BAG, 30)
+        before_score = float(_skill(conn)["score"])
+        conn.commit()
+
+    initialize(db)
+    with connect(db) as conn:
+        row = _skill(conn)
+        settlements = _skill_settlements(conn)
+        assert len(settlements) == 1
+        payload = settlements[0][1]
+        assert payload["bootstrap"] is True
+        assert payload["consumed_action_event_ids"]
+        assert float(row["score"]) == pytest.approx(before_score)
+        assert row["experience"] is None
+        assert payload["old_score"] == pytest.approx(before_score)
+        assert payload["new_score"] == pytest.approx(before_score)
+        assert historical_event_time <= str(snapshot(conn, ACTOR)["sim_time"])
 
 
 def test_future_combat_training_progresses_score_and_experience_once(tmp_path):
     db = tmp_path / "observer.sqlite3"
     initialize(db)
     with connect(db) as conn:
-        # Establish a clean activation cursor; historical/pre-activation work is not XP.
-        initial_time = str(snapshot(conn, ACTOR)["sim_time"])
-        boot = settle_skill_progression(conn, ACTOR, SKILL, as_of_sim_time=initial_time)
-        assert boot["bootstrap"] is True
+        assert _skill_settlements(conn)[0][1]["bootstrap"] is True
 
         as_of = _train(conn, HEAVY_BAG, 30)
         before = float(_skill(conn)["score"])
@@ -117,8 +173,6 @@ def test_noncombat_strength_training_does_not_progress_hand_to_hand(tmp_path):
     db = tmp_path / "observer.sqlite3"
     initialize(db)
     with connect(db) as conn:
-        initial_time = str(snapshot(conn, ACTOR)["sim_time"])
-        settle_skill_progression(conn, ACTOR, SKILL, as_of_sim_time=initial_time)
         before = _skill(conn)
         as_of = _train(conn, FREE_WEIGHTS, 30)
         result = settle_skill_progression(conn, ACTOR, SKILL, as_of_sim_time=as_of)
