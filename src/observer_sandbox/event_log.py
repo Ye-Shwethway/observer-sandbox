@@ -6,6 +6,7 @@ import uuid
 from typing import Any
 
 from .nutrition_energy import energy_expenditure_evidence, nutrition_intake_evidence
+from .skill_practice import skill_practice_evidence
 from .training_methods import training_method_evidence
 
 
@@ -37,6 +38,25 @@ def _enrich_training_method(
         return payload
     enriched = dict(payload)
     enriched["training_method"] = evidence
+    return enriched
+
+
+def _enrich_skill_practice(payload: dict[str, Any], event_type: str) -> dict[str, Any]:
+    if event_type != "action_completed" or payload.get("action") != "practice" or "skill_practice" in payload:
+        return payload
+    target = payload.get("target")
+    duration = payload.get("duration_minutes")
+    if not isinstance(target, str) or not isinstance(duration, (int, float)):
+        return payload
+    evidence = skill_practice_evidence(
+        action_name="practice",
+        target_id=target,
+        duration_minutes=int(duration),
+    )
+    if evidence is None:
+        return payload
+    enriched = dict(payload)
+    enriched["skill_practice"] = evidence
     return enriched
 
 
@@ -117,6 +137,7 @@ def record_event(
         event_type,
         action_id=action_id,
     )
+    event_payload = _enrich_skill_practice(event_payload, event_type)
     event_payload = _enrich_nutrition_energy(
         conn,
         event_payload,
