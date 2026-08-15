@@ -194,6 +194,8 @@ def _fmt_profile_value(item: dict[str, Any]) -> str:
         return "; ".join(f"{str(key).replace('_', ' ').title()}: {part}" for key, part in value.items())
     if isinstance(value, bool):
         return "Yes" if value else "No"
+    if unit == "ratio" and isinstance(value, (int, float)):
+        return f"{float(value):.3f}".rstrip("0").rstrip(".")
 
     formatted = _fmt_number(value)
     if unit == "in":
@@ -212,5 +214,5 @@ def _fmt_number(value: Any) -> str:
         return "Yes" if value else "No"
     if isinstance(value, (int, float)):
         number = float(value)
-        return f"{number:.3f}".rstrip("0").rstrip(".")
+        return f"{number:.1f}".rstrip("0").rstrip(".")
     return str(value)
