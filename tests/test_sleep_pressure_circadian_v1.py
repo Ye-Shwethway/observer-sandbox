@@ -40,6 +40,7 @@ def test_deep_night_long_awake_state_routes_to_real_overnight_sleep(tmp_path):
 
         assert pressure["level"] == "critical"
         assert pressure["hours_awake"] >= 19.0
+        assert pressure["circadian_phase"] == "sleep_window"
         assert "deep_night_circadian_pressure" in pressure["reasons"]
         assert enriched["decision_signals"]["highest_priority"]["need"] == "sleepiness"
         assert enriched["decision_signals"]["recommended_duration"]["action"] == "sleep"
@@ -71,3 +72,106 @@ def test_recent_restorative_sleep_keeps_daytime_pressure_comfortable(tmp_path):
         assert pressure["hours_awake"] == 6.0
         assert pressure["level"] == "comfortable"
         assert pressure["night_window"] is False
+        assert pressure["circadian_phase"] == "wake_window"
+
+
+def test_sixteen_hours_awake_does_not_force_early_evening_bedtime(tmp_path):
+    db = tmp_path / "observer.sqlite3"
+    initialize(db)
+    with connect(db) as conn:
+        set_runtime_value(conn, "sim_time", "2025-05-01T18:56:00+00:00")
+        set_field(conn, "char_darian", "runtime.location", MASTER_SUITE)
+        set_field(conn, "char_darian", "needs.sleepiness", 48.4)
+        conn.commit()
+
+        # Establish the exact phase-drift setup: previous restorative sleep ended
+        # at 02:56, so the actor has been awake for exactly sixteen hours.
+        conn.execute(
+            """
+            INSERT INTO events(actor_id,event_type,sim_time,payload_json)
+            VALUES(?,?,?,?)
+            """,
+            (
+                "char_darian",
+                "action_completed",
+                "2025-05-01T02:56:00+00:00",
+                '{"action":"sleep","duration_minutes":480,"action_ended_sim_time":"2025-05-01T02:56:00+00:00"}',
+            ),
+        )
+        conn.commit()
+
+        pressure = sleep_pressure_signal(
+            conn,
+            state=snapshot(conn, "char_darian"),
+            actor_id="char_darian",
+        )
+
+        assert pressure["hours_awake"] == 16.0
+        assert pressure["circadian_phase"] == "wake_window"
+        assert pressure["level"] == "comfortable"
+        assert "extended_wakefulness" not in pressure["reasons"]
+        assert "night_circadian_pressure" not in pressure["reasons"]
+
+
+def test_same_early_wake_phase_becomes_strong_at_normal_night_window(tmp_path):
+    db = tmp_path / "observer.sqlite3"
+    initialize(db)
+    with connect(db) as conn:
+        set_runtime_value(conn, "sim_time", "2025-05-01T22:00:00+00:00")
+        set_field(conn, "char_darian", "runtime.location", MASTER_SUITE)
+        set_field(conn, "char_darian", "needs.sleepiness", 57.0)
+        conn.execute(
+            """
+            INSERT INTO events(actor_id,event_type,sim_time,payload_json)
+            VALUES(?,?,?,?)
+            """,
+            (
+                "char_darian",
+                "action_completed",
+                "2025-05-01T02:56:00+00:00",
+                '{"action":"sleep","duration_minutes":480,"action_ended_sim_time":"2025-05-01T02:56:00+00:00"}',
+            ),
+        )
+        conn.commit()
+
+        pressure = sleep_pressure_signal(
+            conn,
+            state=snapshot(conn, "char_darian"),
+            actor_id="char_darian",
+        )
+
+        assert pressure["hours_awake"] == 19.067
+        assert pressure["circadian_phase"] == "sleep_window"
+        assert pressure["level"] == "strong"
+        assert pressure["reasons"] == ["night_circadian_pressure"]
+
+
+def test_severe_extended_wakefulness_can_override_daytime_circadian_guard(tmp_path):
+    db = tmp_path / "observer.sqlite3"
+    initialize(db)
+    with connect(db) as conn:
+        set_runtime_value(conn, "sim_time", "2025-05-02T18:00:00+00:00")
+        set_field(conn, "char_darian", "needs.sleepiness", 55.0)
+        conn.execute(
+            """
+            INSERT INTO events(actor_id,event_type,sim_time,payload_json)
+            VALUES(?,?,?,?)
+            """,
+            (
+                "char_darian",
+                "action_completed",
+                "2025-05-01T21:00:00+00:00",
+                '{"action":"sleep","duration_minutes":480,"action_ended_sim_time":"2025-05-01T21:00:00+00:00"}',
+            ),
+        )
+        conn.commit()
+
+        pressure = sleep_pressure_signal(
+            conn,
+            state=snapshot(conn, "char_darian"),
+            actor_id="char_darian",
+        )
+        assert pressure["circadian_phase"] == "wake_window"
+        assert pressure["hours_awake"] == 21.0
+        assert pressure["level"] == "critical"
+        assert "extended_wakefulness" in pressure["reasons"]

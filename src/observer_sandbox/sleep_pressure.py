@@ -7,10 +7,11 @@ from typing import Any
 
 
 RESTORATIVE_SLEEP_MINUTES = 180
-STRONG_HOURS_AWAKE = 16.0
 CRITICAL_HOURS_AWAKE = 20.0
 NIGHT_STRONG_HOURS_AWAKE = 14.0
 DEEP_NIGHT_CRITICAL_HOURS_AWAKE = 17.0
+NIGHT_START_HOUR = 22
+DAY_START_HOUR = 7
 
 
 def _completed_sleep_rows(conn: sqlite3.Connection, actor_id: str):
@@ -59,7 +60,7 @@ def sleep_pressure_signal(
     hours_awake = None if anchor is None else max(0.0, (now - anchor).total_seconds() / 3600.0)
     raw_sleepiness = float(state["sleepiness"])
     hour = now.hour
-    night = hour >= 22 or hour < 7
+    night = hour >= NIGHT_START_HOUR or hour < DAY_START_HOUR
     deep_night = 0 <= hour < 5
 
     critical_reasons: list[str] = []
@@ -70,10 +71,16 @@ def sleep_pressure_signal(
         strong_reasons.append("raw_sleepiness")
 
     if hours_awake is not None:
+        # Severe sleep deprivation remains an all-day safety override. Ordinary
+        # 16-hour wakefulness is not itself a bedtime trigger because doing so
+        # phase-locks the actor to whatever wake time the previous sleep created.
         if hours_awake >= CRITICAL_HOURS_AWAKE:
             critical_reasons.append("extended_wakefulness")
-        elif hours_awake >= STRONG_HOURS_AWAKE:
-            strong_reasons.append("extended_wakefulness")
+
+        # Normal accumulated wakefulness becomes a strong sleep signal only in
+        # the authored circadian night window. This lets an early wake time drift
+        # back toward a conventional night sleep instead of causing progressively
+        # earlier evening bedtimes.
         if deep_night and hours_awake >= DEEP_NIGHT_CRITICAL_HOURS_AWAKE:
             critical_reasons.append("deep_night_circadian_pressure")
         elif night and hours_awake >= NIGHT_STRONG_HOURS_AWAKE:
@@ -87,8 +94,9 @@ def sleep_pressure_signal(
         "hours_awake": None if hours_awake is None else round(hours_awake, 3),
         "night_window": night,
         "deep_night": deep_night,
+        "circadian_phase": "sleep_window" if night else "wake_window",
         "last_restorative_sleep_end": None if last_sleep is None else last_sleep.isoformat(),
         "restorative_sleep_min_minutes": RESTORATIVE_SLEEP_MINUTES,
         "reasons": reasons,
-        "source": "sleep-pressure-circadian-v1",
+        "source": "sleep-pressure-circadian-v1.1",
     }
