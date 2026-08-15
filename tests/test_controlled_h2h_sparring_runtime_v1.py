@@ -262,7 +262,7 @@ def test_wrong_session_definition_fails_exact_binding_before_persisting_action(t
         set_dynamic_location(conn, "char_darian", ROOM)
         conn.commit()
         before = snapshot(conn, "char_darian")
-        with pytest.raises(Exception, match="expected"):
+        with pytest.raises(Exception, match="authorized represented session definition"):
             apply_action(
                 conn,
                 Action(SPAR_ACTION, 10, SESSION, "wrong session", participants=(PARTNER,)),
