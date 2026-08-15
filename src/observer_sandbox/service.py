@@ -15,6 +15,7 @@ from .db import connect
 from .height_lifecycle import maybe_settle_height_lifecycle
 from .physical_attribute_progression import maybe_settle_physical_attribute_batch
 from .physical_presentation import refresh_physical_presentation
+from .profile_change_observer import capture_profile_change_state, observe_profile_changes
 from .runtime import initialize
 from .secrets import load_runtime_secrets
 from .sexual_anatomy_physiology_lifecycle import maybe_settle_sexual_anatomy_physiology_lifecycle
@@ -23,6 +24,7 @@ from .stamina_progression_activation import maybe_settle_stamina_progression
 from .strength_progression_activation import maybe_settle_strength_progression
 from .telegram_creator_bot import run_polling
 from .telegram_notifications import dispatch_action_completion
+from .telegram_profile_notifications import dispatch_profile_change_notifications
 
 DB_PATH = Path(os.environ.get("OBSERVER_SANDBOX_DB", "/var/lib/observer-sandbox/observer.sqlite3"))
 RUNNING = True
@@ -57,6 +59,8 @@ def main() -> None:
                     result = autonomy_tick(conn, actor_id=actor_id)
                     if result.get("state") == "completed" and pending_before and before:
                         after = result["after"]
+                        profile_before = capture_profile_change_state(conn, actor_id)
+
                         for settle in (maybe_settle_strength_progression, maybe_settle_stamina_progression, maybe_settle_agility_progression):
                             try:
                                 settle(conn, actor_id, as_of_sim_time=str(after["sim_time"]), state=after)
@@ -134,9 +138,32 @@ def main() -> None:
                         except Exception:
                             pass
 
+                        profile_after = capture_profile_change_state(conn, actor_id)
+                        observe_profile_changes(
+                            conn,
+                            actor_id,
+                            profile_before,
+                            profile_after,
+                            sim_time=str(after["sim_time"]),
+                        )
+
                         next_result = autonomy_tick(conn, actor_id=actor_id)
                         next_pending = next_result.get("pending") if next_result.get("state") == "planned" else None
-                        dispatch_action_completion(conn, action_id=str(result["action_id"]), action=pending_before, before=before, after=after, next_action=next_pending)
+                        dispatch_action_completion(
+                            conn,
+                            action_id=str(result["action_id"]),
+                            action=pending_before,
+                            before=before,
+                            after=after,
+                            next_action=next_pending,
+                        )
+                        dispatch_profile_change_notifications(
+                            conn,
+                            actor_id=actor_id,
+                            before=profile_before,
+                            current=profile_after,
+                            sim_time=str(after["sim_time"]),
+                        )
         except Exception:
             pass
         time.sleep(2)
