@@ -15,6 +15,7 @@ from .profile_schema import seed_profile_field_definitions
 from .profile_schema_source_union import seed_source_union_extensions
 from .sexual_state_schema import seed_sexual_state_fields
 from .simulation import ensure_sim_clock
+from .skill_progression import maybe_settle_skill_progression
 from .world import seed_home_and_darian
 
 
@@ -44,7 +45,7 @@ def _initialize_conn(conn) -> None:
     # Stateful inventory migrations emit immutable audit events at simulation
     # time. Establish the canonical clock before inventory seeding so a fresh
     # database and every test/runtime initialization share the same ordering.
-    ensure_sim_clock(conn)
+    sim_clock = ensure_sim_clock(conn)
     seed_home_inventory(conn)
     seed_action_definitions(conn)
     defaults = {
@@ -58,6 +59,20 @@ def _initialize_conn(conn) -> None:
             (key, json.dumps(value)),
         )
     conn.commit()
+
+    # Activation is cursor-only: existing represented skills bootstrap at the
+    # initialization/deploy boundary so historical action evidence cannot become
+    # retroactive XP and the first genuinely future practice session is eligible.
+    # Repeated initialize/status calls are idempotent after the bootstrap event.
+    for row in conn.execute(
+        "SELECT entity_id FROM character_profiles WHERE status='active' ORDER BY entity_id"
+    ).fetchall():
+        maybe_settle_skill_progression(
+            conn,
+            str(row["entity_id"]),
+            as_of_sim_time=sim_clock.isoformat(),
+        )
+
     default_actor_id = ensure_default_actor_id(conn)
     if default_actor_id is not None:
         migrate_legacy_actor_runtime(conn, default_actor_id)
