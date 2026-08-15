@@ -7,6 +7,11 @@ from typing import Any
 
 from .nutrition_energy import energy_expenditure_evidence, nutrition_intake_evidence
 from .skill_practice import skill_practice_evidence
+from .technology_diagnostic_runtime import (
+    DIAGNOSE_ACTION,
+    technology_diagnostic_application_evidence,
+    technology_diagnostic_outcome,
+)
 from .training_methods import training_method_evidence
 
 
@@ -57,6 +62,58 @@ def _enrich_skill_practice(payload: dict[str, Any], event_type: str) -> dict[str
         return payload
     enriched = dict(payload)
     enriched["skill_practice"] = evidence
+    return enriched
+
+
+def _enrich_technology_diagnostic(
+    conn: sqlite3.Connection,
+    payload: dict[str, Any],
+    event_type: str,
+    *,
+    actor_id: str | None,
+    action_id: str | None,
+) -> dict[str, Any]:
+    if (
+        event_type != "action_completed"
+        or payload.get("action") != DIAGNOSE_ACTION
+        or not actor_id
+        or not action_id
+        or "skill_application" in payload
+    ):
+        return payload
+    target = payload.get("target")
+    duration = payload.get("duration_minutes")
+    if not isinstance(target, str) or not isinstance(duration, (int, float)):
+        raise ValueError("Completed diagnose action requires target and duration")
+
+    # This resolves exact represented-task binding, learned Skill capability, and
+    # bounded cognitive-performance inputs inside the action-completion
+    # transaction. Any invalid binding/capability raises before commit.
+    diagnostic = technology_diagnostic_outcome(conn, actor_id, target)
+    evidence = technology_diagnostic_application_evidence(
+        diagnostic,
+        action_id=action_id,
+        actor_id=actor_id,
+        duration_minutes=int(duration),
+    )
+    enriched = dict(payload)
+    enriched["represented_skill_task"] = diagnostic
+    enriched["skill_application"] = evidence
+
+    row = conn.execute(
+        "SELECT outcome_json FROM action_instances WHERE id=?",
+        (action_id,),
+    ).fetchone()
+    if row is not None:
+        current = json.loads(row["outcome_json"] or "{}")
+        if not isinstance(current, dict):
+            current = {}
+        current["represented_skill_task"] = diagnostic
+        current["skill_application"] = evidence
+        conn.execute(
+            "UPDATE action_instances SET outcome_json=?,updated_at=CURRENT_TIMESTAMP WHERE id=?",
+            (json.dumps(current, ensure_ascii=False), action_id),
+        )
     return enriched
 
 
@@ -138,6 +195,13 @@ def record_event(
         action_id=action_id,
     )
     event_payload = _enrich_skill_practice(event_payload, event_type)
+    event_payload = _enrich_technology_diagnostic(
+        conn,
+        event_payload,
+        event_type,
+        actor_id=actor_id,
+        action_id=action_id,
+    )
     event_payload = _enrich_nutrition_energy(
         conn,
         event_payload,
@@ -173,4 +237,26 @@ def record_event(
                 "INSERT OR IGNORE INTO event_participants(event_id,entity_id,role) VALUES(?,?,?)",
                 (event_id, entity_id, row.get("role") or "participant"),
             )
+
+    # Application evidence is immutable and distinct from learning evidence. It
+    # shares the completed action id and points back to the completion event.
+    if event_type == "action_completed" and isinstance(event_payload.get("skill_application"), dict):
+        evidence_payload = dict(event_payload["skill_application"])
+        conn.execute(
+            """INSERT INTO events(
+                sim_time,actor_id,event_type,payload_json,event_uuid,action_id,location_id,
+                caused_by_event_id,state_changes_json
+            ) VALUES(?,?,?,?,?,?,?,?,?)""",
+            (
+                sim_time,
+                actor_id,
+                "skill_application_evidence",
+                json.dumps(evidence_payload, ensure_ascii=False),
+                str(uuid.uuid4()),
+                action_id,
+                location_id,
+                event_id,
+                json.dumps({}, ensure_ascii=False),
+            ),
+        )
     return event_id
