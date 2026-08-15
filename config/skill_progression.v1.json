@@ -1,0 +1,19 @@
+{
+  "revision": "skill-progression-foundation-v1",
+  "skills": {
+    "hand_to_hand_combat": {
+      "score_cap": 100.0,
+      "base_score_points_per_learning_unit": 0.12,
+      "recent_window_hours": 24.0,
+      "saturation_half_units": 2.0,
+      "compatibility_profile_field": null,
+      "eligible_methods": {
+        "heavy_bag_rounds": 0.75,
+        "combat_mat_drills": 0.9,
+        "technical_dummy_drills": 0.85,
+        "ai_combat_simulation": 1.0,
+        "combat_pit_drills": 1.0
+      }
+    }
+  }
+}

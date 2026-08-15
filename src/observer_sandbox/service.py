@@ -20,6 +20,7 @@ from .runtime import initialize
 from .secrets import load_runtime_secrets
 from .sexual_anatomy_physiology_lifecycle import maybe_settle_sexual_anatomy_physiology_lifecycle
 from .simulation import snapshot
+from .skill_progression import maybe_settle_skill_progression
 from .stamina_progression_activation import maybe_settle_stamina_progression
 from .strength_progression_activation import maybe_settle_strength_progression
 from .telegram_creator_bot import run_polling
@@ -109,6 +110,18 @@ def main() -> None:
                                 state=after,
                             )
                             after = snapshot(conn, actor_id)
+                        except Exception:
+                            pass
+
+                        # Skills independently consume immutable completed-action
+                        # evidence after the action has settled. They do not call
+                        # physiology/body progression engines as hidden authorities.
+                        try:
+                            maybe_settle_skill_progression(
+                                conn,
+                                actor_id,
+                                as_of_sim_time=str(after["sim_time"]),
+                            )
                         except Exception:
                             pass
 
