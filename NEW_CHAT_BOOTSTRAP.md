@@ -24,19 +24,20 @@ Use **exemplar-first, then batch-by-pattern**. Never manipulate production merel
 
 ## Current verified deployment
 
-Latest runtime deployment: **Deploy #213 / run `31880471063` SUCCESS**, Controlled H2H Interaction Pattern Generalization v1, PR #136 merge `be34324e87e68c54c5d6f80f9448bf5f24381172`.
+Latest runtime deployment: **Deploy #214 / run `31880931750` SUCCESS**, Represented Consequence State Foundation v1, PR #138 merge `ba662010cdf19b078eb6a82c54674250534fab99`.
 
 Post-deploy evidence:
-- service active/healthy, schema v5;
+- service active/healthy, schema remains v5;
+- production `sandboxctl init` succeeded;
 - autonomy enabled in normal mode at 1x with retry `null` and a pending action;
 - cognition binding remained `gemini-3.1-flash-lite`; Groq fallback bootstrap remained healthy;
-- Telegram API connectivity remained healthy;
-- production initialization completed successfully with generalized controlled-H2H code/config active;
-- live state continued naturally at `train` in the Home Gym at sim time `2025-05-06T08:05:00+00:00`;
-- no live `spar` action was forced for proof;
-- no production striking/grappling partner or represented session fixture was fabricated solely for validation.
+- Telegram bot/API/owner/allowed-user configuration remained healthy;
+- live state advanced naturally to sim time `2025-05-06T08:35:00+00:00`;
+- Darian was naturally `rest`ing in the Home Gym at readback;
+- no represented consequence was forced for proof;
+- no production character/action/state fixture was fabricated solely for validation.
 
-Exact grappling behavior is proven by full CI, fresh-DB `init`/`status`, and focused ephemeral-fixture tests. Production deploy/init proves the generalized path loaded successfully; do not overstate this as a live grappling action proof.
+Exact consequence mutation, rollback and retry-idempotency behavior is proven by full CI and fresh-DB ephemeral tests. Production deployment/init proves the new library loaded safely; do not overstate that as a live consequence-mutation proof.
 
 Production parent Skill values remain:
 - H2H 90/S
@@ -53,98 +54,105 @@ Production parent Skill values remain:
 - persisted `tier` = compatibility only;
 - grade = read-time `skill-proficiency-100-v1`.
 
-Ability/Attribute != Knowledge != Skill != Task/Application != demonstrated reliability. No second competency score exists. Legacy RAPS skill-like fields are compatibility/provenance only.
-
-Current application families are the subskill-like gameplay surface. **Do not create independently scored child Skills yet.**
+Ability/Attribute != Knowledge != Skill != Task/Application != demonstrated reliability. Legacy RAPS skill-like fields remain compatibility/provenance only. Do not create independently scored child Skills yet.
 
 ## Completed current execution chain
 
-Recent Skill/runtime line:
+Recent canonical line:
 - Skill Definition Refactor Batch v1 — PR #121 / Deploy #204
 - Represented Skill Task Instance Resolver v1 — PR #123 / Deploy #205
 - Cognition Capability Awareness v1 — PR #124 / Deploy #206
 - Cognitive / Performance Modifier Contract v1 — PR #125 / Deploy #207
 - Technology Represented Diagnostic Task Runtime v1 — PR #126 / Deploy #208
-- sanitized autonomy-error readback — PR #127, corrected by PR #128
+- Sanitized Autonomy Error Readback — PR #127 corrected by PR #128
 - Training Movement Contract Normalization v1 — PR #129 / Deploy #209
 - Tactical Planning Represented Assessment Runtime v1 — PR #131 / Deploy #210
 - Represented Skill Runtime Batch v1 — PR #133 / Deploy #211
 - Controlled H2H Sparring Runtime v1 — PR #134 / Deploy #212
-- Controlled H2H Interaction Pattern Generalization v1 — PR #136 / Deploy #213.
+- Controlled H2H Interaction Pattern Generalization v1 — PR #136 / Deploy #213
+- **Represented Consequence State Foundation v1 — PR #138 / Deploy #214.**
 
-## Represented Skill runtime state
-
-### Low-risk represented pattern — complete and batched
-
-Technology diagnostic and Tactical assessment established the initial represented-task exemplars. PR #133 applied that pattern to Tactical maneuver planning and both Survival applications without movement execution, shelter/resource mutation, consequence state, or automatic XP.
-
-### Controlled H2H interaction pattern — current H2H application surface complete
-
-PR #134 proved explicit multi-actor authorization with controlled striking. PR #136 generalized the runtime rather than adding a separate grappling engine.
+## Controlled H2H state
 
 One generic action remains authoritative: `spar`.
 
-Exact represented session definition selects the application:
+Exact represented session selects the current H2H application:
 - `h2h_controlled_striking_spar_v1` -> `engage_unarmed_striking` -> `scored_contact_only`;
 - `h2h_controlled_grapple_spar_v1` -> `control_unarmed_grapple` -> `scored_positional_control_only`.
 
-Both reuse:
-- exact represented object target;
-- one distinct character participant through `Action.participants`;
-- colocation;
-- explicit `controlled_sparring_consent`;
-- deterministic authorization separate from Skill/performance;
-- parent H2H Skill authority;
-- bounded task-specific performance modifiers;
-- immutable application evidence separate from learning evidence.
+Both require an exact represented object target plus one distinct colocated character participant with explicit `controlled_sparring_consent`. Skill/performance scoring is separate from authorization. Neither path mutates injury, incapacity, persistent restraint, or participant state and neither authorizes hostile/non-consensual use.
 
-Neither path authorizes hostile/non-consensual use or mutates injury, incapacity, persistent restraint, or participant target state. Production still receives no fabricated partner/session fixture.
+## Represented Consequence State Foundation v1
 
-H2H striking and grappling modifier contracts both use Reflexes + Agility + Focus only. IQ is intentionally absent and legacy `raps_pa.combat_skill` remains excluded.
+Implementation: `src/observer_sandbox/represented_consequence_state.py`.
+Design note: `docs/REPRESENTED_CONSEQUENCE_STATE_FOUNDATION_V1.md`.
 
-## Cognition / IQ state
+Canonical seam:
 
-Cognition receives read-only semantic capability awareness: definition scope/exclusions, application families, behavioral anchors, challenge/context/resource boundaries, and relevant performance context.
+`validated represented task -> deterministic consequence authorization -> bounded simulated-state mutation -> causal event evidence`
 
-IQ is not Skill or Knowledge. It can only affect an explicit task-specific modifier contract after deterministic Skill/task feasibility is established. It cannot create consent, authorization, resources, missing context, knowledge, restraint authority, injury state, or consequences.
+The foundation reuses schema-v5 primitives rather than adding a new consequence subsystem.
+
+A `ConsequenceAuthorization` must explicitly bind:
+- consequence id;
+- exact represented task id already persisted on the completed source action;
+- subject id;
+- subject role: `actor`, `target`, or `participant`;
+- finite mutation list.
+
+State boundary:
+- source action must be completed and have its `action_completed` event;
+- task id must match exactly;
+- subject must actually occupy the declared action relationship;
+- only pre-existing `fields` rows with `mode='simulated'` may be changed;
+- no new state fields are created implicitly;
+- canonical/static/derived truth fails closed;
+- field authority/source metadata is preserved.
+
+Supported immediate operations reuse the existing effect vocabulary:
+`add`, `multiply`, `set`, `clamp_min`, `clamp_max`.
+
+Evidence/transaction boundary:
+- success emits `represented_consequence_applied` tied to the source `action_id` and `action_completed` event via `caused_by_event_id`;
+- before/after mutation evidence is stored in structured state changes;
+- consequence evidence is `learning_evidence: false` and awards no Skill XP;
+- SQLite savepoint semantics prevent partial multi-field writes;
+- retries are idempotent per action/consequence/task/subject tuple and do not double-apply additive or multiplicative effects.
+
+CI #863 passed **465 tests** plus fresh DB `init` and `status`; schema remains v5.
+
+Skill score, IQ, supporting Attributes, performance quality, model prose, or generic capability never independently authorizes consequence mutation.
 
 ## Evidence boundary
 
-Runtime application completion may emit immutable `skill_application_evidence`. That is **not learning evidence** and does not automatically award XP.
+Runtime application and consequence evidence are not learning evidence and do not automatically award XP.
 
 Active legitimate progression remains:
 - H2H — structured Training Method evidence;
 - Tactical Planning — VR Tactical Drills / AI Combat Simulation;
 - Technology — `systems_diagnostic_practice`.
 
-Controlled striking and grappling application evidence do not become H2H XP automatically. Weapons, Survival and Field Medicine definitions do not activate XP by themselves.
-
-## Training movement recovery contract
-
-PR #129 remains active:
-- authored training method with no movement subcatalog -> auxiliary `training_movements` canonicalizes to empty;
-- explicit movement subcatalog -> strict exact movement-id validation;
-- unknown/unbound target -> fail closed.
+Weapons, Survival and Field Medicine definitions do not activate XP by themselves.
 
 ## Next canonical direction
 
-**Represented Consequence State Foundation v1 is the proposed next architectural slice; it is not yet implemented.**
+**First Real Represented Consequence Consumer — REVIEW NEXT / not yet implemented.**
 
-Before implementation, inspect current state/effect/event primitives and define the smallest generic seam between a validated represented-task outcome and an authorized deterministic consequence/state transition.
+First reconcile the exact current candidate domain contracts before choosing the exemplar. Field Medicine remains a likely candidate because casualty assessment/stabilization naturally owns explicit state semantics, but that is not implementation authorization by itself and must be checked against the current definition/task/resource contracts.
 
-Do not jump to a full Combat Engine or Injury Engine. Preserve:
+Preserve:
 - performance outcome != consequence authorization;
 - exact target/context/participant/resource authority;
 - deterministic mutation ownership;
-- explicit bounded state/effect lifecycle where applicable;
-- consequence events/evidence tied to the action that caused them;
-- Skill score and supporting Attributes cannot independently authorize state mutation;
-- application evidence != learning evidence;
+- pre-existing simulated state only unless a later domain slice explicitly owns state creation/migration;
+- consequence events causally tied to the action that caused them;
+- Skill score/supporting Attributes cannot manufacture state mutation;
+- application/consequence evidence != learning evidence;
 - no invented child Skill scores;
-- no synthetic production character/action used merely for proof.
+- no synthetic production casualty/character/action merely for proof.
 
-A likely later sequence is consequence-state foundation -> Field Medicine consequence consumer -> Weapons safety/resource exemplar, but each must be re-checked against current canonical contracts before implementation.
+Keep Weapons separate until its exact resource/safety/target/consequence contract is reconciled. Do not turn controlled H2H sparring into injury or restraint state merely to exercise the new foundation.
 
 ## Exact resume point
 
-**Controlled H2H Interaction Pattern Generalization v1 is complete through PR #136 merge `be34324e87e68c54c5d6f80f9448bf5f24381172` / Deploy #213 run `31880471063` SUCCESS. Both current H2H applications now reuse one exact-target-driven `spar` path with explicit participant consent/colocation and application-specific bounded outcomes, with no injury/restraint mutation or automatic XP. Reconcile current repo/production, then inspect existing state/effect/event primitives and design the minimum Represented Consequence State Foundation v1 before adding Field Medicine or Weapons consequence consumers.**
+**Represented Consequence State Foundation v1 is complete through PR #138 merge `ba662010cdf19b078eb6a82c54674250534fab99` / Deploy #214 run `31880931750` SUCCESS. The generic deterministic seam now exists for exact represented-task authorization -> bounded mutation of pre-existing simulated fields -> causal state-change event, with atomic rollback and retry idempotency. No live consequence was forced in production. Reconcile current candidate domain contracts, then choose the first real represented consequence consumer rather than assuming Field Medicine or Weapons semantics from memory.**
