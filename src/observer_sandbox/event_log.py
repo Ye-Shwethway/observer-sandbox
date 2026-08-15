@@ -7,6 +7,11 @@ from typing import Any
 
 from .nutrition_energy import energy_expenditure_evidence, nutrition_intake_evidence
 from .skill_practice import skill_practice_evidence
+from .tactical_assessment_runtime import (
+    ASSESS_ACTION,
+    tactical_assessment_application_evidence,
+    tactical_assessment_outcome,
+)
 from .technology_diagnostic_runtime import (
     DIAGNOSE_ACTION,
     technology_diagnostic_application_evidence,
@@ -87,10 +92,6 @@ def _enrich_technology_diagnostic(
         conn.rollback()
         raise ValueError("Completed diagnose action requires target and duration")
 
-    # This resolves exact represented-task binding, learned Skill capability, and
-    # bounded cognitive-performance inputs inside the action-completion
-    # transaction. Any invalid binding/capability rolls back the entire action
-    # completion before the error is surfaced to autonomy/runtime handling.
     try:
         diagnostic = technology_diagnostic_outcome(conn, actor_id, target)
         evidence = technology_diagnostic_application_evidence(
@@ -112,6 +113,64 @@ def _enrich_technology_diagnostic(
             if not isinstance(current, dict):
                 current = {}
             current["represented_skill_task"] = diagnostic
+            current["skill_application"] = evidence
+            conn.execute(
+                "UPDATE action_instances SET outcome_json=?,updated_at=CURRENT_TIMESTAMP WHERE id=?",
+                (json.dumps(current, ensure_ascii=False), action_id),
+            )
+        return enriched
+    except Exception:
+        conn.rollback()
+        raise
+
+
+def _enrich_tactical_assessment(
+    conn: sqlite3.Connection,
+    payload: dict[str, Any],
+    event_type: str,
+    *,
+    actor_id: str | None,
+    action_id: str | None,
+) -> dict[str, Any]:
+    if (
+        event_type != "action_completed"
+        or payload.get("action") != ASSESS_ACTION
+        or not actor_id
+        or not action_id
+        or "skill_application" in payload
+    ):
+        return payload
+    target = payload.get("target")
+    duration = payload.get("duration_minutes")
+    if not isinstance(target, str) or not isinstance(duration, (int, float)):
+        conn.rollback()
+        raise ValueError("Completed assess action requires target and duration")
+
+    # V1 deliberately owns the assess action as the represented Tactical
+    # assessment exemplar. Exact target-definition binding is resolved before the
+    # completion transaction commits; a wrong assess-capable object therefore
+    # fails closed instead of completing as generic application evidence.
+    try:
+        assessment = tactical_assessment_outcome(conn, actor_id, target)
+        evidence = tactical_assessment_application_evidence(
+            assessment,
+            action_id=action_id,
+            actor_id=actor_id,
+            duration_minutes=int(duration),
+        )
+        enriched = dict(payload)
+        enriched["represented_skill_task"] = assessment
+        enriched["skill_application"] = evidence
+
+        row = conn.execute(
+            "SELECT outcome_json FROM action_instances WHERE id=?",
+            (action_id,),
+        ).fetchone()
+        if row is not None:
+            current = json.loads(row["outcome_json"] or "{}")
+            if not isinstance(current, dict):
+                current = {}
+            current["represented_skill_task"] = assessment
             current["skill_application"] = evidence
             conn.execute(
                 "UPDATE action_instances SET outcome_json=?,updated_at=CURRENT_TIMESTAMP WHERE id=?",
@@ -145,19 +204,14 @@ def _enrich_nutrition_energy(
     if "nutrition_intake" not in enriched:
         nutrition = None
         if action_name == "eat" and action_id:
-            # Lazy import avoids inventory -> event_log -> eating_behavior -> inventory.
             from .eating_behavior import settle_eating_action
 
             try:
                 nutrition = settle_eating_action(conn, action_id)
             except Exception:
-                # Completion mutations and inventory settlement belong to one
-                # transaction boundary. Roll back the whole completion before
-                # surfacing the deterministic failure to autonomy handling.
                 conn.rollback()
                 raise
         if nutrition is None:
-            # Compatibility path for pre-Eating-Behavior in-flight eat actions.
             nutrition = nutrition_intake_evidence(action_name=action_name, target=target_id)
         if nutrition is not None:
             enriched["nutrition_intake"] = nutrition
@@ -208,6 +262,13 @@ def record_event(
         actor_id=actor_id,
         action_id=action_id,
     )
+    event_payload = _enrich_tactical_assessment(
+        conn,
+        event_payload,
+        event_type,
+        actor_id=actor_id,
+        action_id=action_id,
+    )
     event_payload = _enrich_nutrition_energy(
         conn,
         event_payload,
@@ -244,8 +305,6 @@ def record_event(
                 (event_id, entity_id, row.get("role") or "participant"),
             )
 
-    # Application evidence is immutable and distinct from learning evidence. It
-    # shares the completed action id and points back to the completion event.
     if event_type == "action_completed" and isinstance(event_payload.get("skill_application"), dict):
         evidence_payload = dict(event_payload["skill_application"])
         conn.execute(
