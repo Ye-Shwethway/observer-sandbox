@@ -15,7 +15,20 @@ Roadmap synchronized: 2026-08-15
 
 ## Current verified deployment
 
-Latest runtime deployment: **Deploy #214 / run `31880931750` SUCCESS**, Represented Consequence State Foundation v1, PR #138 merge `ba662010cdf19b078eb6a82c54674250534fab99`.
+Latest runtime deployment: **Deploy #215 / run `31881627886` SUCCESS**, Field Medicine Stabilization Consequence Consumer v1, PR #140 merge `2c5f7602dc6263caa74658ae2fadd65aa4857124`.
+
+Final tested PR head: `512f588df3e1b8256f61958a9336e5c0d3b8d17a`.
+
+Verified validation evidence:
+- **CI #868 / run `31881576876` SUCCESS**;
+- full suite: **472 passed**;
+- fresh DB `sandboxctl init` succeeded;
+- fresh DB `sandboxctl status` healthy, schema v5;
+- Represented Skill Task Contract v1 Acceptance #17 succeeded;
+- Represented Skill Task Instance v1 Acceptance #15 succeeded;
+- Technology Diagnostic Task Runtime v1 Acceptance #15 succeeded;
+- Strength Live Cycle Validation v1 #49 succeeded;
+- Inventory Foundation, Eating Behavior, Nutrition & Energy, Skill Evidence Semantics, and Skill Progression acceptance lanes all succeeded.
 
 Verified post-deploy production evidence:
 - service active/healthy; schema remains v5;
@@ -23,12 +36,12 @@ Verified post-deploy production evidence:
 - autonomy enabled, normal mode, 1x, retry `null`, with a pending action;
 - cognition binding remained `gemini-3.1-flash-lite`; Groq fallback bootstrap remained healthy;
 - Telegram bot token/owner/allowed-user configuration remained present and Telegram API connectivity remained healthy;
-- live state continued naturally to sim time `2025-05-06T08:35:00+00:00`;
+- live state remained naturally at sim time `2025-05-06T08:35:00+00:00` during deployment readback;
 - Darian was naturally `rest`ing in the Home Gym at readback;
-- no represented consequence was forced in production;
-- no production character/action/state fixture was fabricated solely for proof.
+- no production casualty, represented stabilization session, or field-medical-supply fixture was fabricated solely for proof;
+- no live `stabilize` action or represented consequence was forced in production.
 
-The foundation's exact mutation/idempotency/rollback behavior is proven by CI and ephemeral fresh-DB tests. Production deploy/init proves that the new runtime library loads safely. Keep those evidence claims distinct.
+Exact Field Medicine stabilization consequence behavior is proven by full CI and ephemeral fresh-DB fixtures. Production deploy/init proves that the new action vocabulary, task registry, runtime module, and event integration load safely. Keep those evidence claims distinct.
 
 Production parent Skill state remains authoritative:
 - H2H `90 / S`
@@ -61,7 +74,8 @@ Recent canonical line:
 9. Represented Skill Runtime Batch v1 — PR #133 / Deploy #211
 10. Controlled H2H Sparring Runtime v1 — PR #134 / Deploy #212
 11. Controlled H2H Interaction Pattern Generalization v1 — PR #136 / Deploy #213
-12. **Represented Consequence State Foundation v1 — PR #138 / Deploy #214.**
+12. Represented Consequence State Foundation v1 — PR #138 / Deploy #214
+13. **Field Medicine Stabilization Consequence Consumer v1 — PR #140 / Deploy #215.**
 
 Canonical execution stack now includes:
 - Skill definition/application/capability + actor adapter;
@@ -71,7 +85,8 @@ Canonical execution stack now includes:
 - low-risk represented-Skill runtime reuse;
 - generalized controlled-H2H explicit multi-actor authorization/runtime path;
 - immutable application-evidence path separate from learning evidence;
-- domain-neutral represented consequence-state application foundation.
+- domain-neutral represented consequence-state application foundation;
+- first real domain consumer of that consequence foundation through bounded Field Medicine stabilization.
 
 ## Represented Skill runtime state
 
@@ -93,26 +108,21 @@ H2H performance uses Reflexes + Agility + Focus where declared. IQ is intentiona
 
 ## Represented Consequence State Foundation v1 — complete
 
-PR #138 / Deploy #214 implemented the minimum generic bridge:
+PR #138 / Deploy #214 implemented the generic bridge:
 
 `validated represented task -> deterministic consequence authorization -> bounded simulated-state mutation -> causal event evidence`
 
 Implementation: `src/observer_sandbox/represented_consequence_state.py`.
 Canonical design note: `docs/REPRESENTED_CONSEQUENCE_STATE_FOUNDATION_V1.md`.
 
-V1 deliberately composes existing schema-v5 primitives rather than inventing a new subsystem:
+The foundation composes schema-v5 primitives:
 - `fields` remains generic state storage;
 - only pre-existing fields with `mode='simulated'` are mutable through this API;
 - `action_instances` remains source-action authority;
-- `events.state_changes_json`, `action_id`, `location_id`, `caused_by_event_id`, and `event_participants` remain consequence evidence/causality primitives;
-- `active_modifiers` remains a future socket and is not activated globally by this slice.
+- events retain state-change evidence, action/location identity, causal parent, and participants;
+- `active_modifiers` remains a future socket and is not activated globally.
 
-A `ConsequenceAuthorization` must explicitly bind:
-- consequence id;
-- exact represented task id already persisted on the completed source action;
-- subject id;
-- subject relationship: `actor`, `target`, or `participant`;
-- finite state mutation list.
+A `ConsequenceAuthorization` must explicitly bind consequence id, exact represented task id already persisted on the completed source action, subject id, subject relationship (`actor`, `target`, or `participant`), and a finite mutation list.
 
 Supported immediate operations reuse the established effect vocabulary:
 `add`, `multiply`, `set`, `clamp_min`, `clamp_max`.
@@ -124,16 +134,72 @@ Hard boundaries:
 - consequence application cannot create new state fields;
 - canonical/static/derived fields fail closed;
 - Skill score, IQ, performance quality, model prose, or generic capability cannot independently authorize mutation;
-- field authority/source metadata are preserved; consequence provenance is carried by the event;
+- field authority/source metadata are preserved;
 - successful application emits `represented_consequence_applied` causally linked to the source completion event;
-- consequence evidence sets `learning_evidence: false` and awards no Skill XP;
-- application is savepoint-atomic and idempotent per action/consequence/task/subject tuple.
+- consequence evidence is not learning evidence and awards no Skill XP;
+- application is savepoint-atomic and retry-idempotent.
 
-CI #863 passed **465 tests** plus fresh DB `init` and `status` with schema v5.
+## Field Medicine Stabilization Consequence Consumer v1 — complete
+
+PR #140 / Deploy #215 is the first real represented consequence consumer.
+
+Represented task registry revision: `represented-skill-tasks-v1.5`.
+
+Task:
+`field_medicine_stabilize_for_evacuation_v1`
+
+Action vocabulary:
+`stabilize`
+
+Application:
+`field_medicine.stabilize_for_evacuation`
+
+Exact represented-session contract:
+- target entity type: object;
+- target definition: `represented_task:field_medicine_stabilization_session_v1`;
+- target capabilities: `stabilize`, `field_medical_context`, `evacuation_or_handoff_needed`;
+- exactly one distinct casualty character participant;
+- casualty must be colocated with actor;
+- casualty must already expose pre-existing numeric `medical.deterioration_risk` in range 0..100 with field mode `simulated`;
+- one or more explicitly represented local or carried resource objects must collectively expose `field_medical_supplies`.
+
+V1 consequence scope is intentionally one field only:
+`medical.deterioration_risk`.
+
+The stabilization runtime:
+- resolves the exact represented task through the existing represented Skill task instance resolver;
+- keeps the parent Field Medicine Skill score as learned-capability authority;
+- resolves a bounded stabilization result;
+- persists immutable `skill_application_evidence`;
+- only after the source `action_completed` event exists, calls the generic consequence foundation;
+- authorizes the casualty participant as consequence subject;
+- applies one bounded `set` mutation to the pre-existing simulated deterioration-risk field;
+- emits causally linked `represented_consequence_applied` evidence;
+- preserves the casualty field's existing authority/source metadata;
+- remains atomic and retry-idempotent through the generic foundation.
+
+Current Darian exemplar behavior in ephemeral tests:
+- Field Medicine `75 / A` resolves a `solid` stabilization result;
+- example deterioration risk `60 -> 40`;
+- this is test evidence only and is not a production casualty event.
+
+Explicit non-goals / boundaries:
+- no injury or wound taxonomy;
+- no bleeding model;
+- no diagnosis state creation;
+- no definitive-treatment completion state;
+- no death/incapacity simulation;
+- no automatic casualty-state creation;
+- no medical-resource depletion/durability yet;
+- no real-world medical-advice surface;
+- no Field Medicine XP from application or consequence evidence;
+- no production casualty/session/supply seed solely for validation.
 
 ## Cognition / evidence boundary
 
 Cognition receives read-only semantic capability awareness. Supporting Attributes and IQ affect performance only through explicit task-specific contracts after deterministic feasibility. They cannot create Knowledge, proficiency, consent, resources, authorization, state fields, or consequences.
+
+Field Medicine stabilization v1 intentionally does not introduce a new IQ/medical-knowledge modifier contract. Parent Field Medicine Skill remains the bounded capability authority for this exemplar; consequence authorization remains separately deterministic.
 
 Runtime application/consequence evidence is not learning evidence. Active legitimate progression remains:
 - H2H — structured Training Method evidence;
@@ -144,19 +210,20 @@ Weapons, Survival, and Field Medicine definitions do not activate XP by themselv
 
 ## Next development sequence
 
-1. **First Real Represented Consequence Consumer — REVIEW NEXT / not yet implemented.**
-2. Reconcile the exact current consequence-capable candidate contracts before choosing the exemplar. Field Medicine remains a likely candidate because it naturally owns assessment/stabilization semantics, but it is not pre-authorized by this roadmap text.
-3. Select one consumer only if it introduces a meaningful real state transition that fits the new foundation without requiring a giant domain engine.
-4. If Field Medicine is selected, first define the minimum represented casualty state and treatment authorization contract; do not infer injury state from prose or fabricate a casualty in production.
-5. Keep Weapons separate unless/until its resource/safety/target/consequence contract is explicitly reconciled; Weapons risk/lethality is a distinct structural question.
-6. Do not turn H2H scored sparring into injury/restraint state merely to exercise the foundation.
-7. Prefer one bounded exemplar; batch only structurally equivalent consequence consumers after it passes.
-8. Keep application/consequence evidence separate from learning evidence; no automatic XP.
+1. **Casualty State Origin & Lifecycle Contract v1 — REVIEW NEXT / not yet implemented.**
+2. The stabilization consumer deliberately requires a pre-existing simulated `medical.deterioration_risk`; the next architectural question is which domain authority may create/initialize that state and how its lifecycle is represented.
+3. Define the smallest explicit casualty-state origin contract before adding broader Field Medicine assessment, diagnosis, treatment, deterioration, or recovery mechanics.
+4. Do not solve this by building a full Injury Engine. Prefer one bounded casualty-state origin/lifecycle exemplar with clear source event, ownership, state initialization, mutation authority, and cleanup/recovery boundary.
+5. Do not infer casualty state from model prose, Skill score, generic combat outcomes, or ordinary events.
+6. Keep Weapons separate until its exact resource/safety/target/consequence contract is reconciled; Weapons lethality remains a distinct structural question.
+7. Do not turn controlled H2H sparring into injury/restraint state merely to manufacture a casualty producer.
+8. Batch only structurally equivalent casualty-state producers after one bounded origin invariant is proven.
+9. Keep application/consequence evidence separate from learning evidence; no automatic XP.
 
 ## Deferred boundaries
 
-No hostile/non-consensual combat engine, full Injury Engine, persistent restraint/incapacity system, Weapons lethality system, broad casualty simulator, universal active-modifier evaluator, full Knowledge Engine, second competency score, giant Skill tree, economy/jobs/quests, broad Mind/Behavior rewrite, deep crafting, second production character solely for testing, or Tahoe exterior traversal as side effects of the next slice.
+No hostile/non-consensual combat engine, full Injury Engine, persistent restraint/incapacity system, Weapons lethality system, broad casualty simulator, bleeding/wound taxonomy, definitive-treatment engine, universal active-modifier evaluator, full Knowledge Engine, second competency score, giant Skill tree, economy/jobs/quests, broad Mind/Behavior rewrite, deep crafting, second production character solely for testing, or Tahoe exterior traversal as side effects of the next slice.
 
 ## Exact resume point
 
-**Represented Consequence State Foundation v1 is complete through PR #138 merge `ba662010cdf19b078eb6a82c54674250534fab99` / Deploy #214 run `31880931750` SUCCESS. The generic deterministic seam now exists for exact represented-task authorization -> bounded pre-existing simulated-field mutation -> causal state-change event, with savepoint rollback and retry idempotency. No live consequence was forced in production. Next reconcile candidate domain contracts and choose the first real consequence consumer; do not assume Field Medicine or Weapons semantics without reading the exact current contracts first.**
+**Field Medicine Stabilization Consequence Consumer v1 is complete through PR #140 final tested head `512f588df3e1b8256f61958a9336e5c0d3b8d17a`, merge `2c5f7602dc6263caa74658ae2fadd65aa4857124`, CI #868 / run `31881576876` with 472 passing tests plus fresh-DB init/status, and Deploy #215 / run `31881627886` SUCCESS. The first real consequence consumer now proves exact represented stabilization task + one colocated casualty participant + explicit field-medical-supply resource -> bounded mutation of only pre-existing simulated `medical.deterioration_risk` -> causal consequence event, with no diagnosis, definitive treatment, resource depletion, XP, or fabricated production casualty. Next review the missing casualty-state origin/lifecycle authority before expanding medical consequence semantics.**
