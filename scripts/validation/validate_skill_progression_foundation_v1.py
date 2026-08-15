@@ -39,9 +39,10 @@ def main() -> int:
         before_score = float(before["score"])
         before_experience = before["experience"]
 
-    # Candidate initialization is the migration/activation boundary. It must
-    # preserve represented proficiency and existing experience while recording
-    # one zero-gain bootstrap cursor over historical eligible evidence.
+    # Candidate initialization is idempotent once progression has already been
+    # activated in production. The durable invariant is that the historical
+    # zero-gain bootstrap cursor exists; later legitimate settlements may follow
+    # it and must not make this acceptance test expect bootstrap to remain last.
     initialize(db_path)
     with connect(db_path) as conn:
         activated = _skill(conn)
@@ -49,19 +50,20 @@ def main() -> int:
         assert activated["experience"] == before_experience
         metadata = json.loads(activated["metadata_json"] or "{}")
         assert metadata.get("progression_active") is True
-        bootstrap_rows = conn.execute(
+        settlement_rows = conn.execute(
             "SELECT payload_json FROM events WHERE actor_id=? AND event_type=? ORDER BY id",
             (ACTOR, SETTLEMENT_EVENT_TYPE),
         ).fetchall()
         matching = [
             json.loads(row["payload_json"] or "{}")
-            for row in bootstrap_rows
+            for row in settlement_rows
             if json.loads(row["payload_json"] or "{}").get("skill_key") == SKILL
         ]
         assert matching
-        assert matching[-1]["bootstrap"] is True
-        assert matching[-1]["score_delta"] == 0.0
-        assert matching[-1]["experience_gain"] == 0.0
+        bootstrap = next((row for row in matching if row.get("bootstrap") is True), None)
+        assert bootstrap is not None
+        assert bootstrap["score_delta"] == 0.0
+        assert bootstrap["experience_gain"] == 0.0
 
         # Establish deterministic training preconditions only on the disposable
         # copy. Production itself is never moved, trained, accelerated or edited.
