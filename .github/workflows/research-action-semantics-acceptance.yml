@@ -78,7 +78,8 @@ jobs:
               conn.commit()
               options = action_options(conn)
               research = [o for o in options if o["action"] == "research"]
-              assert [(o["target"], o["target_name"]) for o in research] == [(desk, "Research Desk")]
+              assert any(o["target"] == desk and o["target_name"] == "Research Desk" for o in research)
+              assert all(o["target"] != shelf for o in research)
               validate_action(conn, "char_darian", Action("research", 45, desk, "review estate records"))
               try:
                   validate_action(conn, "char_darian", Action("research", 45, shelf, "invalid research target"))
@@ -104,6 +105,7 @@ jobs:
               "preferred_duration": [30, 90],
               "first_class_completion": True,
               "unsupported_bookshelf_rejected": True,
+              "additional_research_targets_allowed": True,
           }, indent=2, sort_keys=True))
           PY
             export OBSERVER_SANDBOX_DB=/var/lib/observer-sandbox/observer.sqlite3
