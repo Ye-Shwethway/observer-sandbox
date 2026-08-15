@@ -6,6 +6,7 @@ from typing import Any
 
 from .grading import evaluate_skill_score
 from .skill_definitions import load_skill_definition_config
+from .skill_hierarchy import hierarchy_cognition_awareness, hierarchy_profile_metadata
 
 
 COGNITIVE_FACTOR_FIELDS: tuple[tuple[str, str], ...] = (
@@ -165,19 +166,32 @@ def cognition_capability_awareness(
     source = config if config is not None else load_skill_definition_config()
     definitions = source.get("skills") or {}
     rows = conn.execute(
-        "SELECT skill_key,category,score FROM character_skills WHERE entity_id=? ORDER BY skill_key",
+        """SELECT skill_key,category,score,metadata_json
+        FROM character_skills WHERE entity_id=? ORDER BY skill_key""",
         (actor_id,),
     ).fetchall()
 
     skills: list[dict[str, Any]] = []
     unresolved_skills: list[str] = []
     for row in rows:
+        try:
+            raw_metadata = json.loads(row["metadata_json"] or "{}")
+        except (TypeError, json.JSONDecodeError):
+            raw_metadata = {}
+        metadata = hierarchy_profile_metadata(raw_metadata if isinstance(raw_metadata, dict) else {})
+        if metadata["compatibility_projection"]:
+            continue
+
         skill_id = str(row["skill_key"])
         definition = definitions.get(skill_id) if isinstance(definitions, dict) else None
-        if not isinstance(definition, dict):
-            unresolved_skills.append(skill_id)
+        if isinstance(definition, dict):
+            skills.append(_skill_awareness(conn, actor_id, row, definition))
             continue
-        skills.append(_skill_awareness(conn, actor_id, row, definition))
+        hierarchy_awareness = hierarchy_cognition_awareness(row)
+        if hierarchy_awareness is not None:
+            skills.append(hierarchy_awareness)
+            continue
+        unresolved_skills.append(skill_id)
 
     reasoning_factors = {
         semantic_key: {
