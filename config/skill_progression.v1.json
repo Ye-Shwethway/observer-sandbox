@@ -1,5 +1,5 @@
 {
-  "revision": "skill-progression-training-evidence-v1",
+  "revision": "skill-progression-structured-evidence-v1",
   "skills": {
     "hand_to_hand_combat": {
       "score_cap": 100.0,
@@ -24,6 +24,16 @@
       "eligible_methods": {
         "vr_tactical_drills": 1.0,
         "ai_combat_simulation": 0.8
+      }
+    },
+    "technology": {
+      "score_cap": 100.0,
+      "base_score_points_per_learning_unit": 0.12,
+      "recent_window_hours": 24.0,
+      "saturation_half_units": 2.0,
+      "compatibility_profile_field": null,
+      "eligible_methods": {
+        "systems_diagnostic_practice": 1.0
       }
     }
   }
