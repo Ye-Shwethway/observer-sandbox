@@ -24,7 +24,7 @@ Do not repeatedly run the full suite. Code/runtime PRs get one final full CI che
 
 All Character Profile sections are minimum-unlocked v1 and Skills remains CLOSED v1.
 
-**Minimum-unlocked does not mean immutable.** Personality, preferences, hobbies/interests, and habits have developmental lifecycles. The current human-continuity work is the **Adaptive Character Disposition Foundation**.
+**Minimum-unlocked does not mean immutable.** Personality, preferences, hobbies/interests, and habits have developmental lifecycles. The active human-continuity work is the **Adaptive Character Disposition Foundation**.
 
 Canonical order:
 
@@ -36,65 +36,60 @@ See `docs/ADAPTIVE_CHARACTER_DISPOSITION_FOUNDATION.md`.
 
 ### Habit Formation/Extinction exemplar v1 — COMPLETE
 
-PR #167 established deterministic habit adaptation:
-- completed represented behavior + context supplies evidence;
-- same-day repetitions have diminishing weight;
-- habit strength/status develops gradually;
-- established habits may become dormant/lapsed through long non-reinforcement without deleting history;
-- cognition receives habit-dynamics context;
-- LLM cognition does not mutate habit state directly.
+PR #167 established deterministic habit adaptation from completed represented behavior plus context. Same-day repetition is diminished, development/decay is gradual, history is retained, cognition receives compact state, and runtime-learned rows survive ordinary init/deploy.
 
-Initialization/deploy was also corrected so runtime preferences/hobbies/habits are not deleted and reseeded. Canonical profile values are starting baselines, not perpetual reset values.
+### Hobby / Interest Lifecycle v1 — COMPLETE
+
+PR #172 establishes the next exemplar. See `docs/HOBBY_INTEREST_LIFECYCLE_V1.md`.
+
+Current contract:
+- only completed target-based voluntary `read` and `use` engagements are interest evidence in v1;
+- one engagement creates an emerging interest, not an instant hobby;
+- repeated engagement across distinct days can progress emerging -> recurring -> established;
+- short-interval repetition receives reduced weight;
+- `character_preferences(type='interest')` is learned-interest lifecycle authority;
+- established learned interests project to the active `character_hobbies` surface;
+- dormancy/lapse can remove that active projection without deleting interest history;
+- authored canonical hobbies are independent baseline rows and remain untouched;
+- the LLM reads disposition context but cannot directly mutate lifecycle state.
+
+No schema migration was required.
 
 ### Next adaptive slice
 
-**Hobby/Interest Lifecycle v1** is the next planned exemplar. Keep it minimum-foundation depth: formation/maintenance/dormancy/lapse from legitimate engagement evidence, not a giant leisure/identity engine.
+**Preference Adaptation v1** — minimum-foundation depth only. It should strengthen/weaken preferences from legitimate repeated voluntary choice/outcome evidence, avoid single-event flips, preserve canonical starting baselines, and keep deterministic runtime as mutation authority.
 
 ## Autonomy Livelock Watchdog v1 — COMPLETE
 
-A real production freeze occurred while Darian was in the Training Hall at sim time `2025-05-07T15:04:00+00:00`.
-
-Diagnosis:
-- service process remained active;
-- this was not a provider call-limit/rate-limit crash;
-- no pending action existed;
-- cognition repeatedly proposed `move -> loc_thorne_estate_food_storage` outside the current need-shaped authoritative `action_options`;
-- repeated decision-stage `ValueError` events reached 256-second backoff and simulation progress stopped.
-
-PR #168 added one bounded corrective model retry. PR #169 made reachable-resource awareness planning-only. The live model still repeated the invalid pair, so PR #170 added a deterministic continuity breaker.
-
-Current watchdog contract:
-- only the third consecutive same-sim-boundary authoritative pair-validation failure is eligible;
-- normal mode only; canary remains fail-closed;
-- no recovery for HTTP/provider/API/quota/rate-limit, schedule, completion, or unrelated failures;
-- choose only from the current already-shaped authoritative `action_options`;
-- physiology need shaping remains authoritative;
-- discretionary fallback prefers `idle`, then `rest`;
-- normal deterministic `validate_action` still applies;
-- recovery provenance is attached in action conditions.
+The earlier Training Hall freeze was an action/target decision livelock rather than a service crash or provider call-limit event. PR #170's bounded watchdog remains installed: repeated authoritative pair-validation livelocks may recover only from the already-shaped legal action surface, while provider/API/quota/rate-limit and other unrelated failures remain fail-closed under existing contracts.
 
 See `docs/AUTONOMY_LIVELOCK_WATCHDOG_V1.md`.
 
 ## Current verified deployment
 
-Latest runtime deployment: **Deploy #232 / run `31899099486` SUCCESS**.
+Latest runtime deployment: **Deploy #233 / run `31899884337` SUCCESS**.
 
-Runtime PR: **#170 — Autonomy Livelock Watchdog v1**
-- final tested head: `efe4814483cb997c941555e40de879532058938a`
-- merge: `b17fbb7fe77e3d4e79f71d0b9a526244ef81c9ff`
-- **CI #936 / run `31899038839`: SUCCESS**
-- **554 passed in 38.40s**
-- fresh DB init/status healthy; schema v5
-- Cognition Capability Awareness, Research Action Semantics, Training Movement Contract Normalization, Eating Behavior, and Solo Regulation Naturalism gates green.
+Runtime PR: **#172 — Hobby / Interest Lifecycle v1**
+- final tested head: `05388eba4c6e9e4870b3eb0e927c0247c0e68f06`
+- merge: `3822332c0fb5bca7295e83e0cc0bcebf06973be8`
+- **CI #937 / run `31899806440`: SUCCESS**
+- **560 passed in 37.15s**
+- fresh DB init/status healthy; schema v5.
 
-Production recovery proof after Deploy #232:
-- service active;
-- retry state cleared from eight failures to `null`;
-- first readback showed pending action `71ab5f8e-...`;
-- later readback showed a different pending action `9b02ef99-...`;
-- therefore the recovered action completed and autonomy progressed across another action boundary instead of remaining at the frozen decision boundary.
+One automatic Skill Progression Foundation production-copy gate initially failed before validator execution because SSH was reset by the server. Only that failed job was retried; staging and the actual disposable production-copy validator then succeeded. No runtime code was changed for the transient infrastructure failure and the full Python suite was not deliberately repeated.
 
-Historical autonomy-error events are retained; recovery did not erase evidence or fabricate a proof action.
+Production readback after Deploy #233:
+- service active/healthy;
+- schema v5;
+- autonomy enabled, normal mode, retry null, pending action present;
+- speed **5x**;
+- sim time `2025-05-07T17:19:00+00:00`;
+- Darian was naturally idle in the Top-Class Home Gym at readback;
+- Gemini `gemini-3.1-flash-lite` primary cognition binding preserved;
+- Groq `qwen/qwen3.6-27b` fallback preserved;
+- Telegram configuration/API healthy.
+
+No `read`/`use` action was forced in production to manufacture Hobby/Interest evidence. Treat a naturally formed learned hobby as unproven until normal runtime produces the required evidence.
 
 ## Character Profile / Skills baseline
 
@@ -121,20 +116,17 @@ Skills CLOSED v1 learned leaves:
 
 `Weapon Mastery` is derived/non-executable; hidden legacy `weapons` is compatibility only.
 
-## Sexual baseline
-
-Solo Sexual Regulation Naturalism v2 remains active: authored libido plus bounded positive young-adult/recovery/solitude context, libido-shaped release recovery, trailing-24h saturation, 2h anti-loop pacing, authored private-activity semantics, and graph-based safe-private-location awareness. No daily/weekly quota exists.
-
 ## Development boundaries
 
 - LLM proposes; deterministic runtime validates/mutates.
 - Do not let the watchdog grow into a general deterministic story chooser.
 - Do not make personality/preferences/hobbies/habits fixed forever-fields.
 - Do not permit arbitrary direct LLM disposition mutation.
+- Do not infer a hobby from training, physiological need resolution, or one-off curiosity.
 - No relationship-system expansion by default.
 - No hostile/non-consensual combat engine, weapon lethality, universal Injury/Hazard Engine, deep weapon taxonomy, or real-world weapon instructions.
 - Do not fabricate production actions/actors/casualties solely for proof.
 
 ## Exact resume point
 
-**Adaptive Character Disposition Foundation is active. Habit Formation/Extinction exemplar v1 is complete and runtime adaptive disposition survives deploy/init. A production Training Hall freeze was diagnosed as an autonomy action/target livelock, not a system crash or LLM call-limit event. Autonomy Livelock Watchdog v1 is deployed through PR #170 final head `efe4814483cb997c941555e40de879532058938a`, merge `b17fbb7fe77e3d4e79f71d0b9a526244ef81c9ff`, CI #936 with 554 passed, and Deploy #232 SUCCESS. Production retry cleared and two successive pending action IDs proved action-boundary progress resumed. Continue with Hobby/Interest Lifecycle v1 at minimum-foundation depth.**
+**Adaptive Character Disposition Foundation now has two completed exemplars: Habit Formation/Extinction v1 and Hobby/Interest Lifecycle v1. Hobby/Interest Lifecycle is deployed through PR #172 final head `05388eba4c6e9e4870b3eb0e927c0247c0e68f06`, merge `3822332c0fb5bca7295e83e0cc0bcebf06973be8`, CI #937 with 560 passed, and Deploy #233 SUCCESS. Production is healthy at schema v5, autonomy normal, retry null, pending action present, speed 5x, sim time `2025-05-07T17:19:00+00:00`. No synthetic hobby proof was created. Continue with Preference Adaptation v1 at minimum-foundation depth.**
