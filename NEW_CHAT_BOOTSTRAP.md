@@ -18,51 +18,87 @@ Authority:
 Default workflow:
 `branch -> focused tests + final PR CI -> merge main -> automatic deploy when runtime-affecting -> read-only production check`
 
-Use the smallest task-relevant tests/gates while iterating. Do not repeatedly run the full suite. Code/runtime PRs get one final full CI checkpoint by default; docs-only changes skip the Python suite; do not deliberately repeat a full suite after merge.
-
-Use **exemplar-first, then batch-by-pattern**. Never manipulate production merely to manufacture evidence.
+Do not repeatedly run the full suite. Code/runtime PRs get one final full CI checkpoint by default; docs-only changes skip the Python suite. Use **exemplar-first, then batch-by-pattern** and prefer vertical completeness before local depth.
 
 ## Strategic checkpoint
 
-The vertical-completeness profile pass is complete.
+All Character Profile sections are minimum-unlocked v1 and Skills remains CLOSED v1.
 
-Canonical sequence is now:
+**Minimum-unlocked does not mean immutable.** Personality, preferences, hobbies/interests, and habits have developmental lifecycles. The current human-continuity work is the **Adaptive Character Disposition Foundation**.
 
-`all Character Profile sections minimum-unlocked -> overall workflow/foundation review -> deepen highest-value systems later`
+Canonical order:
 
-Follow `docs/MINIMUM_PROFILE_UNLOCK_POLICY_V1.md` and `docs/PROFILE_MINIMUM_UNLOCK_SWEEP_V1.md`.
+`Habit Formation/Extinction -> Hobby/Interest Lifecycle -> Preference Adaptation -> slow Personality Plasticity`
 
-Do not reopen a profile section for local depth unless the foundation review identifies a real cross-system blocker.
+See `docs/ADAPTIVE_CHARACTER_DISPOSITION_FOUNDATION.md`.
+
+## Adaptive disposition status
+
+### Habit Formation/Extinction exemplar v1 — COMPLETE
+
+PR #167 established deterministic habit adaptation:
+- completed represented behavior + context supplies evidence;
+- same-day repetitions have diminishing weight;
+- habit strength/status develops gradually;
+- established habits may become dormant/lapsed through long non-reinforcement without deleting history;
+- cognition receives habit-dynamics context;
+- LLM cognition does not mutate habit state directly.
+
+Initialization/deploy was also corrected so runtime preferences/hobbies/habits are not deleted and reseeded. Canonical profile values are starting baselines, not perpetual reset values.
+
+### Next adaptive slice
+
+**Hobby/Interest Lifecycle v1** is the next planned exemplar. Keep it minimum-foundation depth: formation/maintenance/dormancy/lapse from legitimate engagement evidence, not a giant leisure/identity engine.
+
+## Autonomy Livelock Watchdog v1 — COMPLETE
+
+A real production freeze occurred while Darian was in the Training Hall at sim time `2025-05-07T15:04:00+00:00`.
+
+Diagnosis:
+- service process remained active;
+- this was not a provider call-limit/rate-limit crash;
+- no pending action existed;
+- cognition repeatedly proposed `move -> loc_thorne_estate_food_storage` outside the current need-shaped authoritative `action_options`;
+- repeated decision-stage `ValueError` events reached 256-second backoff and simulation progress stopped.
+
+PR #168 added one bounded corrective model retry. PR #169 made reachable-resource awareness planning-only. The live model still repeated the invalid pair, so PR #170 added a deterministic continuity breaker.
+
+Current watchdog contract:
+- only the third consecutive same-sim-boundary authoritative pair-validation failure is eligible;
+- normal mode only; canary remains fail-closed;
+- no recovery for HTTP/provider/API/quota/rate-limit, schedule, completion, or unrelated failures;
+- choose only from the current already-shaped authoritative `action_options`;
+- physiology need shaping remains authoritative;
+- discretionary fallback prefers `idle`, then `rest`;
+- normal deterministic `validate_action` still applies;
+- recovery provenance is attached in action conditions.
+
+See `docs/AUTONOMY_LIVELOCK_WATCHDOG_V1.md`.
 
 ## Current verified deployment
 
-Latest runtime deployment: **Deploy #228 / run `31896440459` SUCCESS**, Profile Minimum Unlock Sweep v1, PR #165 merge `736112054e3814f0f340ea5e919eb1729ea5837a`.
+Latest runtime deployment: **Deploy #232 / run `31899099486` SUCCESS**.
 
-Final tested head: `2ebcfab51465ab4193e0bdcd0fee805ff196a442`.
+Runtime PR: **#170 — Autonomy Livelock Watchdog v1**
+- final tested head: `efe4814483cb997c941555e40de879532058938a`
+- merge: `b17fbb7fe77e3d4e79f71d0b9a526244ef81c9ff`
+- **CI #936 / run `31899038839`: SUCCESS**
+- **554 passed in 38.40s**
+- fresh DB init/status healthy; schema v5
+- Cognition Capability Awareness, Research Action Semantics, Training Movement Contract Normalization, Eating Behavior, and Solo Regulation Naturalism gates green.
 
-Validation:
-- **CI #930 / run `31896373252` SUCCESS**;
-- **540 passed in 41.05s**;
-- fresh DB init/status healthy; schema v5;
-- Cognition Capability Awareness, Research Action Semantics, Training Movement Contract Normalization, Eating Behavior, and Solo Regulation Naturalism acceptances all green;
-- no stale-contract correction cycle and no deliberate duplicate full-suite run.
+Production recovery proof after Deploy #232:
+- service active;
+- retry state cleared from eight failures to `null`;
+- first readback showed pending action `71ab5f8e-...`;
+- later readback showed a different pending action `9b02ef99-...`;
+- therefore the recovered action completed and autonomy progressed across another action boundary instead of remaining at the frozen decision boundary.
 
-Production readback after Deploy #228:
-- service active/healthy; autonomy enabled, normal mode, retry null, pending action present;
-- speed **3x** at readback;
-- Gemini `gemini-3.1-flash-lite` primary preserved;
-- Groq `qwen/qwen3.6-27b` fallback preserved;
-- Telegram configuration healthy;
-- world revision `thorne-estate-v3.4-private-activity-semantics`;
-- sim time `2025-05-07T12:49:00+00:00`;
-- Darian was naturally resting in the Training Hall: energy 79.252, fatigue 20.402, hunger 29.743, cleanliness 82.46, sleepiness 29.65, thirst 37.935;
-- no production action/state was fabricated for proof.
+Historical autonomy-error events are retained; recovery did not erase evidence or fabricate a proof action.
 
-Deployment proves the Profile Minimum Unlock code is installed. Tests prove compact Identity/Appearance/Background context reaches cognition input; do not claim a specific live decision relied on those fields unless separately observed.
+## Character Profile / Skills baseline
 
-## Character Profile — MINIMUM-UNLOCKED v1
-
-All profile sections now satisfy the minimum vertical-completeness standard:
+Profile sections minimum-unlocked:
 - Identity
 - Appearance
 - Body
@@ -74,20 +110,7 @@ All profile sections now satisfy the minimum vertical-completeness standard:
 - Preferences
 - Background
 
-Current closure facts:
-- Body, Attributes, Recovery, and Sexual already had substantial deterministic/runtime foundations.
-- Personality, Preferences, hobbies, and habits already reached cognition.
-- Identity had partial runtime use through name/DOB semantics; the profile sweep adds compact structured identity cognition context.
-- Appearance and Background now reach cognition as stable read-only context rather than receiving artificial mutation engines.
-- Skills remains CLOSED v1.
-
-The general character context includes bounded identity, appearance, personality, background, preferences/hobbies/habits, and learned Skills. It does not grant profile mutation authority and deliberately omits sexual orientation from ordinary cognition context.
-
-See `docs/PROFILE_MINIMUM_UNLOCK_SWEEP_V1.md`.
-
-## Skills — CLOSED v1
-
-Frozen learned Skills:
+Skills CLOSED v1 learned leaves:
 - Hand-to-Hand Combat
 - Bladed Weapons
 - Firearms
@@ -96,50 +119,22 @@ Frozen learned Skills:
 - Technology
 - Field Medicine
 
-`Weapon Mastery` is derived/non-executable; hidden legacy `weapons` is compatibility only. Do not deepen Skills during the foundation review unless it blocks a reusable cross-system contract.
-
-See `docs/SKILLS_CLOSURE_V1.md`.
+`Weapon Mastery` is derived/non-executable; hidden legacy `weapons` is compatibility only.
 
 ## Sexual baseline
 
-Solo Sexual Regulation Naturalism v2 is the current corrected baseline. It uses authored libido plus bounded life-stage/recovery/solitude context, libido-shaped release recovery, a trailing-24h saturation guard, 2h anti-loop pacing, authored private-activity semantics, and graph-based private-location awareness. There is no daily/weekly quota and cognition retains discretion.
+Solo Sexual Regulation Naturalism v2 remains active: authored libido plus bounded positive young-adult/recovery/solitude context, libido-shaped release recovery, trailing-24h saturation, 2h anti-loop pacing, authored private-activity semantics, and graph-based safe-private-location awareness. No daily/weekly quota exists.
 
-See `docs/SOLO_SEXUAL_REGULATION_NATURALISM_V2.md`.
+## Development boundaries
 
-## Next canonical phase
-
-**Overall Workflow/Foundation Review — REVIEW NEXT.**
-
-Before implementing more domain depth, audit the end-to-end runnable simulation and classify these candidate foundations from current source + production evidence:
-- profile -> cognition influence / context generality;
-- autonomy planning and goal continuity;
-- generic action/task lifecycle and represented outcomes;
-- environment/world context and purposeful movement;
-- resources/inventory/consequences;
-- knowledge/familiarity;
-- inter-character participation;
-- event/lifecycle handling;
-- long-horizon progression/decay.
-
-For each classify:
-1. sufficient now;
-2. closure/documentation debt only;
-3. real missing foundation;
-4. intentionally deferred depth.
-
-Then implement only the **smallest highest-leverage reusable gap**. Prefer extending an existing contract over creating a new subsystem.
-
-## Hard boundaries
-
-- no relationship-system expansion by default;
-- no hostile/non-consensual combat engine;
-- no weapon lethality/injury/casualty side effects;
-- no real-world weapon instructions;
-- no universal Injury/Hazard Engine or deep weapon taxonomy;
-- no generic application => XP shortcut;
-- no arbitrary LLM profile mutation;
-- no fabricated production actors/actions/casualties solely for proof.
+- LLM proposes; deterministic runtime validates/mutates.
+- Do not let the watchdog grow into a general deterministic story chooser.
+- Do not make personality/preferences/hobbies/habits fixed forever-fields.
+- Do not permit arbitrary direct LLM disposition mutation.
+- No relationship-system expansion by default.
+- No hostile/non-consensual combat engine, weapon lethality, universal Injury/Hazard Engine, deep weapon taxonomy, or real-world weapon instructions.
+- Do not fabricate production actions/actors/casualties solely for proof.
 
 ## Exact resume point
 
-**Profile Minimum Unlock Sweep v1 is complete through PR #165 final head `2ebcfab51465ab4193e0bdcd0fee805ff196a442`, merge `736112054e3814f0f340ea5e919eb1729ea5837a`, CI #930 with 540 passed, and Deploy #228 / run `31896440459` SUCCESS. Every Character Profile section is minimum-unlocked; Skills remains CLOSED v1. Production is healthy at schema v5. At readback Darian was naturally resting in the Training Hall at `2025-05-07T12:49:00+00:00`, speed 3x. Resume with an Overall Workflow/Foundation Review and select one smallest highest-leverage cross-cutting slice before deepening any profile domain.**
+**Adaptive Character Disposition Foundation is active. Habit Formation/Extinction exemplar v1 is complete and runtime adaptive disposition survives deploy/init. A production Training Hall freeze was diagnosed as an autonomy action/target livelock, not a system crash or LLM call-limit event. Autonomy Livelock Watchdog v1 is deployed through PR #170 final head `efe4814483cb997c941555e40de879532058938a`, merge `b17fbb7fe77e3d4e79f71d0b9a526244ef81c9ff`, CI #936 with 554 passed, and Deploy #232 SUCCESS. Production retry cleared and two successive pending action IDs proved action-boundary progress resumed. Continue with Hobby/Interest Lifecycle v1 at minimum-foundation depth.**
