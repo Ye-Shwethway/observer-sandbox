@@ -23,7 +23,7 @@ def _move_actor(conn, actor_id: str, room_id: str) -> None:
     conn.commit()
 
 
-def test_batch_seed_registers_three_distinct_simulation_only_targets(tmp_path) -> None:
+def test_batch_seed_registers_distinct_simulation_only_targets(tmp_path) -> None:
     db = tmp_path / "observer.sqlite3"
     initialize(db)
     with connect(db) as conn:
@@ -84,52 +84,71 @@ def test_batch_actions_are_cognition_visible_only_when_colocated(tmp_path, spec)
 
 
 @pytest.mark.parametrize("spec", TASK_SPECS, ids=lambda spec: spec.task_id)
-def test_batch_outcomes_use_authoritative_skill_and_bounded_modifiers(tmp_path, spec) -> None:
+def test_batch_outcomes_use_authoritative_skill_and_only_declared_modifiers(tmp_path, spec) -> None:
     db = tmp_path / "observer.sqlite3"
     initialize(db)
+    expected_scores = {
+        "tactical_planning": 92.0,
+        "survival": 85.0,
+        "bladed_weapons": 87.0,
+    }
     with connect(db) as conn:
         assessment = assess_batch_action(conn, "char_darian", spec.action, spec.simulator_id)
         assert assessment.status == "supported"
-        expected_score = 92.0 if spec.skill_id == "tactical_planning" else 85.0
-        assert assessment.capability.skill_score == pytest.approx(expected_score)
+        assert assessment.capability.skill_score == pytest.approx(expected_scores[spec.skill_id])
         first = represented_skill_batch_outcome(conn, "char_darian", spec.action, spec.simulator_id)
         second = represented_skill_batch_outcome(conn, "char_darian", spec.action, spec.simulator_id)
         assert first == second
         assert first["outcome_class"] == "strong"
         assert first["learning_evidence"] is False
         assert first["world_mutation_policy"] == "simulation_evidence_only"
-        assert set(first["indices"]) == {
-            "quality_precision",
-            "information_gained",
-            "partial_failure_recovery",
-        }
-        factor_keys = {
-            contribution["field_key"]
-            for dimension in first["cognitive_performance"]["dimensions"]
-            for contribution in dimension["factor_contributions"]
-        }
-        if spec.skill_id == "tactical_planning":
-            assert "raps_ia.iq" in factor_keys
-            assert "raps_ia.tactical_thinking" not in factor_keys
+        assert set(first["indices"]) == set(spec.outcome_dimensions)
+
+        if spec.uses_cognitive_performance:
+            assert first["cognitive_performance"]["contract_id"] is not None
+            factor_keys = {
+                contribution["field_key"]
+                for dimension in first["cognitive_performance"]["dimensions"]
+                for contribution in dimension["factor_contributions"]
+            }
+            if spec.skill_id == "tactical_planning":
+                assert "raps_ia.iq" in factor_keys
+                assert "raps_ia.tactical_thinking" not in factor_keys
+            else:
+                assert "raps_ia.iq" not in factor_keys
+                assert "raps_pa.survival_skill" not in factor_keys
+                assert {"raps_ia.problem_solving", "raps_ma.adaptability"}.issubset(factor_keys)
         else:
-            assert "raps_ia.iq" not in factor_keys
-            assert "raps_pa.survival_skill" not in factor_keys
-            assert {"raps_ia.problem_solving", "raps_ma.adaptability"}.issubset(factor_keys)
+            assert first["cognitive_performance"]["contract_id"] is None
+            assert first["cognitive_performance"]["dimensions"] == []
+            assert first["indices"]["quality_precision"] == pytest.approx(
+                expected_scores[spec.skill_id] / 100.0
+            )
 
 
 def test_batch_completion_writes_application_evidence_without_xp_or_domain_state_mutation(tmp_path) -> None:
     db = tmp_path / "observer.sqlite3"
     initialize(db)
+    tracked_skills = (
+        "tactical_planning",
+        "survival",
+        "bladed_weapons",
+        "firearms",
+        "weapon_mastery",
+        "weapons",
+    )
+    placeholders = ",".join("?" for _ in tracked_skills)
     with connect(db) as conn:
         before_skills = {
             row["skill_key"]: (row["score"], row["experience"])
             for row in conn.execute(
-                """
+                f"""
                 SELECT skill_key,score,experience FROM character_skills
                 WHERE entity_id='char_darian'
-                  AND skill_key IN ('tactical_planning','survival')
+                  AND skill_key IN ({placeholders})
                 ORDER BY skill_key
-                """
+                """,
+                tracked_skills,
             ).fetchall()
         }
         for index, spec in enumerate(TASK_SPECS, start=1):
@@ -167,12 +186,13 @@ def test_batch_completion_writes_application_evidence_without_xp_or_domain_state
         after_skills = {
             row["skill_key"]: (row["score"], row["experience"])
             for row in conn.execute(
-                """
+                f"""
                 SELECT skill_key,score,experience FROM character_skills
                 WHERE entity_id='char_darian'
-                  AND skill_key IN ('tactical_planning','survival')
+                  AND skill_key IN ({placeholders})
                 ORDER BY skill_key
-                """
+                """,
+                tracked_skills,
             ).fetchall()
         }
         assert after_skills == before_skills
