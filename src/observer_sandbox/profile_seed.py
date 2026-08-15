@@ -65,6 +65,13 @@ def validate_seed(conn: sqlite3.Connection, seed: dict[str, Any]) -> None:
     _validate_male_sexual_profile(seed)
 
 
+def _skill_progression_active(row: sqlite3.Row | None) -> bool:
+    if row is None:
+        return False
+    metadata = json.loads(row["metadata_json"] or "{}")
+    return isinstance(metadata, dict) and bool(metadata.get("progression_active"))
+
+
 def import_seed(conn: sqlite3.Connection, seed: dict[str, Any]) -> None:
     """Import canonical/static character data without clobbering live simulation state.
 
@@ -72,6 +79,11 @@ def import_seed(conn: sqlite3.Connection, seed: dict[str, Any]) -> None:
     been activated by a simulation engine. Once a field's persisted mode is
     ``simulated``, that live engine-owned value is authoritative across ordinary
     re-initialization/deployment and is not reset from the seed.
+
+    Skills follow the same initialization rule. Seed rows may refresh an
+    unactivated skill baseline, but a progression-active skill keeps its current
+    score/experience/metadata. Extra learned skills that are not present in the
+    canonical seed are preserved instead of being deleted on initialization.
     """
     validate_seed(conn, seed)
     entity_id = seed["entity_id"]
@@ -161,13 +173,42 @@ def import_seed(conn: sqlite3.Connection, seed: dict[str, Any]) -> None:
             (entity_id, habit),
         )
 
-    conn.execute("DELETE FROM character_skills WHERE entity_id=?", (entity_id,))
     for skill in seed.get("skills", []):
+        skill_key = str(skill["key"])
+        old_skill = conn.execute(
+            """
+            SELECT score,tier,experience,metadata_json
+            FROM character_skills WHERE entity_id=? AND skill_key=?
+            """,
+            (entity_id, skill_key),
+        ).fetchone()
+        if _skill_progression_active(old_skill):
+            # Category remains authored classification; progression-owned score,
+            # experience and metadata survive ordinary initialization/deployment.
+            conn.execute(
+                "UPDATE character_skills SET category=? WHERE entity_id=? AND skill_key=?",
+                (skill.get("category"), entity_id, skill_key),
+            )
+            continue
         conn.execute(
             """
-            INSERT INTO character_skills(entity_id, skill_key, category, score, metadata_json)
-            VALUES (?, ?, ?, ?, '{}')
+            INSERT INTO character_skills(entity_id, skill_key, category, score, tier, experience, metadata_json)
+            VALUES (?, ?, ?, ?, ?, ?, ?)
+            ON CONFLICT(entity_id, skill_key) DO UPDATE SET
+                category=excluded.category,
+                score=excluded.score,
+                tier=excluded.tier,
+                experience=excluded.experience,
+                metadata_json=excluded.metadata_json
             """,
-            (entity_id, skill["key"], skill.get("category"), skill.get("score")),
+            (
+                entity_id,
+                skill_key,
+                skill.get("category"),
+                skill.get("score"),
+                skill.get("tier"),
+                skill.get("experience"),
+                json.dumps(skill.get("metadata") or {}, ensure_ascii=False, sort_keys=True),
+            ),
         )
     conn.commit()
