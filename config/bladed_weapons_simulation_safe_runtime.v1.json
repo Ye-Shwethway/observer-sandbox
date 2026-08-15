@@ -1,0 +1,44 @@
+{
+  "revision": "bladed-weapons-simulation-safe-runtime-v1",
+  "tasks": {
+    "bladed_weapons_safe_handling_sim_v1": {
+      "task_id": "bladed_weapons_safe_handling_sim_v1",
+      "name": "Bladed Weapons Safe Handling Simulation",
+      "status": "active",
+      "skill_id": "bladed_weapons",
+      "application_id": "employ_familiar_melee_weapon",
+      "task_mode": "simulation_safe",
+      "challenge_class": "standard",
+      "context_tags": [
+        "weapon_employment_context",
+        "represented_melee_weapon",
+        "simulation_safe_training_context"
+      ],
+      "target_contract": {
+        "entity_type": "object",
+        "definition_id": "represented_task:bladed_weapons_safe_handling_simulator_v1",
+        "required_capabilities_all": [
+          "blade_drill",
+          "usable_bladed_training_weapon"
+        ]
+      },
+      "resource_contract": {
+        "required_resource_mode": "any",
+        "required_capabilities_any": ["usable_bladed_training_weapon"],
+        "supporting_capabilities": []
+      },
+      "outcome_dimensions": [
+        "quality_precision",
+        "partial_failure_recovery"
+      ],
+      "risk_class": "low",
+      "evidence_policy": {
+        "application_evidence": "deferred_until_action_integration",
+        "learning_evidence": false
+      },
+      "provenance": {
+        "source": "Bladed Weapons Simulation-Safe Runtime v1"
+      }
+    }
+  }
+}
