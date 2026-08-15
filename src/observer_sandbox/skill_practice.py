@@ -133,6 +133,16 @@ def seed_skill_practice_foundation(
 ) -> None:
     source = config if config is not None else load_skill_practice_config()
     revision = str(source.get("revision") or "skill-practice-methods-v1")
+    methods = source.get("methods") or {}
+    targets = source.get("targets") or {}
+    if not isinstance(methods, dict) or not isinstance(targets, dict):
+        raise ValueError("Skill practice config requires object-valued methods and targets")
+    minimums = [
+        int(method.get("min_duration_minutes") or 1)
+        for method in methods.values()
+        if isinstance(method, dict) and str(method.get("action") or PRACTICE_ACTION) == PRACTICE_ACTION
+    ]
+    action_minimum = max(1, min(minimums)) if minimums else 1
 
     conn.execute(
         """
@@ -153,7 +163,7 @@ def seed_skill_practice_foundation(
         (
             PRACTICE_ACTION,
             "Practice",
-            5,
+            action_minimum,
             180,
             "object",
             PRACTICE_ACTION,
@@ -164,11 +174,6 @@ def seed_skill_practice_foundation(
             json.dumps({"source": PRACTICE_SOURCE, "revision": revision}, sort_keys=True),
         ),
     )
-
-    methods = source.get("methods") or {}
-    targets = source.get("targets") or {}
-    if not isinstance(methods, dict) or not isinstance(targets, dict):
-        raise ValueError("Skill practice config requires object-valued methods and targets")
 
     for target_id, target in targets.items():
         if not isinstance(target_id, str) or not isinstance(target, dict):
