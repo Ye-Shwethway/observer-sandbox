@@ -22,17 +22,28 @@ def character_keyboard(character_id: str) -> list[list[dict[str, str]]]:
     ]
 
 
-def profile_callback_view(conn, callback_data: str) -> tuple[str, list[list[dict[str, str]]]] | None:
+def profile_callback_view(
+    conn,
+    callback_data: str,
+    *,
+    role: str = "allowed",
+) -> tuple[str, list[list[dict[str, str]]]] | None:
     if callback_data.startswith("prof:"):
         character_id = callback_data.split(":", 1)[1]
-        data = profile_menu(conn, character_id)
+        data = profile_menu(conn, character_id, role=role)
         return _fmt_profile_menu(data), _profile_menu_keyboard(data)
     if callback_data.startswith("psec:"):
         parts = callback_data.split(":", 2)
         if len(parts) != 3:
             return None
         _, character_id, section_id = parts
-        data = profile_section(conn, character_id, section_id)
+        try:
+            data = profile_section(conn, character_id, section_id, role=role)
+        except PermissionError:
+            return (
+                "🔒 Creator authority required for this profile section.",
+                _profile_section_keyboard(character_id),
+            )
         return _fmt_profile_section(data), _profile_section_keyboard(character_id)
     return None
 
@@ -90,17 +101,17 @@ def _fmt_profile_section(data: dict[str, Any]) -> str:
         lines.append("No represented data yet.")
         return "\n".join(lines)
 
-    section_id = section["id"]
-    if section_id == "attributes":
-        return _fmt_attributes(lines, content)
-    if section_id == "skills":
+    renderer = str(section.get("renderer") or "fields")
+    if renderer == "grouped_attributes":
+        return _fmt_attributes(lines, content, section)
+    if renderer == "skills":
         for item in content:
             score = _fmt_number(item.get("score")) if item.get("score") is not None else "Represented"
             category = str(item.get("category") or "").replace("_", " ").title()
             suffix = f" · {category}" if category else ""
             lines.append(f"• {item['label']}   {score}{suffix}")
         return "\n".join(lines)
-    if section_id == "preferences":
+    if renderer == "preferences":
         return _fmt_preferences(lines, content)
 
     for item in content:
@@ -109,19 +120,38 @@ def _fmt_profile_section(data: dict[str, Any]) -> str:
     return "\n".join(lines)
 
 
-def _fmt_attributes(lines: list[str], content: list[dict[str, Any]]) -> str:
+def _fmt_grade(grade: dict[str, Any] | None) -> str | None:
+    if not grade or not grade.get("grade"):
+        return None
+    label = str(grade.get("label") or "").strip()
+    suffix = f" · {label}" if label else ""
+    return f"({grade['grade']}){suffix}"
+
+
+def _fmt_attributes(
+    lines: list[str],
+    content: list[dict[str, Any]],
+    section: dict[str, Any],
+) -> str:
+    overall = _fmt_grade(section.get("overall_grade"))
+    if overall:
+        lines.extend([f"Overall {overall}", ""])
+
+    group_grades = section.get("group_grades") or {}
     last_domain: str | None = None
     for item in content:
         domain = str(item.get("domain") or "")
         if domain != last_domain:
             if last_domain is not None:
                 lines.append("")
-            lines.append(f"{_DOMAIN_LABELS.get(domain, domain.replace('_', ' ').title())}")
+            label = _DOMAIN_LABELS.get(domain, domain.replace("_", " ").title())
+            group_grade = _fmt_grade(group_grades.get(domain))
+            lines.append(f"{label}{f' {group_grade}' if group_grade else ''}")
             last_domain = domain
         value = _fmt_profile_value(item)
-        grade = item.get("grade") or {}
-        if grade.get("grade"):
-            value = f"{value} · Grade {grade['grade']}"
+        grade = _fmt_grade(item.get("grade"))
+        if grade:
+            value = f"{value} {grade}"
         lines.append(f"• {item['label']}   {value}")
     return "\n".join(lines)
 
