@@ -40,6 +40,19 @@ def _ledger_key(actor_id: str, trait: str) -> str:
     return f"{LEDGER_PREFIX}{actor_id}:{trait}"
 
 
+def _baseline_traits(conn: sqlite3.Connection, actor_id: str) -> set[str]:
+    row = conn.execute(
+        "SELECT value_json FROM character_profile_values WHERE entity_id=? AND field_key='personality.primary_traits'",
+        (actor_id,),
+    ).fetchone()
+    if row is None:
+        return set()
+    value = json.loads(row[0])
+    if not isinstance(value, list):
+        return set()
+    return {str(item).strip().lower() for item in value if str(item).strip()}
+
+
 def _read_ledger(conn: sqlite3.Connection, actor_id: str, trait: str) -> dict[str, Any] | None:
     row = conn.execute(
         "SELECT value_json FROM runtime_state WHERE key=?",
@@ -115,6 +128,8 @@ def record_personality_evidence(
     evidence_kind = evidence_kind.strip()
     if trait not in TRAIT_EVIDENCE_CHANNELS:
         raise ValueError(f"unregistered personality trait evidence channel: {trait}")
+    if trait not in _baseline_traits(conn, actor_id):
+        raise ValueError(f"personality evidence may only adapt an authored baseline trait: {trait}")
     if evidence_kind not in TRAIT_EVIDENCE_CHANNELS[trait]:
         raise ValueError(f"unregistered evidence kind for {trait}: {evidence_kind}")
     if valence not in (-1, 1):
