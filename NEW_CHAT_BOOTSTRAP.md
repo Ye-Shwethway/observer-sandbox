@@ -21,22 +21,15 @@ Default:
 
 Use production-copy validation for concrete stateful/migration risk. Never accelerate/mutate production merely to manufacture acceptance evidence. New architecture/control/security invariants update their canonical contract + ROADMAP + bootstrap in the same cycle.
 
-## Current verified production checkpoint
+## Current verified deployment checkpoint
 
-Latest runtime deployment: **Deploy #186 `31831203232` SUCCESS**, Regional Measurement Detraining v1 PR #88 merge `1ccfce79182942010bd3303fd7308891df9e1b77`.
+Latest runtime deployment: **Deploy #192 / run `31856295920` SUCCESS** for Telegram Profile Schema-Driven UX + Grading Display, PR #95 merge `78037276a8ebceb96dc1784f60e1f3bf6a2fe1c5`.
 
-Main CI #717 passed. Post-deploy read-only Runtime Read job `94867199936` verified:
-- service active/healthy;
-- schema v5;
-- autonomy enabled/normal, paused false, retry null, speed 1.0x;
-- sim `2025-05-05T12:40:00+00:00`;
-- decision calls 393;
-- current/pending action `eat` in the Kitchen;
-- Gemini `gemini-3.1-flash-lite` primary and tested Groq `qwen/qwen3.6-27b` fallback preserved;
-- Weight 215.0 lb and BF 9.0% remain live `simulated` `physiology_engine` fields;
-- BC-3 remains live-activated from `2025-05-05T11:47:00+00:00`; all eleven measurements remain `simulated` under `body_progression_engine`, hips remains 39.0.
+Post-merge main **CI #746 / run `31856295912` SUCCESS**.
 
-Production was not accelerated to manufacture movement or detraining evidence. A historical provider 413 on an 8,645-token request remains old evidence only; current retry is null.
+The immediately preceding physical/profile checkpoint is Physical Presentation Closure v1, PR #94 merge `acfbd0b4a25b3ea1c4a587c9be9a2f4898bcc92b`, Deploy #191 SUCCESS.
+
+Latest safe production verification for this UI slice intentionally does **not** print intimate profile values into public GitHub Actions logs. Deploy health and CI are green; intimate values were validated on disposable/local test databases and are inspectable by the configured Telegram owner.
 
 ## Universal invariants
 
@@ -57,110 +50,124 @@ Body measurements:
 Training:
 `concrete target -> reusable method -> optional selected reusable movement patterns -> effective load -> deterministic method/anatomy evidence -> domain progression engines`
 
-## Deployed nutrition/body checkpoint
+Profile presentation:
+`profile schema + section metadata + current represented values + caller role/sensitivity -> generic profile query -> read-only derived grading/presentation -> Telegram`
 
-- Inventory Foundation v1 — PR #71 / Deploy #177.
-- Inventory Operations v1 — PR #73 / Deploy #178.
-- Food Nutrition Semantics & Visibility v1 — PR #74 / Deploy #179.
-- Eating Behavior v1 — PR #76 / Deploy #180.
-- Meal Choice Intelligence v1 — PR #77 / Deploy #181.
-- BC-2 Body Composition — **COMPLETE / DEPLOYED / LIVE-ACTIVATED** via PR #78 / Deploy #182.
-- BC-3 Body Measurement — **COMPLETE / DEPLOYED / LIVE-ACTIVATED** via PR #82 / Deploy #183.
-- Training Method Semantics v2 — **COMPLETE / DEPLOYED** via PR #84 / Deploy #184.
-- Training Anatomy / Movement Semantics v1 — **COMPLETE / DEPLOYED** via PR #86 / Deploy #185.
-- Regional Measurement Detraining v1 — **COMPLETE / DEPLOYED** via PR #88 / Deploy #186.
+## Physical/profile family — COMPLETE FOR CURRENT SCOPE
 
-Canonical body/training docs:
-- `docs/BODY_COMPOSITION_RESEARCH_FOUNDATION.md`
-- `docs/NUTRITION_ENERGY_EVIDENCE.md`
+Completed and deployed:
+- BC-2 Body Composition — PR #78 / Deploy #182;
+- BC-3 Body Measurement — PR #82 / Deploy #183;
+- Training Method Semantics v2 — PR #84 / Deploy #184;
+- Training Anatomy / Movement Semantics v1 — PR #86 / Deploy #185;
+- Regional Measurement Detraining v1 — PR #88 / Deploy #186;
+- Height Lifecycle v1 — deployed before the current checkpoint;
+- Sexual Anatomy & Physiology Lifecycle v1 — deployed before the current checkpoint;
+- Male Erectile Physiology Canonical Contract — PR #92 / Deploy #189;
+- Physical Profile Coverage Audit v1 — PR #93;
+- Physical Presentation Closure v1 — PR #94 / Deploy #191;
+- Telegram Profile Schema-Driven UX + Grading Display — PR #95 / Deploy #192.
+
+Canonical physical/profile docs include:
 - `docs/BODY_COMPOSITION_PROGRESSION_V1.md`
 - `docs/BODY_MEASUREMENT_PROGRESSION_V1.md`
 - `docs/TRAINING_METHOD_SEMANTICS_V2.md`
 - `docs/TRAINING_ANATOMY_V1.md`
 - `docs/REGIONAL_MEASUREMENT_DETRAINING_V1.md`
+- `docs/PHYSICAL_PROFILE_COVERAGE_AUDIT_V1.md`
+- `docs/TELEGRAM_PROFILE_SCHEMA_DRIVEN_UX.md`
+- `docs/READ_ONLY_GRADING_PROOF.md`
 
-Darian's body measurements remain authored exemplar data; reusable engines do not derive other characters from Darian's ratios.
+### Body/height/sexual authority summary
 
-## Regional Measurement Detraining v1
+- Weight/BF/FM/FFM are owned by BC-2; do **not** add a competing Weight decay authority.
+- Eleven circumferences are owned by BC-3 with movement-aware regional evidence and regional detraining.
+- Structural height is owned by Height Lifecycle; adult stability is a valid normal outcome.
+- Structural male sexual anatomy is lifecycle-driven and distinct from momentary sexual state.
+- Represented male canonical profiles require structural anatomy/genetic targets plus long-term `baseline_erectile_function` and `erection_firmness_cap`.
+- Momentary arousal/erectile state/firmness remain context-driven runtime state rather than invented static defaults.
+- Darian-specific values remain exemplar profile data, never universal engine constants.
 
-Final PR head: `d7389bb58c1b4761064fce049de6b1b4bcc58627`.
+### Physical presentation closure
 
-Contract:
-- regional inactivity is reconstructed from immutable completed resistance evidence after BC-3 activation;
-- Training Anatomy regional load is preferred, with method-level historical/no-selection fallback;
-- 21-day grace, then a 63-day pressure ramp;
-- full-pressure decay is bounded to 0.4% of remaining post-activation excess per ordinary 24h window before existing field clamps;
-- detraining-only loss cannot cross the authored BC-3 activation measurement;
-- negative BC-2 partition FFM suppresses extra regional detraining in the same window, preventing double counting;
-- no schema migration, new state table, extra model call or competing body authority.
+- authored abdominal structure is distinct from current visible abdominal definition;
+- visible definition follows current composition relative to authored sustainable BF floor;
+- stable appearance anchors such as PARS remain truthful canonical anchors unless/until a real dynamic appearance engine exists;
+- broader health vitals and sexual-context transitions remain explicit future domains rather than fake static simulation.
 
+## Telegram Profile Schema-Driven UX — COMPLETE / DEPLOYED
+
+Canonical: `docs/TELEGRAM_PROFILE_SCHEMA_DRIVEN_UX.md`.
+
+Section metadata is now externalized in `config/profile_sections.v1.json`:
+`domain/collection -> section id + label + icon + order + visibility + renderer kind + sensitivity`
+
+Ordinary new sections can be added through metadata/config without a Telegram handler branch. Special renderers only own formatting, not section existence.
+
+### Sexual Anatomy & Physiology observer section
+
+Telegram owner now receives an owner-only **Sexual Anatomy & Physiology** profile section combining represented sexual-anatomy/RAPS-SA values and any genuinely materialized runtime sexual state.
+
+Security is query-layer enforced:
+- allowed non-owner users do not receive the section in the menu;
+- direct non-owner callback attempts fail closed;
+- private/intimate fields are not exposed merely because they exist;
+- no fake current erection/arousal state is invented for display.
+
+### Grading presentation
+
+Shared vocabulary is retained:
+`E Beginner -> D Novice -> C Capable -> B Skilled -> A Advanced -> S Expert -> SS Elite -> SSS Master -> X Mythic -> XX Transcendent`.
+
+The existing `raps-100-proof-v1` scheme preserves its proven E..S thresholds; higher tiers are not artificially compressed into the 0..100 RAPS scale.
+
+Telegram individual display is now:
+`Strength 90 (S) · Expert`
+
+Attributes also derive read-time group and overall grades from the arithmetic mean of current compatible values, then evaluate through the same named scheme. IQ remains excluded because its scale semantics differ.
+
+Grades/group averages are **not persisted state**; they recompute on every read when underlying values change.
+
+For the canonical Darian test fixture at PR #95:
+- Strength 90 -> S · Expert;
+- Physical mean 86.538 -> A · Advanced;
+- overall compatible Attributes mean 86.583 -> A · Advanced.
+
+These are evidence from the tested fixture, not immutable character labels.
+
+PR #95 final tested head: `2683f7f9ced8ee43c14088912b85f709cc2747d5`.
 Validation:
-- CI #716 SUCCESS;
-- Body Measurement Progression Acceptance #15 SUCCESS on disposable production copy;
-- main CI #717 SUCCESS;
-- Deploy #186 SUCCESS;
-- post-deploy read-only runtime healthy and existing measurements preserved.
+- CI #745 / `31856247078` SUCCESS;
+- Read-Only Grading Proof #17 / `31856247076` SUCCESS on disposable production copy;
+- Attribute Grading Batch 1 #16 / `31856247111` SUCCESS on disposable production copy;
+- Public Readiness Security Audit #38 / `31856247097` SUCCESS;
+- Inventory Operations v1 Acceptance #30 / `31856247203` SUCCESS;
+- merge `78037276a8ebceb96dc1784f60e1f3bf6a2fe1c5`;
+- Deploy #192 / `31856295920` SUCCESS;
+- main CI #746 / `31856295912` SUCCESS.
 
-## Physical Profile Completion Gate — LOCKED BEFORE SKILL PROGRESSION
-
-Creator direction: complete the physical/body profile family before moving into Skill Progression because structural growth, body composition, circumference adaptation, sexual physiology, skills and mental attributes obey materially different lifecycle rules.
-
-Current coverage:
-- Weight/BF/FM/FFM — already owned by BC-2; do **not** create a second Weight decay engine;
-- ordinary circumferences — BC-3 + Training Anatomy + Regional Detraining complete for current scope;
-- Height — lifecycle mechanism still missing;
-- sexual-anatomy measurements and sexual physiological presentation — lifecycle mechanism still missing;
-- body/appearance physiology-linked fields — final coverage audit still required.
-
-### Proposed Height Lifecycle v1
-
-Target:
-`age/development stage + authored genetic height envelope + health/context -> bounded structural height lifecycle`
-
-Adult stability must be a first-class correct outcome. Temporary posture/spinal-compression variation, if later represented, belongs to an observed/current-height layer rather than silently rewriting structural stature. Younger characters may grow; later-life decline or pathology requires age/context evidence.
-
-### Proposed Sexual Anatomy & Physiology Lifecycle v1
-
-Current schema already contains intimate structural penis length/girth and dynamic firmness/sensitivity candidates.
-
-Target:
-`developmental/genetic structural anatomy + vascular/arousal/health state + age/pathology -> structural baseline + temporary physiological presentation`
-
-Adult structural dimensions should ordinarily remain stable; puberty/development may change them for younger characters; current presentation may vary with arousal/firmness/vascular state; aging/pathology may cause evidence-backed functional or gradual structural decline. Intimate visibility remains authoritative. Ordinary resistance training must not be treated as a permanent organ-enlargement mechanism.
-
-### Physical Profile Coverage Audit
-
-Before Skill Progression, classify every physical/profile field as canonical structural, derived, simulated dynamic, lifecycle-driven or intentionally static. Catch contradictions such as body-fat changing while abdominal definition or other physiology-linked appearance remains stale.
-
-## Telegram Profile schema-driven UX debt
-
-Canonical debt: `docs/TELEGRAM_PROFILE_SCHEMA_DRIVEN_UX.md`.
-
-Ordinary represented fields already render by schema/domain data. Remaining debt is fixed `PROFILE_SECTIONS` registration. Target:
-`domain/collection -> section id + label + icon + order + visibility + renderer kind`
-
-Sensitivity remains authoritative; private/intimate fields must never auto-surface merely because they exist in schema.
+Legacy grading acceptances were also made state-aware: they stage the profile-section config and grade the current production-copy raw value rather than assuming Strength remains exactly 90 forever.
 
 ## Public repository security checkpoint
 
-`Ye-Shwethway/observer-sandbox` is PUBLIC. Public hardening is complete; manual UI verification remains for outside-contributor workflow approval, Secret scanning/Push protection, and `main` branch/ruleset protection where the GitHub App cannot fully read account-level settings.
+`Ye-Shwethway/observer-sandbox` is PUBLIC. Public hardening remains in force. Intimate production values must not be dumped into public CI logs merely for acceptance evidence.
+
+Manual GitHub UI verification remains opportunistic for outside-contributor workflow approval, Secret scanning/Push protection, and `main` branch/ruleset protection where the GitHub App cannot fully read account-level settings.
 
 ## Later sequence
 
-1. **Height Lifecycle v1**;
-2. **Sexual Anatomy & Physiology Lifecycle v1**;
-3. **Physical Profile Coverage Audit**;
-4. **Telegram Profile schema-driven section UX**;
-5. **Skill Progression Family**;
-6. intellectual attributes;
-7. mental/emotion dynamics;
-8. later broader relationship/social systems;
-9. broad Mind/Behavior architecture only after enough feature families justify it.
+1. **Skill Progression Family**;
+2. intellectual attributes;
+3. mental/emotion dynamics;
+4. later broader relationship/social systems, including contextual sexual-state behavior where justified;
+5. broad Mind/Behavior architecture only after enough real feature families justify it.
 
 ## Exact resume point
 
-First re-read live production and current canonical repository. Regional Measurement Detraining v1 is deployed and healthy.
+First re-read current live production and canonical repository.
 
-The proposed next minimum-runnable runtime slice is **Height Lifecycle v1**. Preserve adult structural stability, use authored genetics/development context rather than arbitrary daily drift, and keep temporary observed-height variation separate from permanent stature.
+The physical/profile completion gate and required Telegram schema-driven profile debt are closed for current scope. **The next canonical development family is Skill Progression.**
+
+Before implementing it, inspect existing `character_skills`, current skill/Profile UX, training/action evidence contracts, and the universal grading/progression boundaries. Preserve the exemplar-first-then-batch policy and do not make Skills a renamed copy of physical-attribute progression without proving skill-specific evidence and lifecycle semantics.
 
 Do not add economy/currency, automatic restocking, deep recipes/crafting, Character Memory, broad Mind/Behavior engines, or a second production character merely for testing as side effects.
