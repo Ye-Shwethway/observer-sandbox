@@ -355,6 +355,11 @@ class ModelDecisionProvider:
         enriched = self._enrich_state(state)
         option_actions = {str(option["action"]) for option in enriched["action_options"]}
         known_actions = sorted(option_actions) if option_actions else sorted(set(available_actions))
+        allowed_pairs = {
+            (str(option.get("action")), option.get("target") if isinstance(option.get("target"), str) else None)
+            for option in enriched["action_options"]
+        }
+
         decision = generate_character_decision(
             self.conn,
             character_id=self.character_id,
@@ -363,12 +368,42 @@ class ModelDecisionProvider:
             available_actions=known_actions,
         )
         selected_target = decision["target"] or None
-        allowed_pairs = {
-            (str(option.get("action")), option.get("target") if isinstance(option.get("target"), str) else None)
-            for option in enriched["action_options"]
-        }
-        if (decision["action"], selected_target) not in allowed_pairs:
-            raise ValueError("Model selected an action/target pair outside authoritative action_options")
+        selected_pair = (str(decision["action"]), selected_target)
+
+        if selected_pair not in allowed_pairs:
+            correction_state = dict(enriched)
+            correction_state["decision_correction"] = {
+                "instruction": (
+                    "Your immediately previous proposal used an action/target pair outside authoritative action_options. "
+                    "Choose exactly one pair from allowed_pairs below. Do not repeat rejected_pair."
+                ),
+                "rejected_pair": {
+                    "action": selected_pair[0],
+                    "target": selected_pair[1],
+                },
+                "allowed_pairs": [
+                    {"action": action, "target": target}
+                    for action, target in sorted(
+                        allowed_pairs,
+                        key=lambda pair: (pair[0], pair[1] or ""),
+                    )
+                ],
+            }
+            decision = generate_character_decision(
+                self.conn,
+                character_id=self.character_id,
+                role=self.role,
+                state=correction_state,
+                available_actions=known_actions,
+            )
+            selected_target = decision["target"] or None
+            corrected_pair = (str(decision["action"]), selected_target)
+            if corrected_pair not in allowed_pairs:
+                raise ValueError(
+                    "Model selected an action/target pair outside authoritative action_options after one corrective retry; "
+                    f"rejected={selected_pair!r}; corrected={corrected_pair!r}"
+                )
+
         resources = validate_proposed_resources(
             self.conn,
             action_name=str(decision["action"]),
