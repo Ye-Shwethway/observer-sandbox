@@ -18,7 +18,7 @@ Authority:
 Default workflow:
 `branch -> focused tests + final PR CI -> merge main -> automatic deploy when runtime-affecting -> read-only production check`
 
-During implementation use the smallest task-relevant tests/gates. Do not repeatedly run the full suite. Code/runtime PRs get one final full CI checkpoint by default; docs-only changes skip the full Python suite; merge-to-main does not need a duplicate full-suite run.
+During implementation use the smallest task-relevant tests/gates. Do not repeatedly run the full suite. Code/runtime PRs get one final full CI checkpoint by default; docs-only changes skip the full Python suite; do not deliberately repeat a full suite after merge when the already-tested PR is sufficient.
 
 Use **exemplar-first, then batch-by-pattern**. Never manipulate production merely to manufacture evidence.
 
@@ -30,28 +30,33 @@ Relationship/casualty-handoff expansion remains deferred until additional repres
 
 ## Current verified deployment
 
-Latest runtime deployment: **Deploy #223 / run `31891128059` SUCCESS**, Firearms Simulation-Safe Runtime v1, PR #156 merge `ea5dad4fb49180e37eaff5435bd82c8f0c4a487e`.
+Latest runtime deployment: **Deploy #225 / run `31892433699` SUCCESS**, Firearms Progression Producer v1, PR #159 merge `d759ef7903f889517e76a48b803fba83bba09ba0`.
 
-Final tested head: `33c52000595f00f36687afef670ebf105dd5f9c2`.
+Final tested head: `1553621a93e52cb52e948a856dec99a49bd4fc23`.
 
 Validation:
-- **CI #912 / run `31891065742` SUCCESS — 525 passed in 31.20s**;
-- fresh DB init/status healthy; schema v5;
-- Strength Live Cycle Validation #67 / run `31891065783` succeeded;
-- no iterative full-suite rerun was needed.
+- final **CI #918 / run `31892374935` SUCCESS**;
+- Skill Progression Foundation, Skill Evidence Semantics, Skill Definition Format/Refactor, Tactical progression, and Strength Live Cycle gates all green;
+- the immediately prior CI #917 had only one stale global revision assertion after 531 passing tests; that assertion alone was aligned;
+- no manual repeated full-suite rerun was requested;
+- production init/status healthy; schema v5.
 
-Production readback after Deploy #223:
-- service active/healthy; production init succeeded;
-- autonomy enabled, normal mode, **5x**, retry null, pending action present;
+Production readback after Deploy #225:
+- service active/healthy; autonomy enabled, normal mode, retry null, pending action preserved;
+- speed **30x** at readback;
 - Gemini `gemini-3.1-flash-lite` primary preserved;
 - Groq `qwen/qwen3.6-27b` fallback healthy;
 - Telegram token/API/owner/allowed-user configuration healthy;
 - sim time `2025-05-06T18:56:00+00:00`;
-- Darian naturally sleeping in Darian's Master Suite;
+- Darian still naturally sleeping in Darian's Master Suite because the sleep action had already been pending before the circadian fix;
 - Bladed Weapons 87/A, Firearms 87/A, Weapon Mastery 87/A, overall Skills A / 85.167;
-- no production firearm practice/action was fabricated for proof.
+- no production firearm practice/application was fabricated for proof.
 
-Exact Firearms application/no-XP behavior is CI/fresh-fixture evidence. Deployment proves safe loading and continuity only.
+## Circadian stabilization
+
+**Circadian Sleep Rhythm Stabilization v1** is complete through PR #158, merge `f63786c5f0f3d4c4b2098a0c6dc37d9ced9180db`, Deploy #224.
+
+The prior sleep-pressure logic incorrectly made ordinary 16-hour wakefulness a strong sleep need at any clock time, allowing an early wake to phase-lock an early bedtime. Current behavior treats 07:00–22:00 as the normal wake window for ordinary accumulated wakefulness and applies the stronger circadian sleep pull in the 22:00–07:00 night window. Severe >=20h wakefulness or critical raw sleepiness still overrides daytime timing. The already-pending early sleep was deliberately not cancelled or rewritten.
 
 ## Weapon Mastery checkpoint
 
@@ -81,30 +86,27 @@ Learning producer:
 - dedicated Training Hall practice simulator distinct from `blade_drill`;
 - only explicit whitelisted practice evidence progresses Bladed Weapons.
 
-### Firearms — represented runtime active
+### Firearms — application + progression complete
 
-Executable ranged authority is now:
-`firearms.employ_familiar_ranged_weapon`
-
-The hidden legacy `weapons` projection no longer executes the ranged application.
-
-Represented task:
-- `firearms_safe_handling_sim_v1`;
+Application runtime:
+- `firearms.employ_familiar_ranged_weapon`;
 - action `firearm_drill`;
-- exact target `represented_task:firearms_safe_handling_simulator_v1`;
-- exact resource/target capability `usable_firearms_training_weapon`;
-- Training Hall, solo-compatible, simulation-safe, low risk.
-
-Deterministic behavior:
-- Firearms learned score is the performance authority;
-- no cognitive/Attribute modifier contract is invented;
-- completion emits application evidence only;
-- `learning_evidence=false`;
+- exact simulation-safe capability `usable_firearms_training_weapon`;
+- low risk, solo-compatible;
+- application evidence only; `learning_evidence=false`;
 - no automatic XP, ammunition consumption, injury, casualty, hostile-use, lethality, or real-world technique semantics.
 
-Firearms progression remains inactive.
+Learning producer:
+- `firearms_handling_practice`;
+- action `practice`, minimum 10 minutes;
+- relevance `{ "firearms": 1.0 }`;
+- dedicated Training Hall Firearms Practice Simulator distinct from `firearm_drill`;
+- only explicit whitelisted `skill_practice` evidence progresses Firearms;
+- Bladed Weapons remains an independent sibling;
+- legitimate Firearms learning re-derives Weapon Mastery/legacy projection while neither parent receives direct XP;
+- ordinary `firearm_drill` remains non-learning.
 
-See `docs/FIREARMS_SIMULATION_SAFE_RUNTIME_V1.md`.
+See `docs/FIREARMS_SIMULATION_SAFE_RUNTIME_V1.md` and `docs/FIREARMS_PROGRESSION_V1.md`.
 
 ## Other Skill coverage
 
@@ -127,12 +129,12 @@ See `docs/FIREARMS_SIMULATION_SAFE_RUNTIME_V1.md`.
 
 ## Next canonical direction
 
-**Firearms Progression Producer v1 — REVIEW NEXT / not yet implemented.**
+**Skills Section Completion Review — REVIEW NEXT.**
 
-Reuse the proven Bladed explicit-practice pattern. Add one dedicated simulation-safe Firearms practice producer whose whitelisted learning evidence progresses only `firearms`. Ordinary `firearm_drill` must remain application-only/non-learning. Legitimate Firearms component learning may re-derive Weapon Mastery/legacy projection but neither parent receives direct XP.
+Audit the current Skills section against the profile-first goal. Confirm which Skills have authoritative learned/derived semantics, safe represented application, legitimate progression producers, cognition awareness, and correct profile rendering. Do not create fake producers just to make every row symmetrical: document intentional deferred constraints such as Field Medicine progression and H2H's second-character sparring requirement.
 
-After Firearms application + progression are complete, perform the **Skills section completion review** before choosing the next Character Profile section.
+Then decide whether Skills is meaningfully simulation-unlocked under the current scope and choose the next Character Profile section only after that review.
 
 ## Exact resume point
 
-**Firearms Simulation-Safe Runtime v1 is complete through PR #156 final tested head `33c52000595f00f36687afef670ebf105dd5f9c2`, merge `ea5dad4fb49180e37eaff5435bd82c8f0c4a487e`, CI #912 / run `31891065742` with 525 passing tests plus fresh-DB init/status, Strength Live Cycle Validation #67 green, and Deploy #223 / run `31891128059` SUCCESS. Firearms now owns executable simulation-safe ranged application authority through `firearm_drill` plus exact `usable_firearms_training_weapon`; Weapon Mastery remains derived/non-executable; application evidence does not award XP; production remained healthy at 5x and no proof action was forced. Review Firearms Progression Producer v1 next.**
+**Firearms Progression Producer v1 is complete through PR #159 final tested head `1553621a93e52cb52e948a856dec99a49bd4fc23`, merge `d759ef7903f889517e76a48b803fba83bba09ba0`, final CI #918 with all relevant Skill/Strength acceptance gates green, and Deploy #225 / run `31892433699` SUCCESS. `firearms_handling_practice` is now explicit Firearms learning authority; `firearm_drill` remains application-only/non-learning; Bladed and Firearms progress independently; Weapon Mastery/legacy projection re-derive without direct XP; production stayed healthy and unchanged at 87/A without fabricated practice. Perform the Skills Section Completion Review next.**
