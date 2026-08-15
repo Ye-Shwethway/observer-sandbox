@@ -1,5 +1,5 @@
 {
-  "revision": "skill-hierarchy-v1.1-bladed-runtime",
+  "revision": "skill-hierarchy-v1",
   "hierarchies": {
     "weapon_mastery": {
       "name": "Weapon Mastery",
