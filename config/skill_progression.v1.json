@@ -1,5 +1,5 @@
 {
-  "revision": "skill-progression-structured-evidence-v1.3-firearms",
+  "revision": "skill-progression-structured-evidence-v1.4-field-medicine",
   "skills": {
     "hand_to_hand_combat": {
       "score_cap": 100.0,
@@ -65,6 +65,16 @@
       "compatibility_profile_field": null,
       "eligible_methods": {
         "firearms_handling_practice": 1.0
+      }
+    },
+    "field_medicine": {
+      "score_cap": 100.0,
+      "base_score_points_per_learning_unit": 0.12,
+      "recent_window_hours": 24.0,
+      "saturation_half_units": 2.0,
+      "compatibility_profile_field": null,
+      "eligible_methods": {
+        "field_medicine_scenario_practice": 1.0
       }
     }
   }
