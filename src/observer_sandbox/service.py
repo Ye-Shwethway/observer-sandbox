@@ -15,6 +15,7 @@ from .db import connect
 from .habit_adaptation import settle_habit_adaptation
 from .height_lifecycle import maybe_settle_height_lifecycle
 from .hobby_interest_lifecycle import settle_hobby_interest_lifecycle
+from .personality_plasticity import settle_personality_plasticity
 from .physical_attribute_progression import maybe_settle_physical_attribute_batch
 from .physical_presentation import refresh_physical_presentation
 from .preference_adaptation import settle_preference_adaptation
@@ -120,6 +121,22 @@ def main() -> None:
                                     if pending_before.get("target") is not None
                                     else None
                                 ),
+                                ended_sim_time=str(after["sim_time"]),
+                            )
+                            conn.commit()
+                        except Exception:
+                            conn.rollback()
+
+                        # Personality is slower again: only explicitly registered
+                        # trait-evidence channels settle here. Same-day repetition
+                        # cannot accelerate the long-horizon gate, canonical trait
+                        # text remains untouched, and cognition sees only a small
+                        # established overlay rather than this evidence ledger.
+                        try:
+                            settle_personality_plasticity(
+                                conn,
+                                actor_id,
+                                action_name=str(pending_before["action"]),
                                 ended_sim_time=str(after["sim_time"]),
                             )
                             conn.commit()
