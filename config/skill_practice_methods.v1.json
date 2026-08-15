@@ -1,5 +1,5 @@
 {
-  "revision": "skill-practice-methods-v1.3-firearms",
+  "revision": "skill-practice-methods-v1.4-field-medicine",
   "methods": {
     "systems_diagnostic_practice": {
       "name": "Systems Diagnostic Practice",
@@ -45,6 +45,15 @@
         "firearms": 1.0
       },
       "tags": ["firearms", "weapon_handling", "simulation_safe"]
+    },
+    "field_medicine_scenario_practice": {
+      "name": "Field Medicine Scenario Practice",
+      "action": "practice",
+      "min_duration_minutes": 10,
+      "skill_relevance": {
+        "field_medicine": 1.0
+      },
+      "tags": ["field_medicine", "medical_scenario", "simulation_safe"]
     }
   },
   "targets": {
@@ -77,6 +86,12 @@
       "room": "loc_thorne_estate_training_hall",
       "capabilities": ["inspect", "practice"],
       "method_id": "firearms_handling_practice"
+    },
+    "obj_thorne_estate_training_field_medicine_practice_simulator": {
+      "name": "Field Medicine Scenario Practice Simulator",
+      "room": "loc_thorne_estate_training_hall",
+      "capabilities": ["inspect", "practice"],
+      "method_id": "field_medicine_scenario_practice"
     }
   }
 }
