@@ -18,6 +18,7 @@ from .profile_schema_source_union import seed_source_union_extensions
 from .represented_skill_runtime_batch import seed_represented_skill_runtime_batch
 from .sexual_state_schema import seed_sexual_state_fields
 from .simulation import ensure_sim_clock
+from .skill_hierarchy import reconcile_skill_hierarchies
 from .skill_practice import seed_skill_practice_foundation
 from .skill_progression import maybe_settle_skill_progression
 from .tactical_assessment_runtime import seed_tactical_assessment_runtime
@@ -48,6 +49,10 @@ def _initialize_conn(conn) -> None:
     seed_source_union_extensions(conn)
     seed_sexual_state_fields(conn)
     seed_home_and_darian(conn)
+    # Canonical character seeds may still contain legacy umbrella Skill keys.
+    # Reconcile them immediately into learned component Skills plus derived parent
+    # summaries before any progression or cognition surface consumes Skill state.
+    reconcile_skill_hierarchies(conn)
     # Stateful inventory migrations emit immutable audit events at simulation
     # time. Establish the canonical clock before inventory seeding so a fresh
     # database and every test/runtime initialization share the same ordering.

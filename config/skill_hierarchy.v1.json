@@ -1,0 +1,44 @@
+{
+  "revision": "skill-hierarchy-v1",
+  "hierarchies": {
+    "weapon_mastery": {
+      "name": "Weapon Mastery",
+      "category": "combat",
+      "role": "derived_parent",
+      "legacy_skill_keys": ["weapons"],
+      "component_skills": ["bladed_weapons", "firearms"],
+      "aggregation": {
+        "method": "mean",
+        "weights": {
+          "bladed_weapons": 1.0,
+          "firearms": 1.0
+        }
+      },
+      "direct_progression": false,
+      "direct_application": false,
+      "description": "Derived overview of learned weapon-family proficiencies. It summarizes component Skills and is never an independent learning or task authority.",
+      "components": {
+        "bladed_weapons": {
+          "name": "Bladed Weapons",
+          "category": "combat",
+          "description": "Learned proficiency with represented bladed-weapon handling and employment. Specific weapon disciplines may be added later only when simulation needs them.",
+          "legacy_application_family": ["employ_familiar_melee_weapon"],
+          "initialization": "inherit_legacy_umbrella_score_as_compatibility_baseline"
+        },
+        "firearms": {
+          "name": "Firearms",
+          "category": "combat",
+          "description": "Learned proficiency with represented firearm handling and employment. Specific firearm disciplines may be added later only when simulation needs them.",
+          "legacy_application_family": ["employ_familiar_ranged_weapon"],
+          "initialization": "inherit_legacy_umbrella_score_as_compatibility_baseline"
+        }
+      },
+      "migration_policy": {
+        "legacy_baseline_is_distinct_history_evidence": false,
+        "preserve_existing_component_state": true,
+        "keep_legacy_key_as_hidden_compatibility_projection": true,
+        "legacy_projection_tracks_derived_parent": true
+      }
+    }
+  }
+}

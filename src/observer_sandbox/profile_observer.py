@@ -16,6 +16,7 @@ from .grading import (
     evaluate_skill_score,
 )
 from .simulation import snapshot
+from .skill_hierarchy import hierarchy_profile_metadata
 from .strength_progression_observer import strength_progression_profile_items
 from .training_modifiers import training_readiness_modifier
 
@@ -382,6 +383,8 @@ def _attribute_grade_summaries(content: list[dict[str, Any]]) -> tuple[dict[str,
 def _skill_grade_summary(content: list[dict[str, Any]]) -> dict[str, Any] | None:
     results: list[GradeResult] = []
     for item in content:
+        if item.get("aggregate_exclude"):
+            continue
         grade = item.get("grade") or {}
         if not grade.get("grade"):
             continue
@@ -399,7 +402,7 @@ def _skill_grade_summary(content: list[dict[str, Any]]) -> dict[str, Any] | None
 def _skills(conn: sqlite3.Connection, character_id: str) -> list[dict[str, Any]]:
     rows = conn.execute(
         """
-        SELECT skill_key, category, score, tier, experience
+        SELECT skill_key, category, score, tier, experience, metadata_json
         FROM character_skills
         WHERE entity_id=?
         ORDER BY COALESCE(category, ''), skill_key
@@ -408,19 +411,40 @@ def _skills(conn: sqlite3.Connection, character_id: str) -> list[dict[str, Any]]
     ).fetchall()
     content: list[dict[str, Any]] = []
     for row in rows:
+        try:
+            raw_metadata = json.loads(row["metadata_json"] or "{}")
+        except (TypeError, json.JSONDecodeError):
+            raw_metadata = {}
+        metadata = hierarchy_profile_metadata(raw_metadata if isinstance(raw_metadata, dict) else {})
+        if metadata["profile_hidden"]:
+            continue
         item: dict[str, Any] = {
             "kind": "skill",
             "key": row["skill_key"],
-            "label": str(row["skill_key"]).replace("_", " ").title(),
+            "label": metadata["display_name"] or str(row["skill_key"]).replace("_", " ").title(),
             "category": row["category"],
             "score": row["score"],
             "tier": row["tier"],
             "experience": row["experience"],
+            "hierarchy_role": metadata["hierarchy_role"],
+            "parent_skill": metadata["parent_skill"],
+            "component_skills": metadata["component_skills"],
+            "derived": metadata["derived"],
+            "mode": "derived" if metadata["derived"] else "learned",
+            "aggregate_exclude": metadata["aggregate_exclude"],
+            "profile_order": metadata["profile_order"],
         }
         if isinstance(row["score"], (int, float)):
             item["grade"] = _grade_payload(evaluate_skill_score(row["score"]))
         content.append(item)
-    return content
+    return sorted(
+        content,
+        key=lambda item: (
+            str(item.get("category") or ""),
+            int(item.get("profile_order") or 999),
+            str(item.get("key") or ""),
+        ),
+    )
 
 
 def _preferences(conn: sqlite3.Connection, character_id: str) -> list[dict[str, Any]]:
