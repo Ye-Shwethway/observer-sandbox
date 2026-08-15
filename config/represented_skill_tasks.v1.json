@@ -1,5 +1,5 @@
 {
-  "revision": "represented-skill-tasks-v1.5",
+  "revision": "represented-skill-tasks-v1.6",
   "tasks": {
     "technology_known_system_fault_diagnostic_sim_v1": {
       "task_id": "technology_known_system_fault_diagnostic_sim_v1",
@@ -282,6 +282,50 @@
       "provenance": {
         "source": "field-medicine-stabilization-consequence-v1",
         "notes": "First real represented consequence consumer. The exact session, one colocated casualty participant, pre-existing simulated casualty deterioration state, and explicit field-medical-supply resource are required before the generic consequence foundation may reduce only the authorized deterioration-risk field."
+      }
+    },
+    "field_medicine_assess_field_casualty_v1": {
+      "task_id": "field_medicine_assess_field_casualty_v1",
+      "name": "Represented Field Casualty Assessment",
+      "status": "active",
+      "skill_id": "field_medicine",
+      "application_id": "assess_field_casualty",
+      "challenge_class": "standard",
+      "task_mode": "represented_consequential",
+      "target_contract": {
+        "entity_type": "object",
+        "definition_id": "represented_task:field_medicine_casualty_assessment_session_v1",
+        "required_capabilities_all": ["assess", "field_medical_context", "casualty_assessment_session"]
+      },
+      "context_tags": ["casualty_represented", "field_medical_context"],
+      "resource_contract": {
+        "required_resource_mode": "none",
+        "required_capabilities_any": [],
+        "supporting_capabilities": ["basic_medical_assessment_tools"]
+      },
+      "outcome_dimensions": ["feasibility", "quality_precision", "information_gained", "error_probability_severity", "partial_failure_recovery"],
+      "risk_class": "high",
+      "interaction_contract": {
+        "participant_entity_type": "character",
+        "participant_count": 1,
+        "requires_distinct_actor": true,
+        "requires_colocation": true,
+        "required_casualty_state_field": "medical.deterioration_risk",
+        "required_casualty_state_mode": "simulated",
+        "observation_mode": "read_only",
+        "casualty_state_creation": false,
+        "casualty_state_mutation": false,
+        "injury_diagnosis_mutation": false,
+        "definitive_treatment_mutation": false
+      },
+      "evidence_policy": {
+        "application_evidence": "deferred_until_action_integration",
+        "learning_evidence": false,
+        "notes": "Assessment records bounded read-only gameplay information and application evidence. It cannot create casualty state, diagnosis, treatment, consequence state, or Field Medicine XP."
+      },
+      "provenance": {
+        "source": "field-medicine-assessment-readonly-v1",
+        "notes": "First read-only represented Field Medicine consumer. Exact assessment-session target plus one distinct colocated represented casualty with pre-existing simulated deterioration state are required; the outcome only interprets abstract deterioration pressure and never diagnoses or mutates the casualty."
       }
     }
   }
