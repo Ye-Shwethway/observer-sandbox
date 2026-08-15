@@ -22,6 +22,7 @@ BATCH_TASK_IDS = [
 H2H_TASK_ID = "h2h_controlled_striking_spar_v1"
 H2H_GRAPPLE_TASK_ID = "h2h_controlled_grapple_spar_v1"
 FIELD_MEDICINE_STABILIZE_TASK_ID = "field_medicine_stabilize_for_evacuation_v1"
+FIELD_MEDICINE_ASSESS_TASK_ID = "field_medicine_assess_field_casualty_v1"
 
 
 def config_copy():
@@ -34,7 +35,7 @@ def task(config, task_id=TECH_TASK_ID):
 
 def test_canonical_represented_task_registry_validates() -> None:
     source = validate_represented_skill_tasks()
-    assert source["revision"] == "represented-skill-tasks-v1.5"
+    assert source["revision"] == "represented-skill-tasks-v1.6"
     assert list(source["tasks"]) == [
         TECH_TASK_ID,
         TACTICAL_TASK_ID,
@@ -42,6 +43,7 @@ def test_canonical_represented_task_registry_validates() -> None:
         H2H_TASK_ID,
         H2H_GRAPPLE_TASK_ID,
         FIELD_MEDICINE_STABILIZE_TASK_ID,
+        FIELD_MEDICINE_ASSESS_TASK_ID,
     ]
 
 
@@ -125,6 +127,24 @@ def test_controlled_h2h_tasks_are_consequential_and_require_explicit_participant
     assert grapple["interaction_contract"]["consequence_mode"] == "scored_positional_control_only"
     assert striking["evidence_policy"]["learning_evidence"] is False
     assert grapple["evidence_policy"]["learning_evidence"] is False
+
+
+def test_field_medicine_assessment_is_read_only_and_preserves_application_contract() -> None:
+    value = represented_skill_task(FIELD_MEDICINE_ASSESS_TASK_ID)
+    assert value["skill_id"] == "field_medicine"
+    assert value["application_id"] == "assess_field_casualty"
+    assert value["challenge_class"] == "standard"
+    assert value["task_mode"] == "represented_consequential"
+    assert value["risk_class"] == "high"
+    assert value["resource_contract"]["required_resource_mode"] == "none"
+    assert value["resource_contract"]["supporting_capabilities"] == ["basic_medical_assessment_tools"]
+    interaction = value["interaction_contract"]
+    assert interaction["observation_mode"] == "read_only"
+    assert interaction["casualty_state_creation"] is False
+    assert interaction["casualty_state_mutation"] is False
+    assert interaction["injury_diagnosis_mutation"] is False
+    assert interaction["definitive_treatment_mutation"] is False
+    assert value["evidence_policy"]["learning_evidence"] is False
 
 
 def test_task_cannot_reference_unknown_skill_application() -> None:
