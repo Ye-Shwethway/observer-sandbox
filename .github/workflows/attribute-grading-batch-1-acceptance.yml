@@ -114,8 +114,12 @@ jobs:
                   assert expected_row in text
               physical = attributes["section"]["group_grades"]["raps_pa"]
               overall = attributes["section"]["overall_grade"]
-              assert f"Physical ({physical['grade']}) · {physical['label']}" in text
-              assert f"Overall ({overall['grade']}) · {overall['label']}" in text
+              physical_grade = physical["grade"]
+              physical_label = physical["label"]
+              overall_grade = overall["grade"]
+              overall_label = overall["label"]
+              assert f"Physical ({physical_grade}) · {physical_label}" in text
+              assert f"Overall ({overall_grade}) · {overall_label}" in text
               assert "IQ   140 (" not in text
 
               body_text = _fmt_profile_section(body)
