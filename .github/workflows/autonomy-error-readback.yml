@@ -61,10 +61,17 @@ jobs:
                   "retry_seconds": payload.get("retry_seconds"),
               })
           retry_row = db.execute(
-              "SELECT retry_json,pending_action_id FROM actor_runtime WHERE actor_id=?",
+              "SELECT retry_failures,retry_after,retry_last_error,pending_action_id "
+              "FROM actor_runtime WHERE actor_id=?",
               ("char_darian",),
           ).fetchone()
-          retry = json.loads(retry_row["retry_json"] or "null") if retry_row else None
+          retry = None
+          if retry_row and (retry_row["retry_failures"] or retry_row["retry_after"] is not None):
+              retry = {
+                  "failures": retry_row["retry_failures"],
+                  "retry_after": retry_row["retry_after"],
+                  "last_error": retry_row["retry_last_error"],
+              }
           seed = db.execute(
               "SELECT id,definition_id,capabilities_json FROM entities WHERE id=?",
               ("obj_thorne_estate_intel_known_fault_diagnostic_simulator",),
