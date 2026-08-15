@@ -165,7 +165,7 @@ def test_good_recovery_and_young_adult_state_add_bonuses_instead_of_penalty_only
         assert young_healthy["drive_components"]["recovery_bonus"] > 0
         assert young_healthy["drive_components"]["age_bonus"] > 0
 
-        older_dob = "1970-09-03"
+        older_dob = "1960-09-03"
         _set_profile_value(conn, "identity.date_of_birth", older_dob)
         older = solo_sexual_regulation_context(conn, ACTOR, state=state)
         assert older["adult"] is True
