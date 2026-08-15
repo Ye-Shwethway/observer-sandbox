@@ -239,10 +239,12 @@ def _fmt_profile_value(item: dict[str, Any]) -> str:
         return "Yes" if value else "No"
     if unit == "ratio" and isinstance(value, (int, float)):
         return f"{float(value):.3f}".rstrip("0").rstrip(".")
-    if unit == "in" and isinstance(value, (int, float)):
+    if field_key.startswith("body.") and unit == "in" and isinstance(value, (int, float)):
         return f'{float(value):.2f}"'
 
     formatted = _fmt_number(value)
+    if unit == "in":
+        return f'{formatted}"'
     if unit == "lb":
         return f"{formatted} lb"
     if unit == "percent":
