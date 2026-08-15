@@ -1,0 +1,185 @@
+{
+  "revision": "skill-definitions-v1",
+  "challenge_model": {
+    "id": "generic-five-class-v1",
+    "classes": ["routine", "standard", "challenging", "advanced", "extreme"]
+  },
+  "skills": {
+    "technology": {
+      "skill_id": "technology",
+      "name": "Technology",
+      "aliases": ["technical systems"],
+      "revision": "technology-definition-v1",
+      "status": "active",
+      "category": "technical",
+      "skill_type": "technical",
+      "reusability": "cross_domain",
+      "definition": "Learned capacity to understand, configure, diagnose, maintain, and troubleshoot designed technical systems by applying relevant knowledge, tools, documentation, and safe procedures.",
+      "scope_includes": [
+        "diagnosing and troubleshooting represented technical systems",
+        "configuring and setting up familiar or documented technical systems",
+        "using diagnostic instrumentation, interfaces, logs, status data, and telemetry",
+        "performing represented routine maintenance and recovery procedures"
+      ],
+      "scope_excludes": [
+        "ordinary consumer use that does not require technical problem-solving",
+        "pure theoretical or scientific knowledge without practical application",
+        "fabrication, manufacturing, or crafting that is not represented by an explicit application",
+        "weapon operation or weapons proficiency",
+        "medical diagnosis or treatment and medical-device use that requires medical competence",
+        "offensive cybersecurity, unauthorized intrusion, or other security-specialist work unless represented by a separate future Skill/Application",
+        "novel engineering or research-grade design that lacks the required explicit knowledge, task, and context definitions"
+      ],
+      "relations": {
+        "parent_skill": null,
+        "component_skills": [],
+        "related_skills": []
+      },
+      "knowledge_requirements": [
+        {
+          "knowledge_key": "technical_systems_fundamentals",
+          "description": "Conceptual understanding of components, interfaces, states, inputs, outputs, and common failure patterns in the represented system family.",
+          "importance": 1.0,
+          "relationship": "performance_modifier",
+          "blocking_if_absent": false
+        },
+        {
+          "knowledge_key": "diagnostic_procedures",
+          "description": "Knowledge of safe, ordered diagnostic and troubleshooting procedures applicable to the represented system.",
+          "importance": 1.0,
+          "relationship": "performance_modifier",
+          "blocking_if_absent": false
+        },
+        {
+          "knowledge_key": "technical_documentation_interpretation",
+          "description": "Ability-supporting knowledge for interpreting represented manuals, logs, status codes, diagrams, and interface feedback.",
+          "importance": 0.8,
+          "relationship": "performance_modifier",
+          "blocking_if_absent": false
+        }
+      ],
+      "ability_dependencies": [
+        {
+          "field_key": "raps_ia.problem_solving",
+          "relationship": "performance_modifier",
+          "relevance": 1.0
+        },
+        {
+          "field_key": "raps_ma.focus",
+          "relationship": "performance_modifier",
+          "relevance": 0.7
+        }
+      ],
+      "applications": [
+        {
+          "application_id": "diagnose_known_system_fault",
+          "name": "Diagnose Known System Fault",
+          "description": "Inspect represented symptoms, logs, telemetry, and diagnostic feedback to identify the most likely fault source and a safe corrective or escalation path for a known technical system family.",
+          "outcome_intent": "Produce a technically justified fault assessment and next-step recommendation rather than merely operate the system.",
+          "skill_role": "primary",
+          "challenge_classes": ["routine", "standard", "challenging", "advanced"],
+          "required_context": [
+            "a represented technical system or simulation with observable diagnostic evidence"
+          ],
+          "helpful_resources": [
+            "diagnostic interface or instrumentation",
+            "relevant system documentation"
+          ],
+          "gameplay_effects": [
+            "feasibility",
+            "quality_precision",
+            "time_speed",
+            "error_probability_severity",
+            "information_gained",
+            "partial_failure_recovery"
+          ],
+          "risk": {
+            "default_class": "moderate",
+            "failure_modes": [
+              "incorrect fault isolation",
+              "incomplete diagnosis",
+              "unnecessary or ineffective corrective recommendation"
+            ],
+            "consequence_bounds": "The generic Technology definition may influence represented technical diagnostic outcomes only. High-risk live systems require an explicit task definition, appropriate tools/resources, relevant knowledge, and additional safeguards; Technology score alone never authorizes them.",
+            "practice_reliability_boundary": "Simulation or purpose-built practice evidence demonstrates learning/practice, not automatic reliability in consequential live systems."
+          }
+        }
+      ],
+      "proficiency_anchors": {
+        "E": {
+          "summary": "Can follow explicit guided steps on simple familiar technical systems but cannot independently perform meaningful diagnosis.",
+          "independence": "requires close guidance or highly prescriptive procedures",
+          "supported_challenges": ["routine"],
+          "limits": "Novel faults, ambiguous evidence, and consequential live work are outside reliable independent capability."
+        },
+        "D": {
+          "summary": "Can perform simple routine setup, checks, and obvious fault identification with documentation or guidance.",
+          "independence": "limited independence on familiar low-risk tasks",
+          "supported_challenges": ["routine"],
+          "limits": "Multi-factor faults and unfamiliar systems generally require assistance."
+        },
+        "C": {
+          "summary": "Can independently perform standard diagnostics and known procedures on familiar systems under ordinary low-risk conditions.",
+          "independence": "independent for familiar standard procedures",
+          "supported_challenges": ["routine", "standard"],
+          "limits": "Complex unfamiliar cases, substantial uncertainty, and higher-risk contexts require escalation or support."
+        },
+        "B": {
+          "summary": "Can independently diagnose a broad range of known faults, combine multiple evidence sources, and adapt established procedures to moderately complex situations.",
+          "independence": "independent for ordinary and moderately complex known-system work",
+          "supported_challenges": ["routine", "standard", "challenging"],
+          "limits": "Advanced unfamiliar, novel, or consequential systems may require specialist knowledge, additional resources, or supervision."
+        },
+        "A": {
+          "summary": "Can independently diagnose complex but known technical systems, integrate conflicting evidence, and adapt established methods while managing nontrivial uncertainty.",
+          "independence": "high independence within represented known-system scope",
+          "supported_challenges": ["routine", "standard", "challenging", "advanced"],
+          "limits": "Research-grade novelty, unsupported specialist domains, and high-risk live operations remain bounded by task-specific knowledge, resources, safeguards, and demonstrated reliability."
+        },
+        "S": {
+          "summary": "Can consistently isolate subtle or multi-factor faults in advanced known or closely adjacent technical systems, select efficient safe diagnostic strategies, and support others' technical reasoning.",
+          "independence": "expert independence within explicitly represented technical scope",
+          "supported_challenges": ["routine", "standard", "challenging", "advanced"],
+          "limits": "Extreme novelty or high-consequence work is never authorized by proficiency score alone and still requires explicit domain knowledge, resources, safeguards, and contextual reliability evidence."
+        }
+      },
+      "challenge_model": "generic-five-class-v1",
+      "gameplay_effects": [
+        "feasibility",
+        "quality_precision",
+        "time_speed",
+        "error_probability_severity",
+        "information_gained",
+        "partial_failure_recovery"
+      ],
+      "learning_evidence": {
+        "families": ["skill_practice"],
+        "practice_method_ids": ["systems_diagnostic_practice"],
+        "implicit_action_evidence": false,
+        "notes": "Generic use, inspect, research, monitor, object names, or model prose are never Technology learning evidence by implication."
+      },
+      "transfer": [],
+      "retention": {
+        "profile": "mixed_knowledge_procedural",
+        "decay_policy": "deferred",
+        "reacquisition_policy": "deferred"
+      },
+      "grading_scheme": "skill-proficiency-100-v1",
+      "presentation": {
+        "short_description": "Applied proficiency with represented technical systems and diagnostics.",
+        "order": 50,
+        "sensitivity": "normal"
+      },
+      "provenance": {
+        "canonical_design": "docs/SKILL_DEFINITION_CAPABILITY_FRAMEWORK_V1.md",
+        "research_basis": ["O*NET Content Model", "NIST NICE Framework", "ESCO", "SFIA"],
+        "compatibility": {
+          "character_skill_key": "technology",
+          "legacy_profile_fields": ["raps_ia.technological_aptitude"]
+        },
+        "historical_evidence_policy": "Existing Technology score/experience and already-consumed Systems Diagnostic Practice evidence remain authoritative actor state. This definition does not retroactively reinterpret generic historical actions as learning evidence.",
+        "migration_notes": "No actor score, experience, tier, or grade is stored in this universal Skill Definition."
+      }
+    }
+  }
+}
