@@ -14,6 +14,11 @@ from observer_sandbox.represented_skill_tasks import (
 
 TECH_TASK_ID = "technology_known_system_fault_diagnostic_sim_v1"
 TACTICAL_TASK_ID = "tactical_situation_assessment_sim_v1"
+BATCH_TASK_IDS = [
+    "tactical_maneuver_planning_sim_v1",
+    "survival_field_navigation_sim_v1",
+    "survival_field_sustainment_sim_v1",
+]
 
 
 def config_copy():
@@ -26,13 +31,12 @@ def task(config, task_id=TECH_TASK_ID):
 
 def test_canonical_represented_task_registry_validates() -> None:
     source = validate_represented_skill_tasks()
-    assert source["revision"] == "represented-skill-tasks-v1.1"
-    assert list(source["tasks"]) == [TECH_TASK_ID, TACTICAL_TASK_ID]
+    assert source["revision"] == "represented-skill-tasks-v1.2"
+    assert list(source["tasks"]) == [TECH_TASK_ID, TACTICAL_TASK_ID, *BATCH_TASK_IDS]
 
 
 def test_technology_task_is_exact_definition_bound_and_simulation_safe() -> None:
     value = represented_skill_task(TECH_TASK_ID)
-
     assert value["skill_id"] == "technology"
     assert value["application_id"] == "diagnose_known_system_fault"
     assert value["challenge_class"] == "standard"
@@ -50,15 +54,12 @@ def test_technology_task_is_exact_definition_bound_and_simulation_safe() -> None
 
 def test_tactical_task_preserves_no_hard_resource_application_semantics() -> None:
     value = represented_skill_task(TACTICAL_TASK_ID)
-
     assert value["skill_id"] == "tactical_planning"
     assert value["application_id"] == "assess_tactical_situation"
     assert value["challenge_class"] == "standard"
     assert value["task_mode"] == "simulation_safe"
     assert value["risk_class"] == "low"
-    assert value["target_contract"]["definition_id"] == (
-        "represented_task:tactical_situation_assessment_simulator_v1"
-    )
+    assert value["target_contract"]["definition_id"] == "represented_task:tactical_situation_assessment_simulator_v1"
     assert value["resource_contract"] == {
         "required_resource_mode": "none",
         "required_capabilities_any": [],
@@ -67,10 +68,29 @@ def test_tactical_task_preserves_no_hard_resource_application_semantics() -> Non
     assert value["evidence_policy"]["learning_evidence"] is False
 
 
+def test_batch_tasks_are_simulation_safe_and_preserve_application_resource_modes() -> None:
+    maneuver = represented_skill_task(BATCH_TASK_IDS[0])
+    navigation = represented_skill_task(BATCH_TASK_IDS[1])
+    sustainment = represented_skill_task(BATCH_TASK_IDS[2])
+    assert maneuver["skill_id"] == "tactical_planning"
+    assert maneuver["application_id"] == "plan_tactical_maneuver"
+    assert maneuver["resource_contract"]["required_resource_mode"] == "none"
+    assert navigation["skill_id"] == "survival"
+    assert navigation["application_id"] == "navigate_field_environment"
+    assert navigation["resource_contract"]["required_resource_mode"] == "none"
+    assert sustainment["skill_id"] == "survival"
+    assert sustainment["application_id"] == "establish_field_sustainment"
+    assert sustainment["resource_contract"]["required_resource_mode"] == "any"
+    assert sustainment["resource_contract"]["required_capabilities_any"] == ["field_sustainment_materials"]
+    for value in (maneuver, navigation, sustainment):
+        assert value["task_mode"] == "simulation_safe"
+        assert value["risk_class"] == "low"
+        assert value["evidence_policy"]["learning_evidence"] is False
+
+
 def test_task_cannot_reference_unknown_skill_application() -> None:
     source = config_copy()
     task(source)["application_id"] = "imaginary_diagnostic_application"
-
     with pytest.raises(RepresentedSkillTaskValidationError, match="unknown or non-executable"):
         validate_represented_skill_tasks(source)
 
@@ -78,7 +98,6 @@ def test_task_cannot_reference_unknown_skill_application() -> None:
 def test_task_challenge_cannot_escape_application_envelope() -> None:
     source = config_copy()
     task(source)["challenge_class"] = "extreme"
-
     with pytest.raises(RepresentedSkillTaskValidationError, match="does not declare"):
         validate_represented_skill_tasks(source)
 
@@ -86,7 +105,6 @@ def test_task_challenge_cannot_escape_application_envelope() -> None:
 def test_task_cannot_weaken_required_context() -> None:
     source = config_copy()
     task(source)["context_tags"] = ["technical_system_represented"]
-
     with pytest.raises(RepresentedSkillTaskValidationError, match="weakens application requirements"):
         validate_represented_skill_tasks(source)
 
@@ -94,7 +112,6 @@ def test_task_cannot_weaken_required_context() -> None:
 def test_task_required_resource_must_narrow_application_declared_capabilities() -> None:
     source = config_copy()
     task(source)["resource_contract"]["required_capabilities_any"] = ["generic_computer"]
-
     with pytest.raises(RepresentedSkillTaskValidationError, match="must narrow"):
         validate_represented_skill_tasks(source)
 
@@ -102,20 +119,14 @@ def test_task_required_resource_must_narrow_application_declared_capabilities() 
 def test_task_resource_mode_must_preserve_application_mode() -> None:
     source = config_copy()
     task(source, TACTICAL_TASK_ID)["resource_contract"]["required_resource_mode"] = "any"
-    task(source, TACTICAL_TASK_ID)["resource_contract"]["required_capabilities_any"] = [
-        "situational_intelligence"
-    ]
-
+    task(source, TACTICAL_TASK_ID)["resource_contract"]["required_capabilities_any"] = ["situational_intelligence"]
     with pytest.raises(RepresentedSkillTaskValidationError, match="must preserve application mode"):
         validate_represented_skill_tasks(source)
 
 
 def test_none_resource_mode_cannot_publish_a_hidden_hard_resource() -> None:
     source = config_copy()
-    task(source, TACTICAL_TASK_ID)["resource_contract"]["required_capabilities_any"] = [
-        "situational_intelligence"
-    ]
-
+    task(source, TACTICAL_TASK_ID)["resource_contract"]["required_capabilities_any"] = ["situational_intelligence"]
     with pytest.raises(RepresentedSkillTaskValidationError, match="must be empty"):
         validate_represented_skill_tasks(source)
 
@@ -123,7 +134,6 @@ def test_none_resource_mode_cannot_publish_a_hidden_hard_resource() -> None:
 def test_any_resource_mode_must_keep_a_nonempty_required_resource_list() -> None:
     source = config_copy()
     task(source)["resource_contract"]["required_capabilities_any"] = []
-
     with pytest.raises(RepresentedSkillTaskValidationError, match="must not be empty"):
         validate_represented_skill_tasks(source)
 
@@ -131,7 +141,6 @@ def test_any_resource_mode_must_keep_a_nonempty_required_resource_list() -> None
 def test_task_cannot_silently_drop_application_support_contract() -> None:
     source = config_copy()
     task(source)["resource_contract"]["supporting_capabilities"] = []
-
     with pytest.raises(RepresentedSkillTaskValidationError, match="weakens application support contract"):
         validate_represented_skill_tasks(source)
 
@@ -139,7 +148,6 @@ def test_task_cannot_silently_drop_application_support_contract() -> None:
 def test_task_outcomes_must_be_declared_by_skill_application() -> None:
     source = config_copy()
     task(source)["outcome_dimensions"].append("instant_mastery")
-
     with pytest.raises(RepresentedSkillTaskValidationError, match="outside the Skill application contract"):
         validate_represented_skill_tasks(source)
 
@@ -147,7 +155,6 @@ def test_task_outcomes_must_be_declared_by_skill_application() -> None:
 def test_practice_definition_cannot_be_promoted_to_application_target_authority() -> None:
     source = config_copy()
     task(source)["target_contract"]["definition_id"] = "skill_practice:systems_diagnostic_practice"
-
     with pytest.raises(RepresentedSkillTaskValidationError, match="practice targets cannot become application authority"):
         validate_represented_skill_tasks(source)
 
@@ -155,7 +162,6 @@ def test_practice_definition_cannot_be_promoted_to_application_target_authority(
 def test_task_contract_cannot_embed_actor_skill_state() -> None:
     source = config_copy()
     task(source)["score"] = 82.0
-
     with pytest.raises(RepresentedSkillTaskValidationError, match="must not contain actor state"):
         validate_represented_skill_tasks(source)
 
@@ -163,7 +169,6 @@ def test_task_contract_cannot_embed_actor_skill_state() -> None:
 def test_task_definition_cannot_imply_learning_evidence() -> None:
     source = config_copy()
     task(source)["evidence_policy"]["learning_evidence"] = True
-
     with pytest.raises(RepresentedSkillTaskValidationError, match="must not imply learning evidence"):
         validate_represented_skill_tasks(source)
 
@@ -171,6 +176,5 @@ def test_task_definition_cannot_imply_learning_evidence() -> None:
 def test_simulation_safe_task_must_remain_low_risk() -> None:
     source = config_copy()
     task(source)["risk_class"] = "moderate"
-
     with pytest.raises(RepresentedSkillTaskValidationError, match="must be low risk"):
         validate_represented_skill_tasks(source)
