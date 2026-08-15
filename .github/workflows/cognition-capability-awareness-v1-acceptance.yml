@@ -1,0 +1,36 @@
+name: Cognition Capability Awareness v1 Acceptance
+
+on:
+  pull_request:
+    paths:
+      - 'src/observer_sandbox/cognition_capability_awareness.py'
+      - 'src/observer_sandbox/model_decision.py'
+      - 'config/skill_definitions.v1.json'
+      - 'tests/test_cognition_capability_awareness_v1.py'
+      - '.github/workflows/cognition-capability-awareness-v1-acceptance.yml'
+  push:
+    branches: [main]
+    paths:
+      - 'src/observer_sandbox/cognition_capability_awareness.py'
+      - 'src/observer_sandbox/model_decision.py'
+      - 'config/skill_definitions.v1.json'
+      - 'tests/test_cognition_capability_awareness_v1.py'
+      - '.github/workflows/cognition-capability-awareness-v1-acceptance.yml'
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - run: python -m pip install -e '.[dev]'
+      - run: >-
+          pytest -q
+          tests/test_skill_definition_format_v1.py
+          tests/test_skill_application_requirements_v1.py
+          tests/test_skill_capability_resolution_v1.py
+          tests/test_actor_skill_capability_adapter_v1.py
+          tests/test_represented_skill_task_instance_v1.py
+          tests/test_cognition_capability_awareness_v1.py
