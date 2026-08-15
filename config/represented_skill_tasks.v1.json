@@ -1,5 +1,5 @@
 {
-  "revision": "represented-skill-tasks-v1",
+  "revision": "represented-skill-tasks-v1.1",
   "tasks": {
     "technology_known_system_fault_diagnostic_sim_v1": {
       "task_id": "technology_known_system_fault_diagnostic_sim_v1",
@@ -21,6 +21,7 @@
         "diagnostic_evidence_available"
       ],
       "resource_contract": {
+        "required_resource_mode": "any",
         "required_capabilities_any": [
           "diagnostic_interface"
         ],
@@ -43,6 +44,49 @@
       "provenance": {
         "source": "represented-technology-task-contract-v1",
         "notes": "First bounded represented-task exemplar. The target binding is exact definition-id based; names and model prose are never task authority."
+      }
+    },
+    "tactical_situation_assessment_sim_v1": {
+      "task_id": "tactical_situation_assessment_sim_v1",
+      "name": "Tactical Situation Assessment Simulation",
+      "status": "active",
+      "skill_id": "tactical_planning",
+      "application_id": "assess_tactical_situation",
+      "challenge_class": "standard",
+      "task_mode": "simulation_safe",
+      "target_contract": {
+        "entity_type": "object",
+        "definition_id": "represented_task:tactical_situation_assessment_simulator_v1",
+        "required_capabilities_all": [
+          "assess"
+        ]
+      },
+      "context_tags": [
+        "tactical_situation_represented",
+        "decision_objective_defined"
+      ],
+      "resource_contract": {
+        "required_resource_mode": "none",
+        "required_capabilities_any": [],
+        "supporting_capabilities": [
+          "situational_intelligence"
+        ]
+      },
+      "outcome_dimensions": [
+        "feasibility",
+        "quality_precision",
+        "information_gained",
+        "partial_failure_recovery"
+      ],
+      "risk_class": "low",
+      "evidence_policy": {
+        "application_evidence": "deferred_until_action_integration",
+        "learning_evidence": false,
+        "notes": "This represented assessment is application evidence only. Existing Tactical training evidence remains the sole learning/progression authority until an explicit later policy says otherwise."
+      },
+      "provenance": {
+        "source": "represented-tactical-assessment-task-contract-v1",
+        "notes": "Second bounded represented-task exemplar, intentionally separate from Tactical training/practice targets and limited to represented information and a defined objective."
       }
     }
   }
