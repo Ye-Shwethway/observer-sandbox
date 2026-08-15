@@ -1,12 +1,12 @@
 {
-  "revision": "profile-sections-v1",
+  "revision": "profile-sections-v1.1-solo-regulation",
   "sections": [
     {"id":"identity","label":"Identity","icon":"👤","order":10,"renderer":"fields","domains":["identity"],"visibility":"authorized","sensitivities":["normal"]},
     {"id":"appearance","label":"Appearance","icon":"🧬","order":20,"renderer":"fields","domains":["appearance"],"visibility":"authorized","sensitivities":["normal"]},
     {"id":"body","label":"Body","icon":"💪","order":30,"renderer":"fields","domains":["body"],"visibility":"authorized","sensitivities":["normal"]},
     {"id":"attributes","label":"Attributes","icon":"⚡","order":40,"renderer":"grouped_attributes","domains":["raps_pa","raps_ma","raps_ia","social","raps_vc"],"visibility":"authorized","sensitivities":["normal"]},
     {"id":"recovery","label":"Recovery","icon":"🛌","order":50,"renderer":"recovery","runtime_fields":["physiology.fatigue"],"visibility":"authorized","sensitivities":["normal"]},
-    {"id":"sexual","label":"Sexual Anatomy & Physiology","icon":"♂️","order":60,"renderer":"fields","domains":["sexual_anatomy","sexual_state","raps_sa"],"runtime_fields":["sexual_anatomy.erectile_state","sexual_anatomy.erection_firmness","sexual_state.arousal_level"],"visibility":"owner","sensitivities":["private","intimate"]},
+    {"id":"sexual","label":"Sexual Anatomy & Physiology","icon":"♂️","order":60,"renderer":"fields","domains":["sexual_anatomy","sexual_state","raps_sa"],"runtime_fields":["sexual_state.solo_regulation_drive","sexual_anatomy.erectile_state","sexual_anatomy.erection_firmness","sexual_state.arousal_level"],"visibility":"owner","sensitivities":["private","intimate"]},
     {"id":"personality","label":"Personality","icon":"🧠","order":70,"renderer":"fields","domains":["personality"],"visibility":"authorized","sensitivities":["normal"]},
     {"id":"skills","label":"Skills","icon":"🎯","order":80,"renderer":"skills","collection":"skills","visibility":"authorized","sensitivities":["normal"]},
     {"id":"preferences","label":"Preferences & Habits","icon":"❤️","order":90,"renderer":"preferences","collection":"preferences","visibility":"authorized","sensitivities":["normal"]},
