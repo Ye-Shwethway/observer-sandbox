@@ -2,6 +2,7 @@ from __future__ import annotations
 
 from typing import Any
 
+from .profile_change_observer import attach_profile_display_deltas
 from .profile_observer import profile_menu, profile_section
 
 
@@ -39,6 +40,7 @@ def profile_callback_view(
         _, character_id, section_id = parts
         try:
             data = profile_section(conn, character_id, section_id, role=role)
+            data = attach_profile_display_deltas(conn, character_id, data)
         except PermissionError:
             return (
                 "🔒 Creator authority required for this profile section.",
@@ -107,7 +109,8 @@ def _fmt_profile_section(data: dict[str, Any]) -> str:
 
     overall = _fmt_grade(section.get("overall_grade"))
     if overall:
-        lines.extend([f"Overall {overall}", ""])
+        overall_delta = _fmt_delta(section.get("overall_delta"))
+        lines.extend([f"Overall {overall}{f'  {overall_delta}' if overall_delta else ''}", ""])
 
     if renderer == "skills":
         for item in content:
@@ -115,6 +118,9 @@ def _fmt_profile_section(data: dict[str, Any]) -> str:
             grade = _fmt_grade(item.get("grade"))
             if grade:
                 score = f"{score} {grade}"
+            delta = _fmt_delta(item.get("delta"))
+            if delta:
+                score = f"{score}  {delta}"
             category = str(item.get("category") or "").replace("_", " ").title()
             suffix = f" · {category}" if category else ""
             lines.append(f"• {item['label']}   {score}{suffix}")
@@ -128,6 +134,9 @@ def _fmt_profile_section(data: dict[str, Any]) -> str:
         grade = _fmt_grade(item.get("grade"))
         if grade:
             value = f"{value} {grade}"
+        delta = _fmt_delta(item.get("delta"))
+        if delta:
+            value = f"{value}  {delta}"
         lines.append(f"• {label}: {value}")
     return "\n".join(lines)
 
@@ -140,6 +149,36 @@ def _fmt_grade(grade: dict[str, Any] | None) -> str | None:
     return f"({grade['grade']}){suffix}"
 
 
+def _fmt_delta(delta: dict[str, Any] | None) -> str | None:
+    if not isinstance(delta, dict):
+        return None
+    amount = float(delta.get("delta") or 0.0)
+    direction = "▲" if amount > 0 else "▼" if amount < 0 else "•"
+    beneficial = delta.get("beneficial")
+    quality = "🟢" if beneficial is True else "🔴" if beneficial is False else ""
+    unit = str(delta.get("unit") or "")
+    absolute = abs(amount)
+    if unit == "in":
+        value = f'{absolute:.2f}"'
+    elif unit == "lb":
+        value = f"{absolute:.2f} lb"
+    elif unit == "percent":
+        value = f"{absolute:.2f}%"
+    elif unit == "ratio":
+        value = f"{absolute:.3f}"
+    else:
+        value = f"{absolute:.2f}".rstrip("0").rstrip(".")
+    text = f"{quality}{direction} {value}"
+    if delta.get("grade_changed"):
+        old_grade = delta.get("old_grade") or {}
+        new_grade = delta.get("new_grade") or {}
+        old_code = old_grade.get("grade") if isinstance(old_grade, dict) else None
+        new_code = new_grade.get("grade") if isinstance(new_grade, dict) else None
+        if old_code or new_code:
+            text += f" · {old_code or '—'}→{new_code or '—'}"
+    return text
+
+
 def _fmt_attributes(
     lines: list[str],
     content: list[dict[str, Any]],
@@ -147,7 +186,8 @@ def _fmt_attributes(
 ) -> str:
     overall = _fmt_grade(section.get("overall_grade"))
     if overall:
-        lines.extend([f"Overall {overall}", ""])
+        overall_delta = _fmt_delta(section.get("overall_delta"))
+        lines.extend([f"Overall {overall}{f'  {overall_delta}' if overall_delta else ''}", ""])
 
     group_grades = section.get("group_grades") or {}
     last_domain: str | None = None
@@ -164,6 +204,9 @@ def _fmt_attributes(
         grade = _fmt_grade(item.get("grade"))
         if grade:
             value = f"{value} {grade}"
+        delta = _fmt_delta(item.get("delta"))
+        if delta:
+            value = f"{value}  {delta}"
         lines.append(f"• {item['label']}   {value}")
     return "\n".join(lines)
 
@@ -196,10 +239,12 @@ def _fmt_profile_value(item: dict[str, Any]) -> str:
         return "Yes" if value else "No"
     if unit == "ratio" and isinstance(value, (int, float)):
         return f"{float(value):.3f}".rstrip("0").rstrip(".")
+    if field_key.startswith("body.") and unit == "in" and isinstance(value, (int, float)):
+        return f'{float(value):.2f}"'
 
     formatted = _fmt_number(value)
     if unit == "in":
-        return f"{formatted}\""
+        return f'{formatted}"'
     if unit == "lb":
         return f"{formatted} lb"
     if unit == "percent":
