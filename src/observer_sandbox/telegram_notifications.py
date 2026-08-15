@@ -6,6 +6,7 @@ import urllib.error
 from datetime import datetime, timedelta
 from typing import Any
 
+from .action_privacy import action_visible_to_role
 from .simulation import runtime_value, set_runtime_value
 from .telegram_bot import (
     _allowed_user_ids,
@@ -203,7 +204,12 @@ def dispatch_action_completion(
     after: dict[str, Any],
     next_action: dict[str, Any] | None = None,
 ) -> int:
-    """Best-effort proactive push after a committed action completion."""
+    """Best-effort proactive push after a committed action completion.
+
+    Action sensitivity is enforced per recipient. Intimate actions never notify
+    allowed non-owner observers, and an intimate next action is omitted from an
+    otherwise ordinary completion notification for those observers.
+    """
     token = os.environ.get("OBSERVER_TELEGRAM_BOT_TOKEN", "").strip()
     if not token:
         return 0
@@ -230,21 +236,27 @@ def dispatch_action_completion(
 
     actor_id = str(after.get("actor_id") or before.get("actor_id") or "") or None
     actor_name = _entity_name(conn, actor_id)
-    message = format_action_completion(
-        display_action,
-        before,
-        after,
-        actor_name=actor_name,
-        next_action=display_next,
-    )
 
     sent = 0
     for user_id in sorted(recipients):
+        role = "owner" if owner_id is not None and user_id == owner_id else "allowed"
+        if not action_visible_to_role(display_action.get("action"), role):
+            continue
         if not _notifications_enabled(conn, user_id):
             continue
         key = f"{LAST_ACTION_NOTIFY_PREFIX}{user_id}"
         if runtime_value(conn, key, None) == action_id:
             continue
+        recipient_next = display_next
+        if recipient_next is not None and not action_visible_to_role(recipient_next.get("action"), role):
+            recipient_next = None
+        message = format_action_completion(
+            display_action,
+            before,
+            after,
+            actor_name=actor_name,
+            next_action=recipient_next,
+        )
         try:
             _send(token, user_id, message)
         except (urllib.error.URLError, TimeoutError, RuntimeError, OSError, ValueError):
