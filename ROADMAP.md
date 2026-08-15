@@ -16,21 +16,20 @@ Roadmap synchronized: 2026-08-15
 
 ## Current verified deployment
 
-Latest runtime deployment: **Deploy #200 / run `31872355878` SUCCESS**, Skill Application Requirements v1, PR #113 merge `7cfe07dc32764d322942b21748a0d26ebb8a46f7`.
+Latest runtime deployment: **Deploy #201 / run `31872775593` SUCCESS**, Technology Capability Resolution v1, PR #115 merge `2609d4bde93d0a188db4ff398a90792b1cec759d`.
 
 Verified:
-- PR CI #807 / run `31872236989`: SUCCESS;
-- Skill Application Requirements Acceptance #1 / run `31872237030`: SUCCESS;
-- Skill Definition Format Acceptance #3 / run `31872236960`: SUCCESS;
-- Strength Live Cycle #37 / run `31872236988`: SUCCESS;
-- Public Security #67 / run `31872236958`: SUCCESS;
-- post-merge Application Requirements Acceptance #2 / run `31872355880`: SUCCESS;
-- post-merge Skill Definition Format Acceptance #4 / run `31872355871`: SUCCESS;
-- post-merge CI #808 / run `31872355861`: SUCCESS;
-- service healthy, schema v5, autonomy normal 1.0x, Telegram/cognition intact;
+- PR Technology Capability Resolution Acceptance #1 / run `31872730382`: SUCCESS;
+- PR CI #811 / run `31872730342`: SUCCESS;
+- Public Readiness Security Audit #69 / run `31872730326`: SUCCESS;
+- post-merge Technology Capability Resolution Acceptance #2 / run `31872775640`: SUCCESS;
+- post-merge CI #812 / run `31872775683`: SUCCESS;
+- Deploy #201 / run `31872775593`: SUCCESS;
+- service healthy/active, schema v5, autonomy normal 1.0x;
+- Telegram/cognition intact;
 - Technology remained `82.0 / A Advanced`.
 
-No live capability/action behavior changed in PR #113; it adds executable requirement metadata only.
+The deployed resolver is a pure deterministic library. No live action authorization, target mutation, Skill XP/score mutation, or forced production capability event was added in PR #115.
 
 ## Completed Skill foundation
 
@@ -40,7 +39,8 @@ Recent Skill checkpoints:
 - Skill Evidence Semantics v1 / Technology practice — PR #108 / Deploy #198;
 - Skill Definition & Capability Framework research/design — PR #110;
 - Skill Creation Format v1 / Technology definition — PR #111 / Deploy #199;
-- **Skill Application Requirements v1 — PR #113 / Deploy #200**.
+- Skill Application Requirements v1 — PR #113 / Deploy #200;
+- **Technology Capability Resolution v1 — PR #115 / Deploy #201**.
 
 Canonical docs:
 - `docs/SKILL_PROGRESSION_FOUNDATION_V1.md`
@@ -49,6 +49,7 @@ Canonical docs:
 - `docs/SKILL_DEFINITION_CAPABILITY_FRAMEWORK_V1.md`
 - `docs/SKILL_CREATION_FORMAT_V1.md`
 - `docs/SKILL_APPLICATION_REQUIREMENTS_V1.md`
+- `docs/SKILL_CAPABILITY_RESOLUTION_V1.md`
 
 ## Skill authority / ontology
 
@@ -72,7 +73,7 @@ Canonical distinctions remain:
 
 RAPS skill-like fields are not independent mutable Skill truth. Model prose and Telegram do not mutate proficiency.
 
-## Skill Creation Format + executable application requirements
+## Skill Definition + executable application requirements
 
 Every first-class Skill Definition is validator-backed for identity, scope, relations, Knowledge/Ability dependencies, applications, E/D/C/B/A/S behavioral anchors, challenge classes, effects, risk, evidence, transfer, retention hooks, presentation and provenance.
 
@@ -85,13 +86,37 @@ Technology v1.1 executable requirements:
 - supporting resource: `technical_documentation`;
 - Knowledge mode: `declarative_support_only` with the Skill's declared Knowledge keys.
 
-This prevents a future deterministic resolver from parsing prose or hiding equivalent constants. No Knowledge score is invented.
-
-Underlying Technology supporting Attributes remain:
+Underlying Technology supporting Attributes:
 - `raps_ia.problem_solving`
 - `raps_ma.focus`
 
 Legacy `raps_ia.technological_aptitude` remains compatibility provenance only, not a second Technology authority.
+
+## Technology Capability Resolution v1
+
+Pure resolver:
+`src/observer_sandbox/skill_capability.py`
+
+Invariant:
+`Skill Definition + proficiency + current grade anchor + requested challenge + executable context/resources + declared supporting inputs -> supported / constrained / unsupported`
+
+Semantics:
+- `supported`: mandatory gates and supporting resources are satisfied;
+- `constrained`: mandatory gates pass but supporting resource capability is missing;
+- `unsupported`: application challenge, proficiency-anchor challenge, required context, or required-any resource gate fails.
+
+Important boundaries:
+- no scattered numeric `skill >= N` capability thresholds;
+- challenge support comes from the Skill Definition's current E–S anchor;
+- Knowledge is exposed as declarative support and is not numerically assessed;
+- declared Attributes are transparent inputs only in v1 and do not secretly alter status;
+- no random success probability;
+- no second competency score;
+- no action authorization;
+- no learning/XP mutation;
+- no LLM authority.
+
+`diagnose_known_system_fault` does not declare `extreme`; an S Technology score therefore does not make extreme work supported or authorized by itself.
 
 ## Current broad Skill set
 
@@ -107,30 +132,30 @@ Never fabricate child Skill scores from a parent value.
 
 ## Next development sequence
 
-1. **Technology Capability Resolution exemplar — NEXT**;
-2. prove one deterministic assessment for `diagnose_known_system_fault`;
-3. batch remaining current Skill Definitions by the proven format/resolution pattern;
-4. resume missing Field Medicine/Survival/Weapons evidence/progression only after definitions exist;
-5. Skill Retention/Reacquisition;
-6. intellectual attributes, mental/emotion dynamics, broader social/relationship systems as later justified.
+1. **Actor-backed Skill Capability Assessment Adapter v1 — NEXT**;
+2. prove read-only actor-state integration with the pure resolver;
+3. then choose one represented Technology application/action evidence integration if a real task/target contract can supply truthful context/resources;
+4. batch remaining current Skill Definitions by the proven format/resolution pattern;
+5. resume missing Field Medicine/Survival/Weapons evidence/progression only after definitions exist;
+6. Skill Retention/Reacquisition;
+7. intellectual attributes, mental/emotion dynamics, broader social/relationship systems as later justified.
 
-## Technology Capability Resolution exemplar — NEXT
+## Actor-backed Skill Capability Assessment Adapter v1 — NEXT
 
 Minimum invariant:
-`declared Technology application + actor Technology proficiency + machine-readable context/resources + declared supporting Attributes + challenge -> deterministic capability assessment -> bounded outcome dimensions + immutable application evidence when actually applied`
+`actor_id + skill_id + application_id + explicit challenge/context/resources -> authoritative actor Skill/Profile reads -> pure capability resolver -> read-only assessment`
 
-First resolver boundary:
-- one application only: `diagnose_known_system_fault`;
-- definition-driven challenge eligibility from the actor's current E–S capability anchor;
-- required context/resource checks from `requirements`, never prose parsing;
-- Knowledge stays declarative support only; no hidden score/gate;
-- supporting Attributes are exposed as declared inputs but must not alter eligibility through hidden weighting constants—add explicit modifier semantics first if/when needed;
-- assessment class should be small and deterministic, e.g. `supported`, `constrained`, `unsupported`;
-- no random success probability, second competency score, new XP formula, or LLM authority;
-- no high-risk live authorization from Skill score alone;
-- reusable actor/skill/application IDs only.
+Constraints:
+- `character_skills.score` remains proficiency authority;
+- only definition-declared Attribute fields may be read as supporting inputs;
+- adapter must not mutate DB, action state, Skill score/XP, or profile values;
+- assessment remains distinct from action authorization;
+- explicit context/resource capabilities come from caller/task context, not guessed from names or prose;
+- do not emit learning/application evidence merely because an assessment was requested;
+- do not add an autonomous technical action in this slice;
+- generic actor/skill/application IDs only; Darian may be a fixture, never implementation identity.
 
-The assessment can be proven as a pure deterministic layer before adding a new live action/target if that keeps the exemplar bounded.
+Before implementation, audit existing service/read accessor patterns and reuse the smallest appropriate layer rather than embedding a parallel persistence abstraction.
 
 ## Deferred boundaries
 
@@ -138,4 +163,4 @@ Do not add as side effects a full Knowledge Engine, second competency score, gia
 
 ## Exact resume point
 
-**Skill Application Requirements v1 is complete/deployed through PR #113 / Deploy #200. Technology has a validated universal definition plus machine-readable executable requirements. Next: implement one bounded pure deterministic Technology Capability Resolution assessment for `diagnose_known_system_fault`, then decide the minimum safe integration point for actual application evidence.**
+**Technology Capability Resolution v1 is complete/deployed through PR #115 / Deploy #201. The pure resolver is proven and production-safe but is not wired to live actions. Next: one read-only actor-backed Skill Capability Assessment Adapter v1, then decide the minimum truthful represented-task integration before any live Technology application evidence.**
