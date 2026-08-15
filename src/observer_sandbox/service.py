@@ -12,6 +12,7 @@ from .autonomy import autonomy_tick
 from .body_composition_progression import maybe_settle_body_composition
 from .body_measurement_progression import maybe_settle_body_measurements
 from .db import connect
+from .habit_adaptation import settle_habit_adaptation
 from .height_lifecycle import maybe_settle_height_lifecycle
 from .physical_attribute_progression import maybe_settle_physical_attribute_batch
 from .physical_presentation import refresh_physical_presentation
@@ -61,6 +62,26 @@ def main() -> None:
                     if result.get("state") == "completed" and pending_before and before:
                         after = result["after"]
                         profile_before = capture_profile_change_state(conn, actor_id)
+
+                        # Completed represented behavior is the sole evidence source
+                        # for learned habit adaptation. Cognition never writes these
+                        # rows directly. The original action place is the stable cue.
+                        try:
+                            settle_habit_adaptation(
+                                conn,
+                                actor_id,
+                                action_name=str(pending_before["action"]),
+                                location_id=str(pending_before["place_id"]),
+                                target_id=(
+                                    str(pending_before["target"])
+                                    if pending_before.get("target") is not None
+                                    else None
+                                ),
+                                ended_sim_time=str(after["sim_time"]),
+                            )
+                            conn.commit()
+                        except Exception:
+                            conn.rollback()
 
                         for settle in (maybe_settle_strength_progression, maybe_settle_stamina_progression, maybe_settle_agility_progression):
                             try:
