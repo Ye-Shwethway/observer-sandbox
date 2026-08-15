@@ -17,6 +17,7 @@ SOURCE = "represented-skill-runtime-batch-v1"
 SUPPORT_MULTIPLIER = 0.92
 REPO_ROOT = Path(__file__).resolve().parents[2]
 BLADED_TASK_CONFIG_PATH = REPO_ROOT / "config" / "bladed_weapons_simulation_safe_runtime.v1.json"
+FIREARMS_TASK_CONFIG_PATH = REPO_ROOT / "config" / "firearms_simulation_safe_runtime.v1.json"
 
 
 @dataclass(frozen=True)
@@ -89,6 +90,21 @@ TASK_SPECS = (
         room_id="loc_thorne_estate_training_hall",
         capabilities=("inspect", "blade_drill", "usable_bladed_training_weapon"),
         task_config_path=str(BLADED_TASK_CONFIG_PATH),
+        uses_cognitive_performance=False,
+        outcome_dimensions=("quality_precision", "partial_failure_recovery"),
+    ),
+    BatchTaskSpec(
+        action="firearm_drill",
+        label="Firearm Drill",
+        task_id="firearms_safe_handling_sim_v1",
+        skill_id="firearms",
+        application_id="employ_familiar_ranged_weapon",
+        simulator_id="obj_thorne_estate_training_firearms_safe_handling_simulator",
+        simulator_name="Firearms Safe Handling Simulator",
+        simulator_definition_id="represented_task:firearms_safe_handling_simulator_v1",
+        room_id="loc_thorne_estate_training_hall",
+        capabilities=("inspect", "firearm_drill", "usable_firearms_training_weapon"),
+        task_config_path=str(FIREARMS_TASK_CONFIG_PATH),
         uses_cognitive_performance=False,
         outcome_dimensions=("quality_precision", "partial_failure_recovery"),
     ),
@@ -299,9 +315,9 @@ def represented_skill_batch_outcome(
             / 2.0,
         }
     else:
-        # No cognitive/Attribute modifier contract is declared for the first
-        # Bladed Weapons exemplar. Learned Skill remains the sole performance
-        # authority rather than inventing a hidden reflex/focus weighting.
+        # No cognitive/Attribute modifier contract is declared for these bounded
+        # weapon-family simulation exemplars. Learned component Skill remains the
+        # sole performance authority rather than inventing hidden bonuses.
         raw_indices = {dimension: score_factor for dimension in spec.outcome_dimensions}
 
     support_multiplier = SUPPORT_MULTIPLIER if task.status == "constrained" else 1.0

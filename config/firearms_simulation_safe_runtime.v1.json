@@ -1,0 +1,44 @@
+{
+  "revision": "firearms-simulation-safe-runtime-v1",
+  "tasks": {
+    "firearms_safe_handling_sim_v1": {
+      "task_id": "firearms_safe_handling_sim_v1",
+      "name": "Firearms Safe Handling Simulation",
+      "status": "active",
+      "skill_id": "firearms",
+      "application_id": "employ_familiar_ranged_weapon",
+      "task_mode": "simulation_safe",
+      "challenge_class": "standard",
+      "context_tags": [
+        "weapon_employment_context",
+        "represented_ranged_weapon",
+        "simulation_safe_training_context"
+      ],
+      "target_contract": {
+        "entity_type": "object",
+        "definition_id": "represented_task:firearms_safe_handling_simulator_v1",
+        "required_capabilities_all": [
+          "firearm_drill",
+          "usable_firearms_training_weapon"
+        ]
+      },
+      "resource_contract": {
+        "required_resource_mode": "any",
+        "required_capabilities_any": ["usable_firearms_training_weapon"],
+        "supporting_capabilities": []
+      },
+      "outcome_dimensions": [
+        "quality_precision",
+        "partial_failure_recovery"
+      ],
+      "risk_class": "low",
+      "evidence_policy": {
+        "application_evidence": "deferred_until_action_integration",
+        "learning_evidence": false
+      },
+      "provenance": {
+        "source": "Firearms Simulation-Safe Runtime v1"
+      }
+    }
+  }
+}

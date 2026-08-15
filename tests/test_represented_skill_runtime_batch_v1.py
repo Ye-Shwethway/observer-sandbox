@@ -91,6 +91,7 @@ def test_batch_outcomes_use_authoritative_skill_and_only_declared_modifiers(tmp_
         "tactical_planning": 92.0,
         "survival": 85.0,
         "bladed_weapons": 87.0,
+        "firearms": 87.0,
     }
     with connect(db) as conn:
         assessment = assess_batch_action(conn, "char_darian", spec.action, spec.simulator_id)

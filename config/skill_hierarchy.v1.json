@@ -46,7 +46,23 @@
           "category": "combat",
           "description": "Learned proficiency with represented firearm handling and employment. Specific firearm disciplines may be added later only when simulation needs them.",
           "legacy_application_family": ["employ_familiar_ranged_weapon"],
-          "initialization": "inherit_legacy_umbrella_score_as_compatibility_baseline"
+          "initialization": "inherit_legacy_umbrella_score_as_compatibility_baseline",
+          "application_authority": {
+            "employ_familiar_ranged_weapon": {
+              "status": "active",
+              "source_skill_id": "weapons",
+              "requirements_override": {
+                "context_tags_all": ["weapon_employment_context", "represented_ranged_weapon", "simulation_safe_training_context"],
+                "required_resource_mode": "any",
+                "resource_capabilities_any": ["usable_firearms_training_weapon"],
+                "supporting_resource_capabilities": [],
+                "knowledge": {
+                  "mode": "declarative_support_only",
+                  "supporting_keys": ["weapon_safety_and_handling", "ranged_weapon_principles"]
+                }
+              }
+            }
+          }
         }
       },
       "migration_policy": {

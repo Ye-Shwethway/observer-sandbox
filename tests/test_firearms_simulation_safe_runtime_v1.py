@@ -26,8 +26,8 @@ PARENT = "weapon_mastery"
 BLADED = "bladed_weapons"
 FIREARMS = "firearms"
 LEGACY = "weapons"
-ACTION = "blade_drill"
-TASK_CONFIG = Path(__file__).resolve().parents[1] / "config" / "bladed_weapons_simulation_safe_runtime.v1.json"
+ACTION = "firearm_drill"
+TASK_CONFIG = Path(__file__).resolve().parents[1] / "config" / "firearms_simulation_safe_runtime.v1.json"
 
 
 def _move_actor(conn, room_id: str) -> None:
@@ -50,46 +50,46 @@ def _weapon_state(conn) -> dict[str, tuple[float, float | None]]:
     }
 
 
-def test_component_owns_melee_application_and_legacy_projection_no_longer_does() -> None:
+def test_component_owns_ranged_application_and_legacy_projection_no_longer_does() -> None:
     hierarchy = load_skill_hierarchy_config()
-    bladed = hierarchy["hierarchies"][PARENT]["components"][BLADED]
-    authority = bladed["application_authority"]["employ_familiar_melee_weapon"]
+    firearms = hierarchy["hierarchies"][PARENT]["components"][FIREARMS]
+    authority = firearms["application_authority"]["employ_familiar_ranged_weapon"]
     assert authority["status"] == "active"
     assert authority["source_skill_id"] == LEGACY
     assert authority["requirements_override"]["resource_capabilities_any"] == [
-        "usable_bladed_training_weapon"
+        "usable_firearms_training_weapon"
     ]
 
     definition, application = get_executable_skill_application(
-        BLADED,
-        "employ_familiar_melee_weapon",
+        FIREARMS,
+        "employ_familiar_ranged_weapon",
     )
-    assert definition["skill_id"] == BLADED
+    assert definition["skill_id"] == FIREARMS
     assert application["requirements"]["context_tags_all"] == [
         "weapon_employment_context",
-        "represented_melee_weapon",
+        "represented_ranged_weapon",
         "simulation_safe_training_context",
     ]
     assert application["requirements"]["resource_capabilities_any"] == [
-        "usable_bladed_training_weapon"
+        "usable_firearms_training_weapon"
     ]
     with pytest.raises(KeyError, match="authority moved to component Skill"):
-        get_executable_skill_application(LEGACY, "employ_familiar_melee_weapon")
+        get_executable_skill_application(LEGACY, "employ_familiar_ranged_weapon")
 
 
 def test_safe_task_contract_is_exact_low_risk_and_non_learning() -> None:
     source = json.loads(TASK_CONFIG.read_text(encoding="utf-8"))
     validate_represented_skill_tasks(source)
-    task = source["tasks"]["bladed_weapons_safe_handling_sim_v1"]
-    assert task["skill_id"] == BLADED
-    assert task["application_id"] == "employ_familiar_melee_weapon"
+    task = source["tasks"]["firearms_safe_handling_sim_v1"]
+    assert task["skill_id"] == FIREARMS
+    assert task["application_id"] == "employ_familiar_ranged_weapon"
     assert task["task_mode"] == "simulation_safe"
     assert task["risk_class"] == "low"
     assert task["target_contract"]["definition_id"] == (
-        "represented_task:bladed_weapons_safe_handling_simulator_v1"
+        "represented_task:firearms_safe_handling_simulator_v1"
     )
     assert task["resource_contract"]["required_capabilities_any"] == [
-        "usable_bladed_training_weapon"
+        "usable_firearms_training_weapon"
     ]
     assert task["outcome_dimensions"] == [
         "quality_precision",
@@ -98,7 +98,7 @@ def test_safe_task_contract_is_exact_low_risk_and_non_learning() -> None:
     assert task["evidence_policy"]["learning_evidence"] is False
 
 
-def test_initialize_seeds_solo_safe_blade_drill_and_cognition_uses_component_authority(tmp_path) -> None:
+def test_initialize_seeds_solo_safe_firearm_drill_and_cognition_uses_component_authority(tmp_path) -> None:
     db = tmp_path / "observer.sqlite3"
     initialize(db)
     spec = spec_for_action(ACTION)
@@ -123,7 +123,7 @@ def test_initialize_seeds_solo_safe_blade_drill_and_cognition_uses_component_aut
         assert set(json.loads(target["capabilities_json"])) == {
             "inspect",
             ACTION,
-            "usable_bladed_training_weapon",
+            "usable_firearms_training_weapon",
         }
 
         _move_actor(conn, spec.room_id)
@@ -136,16 +136,16 @@ def test_initialize_seeds_solo_safe_blade_drill_and_cognition_uses_component_aut
         by_id = {item["skill_id"]: item for item in awareness["skills"]}
         assert LEGACY not in by_id
         assert by_id[PARENT]["applications"] == []
-        bladed_apps = {
-            item["application_id"]: item for item in by_id[BLADED]["applications"]
+        firearm_apps = {
+            item["application_id"]: item for item in by_id[FIREARMS]["applications"]
         }
-        assert "employ_familiar_melee_weapon" in bladed_apps
-        assert bladed_apps["employ_familiar_melee_weapon"][
+        assert "employ_familiar_ranged_weapon" in firearm_apps
+        assert firearm_apps["employ_familiar_ranged_weapon"][
             "required_resource_capabilities_any"
-        ] == ["usable_bladed_training_weapon"]
+        ] == ["usable_firearms_training_weapon"]
 
 
-def test_blade_drill_uses_bladed_score_and_emits_application_evidence_without_learning(tmp_path) -> None:
+def test_firearm_drill_uses_firearms_score_and_emits_application_evidence_without_learning(tmp_path) -> None:
     db = tmp_path / "observer.sqlite3"
     initialize(db)
     spec = spec_for_action(ACTION)
@@ -155,10 +155,10 @@ def test_blade_drill_uses_bladed_score_and_emits_application_evidence_without_le
         before = _weapon_state(conn)
         assessment = assess_batch_action(conn, ACTOR, ACTION, spec.simulator_id)
         assert assessment.status == "supported"
-        assert assessment.capability.skill_id == BLADED
+        assert assessment.capability.skill_id == FIREARMS
         assert assessment.capability.skill_score == pytest.approx(87.0)
         assert assessment.recognized_resource_capabilities == (
-            "usable_bladed_training_weapon",
+            "usable_firearms_training_weapon",
         )
 
         deterministic = represented_skill_batch_outcome(
@@ -176,7 +176,7 @@ def test_blade_drill_uses_bladed_score_and_emits_application_evidence_without_le
         assert deterministic["world_mutation_policy"] == "simulation_evidence_only"
         assert deterministic["learning_evidence"] is False
 
-        action_id = "bladed-safe-runtime-action"
+        action_id = "firearms-safe-runtime-action"
         apply_action(
             conn,
             Action(ACTION, 20, spec.simulator_id, "bounded safe handling simulation"),
@@ -190,8 +190,8 @@ def test_blade_drill_uses_bladed_score_and_emits_application_evidence_without_le
         assert instance["status"] == "completed"
         outcome = json.loads(instance["outcome_json"])
         evidence = outcome["skill_application"]
-        assert evidence["skill_id"] == BLADED
-        assert evidence["application_id"] == "employ_familiar_melee_weapon"
+        assert evidence["skill_id"] == FIREARMS
+        assert evidence["application_id"] == "employ_familiar_ranged_weapon"
         assert evidence["learning_evidence"] is False
         assert outcome["represented_skill_task"]["world_mutation_policy"] == (
             "simulation_evidence_only"
@@ -231,7 +231,7 @@ def test_blade_drill_uses_bladed_score_and_emits_application_evidence_without_le
         assert _weapon_state(conn) == before
 
 
-def test_blade_drill_fails_closed_on_wrong_target_missing_resource_or_missing_skill(tmp_path) -> None:
+def test_firearm_drill_fails_closed_on_wrong_target_missing_resource_or_missing_skill(tmp_path) -> None:
     db = tmp_path / "observer.sqlite3"
     initialize(db)
     spec = spec_for_action(ACTION)
@@ -239,15 +239,15 @@ def test_blade_drill_fails_closed_on_wrong_target_missing_resource_or_missing_sk
     with connect(db) as conn:
         _move_actor(conn, spec.room_id)
 
-        wrong_definition = "obj_wrong_blade_definition"
+        wrong_definition = "obj_wrong_firearms_definition"
         conn.execute(
             "INSERT INTO entities(id,entity_type,name,capabilities_json,definition_id) VALUES(?,?,?,?,?)",
             (
                 wrong_definition,
                 "object",
-                "Wrong Blade Simulator",
+                "Wrong Firearms Simulator",
                 json.dumps(list(spec.capabilities)),
-                "represented_task:not_the_authorized_blade_simulator",
+                "represented_task:not_the_authorized_firearms_simulator",
             ),
         )
         conn.execute(
@@ -261,20 +261,20 @@ def test_blade_drill_fails_closed_on_wrong_target_missing_resource_or_missing_sk
                 conn,
                 Action(ACTION, 20, wrong_definition, "wrong target"),
                 ACTOR,
-                action_id="wrong-blade-definition",
+                action_id="wrong-firearms-definition",
             )
         assert snapshot(conn, ACTOR) == before
         assert conn.execute(
-            "SELECT 1 FROM action_instances WHERE id='wrong-blade-definition'"
+            "SELECT 1 FROM action_instances WHERE id='wrong-firearms-definition'"
         ).fetchone() is None
 
-        missing_resource = "obj_blade_without_training_resource"
+        missing_resource = "obj_firearms_without_training_resource"
         conn.execute(
             "INSERT INTO entities(id,entity_type,name,capabilities_json,definition_id) VALUES(?,?,?,?,?)",
             (
                 missing_resource,
                 "object",
-                "Blade Simulator Without Training Resource",
+                "Firearms Simulator Without Training Resource",
                 json.dumps(["inspect", ACTION]),
                 spec.simulator_definition_id,
             ),
@@ -284,7 +284,7 @@ def test_blade_drill_fails_closed_on_wrong_target_missing_resource_or_missing_sk
 
         conn.execute(
             "DELETE FROM character_skills WHERE entity_id=? AND skill_key=?",
-            (ACTOR, BLADED),
+            (ACTOR, FIREARMS),
         )
         conn.commit()
         with pytest.raises(Exception, match="no authoritative Skill state"):
