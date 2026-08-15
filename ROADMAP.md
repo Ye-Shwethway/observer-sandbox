@@ -19,20 +19,20 @@ Roadmap synchronized: 2026-08-15
 
 ## Current verified deployment baseline
 
-Latest runtime deployment: **Deploy #194 / run `31865693609` SUCCESS**, Universal Profile Grading Framework v1 + current grading coverage closure, PR #100 merge `2c28dbdd4b32084fd13df97290c7793e63f91d33`.
+Latest runtime deployment: **Deploy #195 / run `31867444633` SUCCESS**, Character Change Observability & Notification Foundation v1, PR #102 merge `bfd57ebec3b897be66ec81774de314d16a63db59`.
 
-Post-merge main **CI #768 / run `31865693605` SUCCESS**.
+Post-merge main **CI #778 / run `31867444621` SUCCESS**.
 
-Deploy readback at `2026-08-15T04:56:53Z` verified:
+Deploy readback at `2026-08-15T05:38:40Z` verified:
 - service healthy/active;
 - schema version 5;
 - autonomy enabled in normal mode at 1.0x;
-- Darian remained in the Master Suite and continued ordinary autonomous state rather than being manipulated for grading evidence;
+- Darian continued ordinary autonomous activity without profile/stat manipulation for notification evidence;
 - Telegram API connected with owner/allowed-user configuration present;
 - Gemini `gemini-3.1-flash-lite` remained the primary cognition binding;
 - Groq `qwen/qwen3.6-27b` remained tested fallback evidence.
 
-Grading validation is read-only. No live production profile/skill/body state was mutated to manufacture evidence.
+No live production profile/stat value was forced or accelerated merely to manufacture a change notification.
 
 ## Completed foundations
 
@@ -62,7 +62,8 @@ Grading validation is read-only. No live production profile/skill/body state was
 - Physical Presentation Closure v1;
 - Telegram Profile Schema-Driven UX;
 - Solo Sexual Regulation v1;
-- **Universal Profile Grading Framework v1 + Profile Grading Coverage v1**.
+- Universal Profile Grading Framework v1 + Profile Grading Coverage v1;
+- **Character Change Observability & Notification Foundation v1**.
 
 ## Universal Item / Eating Program
 
@@ -147,7 +148,8 @@ Relevant completed slices:
 - Physical Presentation Closure — PR #94 / Deploy #191;
 - Telegram Profile Schema-Driven UX — PR #95 / Deploy #192;
 - Solo Sexual Regulation v1 — PR #97 / Deploy #193;
-- Universal Profile Grading Framework v1 — PR #100 / Deploy #194.
+- Universal Profile Grading Framework v1 — PR #100 / Deploy #194;
+- Character Change Observability & Notification Foundation v1 — PR #102 / Deploy #195.
 
 ## Telegram Profile Schema-Driven UX — COMPLETE / DEPLOYED
 
@@ -214,6 +216,46 @@ Final PR #100 tested head `4425c9b2d4bc0f5ee421f37c2031739cc7813f9e`:
 
 The production-copy acceptance proves raw profile and skill persistence remain unchanged while derived Body/Skill grading and Telegram rendering work against copied production state. No model call is needed.
 
+## Character Change Observability & Notification Foundation v1 — COMPLETE / DEPLOYED
+
+Canonical: `docs/CHARACTER_CHANGE_OBSERVABILITY_V1.md`.
+
+Core invariant:
+`authoritative mutation/history -> domain-aware cumulative delta -> significance policy -> grade-transition check -> presentation ledger -> Profile delta UX + eligible aggregated notification`
+
+Key rules:
+- authoritative progression/profile values retain engine precision; the observer owns only derived display/notification state;
+- microscopic changes accumulate rather than disappearing or generating one message per settlement;
+- initial significance defaults are RAPS/Skill `0.10`, body circumference `0.05 in`, Height `0.10 in`, Weight `0.25 lb`, Body Fat `0.10` percentage point and ratios `0.01`;
+- grade transitions are always significant even below numeric thresholds;
+- Profile UX shows `▲`/`▼` direction, with `🟢`/`🔴` only where beneficial/detrimental semantics are justified;
+- descriptive Body size deltas remain direction-only by default;
+- Body measurements render two decimals in the Body section so `0.05 in` changes remain visible without changing other inch-valued profile domains;
+- notification OFF never hides Profile deltas;
+- ordinary push notifications are aggregated and debounced to at most one per recipient/character per 5 real minutes;
+- changes during the debounce remain pending/cumulative; grade transitions bypass the debounce;
+- failed sends do not consume pending significance;
+- profile-less/synthetic actors no-op safely.
+
+Notification gate:
+`global notifications ON AND per-character stat notifications ON AND significant change present`
+
+Controls:
+- `/statnotify` lists active character stat-notification states;
+- `/statnotify <character name or id> on|off` controls one character for the caller;
+- Character detail has `Stat Updates: ON/OFF` toggle;
+- current/default actor defaults ON unless explicitly overridden;
+- other/future characters default OFF to prevent multi-character notification floods;
+- per-character preference changes and explicit global notification toggles reset notification baselines to current state, so OFF -> ON never replays a historical backlog burst.
+
+The generic service observation boundary spans current Attributes/physical progression, BC-2 Body Composition, BC-3 Body Measurements and current Skills query state. Future Skill Progression should mutate its authoritative score and inherit this observability layer rather than adding skill-specific Telegram logic.
+
+PR #102 final tested head `f3694480af22770286607adbb05751e06b29ee5a` passed CI #777 plus current Strength, Stamina, Body Composition, Body Measurement, Height, Physical Presentation, Grading, Sexual Anatomy and Inventory acceptance validators. Intermittent VPS SSH staging resets were retried without weakening validators.
+
+PR #102 merged as `bfd57ebec3b897be66ec81774de314d16a63db59`; Deploy #195 / `31867444633` SUCCESS; post-merge CI #778 / `31867444621` SUCCESS.
+
+Production was not mutated/accelerated to manufacture a stat-change notification occurrence.
+
 ## Solo Sexual Regulation v1 — COMPLETE / DEPLOYED
 
 Canonical: `docs/SOLO_SEXUAL_REGULATION_V1.md`.
@@ -261,7 +303,7 @@ Post-public GitHub settings verification remains opportunistic and non-blocking.
 
 Do not treat Skills as merely renamed RAPS physical attributes.
 
-Existing grading is presentation only. Before progression mutation, reconcile:
+Existing grading and change observability are presentation/notification layers only. Before progression mutation, reconcile:
 - `character_skills` schema/current data and Telegram Skills view;
 - `character_skills.score` as current proficiency authority;
 - accumulated `experience` as learning/practice evidence rather than a duplicate score;
@@ -280,6 +322,8 @@ Proposed invariant:
 Use existing training/action evidence as the shared event source. Skill progression and physiology/body progression may consume the same immutable action evidence independently; they must not call one another as hidden authorities.
 
 Do not invent historical experience on activation. Darian's represented current score is the baseline; future legitimate completed actions create new progression evidence naturally. Do not force live production training merely to prove an occurrence.
+
+Once `character_skills.score` changes legitimately, Profile arrows, cumulative significance, grade transitions and character-scoped notification controls should come from the deployed generic observability layer, not from a skill-specific notification subsystem.
 
 Decay/retention remains a later bounded slice after acquisition/progression semantics are proven.
 
@@ -304,6 +348,6 @@ Do not add as side effects:
 
 Re-read live production and current canonical repository first.
 
-**Universal Profile Grading Framework v1 and current Profile Grading Coverage are complete/deployed through PR #100 / Deploy #194. The next canonical development slice is Skill Progression Foundation v1 using Hand-to-Hand Combat as the bounded exemplar.**
+**Universal Profile Grading and Character Change Observability/Notification are complete/deployed through PR #102 / Deploy #195. The next canonical development slice is Skill Progression Foundation v1 using Hand-to-Hand Combat as the bounded exemplar.**
 
-Start by resolving skill authority (`score` / `experience` / legacy `tier` and duplicated RAPS skill-like fields), then establish skill-specific immutable learning evidence and one minimum-runnable progression invariant before batching other skills.
+Start by resolving skill authority (`score` / `experience` / legacy `tier` and duplicated RAPS skill-like fields), then establish skill-specific immutable learning evidence and one minimum-runnable progression invariant before batching other skills. Reuse the deployed generic profile-change observability layer for all Skill delta/grade/notification presentation.
