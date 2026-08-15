@@ -6,6 +6,11 @@ import uuid
 from typing import Any
 
 from .nutrition_energy import energy_expenditure_evidence, nutrition_intake_evidence
+from .represented_skill_runtime_batch import (
+    BATCH_ACTIONS,
+    represented_skill_batch_application_evidence,
+    represented_skill_batch_outcome,
+)
 from .skill_practice import skill_practice_evidence
 from .tactical_assessment_runtime import (
     ASSESS_ACTION,
@@ -70,6 +75,34 @@ def _enrich_skill_practice(payload: dict[str, Any], event_type: str) -> dict[str
     return enriched
 
 
+def _persist_represented_skill_evidence(
+    conn: sqlite3.Connection,
+    payload: dict[str, Any],
+    *,
+    action_id: str,
+    outcome: dict[str, Any],
+    evidence: dict[str, Any],
+) -> dict[str, Any]:
+    enriched = dict(payload)
+    enriched["represented_skill_task"] = outcome
+    enriched["skill_application"] = evidence
+    row = conn.execute(
+        "SELECT outcome_json FROM action_instances WHERE id=?",
+        (action_id,),
+    ).fetchone()
+    if row is not None:
+        current = json.loads(row["outcome_json"] or "{}")
+        if not isinstance(current, dict):
+            current = {}
+        current["represented_skill_task"] = outcome
+        current["skill_application"] = evidence
+        conn.execute(
+            "UPDATE action_instances SET outcome_json=?,updated_at=CURRENT_TIMESTAMP WHERE id=?",
+            (json.dumps(current, ensure_ascii=False), action_id),
+        )
+    return enriched
+
+
 def _enrich_technology_diagnostic(
     conn: sqlite3.Connection,
     payload: dict[str, Any],
@@ -100,25 +133,13 @@ def _enrich_technology_diagnostic(
             actor_id=actor_id,
             duration_minutes=int(duration),
         )
-        enriched = dict(payload)
-        enriched["represented_skill_task"] = diagnostic
-        enriched["skill_application"] = evidence
-
-        row = conn.execute(
-            "SELECT outcome_json FROM action_instances WHERE id=?",
-            (action_id,),
-        ).fetchone()
-        if row is not None:
-            current = json.loads(row["outcome_json"] or "{}")
-            if not isinstance(current, dict):
-                current = {}
-            current["represented_skill_task"] = diagnostic
-            current["skill_application"] = evidence
-            conn.execute(
-                "UPDATE action_instances SET outcome_json=?,updated_at=CURRENT_TIMESTAMP WHERE id=?",
-                (json.dumps(current, ensure_ascii=False), action_id),
-            )
-        return enriched
+        return _persist_represented_skill_evidence(
+            conn,
+            payload,
+            action_id=action_id,
+            outcome=diagnostic,
+            evidence=evidence,
+        )
     except Exception:
         conn.rollback()
         raise
@@ -146,10 +167,6 @@ def _enrich_tactical_assessment(
         conn.rollback()
         raise ValueError("Completed assess action requires target and duration")
 
-    # V1 deliberately owns the assess action as the represented Tactical
-    # assessment exemplar. Exact target-definition binding is resolved before the
-    # completion transaction commits; a wrong assess-capable object therefore
-    # fails closed instead of completing as generic application evidence.
     try:
         assessment = tactical_assessment_outcome(conn, actor_id, target)
         evidence = tactical_assessment_application_evidence(
@@ -158,25 +175,56 @@ def _enrich_tactical_assessment(
             actor_id=actor_id,
             duration_minutes=int(duration),
         )
-        enriched = dict(payload)
-        enriched["represented_skill_task"] = assessment
-        enriched["skill_application"] = evidence
+        return _persist_represented_skill_evidence(
+            conn,
+            payload,
+            action_id=action_id,
+            outcome=assessment,
+            evidence=evidence,
+        )
+    except Exception:
+        conn.rollback()
+        raise
 
-        row = conn.execute(
-            "SELECT outcome_json FROM action_instances WHERE id=?",
-            (action_id,),
-        ).fetchone()
-        if row is not None:
-            current = json.loads(row["outcome_json"] or "{}")
-            if not isinstance(current, dict):
-                current = {}
-            current["represented_skill_task"] = assessment
-            current["skill_application"] = evidence
-            conn.execute(
-                "UPDATE action_instances SET outcome_json=?,updated_at=CURRENT_TIMESTAMP WHERE id=?",
-                (json.dumps(current, ensure_ascii=False), action_id),
-            )
-        return enriched
+
+def _enrich_represented_skill_batch(
+    conn: sqlite3.Connection,
+    payload: dict[str, Any],
+    event_type: str,
+    *,
+    actor_id: str | None,
+    action_id: str | None,
+) -> dict[str, Any]:
+    action_name = payload.get("action")
+    if (
+        event_type != "action_completed"
+        or action_name not in BATCH_ACTIONS
+        or not actor_id
+        or not action_id
+        or "skill_application" in payload
+    ):
+        return payload
+    target = payload.get("target")
+    duration = payload.get("duration_minutes")
+    if not isinstance(action_name, str) or not isinstance(target, str) or not isinstance(duration, (int, float)):
+        conn.rollback()
+        raise ValueError("Completed represented Skill batch action requires target and duration")
+
+    try:
+        outcome = represented_skill_batch_outcome(conn, actor_id, action_name, target)
+        evidence = represented_skill_batch_application_evidence(
+            outcome,
+            action_id=action_id,
+            actor_id=actor_id,
+            duration_minutes=int(duration),
+        )
+        return _persist_represented_skill_evidence(
+            conn,
+            payload,
+            action_id=action_id,
+            outcome=outcome,
+            evidence=evidence,
+        )
     except Exception:
         conn.rollback()
         raise
@@ -263,6 +311,13 @@ def record_event(
         action_id=action_id,
     )
     event_payload = _enrich_tactical_assessment(
+        conn,
+        event_payload,
+        event_type,
+        actor_id=actor_id,
+        action_id=action_id,
+    )
+    event_payload = _enrich_represented_skill_batch(
         conn,
         event_payload,
         event_type,

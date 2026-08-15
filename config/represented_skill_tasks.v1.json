@@ -1,5 +1,5 @@
 {
-  "revision": "represented-skill-tasks-v1.1",
+  "revision": "represented-skill-tasks-v1.2",
   "tasks": {
     "technology_known_system_fault_diagnostic_sim_v1": {
       "task_id": "technology_known_system_fault_diagnostic_sim_v1",
@@ -87,6 +87,138 @@
       "provenance": {
         "source": "represented-tactical-assessment-task-contract-v1",
         "notes": "Second bounded represented-task exemplar, intentionally separate from Tactical training/practice targets and limited to represented information and a defined objective."
+      }
+    },
+    "tactical_maneuver_planning_sim_v1": {
+      "task_id": "tactical_maneuver_planning_sim_v1",
+      "name": "Tactical Maneuver Planning Simulation",
+      "status": "active",
+      "skill_id": "tactical_planning",
+      "application_id": "plan_tactical_maneuver",
+      "challenge_class": "standard",
+      "task_mode": "simulation_safe",
+      "target_contract": {
+        "entity_type": "object",
+        "definition_id": "represented_task:tactical_maneuver_planning_simulator_v1",
+        "required_capabilities_all": [
+          "plan"
+        ]
+      },
+      "context_tags": [
+        "tactical_situation_represented",
+        "movement_objective_defined"
+      ],
+      "resource_contract": {
+        "required_resource_mode": "none",
+        "required_capabilities_any": [],
+        "supporting_capabilities": [
+          "situational_intelligence",
+          "terrain_or_layout_information"
+        ]
+      },
+      "outcome_dimensions": [
+        "feasibility",
+        "quality_precision",
+        "information_gained",
+        "partial_failure_recovery"
+      ],
+      "risk_class": "low",
+      "evidence_policy": {
+        "application_evidence": "deferred_until_action_integration",
+        "learning_evidence": false,
+        "notes": "Application evidence is immutable and remains distinct from learning/progression evidence."
+      },
+      "provenance": {
+        "source": "represented-skill-runtime-batch-v1",
+        "notes": "Simulation-only maneuver planning. It produces application evidence and never executes movement, combat, resources, or consequences."
+      }
+    },
+    "survival_field_navigation_sim_v1": {
+      "task_id": "survival_field_navigation_sim_v1",
+      "name": "Field Navigation Simulation",
+      "status": "active",
+      "skill_id": "survival",
+      "application_id": "navigate_field_environment",
+      "challenge_class": "standard",
+      "task_mode": "simulation_safe",
+      "target_contract": {
+        "entity_type": "object",
+        "definition_id": "represented_task:survival_field_navigation_simulator_v1",
+        "required_capabilities_all": [
+          "navigate"
+        ]
+      },
+      "context_tags": [
+        "field_environment_represented",
+        "navigation_objective_defined"
+      ],
+      "resource_contract": {
+        "required_resource_mode": "none",
+        "required_capabilities_any": [],
+        "supporting_capabilities": [
+          "navigation_aid"
+        ]
+      },
+      "outcome_dimensions": [
+        "feasibility",
+        "quality_precision",
+        "information_gained",
+        "partial_failure_recovery"
+      ],
+      "risk_class": "low",
+      "evidence_policy": {
+        "application_evidence": "deferred_until_action_integration",
+        "learning_evidence": false,
+        "notes": "Application evidence is immutable and remains distinct from learning/progression evidence."
+      },
+      "provenance": {
+        "source": "represented-skill-runtime-batch-v1",
+        "notes": "Simulation-only field navigation. It does not move the actor through the world or establish high-risk field reliability."
+      }
+    },
+    "survival_field_sustainment_sim_v1": {
+      "task_id": "survival_field_sustainment_sim_v1",
+      "name": "Field Sustainment Simulation",
+      "status": "active",
+      "skill_id": "survival",
+      "application_id": "establish_field_sustainment",
+      "challenge_class": "standard",
+      "task_mode": "simulation_safe",
+      "target_contract": {
+        "entity_type": "object",
+        "definition_id": "represented_task:survival_field_sustainment_simulator_v1",
+        "required_capabilities_all": [
+          "sustain"
+        ]
+      },
+      "context_tags": [
+        "field_environment_represented",
+        "sustainment_need_defined"
+      ],
+      "resource_contract": {
+        "required_resource_mode": "any",
+        "required_capabilities_any": [
+          "field_sustainment_materials"
+        ],
+        "supporting_capabilities": [
+          "field_toolkit"
+        ]
+      },
+      "outcome_dimensions": [
+        "feasibility",
+        "quality_precision",
+        "information_gained",
+        "partial_failure_recovery"
+      ],
+      "risk_class": "low",
+      "evidence_policy": {
+        "application_evidence": "deferred_until_action_integration",
+        "learning_evidence": false,
+        "notes": "Application evidence is immutable and remains distinct from learning/progression evidence."
+      },
+      "provenance": {
+        "source": "represented-skill-runtime-batch-v1",
+        "notes": "Simulation-only sustainment exercise. Represented materials are task resources only; no inventory or shelter state is consumed or mutated."
       }
     }
   }
