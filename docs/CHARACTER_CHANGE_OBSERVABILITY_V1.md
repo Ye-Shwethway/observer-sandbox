@@ -1,6 +1,6 @@
 # Character Change Observability & Notification Foundation v1
 
-Status: IMPLEMENTED CANDIDATE / VALIDATION PENDING
+Status: COMPLETE / DEPLOYED
 
 ## Purpose
 
@@ -35,7 +35,7 @@ The generic observer therefore covers current:
 
 Individual progression engines do not call Telegram and are not modified to own presentation state. Future Skill Progression can inherit the same observation boundary by changing authoritative `character_skills.score` before the after-snapshot.
 
-Sexual anatomy/current sexual state, personality, preferences/habits and recovery-status surfaces are not part of this v1 progression-change observer merely because they may contain numeric values.
+Actors without a represented Character Profile no-op safely. Sexual anatomy/current sexual state, personality, preferences/habits and recovery-status surfaces are not part of this v1 progression-change observer merely because they may contain numeric values.
 
 ## Cumulative significance / anti-spam
 
@@ -57,6 +57,12 @@ A grade transition is always meaningful even when raw numeric movement is below 
 Example:
 `Strength 89.98 (A) -> 90.01 (S)` is surfaced immediately despite only `+0.03` raw movement.
 
+### Push debounce
+
+Ordinary stat-change pushes are additionally limited to one message per recipient/character per **5 real minutes**. Meaningful changes that occur inside that cooldown remain pending and continue accumulating from the last successfully notified baseline.
+
+Grade transitions are rare/high-signal events and bypass the ordinary debounce. A failed Telegram send does not consume the pending baseline.
+
 ## Profile UX
 
 Meaningful recent deltas are attached by the query/presentation layer and shown independently of notification preferences.
@@ -67,13 +73,13 @@ Direction and quality are separate concepts:
 - `🔴` = detrimental where such semantics exist;
 - descriptive Body measurements are direction-only by default rather than assuming larger/smaller is universally better.
 
-Slow-changing Body measurements render to two decimal places in the Body section so changes such as `+0.05 in` remain visible. This precision change does not alter other inch-valued profile domains such as sexual anatomy.
+Slow-changing Body measurements render to two decimal places in the Body section so changes such as `+0.05 in` remain visible. This precision change is scoped to `body.*` measurement fields and does not alter other inch-valued profile domains such as sexual anatomy.
 
 Notification OFF never suppresses Profile deltas.
 
 ## Aggregated proactive notification
 
-A recipient receives at most one `CHARACTER PROGRESSION` message for one actor at one action/progression boundary. Multiple significant field changes are batched into that message.
+A recipient receives at most one `CHARACTER PROGRESSION` message for one actor at one eligible progression boundary. Multiple significant field changes are batched into that message.
 
 Notification baseline advances only after a successful send. Failed delivery does not consume the pending meaningful change.
 
@@ -112,8 +118,31 @@ This layer does not widen profile visibility. It observes only the explicitly tr
 
 Telegram does not become progression authority. Runtime-state ledgers are derived UX/preference state and may be rebuilt/reset without changing canonical profile values or progression history.
 
+## Verification / release evidence
+
+Runtime PR #102 final tested head: `f3694480af22770286607adbb05751e06b29ee5a`.
+
+Validated on the candidate through:
+- CI #777 / run `31867315561` SUCCESS;
+- Sexual Anatomy Physiology Lifecycle v1 Acceptance #23 SUCCESS;
+- Stamina Progression Activation v1 Acceptance #42 SUCCESS;
+- Height Lifecycle v1 Acceptance #14 SUCCESS;
+- Physical Presentation Closure v1 Acceptance #10 SUCCESS;
+- Body Composition Progression v1 Acceptance #31 SUCCESS;
+- Body Measurement Progression v1 Acceptance #27 SUCCESS;
+- Attribute Grading Batch 1 Acceptance #36 SUCCESS;
+- Read-Only Grading Proof Acceptance #37 SUCCESS;
+- Strength Progression Auto Activation v1 Acceptance #41 SUCCESS after an infra-only VPS staging retry;
+- Inventory Operations v1 Acceptance #37 SUCCESS after an infra-only VPS staging retry.
+
+PR #102 merged as `bfd57ebec3b897be66ec81774de314d16a63db59`.
+
+Deploy #195 / run `31867444633` SUCCESS. Readback verified service healthy/active, schema version 5, autonomy enabled in normal mode at 1.0x, Telegram API connected, Gemini `gemini-3.1-flash-lite` primary cognition preserved and the tested Groq fallback preserved. Production progression/profile state was not forced or accelerated to manufacture notification evidence.
+
+Post-merge CI #778 / run `31867444621` SUCCESS.
+
 ## Development sequencing
 
-This foundation intentionally precedes Skill Progression Foundation v1.
+This foundation intentionally precedes Skill Progression Foundation v1 and is now complete/deployed.
 
-Once validated/deployed, the next planned family returns to Skill Progression using Hand-to-Hand Combat as the bounded exemplar. New legitimate skill-score changes should then inherit Profile arrows, cumulative significance, grade-transition visibility and character-scoped notification controls without a skill-specific Telegram subsystem.
+The next planned family returns to Skill Progression using Hand-to-Hand Combat as the bounded exemplar. New legitimate skill-score changes should inherit Profile arrows, cumulative significance, grade-transition visibility, debounce and character-scoped notification controls without a skill-specific Telegram subsystem.

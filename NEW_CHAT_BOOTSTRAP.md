@@ -23,20 +23,20 @@ Use production-copy validation for concrete stateful/migration risk. Never accel
 
 ## Current verified deployment checkpoint
 
-Latest runtime deployment: **Deploy #194 / run `31865693609` SUCCESS**, Universal Profile Grading Framework v1 + current Profile Grading Coverage, PR #100 merge `2c28dbdd4b32084fd13df97290c7793e63f91d33`.
+Latest runtime deployment: **Deploy #195 / run `31867444633` SUCCESS**, Character Change Observability & Notification Foundation v1, PR #102 merge `bfd57ebec3b897be66ec81774de314d16a63db59`.
 
-Post-merge main **CI #768 / run `31865693605` SUCCESS**.
+Post-merge main **CI #778 / run `31867444621` SUCCESS**.
 
-Deploy readback at `2026-08-15T04:56:53Z` verified:
+Deploy readback at `2026-08-15T05:38:40Z` verified:
 - service healthy/active;
 - schema version 5;
 - autonomy enabled, normal mode, 1.0x;
-- Darian remained in ordinary autonomous state in the Master Suite; production was not manipulated for grading evidence;
+- Darian continued ordinary autonomous activity; production profile/stat values were not manipulated for notification evidence;
 - Telegram API connected, owner/allowed-user configuration present;
 - Gemini `gemini-3.1-flash-lite` remains primary cognition;
 - Groq `qwen/qwen3.6-27b` remains tested fallback evidence.
 
-Grading is read-only interpretation; no production profile/skill/body mutation was used to prove it.
+Do not force or accelerate profile/stat progression merely to demonstrate the new notification channel. Natural future progression may supply live occurrence evidence.
 
 ## Universal invariants
 
@@ -63,6 +63,9 @@ Profile presentation:
 Profile grading:
 `authoritative current value(s) + explicit named grading scheme + scheme-specific context -> derived grade metadata -> generic consumers`
 
+Profile change observability:
+`authoritative mutation/history -> domain-aware cumulative delta -> significance policy -> grade-transition check -> presentation ledger -> Profile delta UX + eligible aggregated notification`
+
 Solo sexual regulation v1:
 `adult actor + authored libido + release recency + recovery state + authorized private/alone context -> bounded drive -> cognition may propose self_satisfaction -> deterministic validation -> temporary sexual physiology + immutable action evidence -> rolling 7-day count`
 
@@ -86,7 +89,8 @@ Physical/profile/runtime foundations include:
 - Physical Presentation Closure — PR #94 / Deploy #191;
 - Telegram Profile Schema-Driven UX — PR #95 / Deploy #192;
 - Solo Sexual Regulation v1 — PR #97 / Deploy #193;
-- **Universal Profile Grading Framework v1 + Profile Grading Coverage — PR #100 / Deploy #194**.
+- Universal Profile Grading Framework v1 + Profile Grading Coverage — PR #100 / Deploy #194;
+- **Character Change Observability & Notification Foundation v1 — PR #102 / Deploy #195**.
 
 Body authority remains:
 - Weight/BF/FM/FFM — BC-2;
@@ -95,7 +99,8 @@ Body authority remains:
 - structural male sexual anatomy — Sexual Anatomy Lifecycle;
 - long-term erectile baseline — Sexual Physiology/canonical male profile contract;
 - current sexual state — context-driven runtime physiology;
-- grades — derived query-layer interpretation only, never body/progression authority.
+- grades — derived query-layer interpretation only, never body/progression authority;
+- profile-change ledgers/notification baselines — derived UX/preference state only, never progression authority.
 
 ## Universal Profile Grading Framework v1 — COMPLETE / DEPLOYED
 
@@ -149,7 +154,62 @@ PR #100 final tested head `4425c9b2d4bc0f5ee421f37c2031739cc7813f9e`:
 - Deploy #194 / `31865693609` SUCCESS;
 - main CI #768 / `31865693605` SUCCESS.
 
-The production-copy acceptance proved current Attributes, derived Body grading, separate Skills grading, Telegram rendering, zero model calls, and unchanged persisted profile/skill state.
+## Character Change Observability & Notification Foundation v1 — COMPLETE / DEPLOYED
+
+Canonical: `docs/CHARACTER_CHANGE_OBSERVABILITY_V1.md`.
+
+The generic service observation boundary snapshots tracked profile state before and after the existing post-action progression settlement family. Current Attributes/physical progression, BC-2 Body Composition, BC-3 Body Measurements and current Skills query state therefore share one observability layer without individual engines calling Telegram.
+
+Precision separation is mandatory:
+`engine precision != Profile display precision != notification significance threshold`.
+
+Initial significance defaults:
+- RAPS / Skills: `0.10` points cumulative;
+- Body circumferences: `0.05 in` cumulative;
+- Height: `0.10 in`;
+- Weight: `0.25 lb`;
+- Body Fat: `0.10` percentage point;
+- derived ratios: `0.01`;
+- section overall: grade-transition only.
+
+Microscopic changes below threshold accumulate against the relevant surfaced/notified baseline. A grade transition is immediately meaningful even below the normal numeric threshold.
+
+Profile UX:
+- `▲` / `▼` shows numeric direction;
+- `🟢` / `🔴` is used only when beneficial/detrimental semantics are justified;
+- descriptive Body dimensions are direction-only by default;
+- Body measurements use two-decimal display precision so changes such as `0.05 in` are visible;
+- this precision is scoped to `body.*` and does not alter sexual-anatomy inch rendering;
+- notification OFF does not hide Profile deltas.
+
+Proactive push anti-spam:
+- one aggregated `CHARACTER PROGRESSION` message may contain multiple simultaneous meaningful changes;
+- ordinary stat-change pushes are debounced to at most one per recipient/character per **5 real minutes**;
+- meaningful changes during cooldown remain pending/cumulative;
+- grade transitions bypass the ordinary debounce;
+- failed sends do not consume the pending notification baseline.
+
+Notification gate:
+`global notifications ON AND per-character stat notifications ON AND significant change present`.
+
+Controls:
+- `/statnotify` — list active character states;
+- `/statnotify <character name or id> on|off` — caller-scoped character preference;
+- Character detail — `Stat Updates: ON/OFF` inline toggle;
+- current/default actor defaults ON unless explicitly overridden;
+- other/future characters default OFF;
+- per-character toggles and explicit global `/notify` toggles reset stat baselines to current state, preventing OFF -> ON backlog bursts.
+
+Actors without a represented Character Profile no-op safely. Sexual/current sexual state, personality, preferences/habits and recovery status are outside this v1 progression-change observer.
+
+PR #102 final tested head `f3694480af22770286607adbb05751e06b29ee5a`:
+- CI #777 / `31867315561` SUCCESS;
+- current Strength, Stamina, Body Composition, Body Measurement, Height, Physical Presentation, Grading, Sexual Anatomy and Inventory acceptance validators SUCCESS after infra-only VPS staging retries where needed;
+- merge `bfd57ebec3b897be66ec81774de314d16a63db59`;
+- Deploy #195 / `31867444633` SUCCESS;
+- main CI #778 / `31867444621` SUCCESS.
+
+Production profile/stat values were not forced to manufacture a stat-change notification occurrence.
 
 ## Solo Sexual Regulation v1 — COMPLETE / DEPLOYED
 
@@ -193,10 +253,12 @@ Reuse existing immutable action/training evidence. Physiology/body progression a
 
 Do not invent historical XP on activation. Darian's represented current score is the baseline. Do not force live production training merely to produce acceptance evidence. Skill decay/retention remains a later bounded slice.
 
+When Skill Progression legitimately changes `character_skills.score`, reuse the deployed generic change observability layer for Profile arrows, cumulative significance, grade transitions and character-scoped notifications. Do not add a skill-specific Telegram notification subsystem.
+
 ## Exact resume point
 
 First re-read current live production and canonical repository.
 
-**Universal Profile Grading Framework v1 and current Profile Grading Coverage are complete/deployed through PR #100 / Deploy #194. The next canonical development slice is Skill Progression Foundation v1 — Hand-to-Hand Combat exemplar.**
+**Universal Profile Grading and Character Change Observability/Notification are complete/deployed through PR #102 / Deploy #195. The next canonical development slice is Skill Progression Foundation v1 — Hand-to-Hand Combat exemplar.**
 
 Do not add economy/currency, careers/jobs/quests/salary, automatic restocking, deep crafting, Character Memory, broad Mind/Behavior, partnered sexual behavior, detailed endocrine simulation, a second production character, or Tahoe exterior traversal as side effects.
