@@ -63,7 +63,7 @@ def test_legacy_skill_like_raps_fields_are_compatibility_only_not_dependencies()
         assert set(definition["provenance"]["compatibility"]["legacy_profile_fields"]) <= LEGACY_SKILL_LIKE_FIELDS
 
 
-def test_existing_progression_is_preserved_without_fake_activation() -> None:
+def test_existing_progression_is_preserved_and_field_medicine_closure_is_explicit() -> None:
     definitions = load_validated_skill_definitions()["skills"]
     progression = load_skill_progression_config()["skills"]
 
@@ -72,6 +72,7 @@ def test_existing_progression_is_preserved_without_fake_activation() -> None:
     assert definitions["technology"]["learning_evidence"]["families"] == ["skill_practice"]
     assert set(progression) == {
         "bladed_weapons",
+        "field_medicine",
         "firearms",
         "hand_to_hand_combat",
         "survival",
@@ -79,10 +80,9 @@ def test_existing_progression_is_preserved_without_fake_activation() -> None:
         "technology",
     }
 
-    # Survival and both learned Weapon Mastery components have explicit,
-    # simulation-safe practice producers. The historical umbrella definition
-    # remains compatibility semantics only; ordinary weapon application is not
-    # progression authority.
+    # Simulation-safe practice producers are explicit progression authority.
+    # Historical umbrella/definition metadata is not reinterpreted as implicit
+    # learning evidence and ordinary application still does not grant XP.
     assert definitions["survival"]["learning_evidence"]["families"] == ["supervised_application"]
     assert progression["bladed_weapons"]["eligible_methods"] == {
         "bladed_weapons_handling_practice": 1.0
@@ -90,10 +90,12 @@ def test_existing_progression_is_preserved_without_fake_activation() -> None:
     assert progression["firearms"]["eligible_methods"] == {
         "firearms_handling_practice": 1.0
     }
+    assert progression["field_medicine"]["eligible_methods"] == {
+        "field_medicine_scenario_practice": 1.0
+    }
 
-    for skill_id in ("weapons", "field_medicine"):
-        assert definitions[skill_id]["learning_evidence"]["families"] == ["supervised_application"]
-        assert skill_id not in progression
+    assert definitions["weapons"]["learning_evidence"]["families"] == ["supervised_application"]
+    assert "weapons" not in progression
 
 
 def test_no_resource_h2h_application_can_be_supported() -> None:

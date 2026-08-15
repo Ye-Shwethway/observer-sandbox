@@ -20,7 +20,7 @@ LEGACY = "weapons"
 TRAINING_HALL = "loc_thorne_estate_training_hall"
 PRACTICE_TARGET = "obj_thorne_estate_training_firearms_practice_simulator"
 PRACTICE_METHOD = "firearms_handling_practice"
-PROGRESSION_REVISION = "skill-progression-structured-evidence-v1.3-firearms"
+PROGRESSION_REVISION = "skill-progression-structured-evidence-v1.4-field-medicine"
 
 
 def _skill(conn, key: str):

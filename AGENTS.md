@@ -31,6 +31,20 @@ Follow `docs/PRODUCTION_VALIDATION_AND_RELEASE_PROTOCOL.md`.
 - Prefer small reversible changes and Git revert/rollback over defensive process layers.
 - A new gate must have a concrete reliability benefit worth its maintenance/retry cost.
 
+## Vertical completeness policy
+
+Follow `docs/MINIMUM_PROFILE_UNLOCK_POLICY_V1.md`.
+
+Current strategic priority is **vertical completeness before local depth**:
+
+`minimum unlock all profile sections -> verify overall workflow -> deepen highest-value gaps`
+
+- A minimum-unlocked profile section needs authoritative state, meaningful runtime influence, and persistence/presentation where relevant.
+- Do not require exhaustive mechanics, deep taxonomies, or one bespoke subsystem per field during the minimum pass.
+- Once a structural invariant is proven, batch equivalent fields/Skills/sections rather than creating repetitive PR/deploy cycles.
+- Compatibility or skill-like fields are not automatically independent Skills or engines.
+- Deferred depth is acceptable when explicitly classified; fake completeness is not.
+
 ## Continuity
 
 Update `NEW_CHAT_BOOTSTRAP.md` after material repository or verified runtime changes. Distinguish committed, tested, merged, deployed, and live-verified states.
