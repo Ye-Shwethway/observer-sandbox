@@ -96,9 +96,21 @@ Production readback after Deploy #203 verified:
 - Technology remained `82.0 / A Advanced`;
 - no represented task entity/action was introduced, so live behavior remained intentionally unchanged.
 
-## Next minimum-runnable slice
+## Sequencing adjustment after Skill audit
 
-**Represented Skill Task Instance Resolver v1 — read-only.**
+The represented-task contract is proven, but broad runtime integration is intentionally paused for one semantic batch.
+
+Technology is currently the only actor Skill with the full validator-backed universal Skill Definition/application contract. H2H and Tactical Planning already have legitimate progression paths but not full definitions, while Weapons, Survival and Field Medicine remain actor Skill state without equivalent gameplay-grade semantic definitions.
+
+Therefore the next canonical slice is **Skill Definition Refactor Batch v1**, not action integration.
+
+The batch will define H2H, Weapons, Survival, Tactical Planning and Field Medicine using the Technology-proven format. Initial gameplay granularity will be expressed as bounded application families under each existing umbrella Skill score. Existing parent scores must remain authoritative; no child scores may be fabricated from them.
+
+A true scored subskill may be promoted later only when independently distinguishable learning evidence, progression/retention ownership, and parent/child aggregation/migration semantics exist.
+
+## Deferred next runtime seam
+
+After the Skill Definition Refactor Batch, implement **Represented Skill Task Instance Resolver v1 — read-only.**
 
 Minimum invariant:
 `actor + task_id + target_entity_id + explicit available resource capabilities -> validate target entity exact type/definition/capabilities -> derive challenge/context from represented task -> actor-backed Skill capability assessment -> read-only represented-task assessment`
