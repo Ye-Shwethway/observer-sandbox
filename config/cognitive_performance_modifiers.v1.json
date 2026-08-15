@@ -1,5 +1,5 @@
 {
-  "revision": "cognitive-performance-modifiers-v1.1",
+  "revision": "cognitive-performance-modifiers-v1.2",
   "normalization_profiles": {
     "raps_100_centered_v1": {
       "kind": "centered_linear",
@@ -109,6 +109,138 @@
         "Tactical Planning Skill proficiency remains the learned-capability authority; these factors only shape bounded assessment quality after feasibility is established.",
         "IQ is general reasoning context only and cannot create Tactical Planning proficiency, hidden tactical Knowledge, represented information, or command authority.",
         "Legacy raps_ia.tactical_thinking is intentionally excluded so the canonical Tactical Planning Skill is not double-counted as a second proficiency authority."
+      ]
+    },
+    "tactical_planning.plan_tactical_maneuver": {
+      "contract_id": "tactical_maneuver_planning_cognitive_performance_v1",
+      "skill_id": "tactical_planning",
+      "application_id": "plan_tactical_maneuver",
+      "status": "active",
+      "feasibility_policy": "never_modify",
+      "missing_input_policy": "neutral_zero_no_renormalization",
+      "knowledge_policy": "do_not_infer_or_create_knowledge",
+      "dimensions": {
+        "reasoning_quality": {
+          "base_multiplier": 1.0,
+          "max_abs_effect": 0.12,
+          "outcome_effects": ["information_gained", "partial_failure_recovery"],
+          "factors": [
+            {"field_key": "raps_ia.problem_solving", "normalization": "raps_100_centered_v1", "weight": 0.45},
+            {"field_key": "raps_ia.iq", "normalization": "iq_reasoning_context_v1", "weight": 0.25},
+            {"field_key": "raps_ma.focus", "normalization": "raps_100_centered_v1", "weight": 0.30}
+          ]
+        },
+        "precision": {
+          "base_multiplier": 1.0,
+          "max_abs_effect": 0.10,
+          "outcome_effects": ["quality_precision", "error_probability_severity"],
+          "factors": [
+            {"field_key": "raps_ma.focus", "normalization": "raps_100_centered_v1", "weight": 0.45},
+            {"field_key": "raps_ia.problem_solving", "normalization": "raps_100_centered_v1", "weight": 0.40},
+            {"field_key": "raps_ia.iq", "normalization": "iq_reasoning_context_v1", "weight": 0.15}
+          ]
+        },
+        "adaptation": {
+          "base_multiplier": 1.0,
+          "max_abs_effect": 0.10,
+          "outcome_effects": ["partial_failure_recovery", "time_speed"],
+          "factors": [
+            {"field_key": "raps_ma.adaptability", "normalization": "raps_100_centered_v1", "weight": 0.55},
+            {"field_key": "raps_ia.problem_solving", "normalization": "raps_100_centered_v1", "weight": 0.30},
+            {"field_key": "raps_ia.iq", "normalization": "iq_reasoning_context_v1", "weight": 0.15}
+          ]
+        }
+      },
+      "notes": [
+        "Tactical Planning Skill remains learned-capability authority; this contract only shapes bounded simulation planning quality after feasibility.",
+        "IQ never creates Tactical Planning Skill, hidden information, execution authority, movement, combat outcomes, or resources.",
+        "Legacy raps_ia.tactical_thinking is excluded to avoid double-counting learned proficiency."
+      ]
+    },
+    "survival.navigate_field_environment": {
+      "contract_id": "survival_field_navigation_performance_v1",
+      "skill_id": "survival",
+      "application_id": "navigate_field_environment",
+      "status": "active",
+      "feasibility_policy": "never_modify",
+      "missing_input_policy": "neutral_zero_no_renormalization",
+      "knowledge_policy": "do_not_infer_or_create_knowledge",
+      "dimensions": {
+        "reasoning_quality": {
+          "base_multiplier": 1.0,
+          "max_abs_effect": 0.10,
+          "outcome_effects": ["information_gained", "partial_failure_recovery"],
+          "factors": [
+            {"field_key": "raps_ia.problem_solving", "normalization": "raps_100_centered_v1", "weight": 0.45},
+            {"field_key": "raps_ma.adaptability", "normalization": "raps_100_centered_v1", "weight": 0.55}
+          ]
+        },
+        "precision": {
+          "base_multiplier": 1.0,
+          "max_abs_effect": 0.08,
+          "outcome_effects": ["quality_precision", "error_probability_severity"],
+          "factors": [
+            {"field_key": "raps_ia.problem_solving", "normalization": "raps_100_centered_v1", "weight": 0.50},
+            {"field_key": "raps_ma.adaptability", "normalization": "raps_100_centered_v1", "weight": 0.50}
+          ]
+        },
+        "adaptation": {
+          "base_multiplier": 1.0,
+          "max_abs_effect": 0.10,
+          "outcome_effects": ["partial_failure_recovery", "time_speed"],
+          "factors": [
+            {"field_key": "raps_ma.adaptability", "normalization": "raps_100_centered_v1", "weight": 0.65},
+            {"field_key": "raps_ia.problem_solving", "normalization": "raps_100_centered_v1", "weight": 0.35}
+          ]
+        }
+      },
+      "notes": [
+        "Survival Skill remains learned-capability authority; supporting Attributes only shape bounded simulation performance after feasibility.",
+        "This contract intentionally does not use IQ because the canonical Survival definition names task-relevant Adaptability and Problem Solving; no general reasoning factor is implied.",
+        "Legacy raps_pa.survival_skill is excluded so compatibility provenance cannot become a second Skill authority."
+      ]
+    },
+    "survival.establish_field_sustainment": {
+      "contract_id": "survival_field_sustainment_performance_v1",
+      "skill_id": "survival",
+      "application_id": "establish_field_sustainment",
+      "status": "active",
+      "feasibility_policy": "never_modify",
+      "missing_input_policy": "neutral_zero_no_renormalization",
+      "knowledge_policy": "do_not_infer_or_create_knowledge",
+      "dimensions": {
+        "reasoning_quality": {
+          "base_multiplier": 1.0,
+          "max_abs_effect": 0.10,
+          "outcome_effects": ["information_gained", "partial_failure_recovery"],
+          "factors": [
+            {"field_key": "raps_ia.problem_solving", "normalization": "raps_100_centered_v1", "weight": 0.45},
+            {"field_key": "raps_ma.adaptability", "normalization": "raps_100_centered_v1", "weight": 0.55}
+          ]
+        },
+        "precision": {
+          "base_multiplier": 1.0,
+          "max_abs_effect": 0.08,
+          "outcome_effects": ["quality_precision", "error_probability_severity"],
+          "factors": [
+            {"field_key": "raps_ia.problem_solving", "normalization": "raps_100_centered_v1", "weight": 0.50},
+            {"field_key": "raps_ma.adaptability", "normalization": "raps_100_centered_v1", "weight": 0.50}
+          ]
+        },
+        "adaptation": {
+          "base_multiplier": 1.0,
+          "max_abs_effect": 0.10,
+          "outcome_effects": ["partial_failure_recovery", "time_speed"],
+          "factors": [
+            {"field_key": "raps_ma.adaptability", "normalization": "raps_100_centered_v1", "weight": 0.65},
+            {"field_key": "raps_ia.problem_solving", "normalization": "raps_100_centered_v1", "weight": 0.35}
+          ]
+        }
+      },
+      "notes": [
+        "Survival Skill remains learned-capability authority; supporting Attributes only shape bounded simulation performance after feasibility.",
+        "This contract intentionally does not use IQ because the canonical Survival definition names task-relevant Adaptability and Problem Solving; no general reasoning factor is implied.",
+        "Legacy raps_pa.survival_skill is excluded so compatibility provenance cannot become a second Skill authority."
       ]
     }
   }
