@@ -8,7 +8,7 @@ from observer_sandbox.db import connect
 from observer_sandbox.world import seed_home_and_darian
 
 
-EXPECTED_REVISION = "thorne-estate-v3.3-physical-attribute-training"
+EXPECTED_REVISION = "thorne-estate-v3.4-private-activity-semantics"
 NEW_OBJECTS = {
     "obj_thorne_estate_training_ai_combat_sim": "loc_thorne_estate_training_hall",
     "obj_thorne_estate_training_obstacle_course": "loc_thorne_estate_training_hall",
