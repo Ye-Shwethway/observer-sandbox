@@ -29,30 +29,49 @@ Batch structurally equivalent work. Do not return to one-field/one-PR or one-Ski
 
 ## Current verified deployment
 
-Latest runtime deployment: **Deploy #226 / run `31893586685` SUCCESS**, Skills Closure Batch v1, PR #161 merge `7cbc92a38ee8b3f5d8220c6e33ff0c4d00f157b4`.
+Latest runtime deployment: **Deploy #227 / run `31895171211` SUCCESS**, Solo Sexual Regulation Naturalism v2, PR #163 merge `13c57933b8136c014f6940b2647c2acdbc3b8eac`.
 
-Final tested PR head: `f502e7e0e0f438b2dfac9ffab01c547ef1b255b9`.
+Final tested PR head: `b9d7ee05f52555417afb9fc1272e0d921657be6b`.
 
 Validation:
-- final **CI #923 / run `31893520852` SUCCESS**;
+- final **CI #929 / run `31895111772` SUCCESS** with **538 passed**;
 - fresh DB init/status succeeded; schema remains v5;
-- Skill Progression Foundation, Skill Evidence Semantics, Skill Definition Format/Refactor, Tactical Planning progression, Strength Live Cycle, and Public Readiness Security gates all succeeded;
-- the first full CI attempt had four stale progression-revision/set assertions after 531 passing tests; only those contract assertions were corrected;
-- no manual repeated full-suite rerun was requested.
+- Solo Regulation Naturalism v2 Acceptance #23, Thorne Estate Training Environment v1 Acceptance #9, Research Action Semantics Acceptance #29, Strength Live Cycle Validation v1 #82, and Public Readiness Security Audit #113 all succeeded;
+- an earlier final-CI attempt exposed only stale world-revision assertions plus one incorrect older-age fixture after 535 passing tests; those assertions were corrected narrowly, without changing the runtime model;
+- no deliberate duplicate full-suite run was performed after merge.
 
-Verified production readback after Deploy #226:
+Verified production readback after Deploy #227:
 - service active/healthy; production init succeeded; schema v5;
 - autonomy enabled, normal mode, retry null, pending action present;
-- runtime speed **10x** at readback;
+- runtime speed **5x** at readback;
+- world revision `thorne-estate-v3.4-private-activity-semantics` active;
 - Gemini `gemini-3.1-flash-lite` primary cognition binding preserved;
-- Groq `qwen/qwen3.6-27b` fallback healthy;
+- Groq `qwen/qwen3.6-27b` fallback preserved;
 - Telegram bot/API/owner/allowed-user configuration healthy;
-- live sim time `2025-05-07T06:24:00+00:00`;
-- Darian was naturally training in the Top-Class Home Gym;
-- Field Medicine remained 75/A, Bladed Weapons 87/A, Firearms 87/A, Weapon Mastery 87/A, overall Skills 85.167/A;
-- no production Field Medicine practice or casualty was fabricated for proof.
+- live sim time `2025-05-07T10:54:00+00:00`;
+- Darian was in the Top-Class Home Gym, current action `idle`, energy 81.586, fatigue 24.277, sleepiness 23.9;
+- no production self-satisfaction action was forced or accelerated for proof.
 
-The live morning training state also confirms that the earlier Circadian Sleep Rhythm Stabilization has advanced beyond the previously pending early-evening sleep lock.
+## Solo Sexual Regulation Naturalism v2 — COMPLETE
+
+This bounded correction fixes the over-conservative v1 pacing model while preserving cognition discretion and avoiding any daily/weekly quota.
+
+Current drive authority combines:
+- authored libido as the primary stable input;
+- bounded adult life-stage contribution;
+- positive recovery contribution for good energy / low fatigue / low sleepiness;
+- represented resident-scope solitude contribution;
+- libido-shaped release-recency recovery;
+- trailing-24-hour saturation penalty after completed releases;
+- adverse-state penalties only when recovery state is meaningfully poor.
+
+The anti-loop behavioral cooldown is now 2 simulated hours. It is a pacing guard, not a clinical refractory-period claim. For Darian's authored young/high-libido/healthy/solitary state, same-day repeat can become legal when current state supports it; cognition still chooses whether to act.
+
+Privacy suitability is now separate from generic `world.access`. `world.metadata.private_activity` can mark appropriate personal/secluded spaces. Darian's Master Suite/Bathroom remain valid, while Library, Training Hall, Home Gym and other authored secluded estate spaces can also qualify when authorized and alone. Quasi's Room and Guest Rooms are explicitly excluded despite generic `access=private`.
+
+Reachable safe private locations are discovered through the normal location graph with breadth-first search rather than only direct neighbors. Normal movement remains required.
+
+See `docs/SOLO_SEXUAL_REGULATION_NATURALISM_V2.md`.
 
 ## Skills section — CLOSED v1 / minimum-unlocked
 
@@ -90,7 +109,7 @@ The active Field Medicine learning authority is the explicit Skill Progression +
 
 ## Active next phase — Remaining Profile Minimum Unlock Sweep
 
-**REVIEW/IMPLEMENT NEXT.** Leave Skills closed.
+**REVIEW/IMPLEMENT NEXT.** Leave Skills closed. Solo Sexual Regulation Naturalism v2 is now a corrected baseline for the Sexual section review.
 
 Target Character Profile sections:
 - identity
@@ -149,4 +168,4 @@ No relationship system expansion, casualty handoff consumer, hostile/non-consens
 
 ## Exact resume point
 
-**Vertical-completeness mode is authoritative. Skills Closure Batch v1 is complete through PR #161 final tested head `f502e7e0e0f438b2dfac9ffab01c547ef1b255b9`, merge `7cbc92a38ee8b3f5d8220c6e33ff0c4d00f157b4`, CI #923, and Deploy #226 / run `31893586685` SUCCESS. Skills is CLOSED v1 / minimum-unlocked. Production is healthy at schema v5; at readback Darian was naturally training in the Home Gym at `2025-05-07T06:24:00+00:00`, speed 10x, with Field Medicine still 75/A and no fabricated practice/casualty. Review the nine remaining profile sections as one minimum-unlock sweep, batch gaps by pattern, and do not deepen Skills yet.**
+**Vertical-completeness mode is authoritative. Solo Sexual Regulation Naturalism v2 is complete through PR #163 final tested head `b9d7ee05f52555417afb9fc1272e0d921657be6b`, merge `13c57933b8136c014f6940b2647c2acdbc3b8eac`, CI #929 with 538 passed, and Deploy #227 / run `31895171211` SUCCESS. Production is healthy at schema v5 and world revision `thorne-estate-v3.4-private-activity-semantics`; at readback Darian was in the Home Gym at `2025-05-07T10:54:00+00:00`, speed 5x, with no fabricated private action. Skills remains CLOSED v1. Resume with the Remaining Profile Minimum Unlock Sweep, treating Naturalism v2 as the Sexual-section baseline.**
