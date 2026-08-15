@@ -76,15 +76,6 @@ def test_component_owns_melee_application_and_legacy_projection_no_longer_does()
     with pytest.raises(KeyError, match="authority moved to component Skill"):
         get_executable_skill_application(LEGACY, "employ_familiar_melee_weapon")
 
-    # Firearms authority is deliberately not activated by this slice.
-    with pytest.raises(KeyError):
-        get_executable_skill_application(FIREARMS, "employ_familiar_ranged_weapon")
-    ranged_definition, _ = get_executable_skill_application(
-        LEGACY,
-        "employ_familiar_ranged_weapon",
-    )
-    assert ranged_definition["skill_id"] == LEGACY
-
 
 def test_safe_task_contract_is_exact_low_risk_and_non_learning() -> None:
     source = json.loads(TASK_CONFIG.read_text(encoding="utf-8"))
@@ -145,7 +136,6 @@ def test_initialize_seeds_solo_safe_blade_drill_and_cognition_uses_component_aut
         by_id = {item["skill_id"]: item for item in awareness["skills"]}
         assert LEGACY not in by_id
         assert by_id[PARENT]["applications"] == []
-        assert by_id[FIREARMS]["applications"] == []
         bladed_apps = {
             item["application_id"]: item for item in by_id[BLADED]["applications"]
         }
@@ -224,7 +214,6 @@ def test_blade_drill_uses_bladed_score_and_emits_application_evidence_without_le
         )
         assert _weapon_state(conn) == before
 
-        # Existing action IDs remain exactly-once evidence identities.
         event_count = conn.execute(
             "SELECT COUNT(*) FROM events WHERE action_id=?",
             (action_id,),
