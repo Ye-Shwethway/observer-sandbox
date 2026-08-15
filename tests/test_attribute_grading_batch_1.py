@@ -31,13 +31,19 @@ def test_all_explicit_attribute_batch_fields_receive_derived_grades(tmp_path, mo
         assert "IQ   140 (" not in text
 
 
-def test_body_and_skill_sections_do_not_inherit_attribute_batch_grades(tmp_path):
+def test_body_and_skill_sections_use_distinct_explicit_schemes(tmp_path):
     db = tmp_path / "observer.sqlite3"
     initialize(db)
 
     with connect(db) as conn:
         body = profile_section(conn, "char_darian", "body")
-        assert all("grade" not in item for item in body["content"])
+        raw_body = [item for item in body["content"] if item.get("kind") == "field"]
+        derived_body = [item for item in body["content"] if item.get("kind") == "derived_grade"]
+        assert raw_body
+        assert all("grade" not in item for item in raw_body)
+        assert derived_body
+        assert all(item["grade"]["scheme_id"] != "raps-100-proof-v1" for item in derived_body)
 
         skills = profile_section(conn, "char_darian", "skills")
-        assert all("grade" not in item for item in skills["content"])
+        assert skills["content"]
+        assert all(item["grade"]["scheme_id"] == "skill-proficiency-100-v1" for item in skills["content"])
