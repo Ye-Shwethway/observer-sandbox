@@ -130,13 +130,16 @@ def _decision_prompt(state: dict[str, Any], available_actions: list[str]) -> str
         f"Known action vocabulary: {json.dumps(available_actions)}\n"
         f"Runtime context: {json.dumps(prompt_state, ensure_ascii=False, sort_keys=True)}\n\n"
         "The action_options array is authoritative. Choose an action/target pair that appears there. "
+        "The solo_sexual_regulation context is also authoritative when present: it describes adult eligibility, current non-clinical drive, privacy/aloneness, recent release history, and reachable safe private rooms. "
+        "Self-satisfaction is a legitimate discretionary self-regulation option only when it appears in action_options; it is never a weekly quota, mandatory routine, or reason to ignore a stronger physiological/safety need. "
+        "If solo drive is meaningful but the current room is not safe/private, reachable_safe_private_locations may justify an ordinary move before reconsidering the behavior later. "
         "The duration field is the broad legal compatibility range. When preferred_duration is present, choose duration_minutes inside that narrower planning range; duration_purpose explains the intended ordinary use. "
         "Runtime-shaped legal duration bounds override ordinary authored preferences when they are tighter. "
         "For an eat action, choose one or more resources only from that option's meal_resources list. Copy each exact stack_id and choose a quantity within its min_quantity/max_quantity bounds. The engine calculates nutrients; do not invent or calculate macro values. "
         "For every non-eat action, resources must be an empty array. "
         "For a train action whose training_method has movement_options, choose one to four exact movement_id values from that selected option and return them in training_movements. Prefer movements that make the session coherent rather than an arbitrary full-catalog mix. "
         "For train actions without movement_options and for every non-train action, training_movements must be an empty array. "
-        "For idle only, target must be an empty string. For every other action, copy the exact target id from action_options; use an empty string when that option's target is null. "
+        "For any selected option whose target is null, return an empty target string. Otherwise copy the exact target id from action_options. "
         "Return only the structured decision and keep reason short and character-grounded."
     )
 
@@ -326,10 +329,8 @@ def generate_character_decision(
     eating_required = legacy_required | {"resources"}
     required = eating_required | {"training_movements"}
     if set(decision) == legacy_required:
-        # Test/mocked callers predating Eating Behavior v1 normalize safely.
         decision = {**decision, "resources": [], "training_movements": []}
     elif set(decision) == eating_required:
-        # Test/mocked callers predating Training Anatomy v1 normalize safely.
         decision = {**decision, "training_movements": []}
     if set(decision) != required:
         raise AIDecisionError("AI decision keys do not match the required schema")

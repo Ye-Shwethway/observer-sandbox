@@ -19,6 +19,7 @@ from .resource_awareness import (
 )
 from .secrets import load_runtime_secrets
 from .simulation import ACTION_NAMES, Action, action_options, snapshot, validate_action
+from .solo_sexual_regulation import solo_sexual_regulation_context
 from .training_load_guard import projected_training_allowed, shape_training_options_for_load
 from .training_methods import enrich_training_action_options, validate_training_movements_for_target
 from .training_modifiers import training_readiness_modifier
@@ -305,6 +306,11 @@ class ModelDecisionProvider:
             self.character_id,
             state=state,
             autonomy_policy=self.policy,
+        )
+        enriched["solo_sexual_regulation"] = solo_sexual_regulation_context(
+            self.conn,
+            self.character_id,
+            state=state,
         )
         enriched["recent_events"] = recent_events
         return enriched

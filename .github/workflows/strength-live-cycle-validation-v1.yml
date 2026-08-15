@@ -6,6 +6,7 @@ on:
     paths:
       - '.github/workflows/strength-live-cycle-validation-v1.yml'
       - 'scripts/strength_live_cycle_validation_v1.py'
+      - 'config/**'
       - 'src/observer_sandbox/strength_progression.py'
       - 'src/observer_sandbox/strength_progression_activation.py'
       - 'src/observer_sandbox/recovery_realization.py'
@@ -41,6 +42,7 @@ jobs:
         run: |
           ssh -p "$VPS_PORT" "$VPS_USER@$VPS_HOST" 'rm -rf /tmp/observer-strength-live-cycle-v1 && mkdir -p /tmp/observer-strength-live-cycle-v1'
           rsync -az -e "ssh -p $VPS_PORT" src/ "$VPS_USER@$VPS_HOST:/tmp/observer-strength-live-cycle-v1/src/"
+          rsync -az -e "ssh -p $VPS_PORT" config/ "$VPS_USER@$VPS_HOST:/tmp/observer-strength-live-cycle-v1/config/"
           rsync -az -e "ssh -p $VPS_PORT" scripts/strength_live_cycle_validation_v1.py "$VPS_USER@$VPS_HOST:/tmp/observer-strength-live-cycle-v1/runner.py"
       - name: Validate full cycle on disposable production copy
         env:
@@ -48,4 +50,4 @@ jobs:
           VPS_USER: ${{ secrets.VPS_USER }}
           VPS_PORT: ${{ secrets.VPS_PORT || '22' }}
         run: |
-          ssh -p "$VPS_PORT" "$VPS_USER@$VPS_HOST" "set -euo pipefail; cd /opt/observer-sandbox; export PYTHONPATH=/tmp/observer-strength-live-cycle-v1/src; .venv/bin/python /tmp/observer-strength-live-cycle-v1/runner.py --live-db /var/lib/observer-sandbox/observer.sqlite3; rm -rf /tmp/observer-strength-live-cycle-v1"
+          ssh -p "$VPS_PORT" "$VPS_USER@$VPS_HOST" "set -euo pipefail; cd /opt/observer-sandbox; export PYTHONPATH=/tmp/observer-strength-live-cycle-v1/src; export OBSERVER_CONFIG_DIR=/tmp/observer-strength-live-cycle-v1/config; .venv/bin/python /tmp/observer-strength-live-cycle-v1/runner.py --live-db /var/lib/observer-sandbox/observer.sqlite3; rm -rf /tmp/observer-strength-live-cycle-v1"

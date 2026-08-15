@@ -4,6 +4,7 @@ import json
 import sqlite3
 from typing import Any
 
+from .action_privacy import action_visible_to_role
 from .actor_selection import resolve_actor_id
 from .autonomy import autonomy_status
 from .location_runtime import current_location
@@ -85,6 +86,18 @@ def _default_location_id(conn: sqlite3.Connection) -> str:
     raise ValueError("Multiple top-level locations exist; pass location_id explicitly")
 
 
+def _observer_action(action_name: str | None, role: str) -> str | None:
+    if action_visible_to_role(action_name, role):
+        return action_name
+    return "private_activity" if action_name else action_name
+
+
+def _observer_state(state: dict[str, Any], role: str) -> dict[str, Any]:
+    result = dict(state)
+    result["current_action"] = _observer_action(result.get("current_action"), role)
+    return result
+
+
 def list_worlds(conn: sqlite3.Connection) -> list[dict[str, Any]]:
     rows = conn.execute(
         "SELECT id, entity_type, name, capabilities_json, definition_id FROM entities WHERE entity_type='world' ORDER BY name"
@@ -132,13 +145,13 @@ def list_locations(conn: sqlite3.Connection, parent_id: str | None = None) -> li
     ]
 
 
-def list_characters(conn: sqlite3.Connection) -> list[dict[str, Any]]:
+def list_characters(conn: sqlite3.Connection, *, role: str = "owner") -> list[dict[str, Any]]:
     rows = conn.execute(
         "SELECT id, entity_type, name, capabilities_json, definition_id FROM entities WHERE entity_type='character' ORDER BY name"
     ).fetchall()
     result: list[dict[str, Any]] = []
     for row in rows:
-        state = snapshot(conn, row["id"])
+        state = _observer_state(snapshot(conn, row["id"]), role)
         result.append(
             {
                 "id": row["id"],
@@ -154,12 +167,12 @@ def list_characters(conn: sqlite3.Connection) -> list[dict[str, Any]]:
     return result
 
 
-def character_summary(conn: sqlite3.Connection, character_id: str | None = None) -> dict[str, Any]:
+def character_summary(conn: sqlite3.Connection, character_id: str | None = None, *, role: str = "owner") -> dict[str, Any]:
     character_id = resolve_actor_id(conn, character_id)
     entity = _entity(conn, character_id)
     if entity is None:
         raise KeyError(f"Unknown character: {character_id}")
-    state = snapshot(conn, character_id)
+    state = _observer_state(snapshot(conn, character_id), role)
     return {"character": entity, "state": state}
 
 
@@ -189,7 +202,13 @@ def object_summary(conn: sqlite3.Connection, object_id: str) -> dict[str, Any]:
     }
 
 
-def recent_location_activity(conn: sqlite3.Connection, *, location_id: str, limit: int = 3) -> list[dict[str, Any]]:
+def recent_location_activity(
+    conn: sqlite3.Connection,
+    *,
+    location_id: str,
+    limit: int = 3,
+    role: str = "owner",
+) -> list[dict[str, Any]]:
     limit = max(1, min(int(limit), 20))
     rows = conn.execute(
         """
@@ -199,11 +218,14 @@ def recent_location_activity(conn: sqlite3.Connection, *, location_id: str, limi
         ORDER BY id DESC
         LIMIT ?
         """,
-        (location_id, limit),
+        (location_id, max(limit * 3, limit)),
     ).fetchall()
     result: list[dict[str, Any]] = []
     for row in rows:
         payload = json.loads(row["payload_json"])
+        action = payload.get("action")
+        if not action_visible_to_role(action, role):
+            continue
         target = payload.get("target")
         result.append(
             {
@@ -212,16 +234,18 @@ def recent_location_activity(conn: sqlite3.Connection, *, location_id: str, limi
                 "event_type": row["event_type"],
                 "actor_id": row["actor_id"],
                 "actor_name": _entity_name(conn, row["actor_id"]),
-                "action": payload.get("action"),
+                "action": action,
                 "target": target,
                 "target_name": _entity_name(conn, target),
                 "reason": payload.get("reason"),
             }
         )
+        if len(result) >= limit:
+            break
     return result
 
 
-def location_summary(conn: sqlite3.Connection, location_id: str | None = None) -> dict[str, Any]:
+def location_summary(conn: sqlite3.Connection, location_id: str | None = None, *, role: str = "owner") -> dict[str, Any]:
     location_id = location_id or _default_location_id(conn)
     entity = _entity(conn, location_id)
     if entity is None:
@@ -293,7 +317,7 @@ def location_summary(conn: sqlite3.Connection, location_id: str | None = None) -
         ).fetchall()
         for row in rows:
             if current_location(conn, row["id"]) == location_id:
-                state = snapshot(conn, row["id"])
+                state = _observer_state(snapshot(conn, row["id"]), role)
                 occupants.append(
                     {
                         "id": row["id"],
@@ -321,41 +345,59 @@ def location_summary(conn: sqlite3.Connection, location_id: str | None = None) -
         "residents": [dict(row) for row in residents],
         "occupants": occupants,
         "exits": [dict(row) for row in exits],
-        "recent_activity": recent_location_activity(conn, location_id=location_id, limit=3),
+        "recent_activity": recent_location_activity(conn, location_id=location_id, limit=3, role=role),
     }
 
 
-def recent_history(conn: sqlite3.Connection, *, character_id: str | None = None, limit: int = 8) -> list[dict[str, Any]]:
+def recent_history(
+    conn: sqlite3.Connection,
+    *,
+    character_id: str | None = None,
+    limit: int = 8,
+    role: str = "owner",
+) -> list[dict[str, Any]]:
     character_id = resolve_actor_id(conn, character_id)
     limit = max(1, min(int(limit), 50))
     rows = conn.execute(
         "SELECT id, sim_time, event_type, payload_json FROM events WHERE actor_id=? ORDER BY id DESC LIMIT ?",
-        (character_id, limit),
+        (character_id, max(limit * 3, limit)),
     ).fetchall()
     result: list[dict[str, Any]] = []
     for row in rows:
         payload = json.loads(row["payload_json"])
+        action = payload.get("action")
+        if action and not action_visible_to_role(action, role):
+            continue
         target = payload.get("target")
         result.append(
             {
                 "id": row["id"],
                 "sim_time": row["sim_time"],
                 "event_type": row["event_type"],
-                "action": payload.get("action"),
+                "action": action,
                 "target": target,
                 "target_name": _entity_name(conn, target),
                 "reason": payload.get("reason"),
                 "payload": payload,
             }
         )
+        if len(result) >= limit:
+            break
     return result
 
 
-def observer_status(conn: sqlite3.Connection, character_id: str | None = None) -> dict[str, Any]:
+def observer_status(conn: sqlite3.Connection, character_id: str | None = None, *, role: str = "owner") -> dict[str, Any]:
     character_id = resolve_actor_id(conn, character_id)
     status = autonomy_status(conn, character_id)
+    status["character"] = _observer_state(dict(status["character"]), role)
     pending = status.get("pending_action")
     if pending:
-        status["pending_target_name"] = _entity_name(conn, pending.get("target"))
-    status["recent_history"] = recent_history(conn, character_id=character_id, limit=5)
+        if action_visible_to_role(pending.get("action"), role):
+            status["pending_target_name"] = _entity_name(conn, pending.get("target"))
+        else:
+            redacted = dict(pending)
+            redacted.update({"action": "private_activity", "target": None, "reason": None, "resources": [], "conditions": {}, "modifiers": {}})
+            status["pending_action"] = redacted
+            status["pending_target_name"] = None
+    status["recent_history"] = recent_history(conn, character_id=character_id, limit=5, role=role)
     return status

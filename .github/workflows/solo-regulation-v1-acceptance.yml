@@ -1,0 +1,47 @@
+name: Solo Regulation v1 Acceptance
+
+on:
+  workflow_dispatch:
+  pull_request:
+    branches: [main]
+    paths:
+      - '.github/workflows/solo-regulation-v1-acceptance.yml'
+      - 'config/profile_sections.v1.json'
+      - 'src/observer_sandbox/action_privacy.py'
+      - 'src/observer_sandbox/solo_sexual_regulation.py'
+      - 'src/observer_sandbox/sexual_state_schema.py'
+      - 'src/observer_sandbox/composition_schema.py'
+      - 'src/observer_sandbox/duration_planning.py'
+      - 'src/observer_sandbox/simulation.py'
+      - 'src/observer_sandbox/model_decision.py'
+      - 'src/observer_sandbox/ai_runtime.py'
+      - 'src/observer_sandbox/observer_query.py'
+      - 'src/observer_sandbox/telegram_bot.py'
+      - 'src/observer_sandbox/telegram_notifications.py'
+      - 'scripts/validation/validate_solo_regulation_v1.py'
+      - 'tests/test_solo_sexual_regulation_v1.py'
+  push:
+    branches: [main]
+    paths:
+      - '.github/workflows/solo-regulation-v1-acceptance.yml'
+      - 'config/profile_sections.v1.json'
+      - 'src/observer_sandbox/action_privacy.py'
+      - 'src/observer_sandbox/solo_sexual_regulation.py'
+      - 'src/observer_sandbox/sexual_state_schema.py'
+      - 'src/observer_sandbox/composition_schema.py'
+      - 'src/observer_sandbox/duration_planning.py'
+      - 'src/observer_sandbox/simulation.py'
+      - 'src/observer_sandbox/model_decision.py'
+      - 'src/observer_sandbox/ai_runtime.py'
+      - 'src/observer_sandbox/observer_query.py'
+      - 'src/observer_sandbox/telegram_bot.py'
+      - 'src/observer_sandbox/telegram_notifications.py'
+      - 'scripts/validation/validate_solo_regulation_v1.py'
+      - 'tests/test_solo_sexual_regulation_v1.py'
+
+jobs:
+  production-copy:
+    uses: ./.github/workflows/reusable-production-copy-validation.yml
+    with:
+      validator_path: scripts/validation/validate_solo_regulation_v1.py
+    secrets: inherit

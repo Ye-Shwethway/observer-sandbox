@@ -186,13 +186,7 @@ def _fmt_effect_spec(spec: Any) -> str:
     if not isinstance(spec, dict):
         return str(spec)
     parts: list[str] = []
-    labels = {
-        "add": "Add",
-        "multiply": "×",
-        "set": "Set",
-        "clamp_min": "Min",
-        "clamp_max": "Max",
-    }
+    labels = {"add": "Add", "multiply": "×", "set": "Set", "clamp_min": "Min", "clamp_max": "Max"}
     for operation in ("add", "multiply", "set", "clamp_min", "clamp_max"):
         if operation not in spec:
             continue
@@ -218,45 +212,28 @@ def _set_notifications(conn, user_id: int, enabled: bool) -> bool:
 
 def _boot_message() -> str:
     return (
-        "🌌 OBSERVER SANDBOX\n"
-        "━━━━━━━━━━━━━━━━━━\n"
-        "✨ Universe is alive!\n"
-        "🟢 Observer link: Online\n"
-        "🧠 Minds: Wake-on-demand\n"
-        "📡 Creator channel: Connected\n"
-        "━━━━━━━━━━━━━━━━━━\n"
-        "Use /start to open the Observer Home."
+        "🌌 OBSERVER SANDBOX\n━━━━━━━━━━━━━━━━━━\n✨ Universe is alive!\n🟢 Observer link: Online\n"
+        "🧠 Minds: Wake-on-demand\n📡 Creator channel: Connected\n━━━━━━━━━━━━━━━━━━\nUse /start to open the Observer Home."
     )
 
 
 def _home_message(conn, user_id: int) -> str:
-    status = observer_status(conn)
+    raw_role = _user_role(user_id)
+    status = observer_status(conn, role=raw_role)
     c = status["character"]
     notify = "ON" if _notifications_enabled(conn, user_id) else "OFF"
-    role = _user_role(user_id).title()
+    role = raw_role.title()
     return (
-        "🌌 OBSERVER HOME\n"
-        "━━━━━━━━━━━━━━━━━━\n"
-        "✨ Universe is alive.\n\n"
-        f"👤 Darian · {_title_action(c['current_action'])}\n"
-        f"📍 {c['location_name']}\n"
-        f"🕒 {_fmt_time(c['sim_time'])}\n"
-        f"🔔 Notifications {notify}\n"
-        f"🔐 Access {role}\n\n"
-        "Choose what you want to observe:"
+        "🌌 OBSERVER HOME\n━━━━━━━━━━━━━━━━━━\n✨ Universe is alive.\n\n"
+        f"👤 Darian · {_title_action(c['current_action'])}\n📍 {c['location_name']}\n🕒 {_fmt_time(c['sim_time'])}\n"
+        f"🔔 Notifications {notify}\n🔐 Access {role}\n\nChoose what you want to observe:"
     )
 
 
 def _home_keyboard() -> list[list[dict[str, str]]]:
     return [
-        [
-            {"text": "🌍 Universe", "callback_data": "nav:universe"},
-            {"text": "👥 Characters", "callback_data": "nav:characters"},
-        ],
-        [
-            {"text": "🕒 Runtime", "callback_data": "nav:runtime"},
-            {"text": "📜 History", "callback_data": "nav:history"},
-        ],
+        [{"text": "🌍 Universe", "callback_data": "nav:universe"}, {"text": "👥 Characters", "callback_data": "nav:characters"}],
+        [{"text": "🕒 Runtime", "callback_data": "nav:runtime"}, {"text": "📜 History", "callback_data": "nav:history"}],
     ]
 
 
@@ -267,10 +244,7 @@ def _back_home_keyboard() -> list[list[dict[str, str]]]:
 def _character_keyboard_for_user(character_id: str, user_id: int) -> list[list[dict[str, str]]]:
     keyboard = character_keyboard(character_id)
     if _user_role(user_id) == "owner":
-        keyboard.insert(
-            1,
-            [{"text": "🩺 Restore Basic Stats", "callback_data": f"ctl:restore_prompt:{character_id}"}],
-        )
+        keyboard.insert(1, [{"text": "🩺 Restore Basic Stats", "callback_data": f"ctl:restore_prompt:{character_id}"}])
     return keyboard
 
 
@@ -283,43 +257,31 @@ def _fmt_character(data: dict[str, Any], status: dict[str, Any] | None = None, *
     if target:
         action_text += f" → {target}"
     lines = [
-        f"👤 {c['name']}",
-        "━━━━━━━━━━━━━━━━━━",
-        f"📍 Location   {s['location_name']}",
-        f"🎬 Action     {action_text}",
-        f"🕒 Sim Time   {_fmt_time(s['sim_time'])}",
+        f"👤 {c['name']}", "━━━━━━━━━━━━━━━━━━", f"📍 Location   {s['location_name']}",
+        f"🎬 Action     {action_text}", f"🕒 Sim Time   {_fmt_time(s['sim_time'])}",
     ]
     lines.extend(_pending_timing_lines(status, now_wall=now_wall))
     lines.extend([
-        "",
-        f"⚡ Energy       {s['energy']:.1f}",
-        f"🍽 Hunger       {s['hunger']:.1f}",
-        f"💧 Thirst       {s['thirst']:.1f}",
-        f"🌙 Sleepiness   {s['sleepiness']:.1f}",
-        f"🫧 Cleanliness  {s['cleanliness']:.1f}",
+        "", f"⚡ Energy       {s['energy']:.1f}", f"🍽 Hunger       {s['hunger']:.1f}",
+        f"💧 Thirst       {s['thirst']:.1f}", f"🌙 Sleepiness   {s['sleepiness']:.1f}", f"🫧 Cleanliness  {s['cleanliness']:.1f}",
     ])
     return "\n".join(lines)
 
 
-def _character_view(conn, character_id: str, *, now_wall: float | None = None) -> str:
+def _character_view(conn, character_id: str, *, role: str = "owner", now_wall: float | None = None) -> str:
     return _fmt_character(
-        character_summary(conn, character_id),
-        observer_status(conn, character_id),
+        character_summary(conn, character_id, role=role),
+        observer_status(conn, character_id, role=role),
         now_wall=now_wall,
     )
 
 
 def _fmt_restore_prompt(character_name: str) -> str:
     return (
-        f"🩺 RESTORE {character_name.upper()} BASIC STATS\n"
-        "━━━━━━━━━━━━━━━━━━\n"
-        "Creator authority required.\n\n"
-        f"⚡ Energy       {BASIC_STAT_BASELINE['needs.energy']:.0f}\n"
-        f"🍽 Hunger       {BASIC_STAT_BASELINE['needs.hunger']:.0f}\n"
-        f"💧 Thirst       {BASIC_STAT_BASELINE['needs.thirst']:.0f}\n"
-        f"🌙 Sleepiness   {BASIC_STAT_BASELINE['needs.sleepiness']:.0f}\n"
-        f"🫧 Cleanliness  {BASIC_STAT_BASELINE['physiology.cleanliness']:.0f}\n"
-        f"🛌 Fatigue      {BASIC_STAT_BASELINE['physiology.fatigue']:.0f}\n\n"
+        f"🩺 RESTORE {character_name.upper()} BASIC STATS\n━━━━━━━━━━━━━━━━━━\nCreator authority required.\n\n"
+        f"⚡ Energy       {BASIC_STAT_BASELINE['needs.energy']:.0f}\n🍽 Hunger       {BASIC_STAT_BASELINE['needs.hunger']:.0f}\n"
+        f"💧 Thirst       {BASIC_STAT_BASELINE['needs.thirst']:.0f}\n🌙 Sleepiness   {BASIC_STAT_BASELINE['needs.sleepiness']:.0f}\n"
+        f"🫧 Cleanliness  {BASIC_STAT_BASELINE['physiology.cleanliness']:.0f}\n🛌 Fatigue      {BASIC_STAT_BASELINE['physiology.fatigue']:.0f}\n\n"
         "The current pending autonomous action will be cancelled so cognition can re-evaluate from the restored state. "
         "Location, simulation time, profile canon and autonomy mode are preserved."
     )
@@ -329,19 +291,11 @@ def _fmt_restore_result(result: dict[str, Any]) -> str:
     after = result["after"]
     cancelled = "Yes" if result.get("cancelled_action_id") else "No"
     return (
-        "✅ CREATOR RESTORE APPLIED\n"
-        "━━━━━━━━━━━━━━━━━━\n"
-        f"👤 {result['character_name']}\n"
-        f"📍 {after['location_name']}\n"
-        f"🕒 {_fmt_time(after['sim_time'])}\n\n"
-        f"⚡ Energy       {after['energy']:.1f}\n"
-        f"🍽 Hunger       {after['hunger']:.1f}\n"
-        f"💧 Thirst       {after['thirst']:.1f}\n"
-        f"🌙 Sleepiness   {after['sleepiness']:.1f}\n"
-        f"🫧 Cleanliness  {after['cleanliness']:.1f}\n"
-        f"🛌 Fatigue      {after['fatigue']:.1f}\n\n"
-        f"🧹 Pending action cancelled: {cancelled}\n"
-        "🧠 Cognition will re-evaluate on the next wake."
+        "✅ CREATOR RESTORE APPLIED\n━━━━━━━━━━━━━━━━━━\n"
+        f"👤 {result['character_name']}\n📍 {after['location_name']}\n🕒 {_fmt_time(after['sim_time'])}\n\n"
+        f"⚡ Energy       {after['energy']:.1f}\n🍽 Hunger       {after['hunger']:.1f}\n💧 Thirst       {after['thirst']:.1f}\n"
+        f"🌙 Sleepiness   {after['sleepiness']:.1f}\n🫧 Cleanliness  {after['cleanliness']:.1f}\n🛌 Fatigue      {after['fatigue']:.1f}\n\n"
+        f"🧹 Pending action cancelled: {cancelled}\n🧠 Cognition will re-evaluate on the next wake."
     )
 
 
@@ -362,38 +316,31 @@ def _fmt_location(data: dict[str, Any]) -> str:
     loc = data["location"]
     icon = _location_icon(loc)
     lines = [f"{icon} {loc['name']}", "━━━━━━━━━━━━━━━━━━"]
-
     kind = str(loc.get("kind") or "location").replace("_", " ").title()
     if kind and kind != "Location":
         lines.append(f"🧭 {kind}")
     if loc.get("access") != "open":
         lines.append("🔒 Access unavailable")
-
     child_locations = data.get("child_locations") or []
     if child_locations:
         lines.extend(["", "🗺 Areas"])
         for child in child_locations:
-            child_icon = _location_icon(child)
-            lines.append(f"• {child_icon} {child['name']}")
-
+            lines.append(f"• {_location_icon(child)} {child['name']}")
     occupants = data.get("occupants") or []
     if occupants:
         lines.extend(["", "👥 Present now"])
         for occupant in occupants:
             lines.append(f"• {occupant['name']} · {_title_action(occupant.get('current_action'))}")
-
     objects = data.get("objects") or []
     if objects:
         lines.extend(["", "📦 Objects"])
         for obj in objects:
             lines.append(f"• {obj['name']}")
-
     exits = data.get("exits") or []
     if exits:
         lines.extend(["", "🚪 Exits"])
         for exit_node in exits:
             lines.append(f"• {exit_node['name']}")
-
     activity = data.get("recent_activity") or []
     if activity:
         lines.extend(["", "🎬 Recent activity"])
@@ -404,10 +351,8 @@ def _fmt_location(data: dict[str, Any]) -> str:
             actor = event.get("actor_name") or "Character"
             lines.append(f"• {actor} · {detail}")
             lines.append(f"  {_fmt_time(event.get('sim_time'))}")
-
     if not child_locations and not occupants and not objects and not exits and not activity:
         lines.extend(["", "No observable contents yet."])
-
     return "\n".join(lines)
 
 
@@ -417,20 +362,16 @@ def _fmt_object(data: dict[str, Any]) -> str:
     location = data.get("location")
     capabilities = data.get("capabilities") or []
     effects = data.get("effects") or {}
-
-    lines = [f"📦 {obj['name']}", "━━━━━━━━━━━━━━━━━━"]
-    lines.append("🧩 Concrete object")
+    lines = [f"📦 {obj['name']}", "━━━━━━━━━━━━━━━━━━", "🧩 Concrete object"]
     if definition:
         lines.append(f"🧬 Definition   {definition['name']}")
     else:
         lines.append("🧬 Definition   Instance-only fixture")
     if location:
         lines.append(f"📍 Location     {location['name']}")
-
     if capabilities:
         lines.extend(["", "⚙️ Capabilities"])
         lines.append("• " + " · ".join(str(value).replace("_", " ").title() for value in capabilities))
-
     if effects:
         lines.extend(["", "✨ Authored effects"])
         for action, fields in effects.items():
@@ -442,19 +383,15 @@ def _fmt_object(data: dict[str, Any]) -> str:
                 lines.append(f"  ↳ {_fmt_effect_spec(fields)}")
     else:
         lines.extend(["", "✨ Authored effects", "• None"])
-
     return "\n".join(lines)
 
 
 def _location_keyboard(data: dict[str, Any]) -> list[list[dict[str, str]]]:
     keyboard: list[list[dict[str, str]]] = []
     for child in data.get("child_locations") or []:
-        icon = _location_icon(child)
-        keyboard.append([{"text": f"{icon} {child['name']}", "callback_data": f"loc:{child['id']}"}])
-
+        keyboard.append([{"text": f"{_location_icon(child)} {child['name']}", "callback_data": f"loc:{child['id']}"}])
     for obj in data.get("objects") or []:
         keyboard.append([{"text": f"📦 {obj['name']}", "callback_data": f"obj:{obj['id']}"}])
-
     parent = data.get("parent")
     if parent:
         if parent.get("type") == "world":
@@ -463,7 +400,6 @@ def _location_keyboard(data: dict[str, Any]) -> list[list[dict[str, str]]]:
             keyboard.append([{"text": f"← {parent['name']}", "callback_data": f"loc:{parent['id']}"}])
     else:
         keyboard.append([{"text": "← Universe", "callback_data": "nav:universe"}])
-
     keyboard.append([{"text": "⌂ Observer Home", "callback_data": "nav:home"}])
     return keyboard
 
@@ -506,22 +442,12 @@ def _fmt_status(data: dict[str, Any], *, now_wall: float | None = None) -> str:
         if target:
             pending_text += f" → {target}"
     lines = [
-        "🌌 OBSERVER SANDBOX",
-        "━━━━━━━━━━━━━━━━━━",
+        "🌌 OBSERVER SANDBOX", "━━━━━━━━━━━━━━━━━━",
         f"{autonomy_icon} Autonomy   {'ON' if data['autonomy_enabled'] else 'OFF'} · {str(data['mode']).replace('_', ' ').title()}",
-        f"⏸ Paused     {_yes_no(data['paused'])}",
-        f"⏩ Speed      {data['speed']}x",
-        f"🧠 Mind Calls {calls}",
-        f"⏳ Pending    {pending_text}",
+        f"⏸ Paused     {_yes_no(data['paused'])}", f"⏩ Speed      {data['speed']}x", f"🧠 Mind Calls {calls}", f"⏳ Pending    {pending_text}",
     ]
     lines.extend(_pending_timing_lines(data, now_wall=now_wall))
-    lines.extend([
-        "",
-        "👤 Darian Thorne",
-        f"📍 {c['location_name']}",
-        f"🎬 {_title_action(c['current_action'])}",
-        f"🕒 {_fmt_time(c['sim_time'])}",
-    ])
+    lines.extend(["", "👤 Darian Thorne", f"📍 {c['location_name']}", f"🎬 {_title_action(c['current_action'])}", f"🕒 {_fmt_time(c['sim_time'])}"])
     return "\n".join(lines)
 
 
@@ -532,14 +458,13 @@ def _universe_view(conn) -> tuple[str, list[list[dict[str, str]]]]:
     for world in worlds:
         lines.append(f"• {world['name']}")
         for location in list_locations(conn, world["id"]):
-            icon = _location_icon(location)
-            keyboard.append([{"text": f"{icon} {location['name']}", "callback_data": f"loc:{location['id']}"}])
+            keyboard.append([{"text": f"{_location_icon(location)} {location['name']}", "callback_data": f"loc:{location['id']}"}])
     keyboard.append([{"text": "⌂ Observer Home", "callback_data": "nav:home"}])
     return "\n".join(lines), keyboard
 
 
-def _characters_view(conn) -> tuple[str, list[list[dict[str, str]]]]:
-    chars = list_characters(conn)
+def _characters_view(conn, *, role: str = "owner") -> tuple[str, list[list[dict[str, str]]]]:
+    chars = list_characters(conn, role=role)
     lines = ["👥 CHARACTERS", "━━━━━━━━━━━━━━━━━━", "Select a character:"]
     keyboard: list[list[dict[str, str]]] = []
     for char in chars:
@@ -550,22 +475,22 @@ def _characters_view(conn) -> tuple[str, list[list[dict[str, str]]]]:
 
 
 def _callback_view(conn, user_id: int, callback_data: str) -> tuple[str, list[list[dict[str, str]]] | None]:
+    role = _user_role(user_id)
     if callback_data == "nav:home":
         return _home_message(conn, user_id), _home_keyboard()
     if callback_data == "nav:universe":
         return _universe_view(conn)
     if callback_data == "nav:characters":
-        return _characters_view(conn)
+        return _characters_view(conn, role=role)
     if callback_data == "nav:runtime":
-        return _fmt_status(observer_status(conn)), _back_home_keyboard()
+        return _fmt_status(observer_status(conn, role=role)), _back_home_keyboard()
     if callback_data == "nav:history":
-        return _fmt_history(recent_history(conn, limit=16)), _back_home_keyboard()
-
+        return _fmt_history(recent_history(conn, limit=16, role=role)), _back_home_keyboard()
     if callback_data.startswith("ctl:restore_prompt:"):
         character_id = callback_data.split(":", 2)[2]
-        if _user_role(user_id) != "owner":
+        if role != "owner":
             return "🔒 Creator authority required for this control.", character_keyboard(character_id)
-        data = character_summary(conn, character_id)
+        data = character_summary(conn, character_id, role=role)
         return _fmt_restore_prompt(data["character"]["name"]), [
             [{"text": "✅ Confirm Restore", "callback_data": f"ctl:restore_apply:{character_id}"}],
             [{"text": "← Character", "callback_data": f"char:{character_id}"}],
@@ -573,23 +498,16 @@ def _callback_view(conn, user_id: int, callback_data: str) -> tuple[str, list[li
         ]
     if callback_data.startswith("ctl:restore_apply:"):
         character_id = callback_data.split(":", 2)[2]
-        if _user_role(user_id) != "owner":
+        if role != "owner":
             return "🔒 Creator authority required for this control.", character_keyboard(character_id)
-        result = restore_basic_stats(
-            conn,
-            character_id,
-            authority="creator",
-            requested_by=f"telegram:{user_id}",
-        )
+        result = restore_basic_stats(conn, character_id, authority="creator", requested_by=f"telegram:{user_id}")
         return _fmt_restore_result(result), _character_keyboard_for_user(character_id, user_id)
-
     profile_view = profile_callback_view(conn, callback_data)
     if profile_view is not None:
         return profile_view
-
     if callback_data.startswith("loc:"):
         location_id = callback_data.split(":", 1)[1]
-        data = location_summary(conn, location_id)
+        data = location_summary(conn, location_id, role=role)
         return _fmt_location(data), _location_keyboard(data)
     if callback_data.startswith("obj:"):
         object_id = callback_data.split(":", 1)[1]
@@ -597,25 +515,16 @@ def _callback_view(conn, user_id: int, callback_data: str) -> tuple[str, list[li
         return _fmt_object(data), _object_keyboard(data)
     if callback_data.startswith("char:"):
         character_id = callback_data.split(":", 1)[1]
-        return _character_view(conn, character_id), _character_keyboard_for_user(character_id, user_id)
+        return _character_view(conn, character_id, role=role), _character_keyboard_for_user(character_id, user_id)
     return "Unknown observer destination.", _back_home_keyboard()
 
 
 def _help(role: str) -> str:
     role_label = "Owner" if role == "owner" else "Authorized User"
     lines = [
-        f"🌌 Observer Sandbox · {role_label}",
-        "━━━━━━━━━━━━━━━━━━",
-        "/start — Observer Home",
-        "/status — Runtime overview",
-        "/watch — Darian now + recent activity",
-        "/history [n] — Recent activity",
-        "/darian — Character summary",
-        "/home — Thorne Estate summary",
-        "/notify on|off — Proactive notifications",
-        "/pause — Pause autonomy",
-        "/resume — Resume autonomy",
-        "/speed <value> — Set runtime speed",
+        f"🌌 Observer Sandbox · {role_label}", "━━━━━━━━━━━━━━━━━━", "/start — Observer Home", "/status — Runtime overview",
+        "/watch — Darian now + recent activity", "/history [n] — Recent activity", "/darian — Character summary", "/home — Thorne Estate summary",
+        "/notify on|off — Proactive notifications", "/pause — Pause autonomy", "/resume — Resume autonomy", "/speed <value> — Set runtime speed",
     ]
     if role == "owner":
         lines.append("/restorestats [character_id] — Restore basic living stats")
@@ -628,14 +537,12 @@ def handle_command(db_path: str | Path, *, user_id: int, text: str) -> str:
     command_line = (text or "").strip()
     first, *rest = command_line.split()
     command = first.split("@", 1)[0].lower() if first else ""
-
     if command in {"/whoami", "/start"} and role == "unauthorized":
         return f"Observer Sandbox bot is connected. Your Telegram user id is {user_id}. Role: unauthorized. Ask the owner to authorize this id."
     if role == "unauthorized":
         return "Not authorized. Use /whoami to obtain your Telegram user id."
     if command == "/whoami":
         return f"🪪 Telegram Identity\n━━━━━━━━━━━━━━━━━━\nUser ID: {user_id}\nRole: {role.title()}"
-
     with connect(db_path) as conn:
         migrate(conn)
         if command == "/start":
@@ -643,13 +550,13 @@ def handle_command(db_path: str | Path, *, user_id: int, text: str) -> str:
         if command == "/help":
             return _help(role)
         if command == "/status":
-            return _fmt_status(observer_status(conn))
+            return _fmt_status(observer_status(conn, role=role))
         if command == "/darian":
-            return _character_view(conn, "char_darian")
+            return _character_view(conn, "char_darian", role=role)
         if command == "/home":
-            return _fmt_location(location_summary(conn, "loc_thorne_estate"))
+            return _fmt_location(location_summary(conn, "loc_thorne_estate", role=role))
         if command == "/watch":
-            return _character_view(conn, "char_darian") + "\n\n" + _fmt_history(recent_history(conn, limit=12))
+            return _character_view(conn, "char_darian", role=role) + "\n\n" + _fmt_history(recent_history(conn, limit=12, role=role))
         if command == "/history":
             limit = 8
             if rest:
@@ -657,7 +564,7 @@ def handle_command(db_path: str | Path, *, user_id: int, text: str) -> str:
                     limit = max(1, min(int(rest[0]), 20))
                 except ValueError:
                     return "Usage: /history [1-20]"
-            return _fmt_history(recent_history(conn, limit=max(limit * 2, 12)))
+            return _fmt_history(recent_history(conn, limit=max(limit * 2, 12), role=role))
         if command in {"/notify", "/notification", "/notifications"}:
             if not rest or rest[0].lower() not in {"on", "off"}:
                 return f"🔔 Notifications are {'ON' if _notifications_enabled(conn, user_id) else 'OFF'}.\nUse /notify on or /notify off."
@@ -671,24 +578,22 @@ def handle_command(db_path: str | Path, *, user_id: int, text: str) -> str:
                 return "🔒 Creator authority required for /restorestats."
             character_id = rest[0] if rest else "char_darian"
             try:
-                result = restore_basic_stats(
-                    conn,
-                    character_id,
-                    authority="creator",
-                    requested_by=f"telegram:{user_id}",
-                )
+                result = restore_basic_stats(conn, character_id, authority="creator", requested_by=f"telegram:{user_id}")
             except KeyError:
                 return f"Unknown character: {character_id}"
             return _fmt_restore_result(result)
         if command == "/pause":
-            return _fmt_status(set_autonomy_paused(conn, True))
+            set_autonomy_paused(conn, True)
+            return _fmt_status(observer_status(conn, role=role))
         if command == "/resume":
-            return _fmt_status(set_autonomy_paused(conn, False))
+            set_autonomy_paused(conn, False)
+            return _fmt_status(observer_status(conn, role=role))
         if command == "/speed":
             if not rest:
                 return "Usage: /speed <0-3600>"
             try:
-                return _fmt_status(set_autonomy_speed(conn, float(rest[0])))
+                set_autonomy_speed(conn, float(rest[0]))
+                return _fmt_status(observer_status(conn, role=role))
             except ValueError as exc:
                 return f"Speed rejected: {exc}"
         return _help(role)
@@ -703,7 +608,6 @@ def run_polling(db_path: str | Path = DEFAULT_DB) -> None:
     token = os.environ.get("OBSERVER_TELEGRAM_BOT_TOKEN", "").strip()
     if not token:
         return
-
     owner_id = _owner_user_id()
     if owner_id is not None:
         try:
@@ -714,22 +618,17 @@ def run_polling(db_path: str | Path = DEFAULT_DB) -> None:
                 _send(token, owner_id, _boot_message())
         except (urllib.error.URLError, TimeoutError, RuntimeError, OSError, ValueError):
             pass
-
     offset: int | None = None
     backoff = 1.0
     while True:
         try:
-            payload: dict[str, Any] = {
-                "timeout": 20,
-                "allowed_updates": json.dumps(["message", "callback_query"]),
-            }
+            payload: dict[str, Any] = {"timeout": 20, "allowed_updates": json.dumps(["message", "callback_query"])}
             if offset is not None:
                 payload["offset"] = offset
             updates = _api(token, "getUpdates", payload, timeout=30) or []
             backoff = 1.0
             for update in updates:
                 offset = int(update["update_id"]) + 1
-
                 callback = update.get("callback_query") or {}
                 if callback:
                     sender = callback.get("from") or {}
@@ -748,7 +647,6 @@ def run_polling(db_path: str | Path = DEFAULT_DB) -> None:
                     except Exception:
                         _api(token, "answerCallbackQuery", {"callback_query_id": callback.get("id"), "text": "Observer action failed safely"}, timeout=10)
                     continue
-
                 message = update.get("message") or {}
                 chat = message.get("chat") or {}
                 sender = message.get("from") or {}

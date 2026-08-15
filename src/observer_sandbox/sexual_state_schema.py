@@ -64,6 +64,18 @@ FIELDS = (
         "sensitivity": "intimate",
         "metadata_json": '{"min":0,"max":100,"baseline":0}',
     },
+    {
+        "field_key": "sexual_state.solo_regulation_drive",
+        "domain": "sexual_state",
+        "label": "Solo regulation drive",
+        "data_type": "number",
+        "unit": "0-100",
+        "description": "Current non-clinical behavioral drive used by the autonomous solo sexual-regulation loop; derived from authored libido, release recency, and immediate recovery state rather than a testosterone surrogate or weekly quota.",
+        "default_mode": "simulated",
+        "default_authority": "sexual_behavior_engine",
+        "sensitivity": "intimate",
+        "metadata_json": '{"min":0,"max":100,"meaning":"behavioral_drive","not_clinical":true}',
+    },
 )
 
 
