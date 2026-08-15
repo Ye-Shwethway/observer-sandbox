@@ -19,6 +19,7 @@ BATCH_TASK_IDS = [
     "survival_field_navigation_sim_v1",
     "survival_field_sustainment_sim_v1",
 ]
+H2H_TASK_ID = "h2h_controlled_striking_spar_v1"
 
 
 def config_copy():
@@ -31,8 +32,8 @@ def task(config, task_id=TECH_TASK_ID):
 
 def test_canonical_represented_task_registry_validates() -> None:
     source = validate_represented_skill_tasks()
-    assert source["revision"] == "represented-skill-tasks-v1.2"
-    assert list(source["tasks"]) == [TECH_TASK_ID, TACTICAL_TASK_ID, *BATCH_TASK_IDS]
+    assert source["revision"] == "represented-skill-tasks-v1.3"
+    assert list(source["tasks"]) == [TECH_TASK_ID, TACTICAL_TASK_ID, *BATCH_TASK_IDS, H2H_TASK_ID]
 
 
 def test_technology_task_is_exact_definition_bound_and_simulation_safe() -> None:
@@ -86,6 +87,27 @@ def test_batch_tasks_are_simulation_safe_and_preserve_application_resource_modes
         assert value["task_mode"] == "simulation_safe"
         assert value["risk_class"] == "low"
         assert value["evidence_policy"]["learning_evidence"] is False
+
+
+def test_controlled_h2h_task_is_consequential_and_requires_explicit_participant_authorization() -> None:
+    value = represented_skill_task(H2H_TASK_ID)
+    assert value["skill_id"] == "hand_to_hand_combat"
+    assert value["application_id"] == "engage_unarmed_striking"
+    assert value["task_mode"] == "represented_consequential"
+    assert value["risk_class"] == "moderate"
+    assert value["resource_contract"]["required_resource_mode"] == "none"
+    assert value["interaction_contract"] == {
+        "participant_entity_type": "character",
+        "participant_count": 1,
+        "requires_distinct_actor": True,
+        "requires_colocation": True,
+        "required_participant_capabilities_all": ["controlled_sparring_consent"],
+        "authorization_mode": "explicit_participant_capability",
+        "consequence_mode": "scored_contact_only",
+        "injury_state_mutation": False,
+        "target_state_mutation": False,
+    }
+    assert value["evidence_policy"]["learning_evidence"] is False
 
 
 def test_task_cannot_reference_unknown_skill_application() -> None:
