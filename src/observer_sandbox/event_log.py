@@ -84,37 +84,43 @@ def _enrich_technology_diagnostic(
     target = payload.get("target")
     duration = payload.get("duration_minutes")
     if not isinstance(target, str) or not isinstance(duration, (int, float)):
+        conn.rollback()
         raise ValueError("Completed diagnose action requires target and duration")
 
     # This resolves exact represented-task binding, learned Skill capability, and
     # bounded cognitive-performance inputs inside the action-completion
-    # transaction. Any invalid binding/capability raises before commit.
-    diagnostic = technology_diagnostic_outcome(conn, actor_id, target)
-    evidence = technology_diagnostic_application_evidence(
-        diagnostic,
-        action_id=action_id,
-        actor_id=actor_id,
-        duration_minutes=int(duration),
-    )
-    enriched = dict(payload)
-    enriched["represented_skill_task"] = diagnostic
-    enriched["skill_application"] = evidence
-
-    row = conn.execute(
-        "SELECT outcome_json FROM action_instances WHERE id=?",
-        (action_id,),
-    ).fetchone()
-    if row is not None:
-        current = json.loads(row["outcome_json"] or "{}")
-        if not isinstance(current, dict):
-            current = {}
-        current["represented_skill_task"] = diagnostic
-        current["skill_application"] = evidence
-        conn.execute(
-            "UPDATE action_instances SET outcome_json=?,updated_at=CURRENT_TIMESTAMP WHERE id=?",
-            (json.dumps(current, ensure_ascii=False), action_id),
+    # transaction. Any invalid binding/capability rolls back the entire action
+    # completion before the error is surfaced to autonomy/runtime handling.
+    try:
+        diagnostic = technology_diagnostic_outcome(conn, actor_id, target)
+        evidence = technology_diagnostic_application_evidence(
+            diagnostic,
+            action_id=action_id,
+            actor_id=actor_id,
+            duration_minutes=int(duration),
         )
-    return enriched
+        enriched = dict(payload)
+        enriched["represented_skill_task"] = diagnostic
+        enriched["skill_application"] = evidence
+
+        row = conn.execute(
+            "SELECT outcome_json FROM action_instances WHERE id=?",
+            (action_id,),
+        ).fetchone()
+        if row is not None:
+            current = json.loads(row["outcome_json"] or "{}")
+            if not isinstance(current, dict):
+                current = {}
+            current["represented_skill_task"] = diagnostic
+            current["skill_application"] = evidence
+            conn.execute(
+                "UPDATE action_instances SET outcome_json=?,updated_at=CURRENT_TIMESTAMP WHERE id=?",
+                (json.dumps(current, ensure_ascii=False), action_id),
+            )
+        return enriched
+    except Exception:
+        conn.rollback()
+        raise
 
 
 def _enrich_nutrition_energy(
