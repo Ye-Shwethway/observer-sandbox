@@ -5,131 +5,103 @@ Roadmap synchronized: 2026-08-15
 
 ## Operating principles
 
-- Runtime/code/config plus verified live production are authoritative over remembered chat.
+- Runtime/code/config plus verified production are authoritative over remembered chat.
 - AI proposes structured cognition; deterministic engines validate and mutate.
 - Telegram is observer/control, never simulation authority.
-- Preserve the LEGO contract:
-  `Actor(s) + Action + Place + Simulation Time + Conditions/Modifiers + Resources/Targets -> Validation -> State Changes + Events`.
+- Preserve: `Actor(s) + Action + Place + Simulation Time + Conditions/Modifiers + Resources/Targets -> Validation -> State Changes + Events`.
 - Darian/Thorne Estate are exemplars, never reusable-engine identity.
 - Use minimum-runnable reversible slices and **exemplar-first, then batch-by-pattern**.
-- Never mutate or accelerate production merely to manufacture evidence.
+- Never manipulate production merely to manufacture evidence.
 
 ## Current verified deployment
 
-Latest runtime deployment: **Deploy #202 / run `31873159944` SUCCESS**, Actor-backed Skill Capability Assessment Adapter v1, PR #117 merge `07b43a20f28c75cccb150f01cd8f071a5a3a08d9`.
+Latest runtime deployment: **Deploy #203 / run `31873525050` SUCCESS**, Represented Skill Task Contract v1, PR #119 merge `5dd49824e75adce40f374822bf9dc5383ad7532e`.
 
 Verified:
-- PR Actor Skill Capability Adapter Acceptance #1 / run `31873122885`: SUCCESS;
-- PR CI #815 / run `31873122797`: SUCCESS;
-- Public Readiness Security Audit #71 / run `31873122839`: SUCCESS;
-- post-merge Actor Skill Capability Adapter Acceptance #2 / run `31873159937`: SUCCESS;
-- post-merge CI #816 / run `31873159939`: SUCCESS;
-- Deploy #202 / run `31873159944`: SUCCESS;
-- service healthy/active, schema v5, autonomy normal 1.0x;
-- Telegram/cognition intact;
+- PR Represented Task Acceptance #1 / `31873487399`: SUCCESS;
+- PR CI #819 / `31873487361`: SUCCESS;
+- Strength Live Cycle #38 / `31873487388`: SUCCESS;
+- Public Security #73 / `31873487376`: SUCCESS;
+- post-merge Represented Task Acceptance #2 / `31873525048`: SUCCESS;
+- post-merge CI #820 / `31873525036`: SUCCESS;
+- Deploy #203 / `31873525050`: SUCCESS;
+- service healthy, schema v5, autonomy normal 1.0x, Telegram/cognition intact;
 - Technology remained `82.0 / A Advanced`.
 
-The adapter is deployed as a read-only library and is not called by the autonomy/service loop. No live action capability, Skill score/XP, profile value, or evidence was mutated merely to prove it.
-
-## Completed Skill foundation
-
-Recent Skill checkpoints:
-- Hand-to-Hand Skill Progression Foundation v1 — PR #104 / Deploy #196;
-- Tactical Planning Skill Progression v1 — PR #106 / Deploy #197;
-- Skill Evidence Semantics v1 / Technology practice — PR #108 / Deploy #198;
-- Skill Definition & Capability Framework research/design — PR #110;
-- Skill Creation Format v1 / Technology definition — PR #111 / Deploy #199;
-- Skill Application Requirements v1 — PR #113 / Deploy #200;
-- Technology Capability Resolution v1 — PR #115 / Deploy #201;
-- **Actor-backed Skill Capability Assessment Adapter v1 — PR #117 / Deploy #202**.
-
-Canonical docs:
-- `docs/SKILL_PROGRESSION_FOUNDATION_V1.md`
-- `docs/SKILL_PROGRESSION_TACTICAL_V1.md`
-- `docs/SKILL_EVIDENCE_SEMANTICS_V1.md`
-- `docs/SKILL_DEFINITION_CAPABILITY_FRAMEWORK_V1.md`
-- `docs/SKILL_CREATION_FORMAT_V1.md`
-- `docs/SKILL_APPLICATION_REQUIREMENTS_V1.md`
-- `docs/SKILL_CAPABILITY_RESOLUTION_V1.md`
-- `docs/ACTOR_SKILL_CAPABILITY_ADAPTER_V1.md`
+PR #119 added definition/validation artifacts only. No represented task entity or action was seeded, so production behavior intentionally remained unchanged.
 
 ## Skill authority / ontology
 
-Actor state:
 - `character_skills.score` = authoritative learned proficiency;
-- `character_skills.experience` = accumulated legitimate learning evidence;
+- `character_skills.experience` = legitimate accumulated learning evidence;
 - persisted `tier` = compatibility only;
 - grade = read-time `skill-proficiency-100-v1`.
 
-Universal meaning:
-- `config/skill_definitions.v1.json` + validator-backed definitions.
+Ability/Attribute != Knowledge != Skill != Task/Application != demonstrated reliability. No second competency score exists. RAPS skill-like fields are not independent mutable Skill truth.
 
-Canonical distinctions remain:
-- Ability/Attribute = underlying capacity;
-- Knowledge = facts/concepts/procedures known;
-- Skill = learned capacity to apply knowledge/abilities to observable task families;
-- Task/Application = work attempted with challenge/context/resources/risk;
-- Competency/Demonstrated Capability = real-context reliability evidence, not a second score;
-- Learning Evidence = immutable progression-eligible evidence;
-- Proficiency = actor Skill score interpreted by skill-specific behavioral anchors.
+## Completed Skill execution chain
 
-RAPS skill-like fields are not independent mutable Skill truth. Model prose and Telegram do not mutate proficiency.
+1. H2H Skill Progression v1 — PR #104 / Deploy #196
+2. Tactical Planning Skill Progression — PR #106 / Deploy #197
+3. Skill Evidence Semantics / Technology practice — PR #108 / Deploy #198
+4. Skill Definition & Capability Framework — PR #110
+5. Skill Creation Format / Technology definition — PR #111 / Deploy #199
+6. Skill Application Requirements — PR #113 / Deploy #200
+7. Technology Capability Resolution — PR #115 / Deploy #201
+8. Actor-backed Skill Capability Adapter — PR #117 / Deploy #202
+9. **Represented Skill Task Contract v1 — PR #119 / Deploy #203**
 
-## Technology executable definition
+Canonical stack:
+- `config/skill_definitions.v1.json`
+- `src/observer_sandbox/skill_definitions.py`
+- `src/observer_sandbox/skill_application_requirements.py`
+- `src/observer_sandbox/skill_capability.py`
+- `src/observer_sandbox/actor_skill_capability.py`
+- `config/represented_skill_tasks.v1.json`
+- `src/observer_sandbox/represented_skill_tasks.py`
 
-Technology is the first complete universal Skill Definition. First application:
-`diagnose_known_system_fault`.
+Canonical docs include `docs/SKILL_DEFINITION_CAPABILITY_FRAMEWORK_V1.md`, `SKILL_CREATION_FORMAT_V1.md`, `SKILL_APPLICATION_REQUIREMENTS_V1.md`, `SKILL_CAPABILITY_RESOLUTION_V1.md`, `ACTOR_SKILL_CAPABILITY_ADAPTER_V1.md`, and `REPRESENTED_SKILL_TASK_CONTRACT_V1.md`.
 
-Technology v1.1 executable requirements:
-- all context tags: `technical_system_represented`, `diagnostic_evidence_available`;
-- any required resource capability: `diagnostic_interface`, `diagnostic_instrumentation`;
-- supporting resource: `technical_documentation`;
-- Knowledge mode: `declarative_support_only`.
+## Technology exemplar
 
-Supporting Attributes:
-- `raps_ia.problem_solving`
-- `raps_ma.focus`
+Application: `diagnose_known_system_fault`.
 
-Legacy `raps_ia.technological_aptitude` is compatibility provenance only, not a second Technology authority.
+Skill application requirements:
+- context all: `technical_system_represented`, `diagnostic_evidence_available`;
+- resource any: `diagnostic_interface` or `diagnostic_instrumentation`;
+- supporting: `technical_documentation`;
+- Knowledge: `declarative_support_only`;
+- supporting Attributes: `raps_ia.problem_solving`, `raps_ma.focus`.
 
-## Capability Resolution v1
+Pure capability resolver returns `supported / constrained / unsupported`; definition anchors own challenge support. Knowledge is non-gating; Attributes are transparent/non-weighted until explicit modifier semantics exist. No probability, action authorization, second competency score, XP mutation, or LLM authority.
 
-Pure resolver:
-`src/observer_sandbox/skill_capability.py`
+Actor-backed adapter reads only authoritative `character_skills.score` and definition-declared Attribute fields. It is read-only, fails closed on missing Skill state, and never guesses task context/resources.
 
-Invariant:
-`Skill Definition + proficiency + grade anchor + requested challenge + explicit context/resources + declared supporting inputs -> supported / constrained / unsupported`
+## Represented Skill Task Contract v1
 
-Locks:
-- no scattered numeric capability thresholds;
-- challenge support comes from definition anchors;
-- Knowledge is declarative/non-gating;
-- Attributes are transparent non-weighted inputs until explicit modifier semantics exist;
-- no probability, second competency score, action authorization, learning mutation, or LLM authority.
+The Skill Definition defines what an application means. The Represented Task Definition defines one concrete world-task contract.
 
-## Actor-backed Capability Adapter v1
+First task:
+`technology_known_system_fault_diagnostic_sim_v1`
 
-Read-only adapter:
-`src/observer_sandbox/actor_skill_capability.py`
+- skill/application: `technology.diagnose_known_system_fault`
+- challenge: `standard`
+- mode/risk: `simulation_safe` / `low`
+- exact target definition: `represented_task:technology_known_fault_diagnostic_simulator_v1`
+- required target capability: `inspect`
+- context: represented technical system + diagnostic evidence
+- required resource: `diagnostic_interface`
+- supporting resource: `technical_documentation`
+- outcomes: feasibility, quality precision, information gained, partial failure recovery
+- application evidence deferred; learning evidence explicitly false.
 
-Invariant:
-`actor_id + skill_id + application_id + explicit challenge/context/resources -> authoritative actor Skill/Profile reads -> pure resolver -> read-only assessment`
+Validator prevents task definitions from weakening Skill application requirements, escaping challenge/effect envelopes, embedding actor state, or promoting `skill_practice:*` targets into application authority. Names/model prose are never target authority.
 
-Behavior:
-- reads `character_skills.score` only for Skill proficiency;
-- reads only definition-declared Attribute fields;
-- ignores unrelated profile fields;
-- missing declared Attribute rows remain explicit `None` under current non-gating semantics;
-- malformed declared numeric fields fail clearly;
-- missing authoritative Skill state fails closed instead of fabricating a score;
-- caller/task contract owns challenge/context/resource tokens; adapter does not guess them from inventory, location, names or prose;
-- assessments emit no events/history/evidence and perform no writes.
-
-Focused tests use a generic synthetic actor, not Darian as implementation identity.
+Existing Systems Diagnostic Practice Console remains **practice/learning evidence only** and must not be reused as application authority.
 
 ## Current broad Skill set
 
-Preserve as umbrella Skills until justified decomposition:
+Preserve umbrella Skills until justified decomposition:
 - Hand-to-Hand Combat
 - Weapons
 - Survival
@@ -137,37 +109,33 @@ Preserve as umbrella Skills until justified decomposition:
 - Technology
 - Field Medicine
 
-Never fabricate child Skill scores from a parent value.
+Never fabricate child scores from parent values.
 
 ## Next development sequence
 
-1. **Represented Technology Task Contract audit/exemplar — NEXT**;
-2. determine whether existing object/action semantics can truthfully supply application id, challenge, context/resource capabilities and target identity;
-3. if not, add the smallest generic represented-task contract first;
-4. then implement one bounded `diagnose_known_system_fault` application/action evidence integration;
-5. batch remaining current Skill Definitions after the full definition->assessment->represented-task pattern is proven;
-6. resume missing Field Medicine/Survival/Weapons evidence/progression only after definitions exist;
-7. Skill Retention/Reacquisition;
-8. later intellectual attributes, mental/emotion dynamics and broader social/relationship systems as justified.
+1. **Represented Skill Task Instance Resolver v1 — NEXT**;
+2. prove exact read-only target-entity binding + actor capability assessment with synthetic entities;
+3. then consider one distinct represented Technology simulator entity plus bounded action/application-evidence integration;
+4. batch remaining Skill Definitions only after the full definition -> actor assessment -> represented task -> instance/action pattern is proven;
+5. later missing Field Medicine/Survival/Weapons progression, retention/reacquisition, intellectual attributes, mental/emotion and social/relationship systems.
 
-## Represented Technology Task Contract — NEXT
+## Represented Skill Task Instance Resolver v1 — NEXT
 
-Audit existing actions, object capabilities/definitions, conditions/resources/modifiers and target validation before mutation.
+Invariant:
+`actor + task_id + target_entity_id + explicit available resource capabilities -> validate exact target type/definition/capabilities -> derive task challenge/context -> actor-backed Skill capability assessment -> read-only represented-task assessment`
 
-Required task facts for a truthful `diagnose_known_system_fault` exemplar:
-- stable application id;
-- represented target/system identity;
-- challenge class;
-- explicit required context tags;
-- explicit resource capability tokens;
-- bounded outcome dimensions and evidence semantics.
-
-Do not infer these facts from object names or LLM prose. Do not make Skill assessment itself action authorization. If the existing action/object architecture lacks a generic machine-readable source for these facts, add one minimum contract rather than hiding Technology constants in the action engine.
+Constraints:
+- exact `definition_id`; no name/prose matching;
+- fail closed on target mismatch;
+- do not reuse practice console;
+- synthetic target/entity tests are sufficient; no production seed for proof;
+- available resource capabilities remain explicit until represented resource ownership is separately proven;
+- no writes, action authorization, events/evidence, XP, autonomy or Telegram integration.
 
 ## Deferred boundaries
 
-Do not add as side effects a full Knowledge Engine, second competency score, giant Skill tree, economy/jobs/quests, broad Mind/Behavior, deep crafting, partnered sexual behavior, detailed endocrine simulation, second production character solely for testing, or Tahoe exterior traversal.
+No full Knowledge Engine, second competency score, giant Skill tree, economy/jobs/quests, broad Mind/Behavior, deep crafting, partnered sexual behavior, detailed endocrine simulation, second production character solely for testing, or Tahoe exterior traversal as side effects.
 
 ## Exact resume point
 
-**Actor-backed Skill Capability Assessment Adapter v1 is complete/deployed through PR #117 / Deploy #202. Next audit and prove the minimum represented Technology task contract for `diagnose_known_system_fault`; do not yet wire a generic Skill action engine or batch other Skill definitions.**
+**Represented Skill Task Contract v1 is complete/deployed through PR #119 / Deploy #203. Next implement one read-only Represented Skill Task Instance Resolver v1; do not seed/reuse the practice console or wire live actions yet.**
