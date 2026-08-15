@@ -15,21 +15,41 @@ from observer_sandbox.skill_practice import load_skill_practice_config
 from observer_sandbox.skill_progression import load_skill_progression_config
 
 
+CURRENT_SKILLS = {
+    "hand_to_hand_combat",
+    "weapons",
+    "survival",
+    "tactical_planning",
+    "technology",
+    "field_medicine",
+}
+
+
 def canonical() -> dict:
     return deepcopy(load_validated_skill_definitions())
 
 
-def test_canonical_registry_has_only_technology_exemplar_and_valid_semantics() -> None:
+def test_canonical_registry_covers_current_six_umbrella_skills() -> None:
     config = canonical()
-    assert config["revision"] == "skill-definitions-v1"
-    assert set(config["skills"]) == {"technology"}
+    assert config["revision"] == "skill-definitions-v1.1"
+    assert set(config["skills"]) == CURRENT_SKILLS
 
     technology = get_skill_definition("technology", config=config)
     assert technology["skill_id"] == "technology"
+    assert technology["revision"] == "technology-definition-v1.2"
     assert technology["grading_scheme"] == "skill-proficiency-100-v1"
     assert tuple(technology["proficiency_anchors"]) == EXPECTED_ANCHORS
     assert technology["learning_evidence"]["practice_method_ids"] == ["systems_diagnostic_practice"]
     assert technology["provenance"]["compatibility"]["character_skill_key"] == "technology"
+
+
+def test_every_current_skill_has_behavioral_anchors_and_applications() -> None:
+    config = canonical()
+    for skill_id, definition in config["skills"].items():
+        assert tuple(definition["proficiency_anchors"]) == EXPECTED_ANCHORS
+        assert definition["applications"]
+        assert definition["relations"]["component_skills"] == []
+        assert definition["provenance"]["compatibility"]["character_skill_key"] == skill_id
 
 
 def test_technology_learning_evidence_matches_practice_and_progression_catalogs() -> None:
@@ -65,7 +85,7 @@ def test_current_scale_rejects_ss_plus_capability_anchors() -> None:
         "supported_challenges": ["extreme"],
         "limits": "unsupported",
     }
-    with pytest.raises(SkillDefinitionValidationError, match="SS\+"):
+    with pytest.raises(SkillDefinitionValidationError, match="SS\\+"):
         validate_skill_definition_config(config)
 
 
@@ -101,8 +121,7 @@ def test_practice_method_must_also_be_whitelisted_by_progression() -> None:
 
 def test_high_risk_application_requires_meaningful_consequence_boundary() -> None:
     config = canonical()
-    app = config["skills"]["technology"]["applications"][0]
-    app["risk"]["default_class"] = "high"
+    app = config["skills"]["field_medicine"]["applications"][0]
     app["risk"]["consequence_bounds"] = "too short"
     with pytest.raises(SkillDefinitionValidationError, match="high-risk boundary"):
         validate_skill_definition_config(config)
