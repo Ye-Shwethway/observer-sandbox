@@ -1,205 +1,589 @@
 {
-  "revision": "skill-definitions-v1",
+  "revision": "skill-definitions-v1.1",
   "challenge_model": {
     "id": "generic-five-class-v1",
     "classes": ["routine", "standard", "challenging", "advanced", "extreme"]
   },
   "skills": {
+    "hand_to_hand_combat": {
+      "skill_id": "hand_to_hand_combat",
+      "name": "Hand-to-Hand Combat",
+      "aliases": ["unarmed combat"],
+      "revision": "hand-to-hand-combat-definition-v1",
+      "status": "active",
+      "category": "combat",
+      "skill_type": "mixed",
+      "reusability": "domain_specific",
+      "definition": "Learned capacity to apply unarmed striking, grappling, control, escape, and defensive movement in explicitly represented close-combat or training contexts.",
+      "scope_includes": ["unarmed striking", "grappling, control and escape", "bounded defensive movement and timing"],
+      "scope_excludes": ["weapon proficiency", "tactical command", "physical attributes as substitutes for learned combat skill", "unrepresented violence inferred from prose"],
+      "relations": {"parent_skill": null, "component_skills": [], "related_skills": []},
+      "knowledge_requirements": [
+        {"knowledge_key": "unarmed_striking_fundamentals", "description": "Distance, timing, balance, defense, and safe striking principles.", "importance": 1.0, "relationship": "performance_modifier", "blocking_if_absent": false},
+        {"knowledge_key": "grappling_control_principles", "description": "Position, leverage, control, escape, and safe close-contact principles.", "importance": 1.0, "relationship": "performance_modifier", "blocking_if_absent": false},
+        {"knowledge_key": "unarmed_combat_risk_awareness", "description": "Represented injury, escalation, and safe-practice boundaries.", "importance": 0.8, "relationship": "performance_modifier", "blocking_if_absent": false}
+      ],
+      "ability_dependencies": [
+        {"field_key": "raps_pa.reflexes", "relationship": "performance_modifier", "relevance": 1.0},
+        {"field_key": "raps_pa.agility", "relationship": "performance_modifier", "relevance": 0.9},
+        {"field_key": "raps_ma.focus", "relationship": "performance_modifier", "relevance": 0.8}
+      ],
+      "applications": [
+        {
+          "application_id": "engage_unarmed_striking",
+          "name": "Engage in Unarmed Striking",
+          "description": "Apply represented unarmed striking and defensive movement against a represented opponent or training target.",
+          "outcome_intent": "Produce bounded striking and defensive performance rather than generic athletic movement.",
+          "skill_role": "primary",
+          "challenge_classes": ["routine", "standard", "challenging", "advanced"],
+          "required_context": ["represented unarmed-combat context", "represented opponent or training target"],
+          "helpful_resources": [],
+          "requirements": {
+            "context_tags_all": ["unarmed_combat_context", "opponent_or_training_target_represented"],
+            "required_resource_mode": "none",
+            "resource_capabilities_any": [],
+            "supporting_resource_capabilities": [],
+            "knowledge": {"mode": "declarative_support_only", "supporting_keys": ["unarmed_striking_fundamentals", "unarmed_combat_risk_awareness"]}
+          },
+          "gameplay_effects": ["feasibility", "quality_precision", "time_speed", "error_probability_severity", "partial_failure_recovery", "available_action_variants"],
+          "risk": {
+            "default_class": "moderate",
+            "failure_modes": ["poor distance or timing", "loss of balance or defensive position", "ineffective striking sequence"],
+            "consequence_bounds": "Only explicitly represented unarmed-combat outcomes are affected. Skill score alone never authorizes harmful conduct or bypasses task safety and consequence rules.",
+            "practice_reliability_boundary": "Practice or simulation evidence does not automatically prove reliable consequential real-context performance."
+          }
+        },
+        {
+          "application_id": "control_unarmed_grapple",
+          "name": "Control or Escape an Unarmed Grapple",
+          "description": "Apply represented grappling, positional control, escape, and close-contact defensive skill.",
+          "outcome_intent": "Gain, maintain, reverse, or escape a represented close-contact position within bounded task rules.",
+          "skill_role": "primary",
+          "challenge_classes": ["routine", "standard", "challenging", "advanced"],
+          "required_context": ["represented unarmed-combat context", "represented close-contact control context"],
+          "helpful_resources": [],
+          "requirements": {
+            "context_tags_all": ["unarmed_combat_context", "close_contact_control_context"],
+            "required_resource_mode": "none",
+            "resource_capabilities_any": [],
+            "supporting_resource_capabilities": [],
+            "knowledge": {"mode": "declarative_support_only", "supporting_keys": ["grappling_control_principles", "unarmed_combat_risk_awareness"]}
+          },
+          "gameplay_effects": ["feasibility", "quality_precision", "time_speed", "error_probability_severity", "partial_failure_recovery", "available_action_variants"],
+          "risk": {
+            "default_class": "moderate",
+            "failure_modes": ["loss of position", "failed control or escape", "inefficient leverage or transition"],
+            "consequence_bounds": "Only explicitly represented grappling and control outcomes are affected; physical consequences remain owned by the represented task and safety systems.",
+            "practice_reliability_boundary": "Practice or simulation evidence does not automatically prove reliable consequential real-context performance."
+          }
+        }
+      ],
+      "proficiency_anchors": {
+        "E": {"summary": "Can follow simple guided unarmed-combat drills.", "independence": "close guidance required", "supported_challenges": ["routine"], "limits": "Independent unfamiliar combat is outside reliable capability."},
+        "D": {"summary": "Can perform familiar routine unarmed techniques with limited independence.", "independence": "limited independence", "supported_challenges": ["routine"], "limits": "Complex exchanges generally require support."},
+        "C": {"summary": "Can independently perform standard familiar striking and grappling tasks.", "independence": "independent on familiar standard tasks", "supported_challenges": ["routine", "standard"], "limits": "Challenging unfamiliar exchanges require support."},
+        "B": {"summary": "Can combine established unarmed techniques in moderately complex represented exchanges.", "independence": "independent on ordinary and moderately complex tasks", "supported_challenges": ["routine", "standard", "challenging"], "limits": "Advanced unfamiliar or consequential contexts may require support."},
+        "A": {"summary": "Can adapt established unarmed methods across complex known represented exchanges.", "independence": "high independence within known scope", "supported_challenges": ["routine", "standard", "challenging", "advanced"], "limits": "Extreme novelty or consequence remains task-bounded."},
+        "S": {"summary": "Can consistently handle subtle advanced unarmed exchanges and select efficient responses.", "independence": "expert independence within represented scope", "supported_challenges": ["routine", "standard", "challenging", "advanced"], "limits": "Extreme or high-consequence work is never authorized by score alone."}
+      },
+      "challenge_model": "generic-five-class-v1",
+      "gameplay_effects": ["feasibility", "quality_precision", "time_speed", "error_probability_severity", "partial_failure_recovery", "available_action_variants"],
+      "learning_evidence": {
+        "families": ["training_method"],
+        "practice_method_ids": [],
+        "implicit_action_evidence": false,
+        "notes": "Existing structured Training Method evidence remains progression authority. Generic use, inspect, research, monitor, object names, and model prose are never implicit learning evidence."
+      },
+      "transfer": [],
+      "retention": {"profile": "motor_procedural", "decay_policy": "deferred", "reacquisition_policy": "deferred"},
+      "grading_scheme": "skill-proficiency-100-v1",
+      "presentation": {"short_description": "Applied proficiency in represented unarmed striking and grappling.", "order": 10, "sensitivity": "normal"},
+      "provenance": {
+        "canonical_design": "docs/SKILL_DEFINITION_CAPABILITY_FRAMEWORK_V1.md",
+        "research_basis": ["O*NET Content Model", "NIST NICE Framework", "ESCO", "SFIA"],
+        "compatibility": {"character_skill_key": "hand_to_hand_combat", "legacy_profile_fields": ["raps_pa.combat_skill"]},
+        "historical_evidence_policy": "Existing Hand-to-Hand score, experience, and already-consumed legitimate training evidence remain authoritative; generic historical actions are not reinterpreted.",
+        "migration_notes": "Definition-only refactor. Existing parent Skill score is preserved and is not copied into striking or grappling child scores."
+      }
+    },
+    "weapons": {
+      "skill_id": "weapons",
+      "name": "Weapons",
+      "aliases": ["weapon proficiency"],
+      "revision": "weapons-definition-v1",
+      "status": "active",
+      "category": "combat",
+      "skill_type": "mixed",
+      "reusability": "domain_specific",
+      "definition": "Learned capacity to safely handle and effectively employ familiar represented weapons within explicitly bounded melee or ranged task contexts.",
+      "scope_includes": ["familiar represented melee weapon employment", "familiar represented ranged weapon employment", "safe handling within authored task constraints"],
+      "scope_excludes": ["unarmed combat", "weapon design or fabrication", "tactical command authority", "automatic mastery of every weapon family", "harmful conduct inferred from prose"],
+      "relations": {"parent_skill": null, "component_skills": [], "related_skills": []},
+      "knowledge_requirements": [
+        {"knowledge_key": "weapon_safety_and_handling", "description": "Safe handling, readiness, and control principles for familiar represented weapons.", "importance": 1.0, "relationship": "performance_modifier", "blocking_if_absent": false},
+        {"knowledge_key": "melee_weapon_principles", "description": "Distance, timing, and control principles for familiar represented melee weapons.", "importance": 1.0, "relationship": "performance_modifier", "blocking_if_absent": false},
+        {"knowledge_key": "ranged_weapon_principles", "description": "Safe aiming, control, and established employment principles for familiar represented ranged weapons.", "importance": 1.0, "relationship": "performance_modifier", "blocking_if_absent": false}
+      ],
+      "ability_dependencies": [
+        {"field_key": "raps_pa.reflexes", "relationship": "performance_modifier", "relevance": 0.9},
+        {"field_key": "raps_ma.focus", "relationship": "performance_modifier", "relevance": 1.0},
+        {"field_key": "raps_pa.agility", "relationship": "performance_modifier", "relevance": 0.7}
+      ],
+      "applications": [
+        {
+          "application_id": "employ_familiar_melee_weapon",
+          "name": "Employ a Familiar Melee Weapon",
+          "description": "Use a represented familiar melee weapon inside an explicitly authored training, simulation, or bounded operational task.",
+          "outcome_intent": "Apply safe and effective familiar-melee handling within represented objective and consequence limits.",
+          "skill_role": "primary",
+          "challenge_classes": ["routine", "standard", "challenging", "advanced"],
+          "required_context": ["represented weapon-employment context", "represented melee weapon"],
+          "helpful_resources": ["usable melee weapon"],
+          "requirements": {
+            "context_tags_all": ["weapon_employment_context", "represented_melee_weapon"],
+            "required_resource_mode": "any",
+            "resource_capabilities_any": ["usable_melee_weapon"],
+            "supporting_resource_capabilities": [],
+            "knowledge": {"mode": "declarative_support_only", "supporting_keys": ["weapon_safety_and_handling", "melee_weapon_principles"]}
+          },
+          "gameplay_effects": ["feasibility", "quality_precision", "time_speed", "error_probability_severity", "partial_failure_recovery", "available_action_variants"],
+          "risk": {
+            "default_class": "high",
+            "failure_modes": ["unsafe handling", "loss of weapon control", "ineffective timing or distance"],
+            "consequence_bounds": "Weapons score never independently authorizes consequential use. The represented task must separately own safety, target/context, weapon availability, and consequence rules.",
+            "practice_reliability_boundary": "Practice or simulation evidence does not automatically establish reliable consequential weapon performance."
+          }
+        },
+        {
+          "application_id": "employ_familiar_ranged_weapon",
+          "name": "Employ a Familiar Ranged Weapon",
+          "description": "Use a represented familiar ranged weapon inside an explicitly authored training, simulation, or bounded operational task.",
+          "outcome_intent": "Apply safe and effective familiar-ranged handling within represented objective and consequence limits.",
+          "skill_role": "primary",
+          "challenge_classes": ["routine", "standard", "challenging", "advanced"],
+          "required_context": ["represented weapon-employment context", "represented ranged weapon"],
+          "helpful_resources": ["usable ranged weapon"],
+          "requirements": {
+            "context_tags_all": ["weapon_employment_context", "represented_ranged_weapon"],
+            "required_resource_mode": "any",
+            "resource_capabilities_any": ["usable_ranged_weapon"],
+            "supporting_resource_capabilities": [],
+            "knowledge": {"mode": "declarative_support_only", "supporting_keys": ["weapon_safety_and_handling", "ranged_weapon_principles"]}
+          },
+          "gameplay_effects": ["feasibility", "quality_precision", "time_speed", "error_probability_severity", "partial_failure_recovery", "available_action_variants"],
+          "risk": {
+            "default_class": "high",
+            "failure_modes": ["unsafe handling", "poor control or aim", "incorrect established employment procedure"],
+            "consequence_bounds": "Weapons score never independently authorizes consequential ranged use. The represented task must separately own safety, target/context, weapon availability, and consequence rules.",
+            "practice_reliability_boundary": "Practice or simulation evidence does not automatically establish reliable consequential weapon performance."
+          }
+        }
+      ],
+      "proficiency_anchors": {
+        "E": {"summary": "Can follow guided safe handling on a simple familiar weapon.", "independence": "close guidance required", "supported_challenges": ["routine"], "limits": "Independent employment is outside reliable capability."},
+        "D": {"summary": "Can perform familiar routine weapon handling with limited independence.", "independence": "limited independence", "supported_challenges": ["routine"], "limits": "Complex or unfamiliar employment needs support."},
+        "C": {"summary": "Can independently perform standard familiar weapon tasks in ordinary bounded contexts.", "independence": "independent on familiar standard tasks", "supported_challenges": ["routine", "standard"], "limits": "Challenging or unfamiliar contexts need support."},
+        "B": {"summary": "Can adapt established familiar-weapon methods to moderately complex represented situations.", "independence": "independent on ordinary and moderately complex tasks", "supported_challenges": ["routine", "standard", "challenging"], "limits": "Advanced unfamiliar or consequential contexts may need specialist support."},
+        "A": {"summary": "Can independently handle complex known familiar-weapon tasks under nontrivial uncertainty.", "independence": "high independence within known scope", "supported_challenges": ["routine", "standard", "challenging", "advanced"], "limits": "High consequence remains task-bounded."},
+        "S": {"summary": "Can consistently handle advanced familiar-weapon tasks and select efficient established responses.", "independence": "expert independence within represented scope", "supported_challenges": ["routine", "standard", "challenging", "advanced"], "limits": "Extreme novelty or consequence is never authorized by score alone."}
+      },
+      "challenge_model": "generic-five-class-v1",
+      "gameplay_effects": ["feasibility", "quality_precision", "time_speed", "error_probability_severity", "partial_failure_recovery", "available_action_variants"],
+      "learning_evidence": {
+        "families": ["supervised_application"],
+        "practice_method_ids": [],
+        "implicit_action_evidence": false,
+        "notes": "No Weapons learning producer is activated by this definition. Generic use, inspect, research, monitor, object names, and model prose are never implicit learning evidence."
+      },
+      "transfer": [],
+      "retention": {"profile": "motor_procedural", "decay_policy": "deferred", "reacquisition_policy": "deferred"},
+      "grading_scheme": "skill-proficiency-100-v1",
+      "presentation": {"short_description": "Applied proficiency with familiar represented melee and ranged weapons.", "order": 20, "sensitivity": "normal"},
+      "provenance": {
+        "canonical_design": "docs/SKILL_DEFINITION_CAPABILITY_FRAMEWORK_V1.md",
+        "research_basis": ["O*NET Content Model", "NIST NICE Framework", "ESCO", "SFIA"],
+        "compatibility": {"character_skill_key": "weapons", "legacy_profile_fields": ["raps_pa.weapons_proficiency"]},
+        "historical_evidence_policy": "Existing Weapons score remains authoritative; this definition does not invent or reinterpret historical progression evidence.",
+        "migration_notes": "Definition-only refactor. Existing parent score is preserved and is not copied into melee or ranged child scores."
+      }
+    },
+    "survival": {
+      "skill_id": "survival",
+      "name": "Survival",
+      "aliases": ["fieldcraft"],
+      "revision": "survival-definition-v1",
+      "status": "active",
+      "category": "fieldcraft",
+      "skill_type": "fieldcraft",
+      "reusability": "cross_domain",
+      "definition": "Learned capacity to navigate, sustain oneself, and manage ordinary field-environment demands using represented information, materials, and established fieldcraft procedures.",
+      "scope_includes": ["field navigation", "bounded field sustainment", "adaptation of established fieldcraft procedures"],
+      "scope_excludes": ["wilderness omniscience", "medical treatment", "combat or weapon proficiency", "extreme expedition capability inferred from score alone"],
+      "relations": {"parent_skill": null, "component_skills": [], "related_skills": []},
+      "knowledge_requirements": [
+        {"knowledge_key": "field_navigation_principles", "description": "Orientation, route selection, terrain interpretation, and correction principles.", "importance": 1.0, "relationship": "performance_modifier", "blocking_if_absent": false},
+        {"knowledge_key": "field_sustainment_principles", "description": "Shelter, resource organization, exposure management, and bounded sustainment principles.", "importance": 1.0, "relationship": "performance_modifier", "blocking_if_absent": false},
+        {"knowledge_key": "environmental_hazard_awareness", "description": "Recognition of represented environmental hazards and escalation boundaries.", "importance": 0.9, "relationship": "performance_modifier", "blocking_if_absent": false}
+      ],
+      "ability_dependencies": [
+        {"field_key": "raps_ma.adaptability", "relationship": "performance_modifier", "relevance": 1.0},
+        {"field_key": "raps_ia.problem_solving", "relationship": "performance_modifier", "relevance": 0.9},
+        {"field_key": "raps_pa.endurance", "relationship": "performance_modifier", "relevance": 0.7}
+      ],
+      "applications": [
+        {
+          "application_id": "navigate_field_environment",
+          "name": "Navigate a Field Environment",
+          "description": "Determine and execute a route toward a represented field objective using terrain cues and optional navigation aids.",
+          "outcome_intent": "Progress toward the represented objective while managing route uncertainty and ordinary environmental constraints.",
+          "skill_role": "primary",
+          "challenge_classes": ["routine", "standard", "challenging", "advanced"],
+          "required_context": ["represented field environment", "defined navigation objective"],
+          "helpful_resources": ["navigation aid"],
+          "requirements": {
+            "context_tags_all": ["field_environment_represented", "navigation_objective_defined"],
+            "required_resource_mode": "none",
+            "resource_capabilities_any": [],
+            "supporting_resource_capabilities": ["navigation_aid"],
+            "knowledge": {"mode": "declarative_support_only", "supporting_keys": ["field_navigation_principles", "environmental_hazard_awareness"]}
+          },
+          "gameplay_effects": ["feasibility", "quality_precision", "time_speed", "resource_efficiency", "error_probability_severity", "information_gained", "partial_failure_recovery"],
+          "risk": {
+            "default_class": "moderate",
+            "failure_modes": ["route error", "loss of orientation", "inefficient or unsafe route selection"],
+            "consequence_bounds": "Survival proficiency affects represented navigation only. Extreme environments or severe hazards require explicit task definitions, resources, safeguards, and reliability evidence.",
+            "practice_reliability_boundary": "Practice or simulation evidence does not automatically establish reliable high-risk field performance."
+          }
+        },
+        {
+          "application_id": "establish_field_sustainment",
+          "name": "Establish Field Sustainment",
+          "description": "Organize represented materials and established fieldcraft procedures to meet a bounded shelter, exposure, or sustainment need.",
+          "outcome_intent": "Create or maintain a represented sustainment state using explicit available materials.",
+          "skill_role": "primary",
+          "challenge_classes": ["routine", "standard", "challenging", "advanced"],
+          "required_context": ["represented field environment", "defined sustainment need"],
+          "helpful_resources": ["field sustainment materials", "field toolkit"],
+          "requirements": {
+            "context_tags_all": ["field_environment_represented", "sustainment_need_defined"],
+            "required_resource_mode": "any",
+            "resource_capabilities_any": ["field_sustainment_materials"],
+            "supporting_resource_capabilities": ["field_toolkit"],
+            "knowledge": {"mode": "declarative_support_only", "supporting_keys": ["field_sustainment_principles", "environmental_hazard_awareness"]}
+          },
+          "gameplay_effects": ["feasibility", "quality_precision", "time_speed", "resource_efficiency", "error_probability_severity", "information_gained", "partial_failure_recovery"],
+          "risk": {
+            "default_class": "moderate",
+            "failure_modes": ["ineffective sustainment", "resource inefficiency", "incomplete exposure management"],
+            "consequence_bounds": "This application is bounded to explicitly represented materials, needs, and environment; high-hazard survival scenarios require separate safeguards.",
+            "practice_reliability_boundary": "Practice or simulation evidence does not automatically establish reliable high-risk field performance."
+          }
+        }
+      ],
+      "proficiency_anchors": {
+        "E": {"summary": "Can follow simple guided fieldcraft steps.", "independence": "close guidance required", "supported_challenges": ["routine"], "limits": "Independent unfamiliar field problems are outside reliable capability."},
+        "D": {"summary": "Can perform familiar routine fieldcraft with limited independence.", "independence": "limited independence", "supported_challenges": ["routine"], "limits": "Complex environments generally require support."},
+        "C": {"summary": "Can independently handle standard familiar navigation and sustainment tasks.", "independence": "independent on familiar standard tasks", "supported_challenges": ["routine", "standard"], "limits": "Challenging unfamiliar conditions require support."},
+        "B": {"summary": "Can adapt established fieldcraft to moderately complex represented conditions.", "independence": "independent on ordinary and moderately complex tasks", "supported_challenges": ["routine", "standard", "challenging"], "limits": "Advanced unfamiliar or hazardous conditions may require specialist support."},
+        "A": {"summary": "Can independently manage complex known fieldcraft tasks under nontrivial uncertainty.", "independence": "high independence within known scope", "supported_challenges": ["routine", "standard", "challenging", "advanced"], "limits": "Extreme hazard remains task-bounded."},
+        "S": {"summary": "Can consistently solve subtle advanced represented fieldcraft problems using efficient established strategies.", "independence": "expert independence within represented scope", "supported_challenges": ["routine", "standard", "challenging", "advanced"], "limits": "Extreme environments are never authorized by score alone."}
+      },
+      "challenge_model": "generic-five-class-v1",
+      "gameplay_effects": ["feasibility", "quality_precision", "time_speed", "resource_efficiency", "error_probability_severity", "information_gained", "partial_failure_recovery"],
+      "learning_evidence": {
+        "families": ["supervised_application"],
+        "practice_method_ids": [],
+        "implicit_action_evidence": false,
+        "notes": "No Survival learning producer is activated by this definition. Generic use, inspect, research, monitor, object names, and model prose are never implicit learning evidence."
+      },
+      "transfer": [],
+      "retention": {"profile": "mixed_knowledge_procedural", "decay_policy": "deferred", "reacquisition_policy": "deferred"},
+      "grading_scheme": "skill-proficiency-100-v1",
+      "presentation": {"short_description": "Applied field navigation and sustainment proficiency.", "order": 30, "sensitivity": "normal"},
+      "provenance": {
+        "canonical_design": "docs/SKILL_DEFINITION_CAPABILITY_FRAMEWORK_V1.md",
+        "research_basis": ["O*NET Content Model", "NIST NICE Framework", "ESCO", "SFIA"],
+        "compatibility": {"character_skill_key": "survival", "legacy_profile_fields": ["raps_pa.survival_skill"]},
+        "historical_evidence_policy": "Existing Survival score remains authoritative; this definition does not invent or reinterpret historical progression evidence.",
+        "migration_notes": "Definition-only refactor. Existing parent score is preserved and is not copied into navigation or sustainment child scores."
+      }
+    },
+    "tactical_planning": {
+      "skill_id": "tactical_planning",
+      "name": "Tactical Planning",
+      "aliases": ["tactical analysis"],
+      "revision": "tactical-planning-definition-v1",
+      "status": "active",
+      "category": "cognition",
+      "skill_type": "cognitive",
+      "reusability": "cross_domain",
+      "definition": "Learned capacity to assess represented tactical situations, organize available information, and develop bounded maneuver or contingency plans toward an explicit objective.",
+      "scope_includes": ["tactical situation assessment", "maneuver and sequencing plans", "bounded contingency planning"],
+      "scope_excludes": ["direct combat proficiency", "weapon proficiency", "grand strategy", "omniscient access to unrepresented information", "automatic command authority"],
+      "relations": {"parent_skill": null, "component_skills": [], "related_skills": []},
+      "knowledge_requirements": [
+        {"knowledge_key": "tactical_situation_assessment", "description": "Identify objectives, constraints, threats, opportunities, and information gaps.", "importance": 1.0, "relationship": "performance_modifier", "blocking_if_absent": false},
+        {"knowledge_key": "maneuver_planning_principles", "description": "Sequence movement, positioning, timing, and resource use toward a tactical objective.", "importance": 1.0, "relationship": "performance_modifier", "blocking_if_absent": false},
+        {"knowledge_key": "contingency_planning_principles", "description": "Identify plausible branches, failure points, and bounded fallback options.", "importance": 0.9, "relationship": "performance_modifier", "blocking_if_absent": false}
+      ],
+      "ability_dependencies": [
+        {"field_key": "raps_ia.problem_solving", "relationship": "performance_modifier", "relevance": 1.0},
+        {"field_key": "raps_ma.focus", "relationship": "performance_modifier", "relevance": 0.9},
+        {"field_key": "raps_ma.adaptability", "relationship": "performance_modifier", "relevance": 0.8}
+      ],
+      "applications": [
+        {
+          "application_id": "assess_tactical_situation",
+          "name": "Assess a Tactical Situation",
+          "description": "Analyze represented tactical information and an explicit objective to identify constraints, threats, opportunities, and information gaps.",
+          "outcome_intent": "Produce a bounded assessment grounded only in represented information.",
+          "skill_role": "primary",
+          "challenge_classes": ["routine", "standard", "challenging", "advanced"],
+          "required_context": ["represented tactical situation", "defined decision objective"],
+          "helpful_resources": ["situational intelligence"],
+          "requirements": {
+            "context_tags_all": ["tactical_situation_represented", "decision_objective_defined"],
+            "required_resource_mode": "none",
+            "resource_capabilities_any": [],
+            "supporting_resource_capabilities": ["situational_intelligence"],
+            "knowledge": {"mode": "declarative_support_only", "supporting_keys": ["tactical_situation_assessment"]}
+          },
+          "gameplay_effects": ["feasibility", "quality_precision", "time_speed", "error_probability_severity", "information_gained", "partial_failure_recovery", "available_action_variants"],
+          "risk": {
+            "default_class": "moderate",
+            "failure_modes": ["missed constraint", "incorrect prioritization", "incomplete uncertainty assessment"],
+            "consequence_bounds": "This application can reason only over represented information. Skill score does not create hidden intelligence, command authority, or guaranteed operational outcomes.",
+            "practice_reliability_boundary": "Simulation planning evidence does not automatically prove reliable consequential operational performance."
+          }
+        },
+        {
+          "application_id": "plan_tactical_maneuver",
+          "name": "Plan a Tactical Maneuver or Contingency",
+          "description": "Develop a represented maneuver, sequence, or contingency plan toward an explicit tactical objective.",
+          "outcome_intent": "Produce a coherent bounded plan and fallback structure without directly resolving execution outcomes.",
+          "skill_role": "primary",
+          "challenge_classes": ["routine", "standard", "challenging", "advanced"],
+          "required_context": ["represented tactical situation", "defined movement objective"],
+          "helpful_resources": ["situational intelligence", "terrain or layout information"],
+          "requirements": {
+            "context_tags_all": ["tactical_situation_represented", "movement_objective_defined"],
+            "required_resource_mode": "none",
+            "resource_capabilities_any": [],
+            "supporting_resource_capabilities": ["situational_intelligence", "terrain_or_layout_information"],
+            "knowledge": {"mode": "declarative_support_only", "supporting_keys": ["maneuver_planning_principles", "contingency_planning_principles"]}
+          },
+          "gameplay_effects": ["feasibility", "quality_precision", "time_speed", "error_probability_severity", "information_gained", "partial_failure_recovery", "available_action_variants"],
+          "risk": {
+            "default_class": "moderate",
+            "failure_modes": ["poor sequencing", "unhandled contingency", "inefficient positioning or timing"],
+            "consequence_bounds": "Planning quality is distinct from action execution. World and action engines own movement, combat, resources, and consequences; Tactical Planning never guarantees them.",
+            "practice_reliability_boundary": "Simulation planning evidence does not automatically prove reliable consequential operational performance."
+          }
+        }
+      ],
+      "proficiency_anchors": {
+        "E": {"summary": "Can follow a guided assessment or simple tactical plan.", "independence": "close guidance required", "supported_challenges": ["routine"], "limits": "Independent ambiguous planning is outside reliable capability."},
+        "D": {"summary": "Can handle familiar routine tactical assessments with limited independence.", "independence": "limited independence", "supported_challenges": ["routine"], "limits": "Multi-factor situations generally require support."},
+        "C": {"summary": "Can independently assess and plan standard familiar represented tactical situations.", "independence": "independent on familiar standard tasks", "supported_challenges": ["routine", "standard"], "limits": "Challenging uncertainty requires support."},
+        "B": {"summary": "Can integrate several represented factors and adapt established plans to moderately complex situations.", "independence": "independent on ordinary and moderately complex tasks", "supported_challenges": ["routine", "standard", "challenging"], "limits": "Advanced unfamiliar situations may require specialist input."},
+        "A": {"summary": "Can independently assess complex known tactical situations and build robust bounded contingencies.", "independence": "high independence within known scope", "supported_challenges": ["routine", "standard", "challenging", "advanced"], "limits": "Extreme novelty or consequence remains task-bounded."},
+        "S": {"summary": "Can consistently isolate subtle tactical factors and produce efficient advanced plans under represented uncertainty.", "independence": "expert independence within represented scope", "supported_challenges": ["routine", "standard", "challenging", "advanced"], "limits": "Extreme or high-consequence planning is never authorized by score alone."}
+      },
+      "challenge_model": "generic-five-class-v1",
+      "gameplay_effects": ["feasibility", "quality_precision", "time_speed", "error_probability_severity", "information_gained", "partial_failure_recovery", "available_action_variants"],
+      "learning_evidence": {
+        "families": ["training_method"],
+        "practice_method_ids": [],
+        "implicit_action_evidence": false,
+        "notes": "Existing VR Tactical Drills and AI Combat Simulation progression evidence remain authoritative. Generic use, inspect, research, monitor, object names, and model prose are never implicit learning evidence."
+      },
+      "transfer": [],
+      "retention": {"profile": "cognitive_procedural", "decay_policy": "deferred", "reacquisition_policy": "deferred"},
+      "grading_scheme": "skill-proficiency-100-v1",
+      "presentation": {"short_description": "Applied tactical assessment, maneuver, and contingency planning proficiency.", "order": 40, "sensitivity": "normal"},
+      "provenance": {
+        "canonical_design": "docs/SKILL_DEFINITION_CAPABILITY_FRAMEWORK_V1.md",
+        "research_basis": ["O*NET Content Model", "NIST NICE Framework", "ESCO", "SFIA"],
+        "compatibility": {"character_skill_key": "tactical_planning", "legacy_profile_fields": ["raps_ia.tactical_thinking"]},
+        "historical_evidence_policy": "Existing Tactical Planning score, experience, and already-consumed legitimate training evidence remain authoritative; generic historical actions are not reinterpreted.",
+        "migration_notes": "Definition-only refactor. Existing parent Skill score is preserved and is not copied into assessment or maneuver child scores."
+      }
+    },
     "technology": {
       "skill_id": "technology",
       "name": "Technology",
       "aliases": ["technical systems"],
-      "revision": "technology-definition-v1.1",
+      "revision": "technology-definition-v1.2",
       "status": "active",
       "category": "technical",
       "skill_type": "technical",
       "reusability": "cross_domain",
       "definition": "Learned capacity to understand, configure, diagnose, maintain, and troubleshoot designed technical systems by applying relevant knowledge, tools, documentation, and safe procedures.",
-      "scope_includes": [
-        "diagnosing and troubleshooting represented technical systems",
-        "configuring and setting up familiar or documented technical systems",
-        "using diagnostic instrumentation, interfaces, logs, status data, and telemetry",
-        "performing represented routine maintenance and recovery procedures"
-      ],
-      "scope_excludes": [
-        "ordinary consumer use that does not require technical problem-solving",
-        "pure theoretical or scientific knowledge without practical application",
-        "fabrication, manufacturing, or crafting that is not represented by an explicit application",
-        "weapon operation or weapons proficiency",
-        "medical diagnosis or treatment and medical-device use that requires medical competence",
-        "offensive cybersecurity, unauthorized intrusion, or other security-specialist work unless represented by a separate future Skill/Application",
-        "novel engineering or research-grade design that lacks the required explicit knowledge, task, and context definitions"
-      ],
-      "relations": {
-        "parent_skill": null,
-        "component_skills": [],
-        "related_skills": []
-      },
+      "scope_includes": ["represented technical diagnostics", "familiar or documented technical configuration", "diagnostic interfaces and telemetry", "represented routine technical maintenance"],
+      "scope_excludes": ["ordinary consumer use", "pure theoretical knowledge", "unrepresented fabrication", "weapon operation", "medical work", "unauthorized security intrusion", "research-grade design without explicit task support"],
+      "relations": {"parent_skill": null, "component_skills": [], "related_skills": []},
       "knowledge_requirements": [
-        {
-          "knowledge_key": "technical_systems_fundamentals",
-          "description": "Conceptual understanding of components, interfaces, states, inputs, outputs, and common failure patterns in the represented system family.",
-          "importance": 1.0,
-          "relationship": "performance_modifier",
-          "blocking_if_absent": false
-        },
-        {
-          "knowledge_key": "diagnostic_procedures",
-          "description": "Knowledge of safe, ordered diagnostic and troubleshooting procedures applicable to the represented system.",
-          "importance": 1.0,
-          "relationship": "performance_modifier",
-          "blocking_if_absent": false
-        },
-        {
-          "knowledge_key": "technical_documentation_interpretation",
-          "description": "Ability-supporting knowledge for interpreting represented manuals, logs, status codes, diagrams, and interface feedback.",
-          "importance": 0.8,
-          "relationship": "performance_modifier",
-          "blocking_if_absent": false
-        }
+        {"knowledge_key": "technical_systems_fundamentals", "description": "Components, interfaces, states, inputs, outputs, and common failure patterns.", "importance": 1.0, "relationship": "performance_modifier", "blocking_if_absent": false},
+        {"knowledge_key": "diagnostic_procedures", "description": "Safe ordered diagnostic and troubleshooting procedures.", "importance": 1.0, "relationship": "performance_modifier", "blocking_if_absent": false},
+        {"knowledge_key": "technical_documentation_interpretation", "description": "Interpretation of represented manuals, logs, status codes, diagrams, and feedback.", "importance": 0.8, "relationship": "performance_modifier", "blocking_if_absent": false}
       ],
       "ability_dependencies": [
-        {
-          "field_key": "raps_ia.problem_solving",
-          "relationship": "performance_modifier",
-          "relevance": 1.0
-        },
-        {
-          "field_key": "raps_ma.focus",
-          "relationship": "performance_modifier",
-          "relevance": 0.7
-        }
+        {"field_key": "raps_ia.problem_solving", "relationship": "performance_modifier", "relevance": 1.0},
+        {"field_key": "raps_ma.focus", "relationship": "performance_modifier", "relevance": 0.7}
       ],
       "applications": [
         {
           "application_id": "diagnose_known_system_fault",
           "name": "Diagnose Known System Fault",
-          "description": "Inspect represented symptoms, logs, telemetry, and diagnostic feedback to identify the most likely fault source and a safe corrective or escalation path for a known technical system family.",
-          "outcome_intent": "Produce a technically justified fault assessment and next-step recommendation rather than merely operate the system.",
+          "description": "Inspect represented symptoms, logs, telemetry, and diagnostic feedback to identify a likely fault source and safe next step for a known technical system family.",
+          "outcome_intent": "Produce a justified fault assessment and next-step recommendation rather than merely operate the system.",
           "skill_role": "primary",
           "challenge_classes": ["routine", "standard", "challenging", "advanced"],
-          "required_context": [
-            "a represented technical system or simulation with observable diagnostic evidence"
-          ],
-          "helpful_resources": [
-            "diagnostic interface or instrumentation",
-            "relevant system documentation"
-          ],
+          "required_context": ["represented technical system with diagnostic evidence"],
+          "helpful_resources": ["diagnostic interface or instrumentation", "technical documentation"],
           "requirements": {
-            "context_tags_all": [
-              "technical_system_represented",
-              "diagnostic_evidence_available"
-            ],
-            "resource_capabilities_any": [
-              "diagnostic_interface",
-              "diagnostic_instrumentation"
-            ],
-            "supporting_resource_capabilities": [
-              "technical_documentation"
-            ],
-            "knowledge": {
-              "mode": "declarative_support_only",
-              "supporting_keys": [
-                "technical_systems_fundamentals",
-                "diagnostic_procedures",
-                "technical_documentation_interpretation"
-              ]
-            }
+            "context_tags_all": ["technical_system_represented", "diagnostic_evidence_available"],
+            "required_resource_mode": "any",
+            "resource_capabilities_any": ["diagnostic_interface", "diagnostic_instrumentation"],
+            "supporting_resource_capabilities": ["technical_documentation"],
+            "knowledge": {"mode": "declarative_support_only", "supporting_keys": ["technical_systems_fundamentals", "diagnostic_procedures", "technical_documentation_interpretation"]}
           },
-          "gameplay_effects": [
-            "feasibility",
-            "quality_precision",
-            "time_speed",
-            "error_probability_severity",
-            "information_gained",
-            "partial_failure_recovery"
-          ],
+          "gameplay_effects": ["feasibility", "quality_precision", "time_speed", "error_probability_severity", "information_gained", "partial_failure_recovery"],
           "risk": {
             "default_class": "moderate",
-            "failure_modes": [
-              "incorrect fault isolation",
-              "incomplete diagnosis",
-              "unnecessary or ineffective corrective recommendation"
-            ],
-            "consequence_bounds": "The generic Technology definition may influence represented technical diagnostic outcomes only. High-risk live systems require an explicit task definition, appropriate tools/resources, relevant knowledge, and additional safeguards; Technology score alone never authorizes them.",
-            "practice_reliability_boundary": "Simulation or purpose-built practice evidence demonstrates learning/practice, not automatic reliability in consequential live systems."
+            "failure_modes": ["incorrect fault isolation", "incomplete diagnosis", "ineffective recommendation"],
+            "consequence_bounds": "Technology may influence represented diagnostics only. High-risk live systems require explicit task definitions, resources, knowledge, safeguards, and reliability evidence; score alone never authorizes them.",
+            "practice_reliability_boundary": "Simulation or purpose-built practice demonstrates learning, not automatic reliability in consequential live systems."
           }
         }
       ],
       "proficiency_anchors": {
-        "E": {
-          "summary": "Can follow explicit guided steps on simple familiar technical systems but cannot independently perform meaningful diagnosis.",
-          "independence": "requires close guidance or highly prescriptive procedures",
-          "supported_challenges": ["routine"],
-          "limits": "Novel faults, ambiguous evidence, and consequential live work are outside reliable independent capability."
-        },
-        "D": {
-          "summary": "Can perform simple routine setup, checks, and obvious fault identification with documentation or guidance.",
-          "independence": "limited independence on familiar low-risk tasks",
-          "supported_challenges": ["routine"],
-          "limits": "Multi-factor faults and unfamiliar systems generally require assistance."
-        },
-        "C": {
-          "summary": "Can independently perform standard diagnostics and known procedures on familiar systems under ordinary low-risk conditions.",
-          "independence": "independent for familiar standard procedures",
-          "supported_challenges": ["routine", "standard"],
-          "limits": "Complex unfamiliar cases, substantial uncertainty, and higher-risk contexts require escalation or support."
-        },
-        "B": {
-          "summary": "Can independently diagnose a broad range of known faults, combine multiple evidence sources, and adapt established procedures to moderately complex situations.",
-          "independence": "independent for ordinary and moderately complex known-system work",
-          "supported_challenges": ["routine", "standard", "challenging"],
-          "limits": "Advanced unfamiliar, novel, or consequential systems may require specialist knowledge, additional resources, or supervision."
-        },
-        "A": {
-          "summary": "Can independently diagnose complex but known technical systems, integrate conflicting evidence, and adapt established methods while managing nontrivial uncertainty.",
-          "independence": "high independence within represented known-system scope",
-          "supported_challenges": ["routine", "standard", "challenging", "advanced"],
-          "limits": "Research-grade novelty, unsupported specialist domains, and high-risk live operations remain bounded by task-specific knowledge, resources, safeguards, and demonstrated reliability."
-        },
-        "S": {
-          "summary": "Can consistently isolate subtle or multi-factor faults in advanced known or closely adjacent technical systems, select efficient safe diagnostic strategies, and support others' technical reasoning.",
-          "independence": "expert independence within explicitly represented technical scope",
-          "supported_challenges": ["routine", "standard", "challenging", "advanced"],
-          "limits": "Extreme novelty or high-consequence work is never authorized by proficiency score alone and still requires explicit domain knowledge, resources, safeguards, and contextual reliability evidence."
-        }
+        "E": {"summary": "Can follow explicit guided steps on simple familiar technical systems.", "independence": "close guidance required", "supported_challenges": ["routine"], "limits": "Independent meaningful diagnosis is outside reliable capability."},
+        "D": {"summary": "Can perform simple routine checks and obvious fault identification with guidance.", "independence": "limited independence", "supported_challenges": ["routine"], "limits": "Multi-factor faults usually require assistance."},
+        "C": {"summary": "Can independently perform standard diagnostics on familiar systems.", "independence": "independent on familiar standard procedures", "supported_challenges": ["routine", "standard"], "limits": "Complex unfamiliar cases require escalation."},
+        "B": {"summary": "Can combine evidence and adapt established diagnostic procedures to moderately complex cases.", "independence": "independent on ordinary and moderately complex known work", "supported_challenges": ["routine", "standard", "challenging"], "limits": "Advanced unfamiliar or consequential systems may require specialist support."},
+        "A": {"summary": "Can independently diagnose complex but known systems under nontrivial uncertainty.", "independence": "high independence within known-system scope", "supported_challenges": ["routine", "standard", "challenging", "advanced"], "limits": "Research novelty or high consequence remains task-bounded."},
+        "S": {"summary": "Can consistently isolate subtle multi-factor faults in advanced known or adjacent systems.", "independence": "expert independence within represented scope", "supported_challenges": ["routine", "standard", "challenging", "advanced"], "limits": "Extreme novelty or high consequence is never authorized by score alone."}
       },
       "challenge_model": "generic-five-class-v1",
-      "gameplay_effects": [
-        "feasibility",
-        "quality_precision",
-        "time_speed",
-        "error_probability_severity",
-        "information_gained",
-        "partial_failure_recovery"
-      ],
+      "gameplay_effects": ["feasibility", "quality_precision", "time_speed", "error_probability_severity", "information_gained", "partial_failure_recovery"],
       "learning_evidence": {
         "families": ["skill_practice"],
         "practice_method_ids": ["systems_diagnostic_practice"],
         "implicit_action_evidence": false,
-        "notes": "Generic use, inspect, research, monitor, object names, or model prose are never Technology learning evidence by implication."
+        "notes": "Generic use, inspect, research, monitor, object names, and model prose are never Technology learning evidence by implication."
       },
       "transfer": [],
-      "retention": {
-        "profile": "mixed_knowledge_procedural",
-        "decay_policy": "deferred",
-        "reacquisition_policy": "deferred"
-      },
+      "retention": {"profile": "mixed_knowledge_procedural", "decay_policy": "deferred", "reacquisition_policy": "deferred"},
       "grading_scheme": "skill-proficiency-100-v1",
-      "presentation": {
-        "short_description": "Applied proficiency with represented technical systems and diagnostics.",
-        "order": 50,
-        "sensitivity": "normal"
-      },
+      "presentation": {"short_description": "Applied proficiency with represented technical systems and diagnostics.", "order": 50, "sensitivity": "normal"},
       "provenance": {
         "canonical_design": "docs/SKILL_DEFINITION_CAPABILITY_FRAMEWORK_V1.md",
         "research_basis": ["O*NET Content Model", "NIST NICE Framework", "ESCO", "SFIA"],
-        "compatibility": {
-          "character_skill_key": "technology",
-          "legacy_profile_fields": ["raps_ia.technological_aptitude"]
+        "compatibility": {"character_skill_key": "technology", "legacy_profile_fields": ["raps_ia.technological_aptitude"]},
+        "historical_evidence_policy": "Existing Technology score, experience, and already-consumed Systems Diagnostic Practice evidence remain authoritative; generic historical actions are not reinterpreted.",
+        "migration_notes": "v1.2 makes required-resource mode explicit without changing actor state or historical learning evidence."
+      }
+    },
+    "field_medicine": {
+      "skill_id": "field_medicine",
+      "name": "Field Medicine",
+      "aliases": ["field medical care"],
+      "revision": "field-medicine-definition-v1",
+      "status": "active",
+      "category": "medical",
+      "skill_type": "medical",
+      "reusability": "domain_specific",
+      "definition": "Learned capacity to assess represented casualties and perform bounded field stabilization or evacuation preparation within explicit medical-task, resource, and safety constraints.",
+      "scope_includes": ["structured field casualty assessment", "bounded stabilization", "evacuation preparation and handoff"],
+      "scope_excludes": ["definitive diagnosis", "comprehensive clinical treatment", "surgery or prescribing", "unrepresented medical-device competence", "real-world medical authority from gameplay score"],
+      "relations": {"parent_skill": null, "component_skills": [], "related_skills": []},
+      "knowledge_requirements": [
+        {"knowledge_key": "field_casualty_assessment", "description": "Structured field assessment, prioritization, and recognition of represented urgent problems.", "importance": 1.0, "relationship": "performance_modifier", "blocking_if_absent": false},
+        {"knowledge_key": "immediate_stabilization_principles", "description": "Bounded represented stabilization and prevention-of-deterioration principles pending escalation.", "importance": 1.0, "relationship": "performance_modifier", "blocking_if_absent": false},
+        {"knowledge_key": "evacuation_preparation_principles", "description": "Represented preparation, communication, and handoff principles for evacuation or higher-level care.", "importance": 1.0, "relationship": "performance_modifier", "blocking_if_absent": false}
+      ],
+      "ability_dependencies": [
+        {"field_key": "raps_ia.problem_solving", "relationship": "performance_modifier", "relevance": 1.0},
+        {"field_key": "raps_ma.focus", "relationship": "performance_modifier", "relevance": 0.9},
+        {"field_key": "raps_ma.emotional_stability", "relationship": "performance_modifier", "relevance": 0.8}
+      ],
+      "applications": [
+        {
+          "application_id": "assess_field_casualty",
+          "name": "Assess a Field Casualty",
+          "description": "Perform a structured assessment of a represented casualty inside an authored field-medical scenario.",
+          "outcome_intent": "Identify represented priority concerns and an escalation or next-step category without implying definitive diagnosis.",
+          "skill_role": "primary",
+          "challenge_classes": ["routine", "standard", "challenging", "advanced"],
+          "required_context": ["represented casualty", "represented field-medical context"],
+          "helpful_resources": ["basic medical assessment tools"],
+          "requirements": {
+            "context_tags_all": ["casualty_represented", "field_medical_context"],
+            "required_resource_mode": "none",
+            "resource_capabilities_any": [],
+            "supporting_resource_capabilities": ["basic_medical_assessment_tools"],
+            "knowledge": {"mode": "declarative_support_only", "supporting_keys": ["field_casualty_assessment"]}
+          },
+          "gameplay_effects": ["feasibility", "quality_precision", "time_speed", "resource_efficiency", "error_probability_severity", "information_gained", "partial_failure_recovery"],
+          "risk": {
+            "default_class": "high",
+            "failure_modes": ["missed priority concern", "incorrect prioritization", "incomplete assessment"],
+            "consequence_bounds": "These are simulation and gameplay semantics, not medical advice or real-world authorization. Consequential medical tasks require explicit represented patient state, safeguards, resources, and bounded procedure contracts.",
+            "practice_reliability_boundary": "Practice or simulation evidence does not automatically establish real-world medical competence or authorization."
+          }
         },
-        "historical_evidence_policy": "Existing Technology score/experience and already-consumed Systems Diagnostic Practice evidence remain authoritative actor state. This definition does not retroactively reinterpret generic historical actions as learning evidence.",
-        "migration_notes": "v1.1 adds machine-readable application requirements only. No actor score, experience, tier, grade, or historical learning evidence is reinterpreted."
+        {
+          "application_id": "stabilize_for_evacuation",
+          "name": "Stabilize for Evacuation or Handoff",
+          "description": "Apply a bounded represented stabilization and evacuation-preparation task using explicit supplies and authored casualty state.",
+          "outcome_intent": "Reduce represented immediate deterioration risk and prepare escalation or handoff without implying definitive treatment.",
+          "skill_role": "primary",
+          "challenge_classes": ["routine", "standard", "challenging", "advanced"],
+          "required_context": ["represented casualty", "represented field-medical context", "defined evacuation or handoff need"],
+          "helpful_resources": ["field medical supplies", "evacuation support equipment"],
+          "requirements": {
+            "context_tags_all": ["casualty_represented", "field_medical_context", "evacuation_or_handoff_needed"],
+            "required_resource_mode": "any",
+            "resource_capabilities_any": ["field_medical_supplies"],
+            "supporting_resource_capabilities": ["evacuation_support_equipment"],
+            "knowledge": {"mode": "declarative_support_only", "supporting_keys": ["immediate_stabilization_principles", "evacuation_preparation_principles"]}
+          },
+          "gameplay_effects": ["feasibility", "quality_precision", "time_speed", "resource_efficiency", "error_probability_severity", "information_gained", "partial_failure_recovery"],
+          "risk": {
+            "default_class": "high",
+            "failure_modes": ["ineffective stabilization", "resource misuse", "unsafe or incomplete evacuation preparation"],
+            "consequence_bounds": "These are simulation and gameplay semantics, not medical advice or real-world authorization. High-consequence treatment remains outside generic Field Medicine authority unless an explicit represented task owns patient state, procedure, tools, safeguards, and outcomes.",
+            "practice_reliability_boundary": "Practice or simulation evidence does not automatically establish real-world medical competence or authorization."
+          }
+        }
+      ],
+      "proficiency_anchors": {
+        "E": {"summary": "Can follow simple guided field-casualty assessment steps.", "independence": "close guidance required", "supported_challenges": ["routine"], "limits": "Independent medical judgment is outside reliable capability."},
+        "D": {"summary": "Can perform familiar routine field-medical steps with limited independence.", "independence": "limited independence", "supported_challenges": ["routine"], "limits": "Complex cases generally require support."},
+        "C": {"summary": "Can independently perform standard familiar field assessment and bounded stabilization tasks.", "independence": "independent on familiar standard tasks", "supported_challenges": ["routine", "standard"], "limits": "Challenging or ambiguous cases require escalation."},
+        "B": {"summary": "Can combine represented findings and adapt established field-medical procedures to moderately complex cases.", "independence": "independent on ordinary and moderately complex tasks", "supported_challenges": ["routine", "standard", "challenging"], "limits": "Advanced or consequential cases may require higher-level support."},
+        "A": {"summary": "Can independently manage complex known field-medical assessment and bounded stabilization under uncertainty.", "independence": "high independence within represented known scope", "supported_challenges": ["routine", "standard", "challenging", "advanced"], "limits": "Definitive or high-consequence treatment remains task-bounded."},
+        "S": {"summary": "Can consistently identify subtle represented priorities and select efficient bounded field stabilization strategies.", "independence": "expert independence within represented scope", "supported_challenges": ["routine", "standard", "challenging", "advanced"], "limits": "Extreme or definitive medical work is never authorized by score alone."}
+      },
+      "challenge_model": "generic-five-class-v1",
+      "gameplay_effects": ["feasibility", "quality_precision", "time_speed", "resource_efficiency", "error_probability_severity", "information_gained", "partial_failure_recovery"],
+      "learning_evidence": {
+        "families": ["supervised_application"],
+        "practice_method_ids": [],
+        "implicit_action_evidence": false,
+        "notes": "No Field Medicine learning producer is activated by this definition. Generic use, inspect, research, monitor, object names, and model prose are never implicit learning evidence."
+      },
+      "transfer": [],
+      "retention": {"profile": "mixed_knowledge_procedural", "decay_policy": "deferred", "reacquisition_policy": "deferred"},
+      "grading_scheme": "skill-proficiency-100-v1",
+      "presentation": {"short_description": "Bounded represented field-casualty assessment and stabilization proficiency.", "order": 60, "sensitivity": "normal"},
+      "provenance": {
+        "canonical_design": "docs/SKILL_DEFINITION_CAPABILITY_FRAMEWORK_V1.md",
+        "research_basis": ["O*NET Content Model", "NIST NICE Framework", "ESCO", "SFIA"],
+        "compatibility": {"character_skill_key": "field_medicine", "legacy_profile_fields": ["raps_ia.medical_knowledge"]},
+        "historical_evidence_policy": "Existing Field Medicine score remains authoritative; this definition does not invent or reinterpret historical progression evidence.",
+        "migration_notes": "Definition-only refactor. Existing parent score is preserved and is not copied into assessment or stabilization child scores."
       }
     }
   }
