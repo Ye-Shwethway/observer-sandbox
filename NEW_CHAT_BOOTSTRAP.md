@@ -24,20 +24,19 @@ Use **exemplar-first, then batch-by-pattern**. Never manipulate production merel
 
 ## Current verified deployment
 
-Latest runtime deployment: **Deploy #212 / run `31879753891` SUCCESS**, Controlled H2H Sparring Runtime v1, PR #134 merge `a4f8f8f84f71d77e87f7208bbac9546b3bdc4ca9`.
+Latest runtime deployment: **Deploy #213 / run `31880471063` SUCCESS**, Controlled H2H Interaction Pattern Generalization v1, PR #136 merge `be34324e87e68c54c5d6f80f9448bf5f24381172`.
 
 Post-deploy evidence:
 - service active/healthy, schema v5;
-- autonomy enabled in normal mode at 1x;
-- `autonomy_retry` is `null` and a pending action exists;
-- cognition binding was preserved/resolved successfully;
+- autonomy enabled in normal mode at 1x with retry `null` and a pending action;
+- cognition binding remained `gemini-3.1-flash-lite`; Groq fallback bootstrap remained healthy;
 - Telegram API connectivity remained healthy;
-- production initialization completed successfully with controlled-H2H action vocabulary seed code active;
-- live state continued naturally at `train` in the Home Gym;
+- production initialization completed successfully with generalized controlled-H2H code/config active;
+- live state continued naturally at `train` in the Home Gym at sim time `2025-05-06T08:05:00+00:00`;
 - no live `spar` action was forced for proof;
-- no production sparring partner or represented sparring-session fixture was fabricated solely for validation.
+- no production striking/grappling partner or represented session fixture was fabricated solely for validation.
 
-The exact production `spar` action-definition row was not separately queried in a dedicated read-only workflow. Exact H2H contract/action/participant behavior is proven by full CI, fresh-DB `init`/`status`, and focused runtime tests; do not overstate the live evidence.
+Exact grappling behavior is proven by full CI, fresh-DB `init`/`status`, and focused ephemeral-fixture tests. Production deploy/init proves the generalized path loaded successfully; do not overstate this as a live grappling action proof.
 
 Production parent Skill values remain:
 - H2H 90/S
@@ -70,47 +69,44 @@ Recent Skill/runtime line:
 - Training Movement Contract Normalization v1 — PR #129 / Deploy #209
 - Tactical Planning Represented Assessment Runtime v1 — PR #131 / Deploy #210
 - Represented Skill Runtime Batch v1 — PR #133 / Deploy #211
-- Controlled H2H Sparring Runtime v1 — PR #134 / Deploy #212.
+- Controlled H2H Sparring Runtime v1 — PR #134 / Deploy #212
+- Controlled H2H Interaction Pattern Generalization v1 — PR #136 / Deploy #213.
 
 ## Represented Skill runtime state
 
 ### Low-risk represented pattern — complete and batched
 
-Technology diagnostic and Tactical assessment established structurally different `required_resource_mode: any|none` exemplars. PR #133 then applied the proven pattern in one batch to:
-- `tactical_planning.plan_tactical_maneuver`;
-- `survival.navigate_field_environment`;
-- `survival.establish_field_sustainment`.
+Technology diagnostic and Tactical assessment established the initial represented-task exemplars. PR #133 applied that pattern to Tactical maneuver planning and both Survival applications without movement execution, shelter/resource mutation, consequence state, or automatic XP.
 
-The batch reuses exact represented target/context/resource resolution, cognition awareness, bounded modifiers, deterministic outcomes and immutable application evidence without movement execution, shelter mutation, represented-resource consumption or automatic XP.
+### Controlled H2H interaction pattern — current H2H application surface complete
 
-### Controlled H2H consequential exemplar — complete
+PR #134 proved explicit multi-actor authorization with controlled striking. PR #136 generalized the runtime rather than adding a separate grappling engine.
 
-Task: `h2h_controlled_striking_spar_v1`
-Application: `hand_to_hand_combat.engage_unarmed_striking`
-Action: `spar`
-Session definition: `represented_task:h2h_controlled_striking_sparring_session_v1`
+One generic action remains authoritative: `spar`.
 
-The first bounded multi-actor authorization invariant is now proven:
-- represented sparring session remains the exact object target;
-- one opponent is carried in `Action.participants`;
-- opponent must be a distinct represented character;
-- opponent must be colocated;
-- opponent must expose explicit `controlled_sparring_consent`;
-- authorization is deterministic and separate from Skill/performance scoring;
-- outcome is scored contact only;
-- no injury or participant target state mutation occurs in v1;
-- no hostile/non-consensual combat is authorized;
-- no production test character/session was created just to prove the feature.
+Exact represented session definition selects the application:
+- `h2h_controlled_striking_spar_v1` -> `engage_unarmed_striking` -> `scored_contact_only`;
+- `h2h_controlled_grapple_spar_v1` -> `control_unarmed_grapple` -> `scored_positional_control_only`.
 
-H2H Skill score 90/S remains learned-capability authority. Bounded performance factors are Reflexes + Agility + Focus only. IQ is not used; legacy `raps_pa.combat_skill` is excluded.
+Both reuse:
+- exact represented object target;
+- one distinct character participant through `Action.participants`;
+- colocation;
+- explicit `controlled_sparring_consent`;
+- deterministic authorization separate from Skill/performance;
+- parent H2H Skill authority;
+- bounded task-specific performance modifiers;
+- immutable application evidence separate from learning evidence.
+
+Neither path authorizes hostile/non-consensual use or mutates injury, incapacity, persistent restraint, or participant target state. Production still receives no fabricated partner/session fixture.
+
+H2H striking and grappling modifier contracts both use Reflexes + Agility + Focus only. IQ is intentionally absent and legacy `raps_pa.combat_skill` remains excluded.
 
 ## Cognition / IQ state
 
 Cognition receives read-only semantic capability awareness: definition scope/exclusions, application families, behavioral anchors, challenge/context/resource boundaries, and relevant performance context.
 
-IQ is not Skill or Knowledge. It can only affect an explicit task-specific modifier contract after deterministic Skill/task feasibility is established. It cannot create consent, authorization, resources, missing context, knowledge or consequences.
-
-Do not apply a universal IQ bonus. Tactical represented tasks may use bounded IQ when declared; Survival and controlled H2H deliberately do not.
+IQ is not Skill or Knowledge. It can only affect an explicit task-specific modifier contract after deterministic Skill/task feasibility is established. It cannot create consent, authorization, resources, missing context, knowledge, restraint authority, injury state, or consequences.
 
 ## Evidence boundary
 
@@ -121,9 +117,7 @@ Active legitimate progression remains:
 - Tactical Planning — VR Tactical Drills / AI Combat Simulation;
 - Technology — `systems_diagnostic_practice`.
 
-Controlled sparring application evidence does not become H2H XP automatically. Weapons, Survival and Field Medicine definitions do not activate XP by themselves.
-
-PR #134 also corrected the Skill Progression Foundation acceptance validator so it requires the durable historical zero-gain bootstrap to exist rather than incorrectly requiring bootstrap to remain the latest H2H settlement after legitimate later training.
+Controlled striking and grappling application evidence do not become H2H XP automatically. Weapons, Survival and Field Medicine definitions do not activate XP by themselves.
 
 ## Training movement recovery contract
 
@@ -134,23 +128,23 @@ PR #129 remains active:
 
 ## Next canonical direction
 
-**Controlled H2H Pattern Expansion v1** is next.
+**Represented Consequence State Foundation v1 is the proposed next architectural slice; it is not yet implemented.**
 
-First inspect the exact live `hand_to_hand_combat.control_unarmed_grapple` application contract against the new controlled-striking interaction pattern.
+Before implementation, inspect current state/effect/event primitives and define the smallest generic seam between a validated represented-task outcome and an authorized deterministic consequence/state transition.
 
-If structurally equivalent, reuse the same participant channel, distinct-character + colocation + explicit-authorization checks, Skill authority, bounded task-specific modifiers, deterministic outcome and immutable application-evidence path rather than creating another parallel engine.
-
-If grapple introduces genuinely new restraint/control, release, incapacity, injury or authorization semantics, treat that as a new bounded structural invariant instead of hiding it inside a nominal follow-on.
-
-Do not pull Weapons or Field Medicine into the same slice for completeness. Preserve:
-- Skill score as learned-capability authority;
-- exact represented target/context/resource binding;
-- explicit participant authorization for consequential interaction;
-- bounded explicit modifiers only where task-relevant;
+Do not jump to a full Combat Engine or Injury Engine. Preserve:
+- performance outcome != consequence authorization;
+- exact target/context/participant/resource authority;
+- deterministic mutation ownership;
+- explicit bounded state/effect lifecycle where applicable;
+- consequence events/evidence tied to the action that caused them;
+- Skill score and supporting Attributes cannot independently authorize state mutation;
 - application evidence != learning evidence;
 - no invented child Skill scores;
-- no production forcing/fabricated second character for proof.
+- no synthetic production character/action used merely for proof.
+
+A likely later sequence is consequence-state foundation -> Field Medicine consequence consumer -> Weapons safety/resource exemplar, but each must be re-checked against current canonical contracts before implementation.
 
 ## Exact resume point
 
-**Represented Skill Runtime Batch v1 is complete through PR #133 / Deploy #211. Controlled H2H Sparring Runtime v1 is complete through PR #134 merge `a4f8f8f84f71d77e87f7208bbac9546b3bdc4ca9` / Deploy #212 run `31879753891` SUCCESS. Reconcile current repo/production, then inspect `control_unarmed_grapple` for structural equivalence to the proven explicit-consent/colocation/scored-contact participant pattern; reuse it if equivalent, otherwise isolate any genuinely new restraint/control/consequence invariant.**
+**Controlled H2H Interaction Pattern Generalization v1 is complete through PR #136 merge `be34324e87e68c54c5d6f80f9448bf5f24381172` / Deploy #213 run `31880471063` SUCCESS. Both current H2H applications now reuse one exact-target-driven `spar` path with explicit participant consent/colocation and application-specific bounded outcomes, with no injury/restraint mutation or automatic XP. Reconcile current repo/production, then inspect existing state/effect/event primitives and design the minimum Represented Consequence State Foundation v1 before adding Field Medicine or Weapons consequence consumers.**
