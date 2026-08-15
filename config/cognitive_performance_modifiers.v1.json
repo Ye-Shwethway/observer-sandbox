@@ -1,5 +1,5 @@
 {
-  "revision": "cognitive-performance-modifiers-v1.3",
+  "revision": "cognitive-performance-modifiers-v1.4",
   "normalization_profiles": {
     "raps_100_centered_v1": {
       "kind": "centered_linear",
@@ -286,6 +286,51 @@
         "IQ is intentionally absent because the canonical H2H definition names Reflexes, Agility and Focus as task-relevant supporting Attributes.",
         "Legacy raps_pa.combat_skill is excluded so compatibility provenance cannot become a second H2H proficiency authority.",
         "Performance modifiers never create consent, safety authorization, an opponent, injury state, or harmful action permission."
+      ]
+    },
+    "hand_to_hand_combat.control_unarmed_grapple": {
+      "contract_id": "h2h_controlled_grapple_performance_v1",
+      "skill_id": "hand_to_hand_combat",
+      "application_id": "control_unarmed_grapple",
+      "status": "active",
+      "feasibility_policy": "never_modify",
+      "missing_input_policy": "neutral_zero_no_renormalization",
+      "knowledge_policy": "do_not_infer_or_create_knowledge",
+      "dimensions": {
+        "reasoning_quality": {
+          "base_multiplier": 1.0,
+          "max_abs_effect": 0.08,
+          "outcome_effects": ["error_probability_severity", "partial_failure_recovery"],
+          "factors": [
+            {"field_key": "raps_pa.reflexes", "normalization": "raps_100_centered_v1", "weight": 0.45},
+            {"field_key": "raps_ma.focus", "normalization": "raps_100_centered_v1", "weight": 0.55}
+          ]
+        },
+        "precision": {
+          "base_multiplier": 1.0,
+          "max_abs_effect": 0.10,
+          "outcome_effects": ["quality_precision", "error_probability_severity"],
+          "factors": [
+            {"field_key": "raps_pa.reflexes", "normalization": "raps_100_centered_v1", "weight": 0.35},
+            {"field_key": "raps_pa.agility", "normalization": "raps_100_centered_v1", "weight": 0.40},
+            {"field_key": "raps_ma.focus", "normalization": "raps_100_centered_v1", "weight": 0.25}
+          ]
+        },
+        "adaptation": {
+          "base_multiplier": 1.0,
+          "max_abs_effect": 0.08,
+          "outcome_effects": ["partial_failure_recovery", "time_speed"],
+          "factors": [
+            {"field_key": "raps_pa.reflexes", "normalization": "raps_100_centered_v1", "weight": 0.45},
+            {"field_key": "raps_pa.agility", "normalization": "raps_100_centered_v1", "weight": 0.55}
+          ]
+        }
+      },
+      "notes": [
+        "Hand-to-Hand Combat Skill remains the learned proficiency authority; these factors only shape bounded grappling control or escape performance after exact task feasibility and participant authorization are established.",
+        "IQ is intentionally absent because the canonical H2H definition names Reflexes, Agility and Focus as task-relevant supporting Attributes.",
+        "Legacy raps_pa.combat_skill is excluded so compatibility provenance cannot become a second H2H proficiency authority.",
+        "Performance modifiers never create consent, restraint authority, injury state, incapacity, or harmful action permission."
       ]
     }
   }
