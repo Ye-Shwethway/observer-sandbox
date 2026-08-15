@@ -1,5 +1,5 @@
 {
-  "revision": "represented-skill-tasks-v1.2",
+  "revision": "represented-skill-tasks-v1.3",
   "tasks": {
     "technology_known_system_fault_diagnostic_sim_v1": {
       "task_id": "technology_known_system_fault_diagnostic_sim_v1",
@@ -12,29 +12,15 @@
       "target_contract": {
         "entity_type": "object",
         "definition_id": "represented_task:technology_known_fault_diagnostic_simulator_v1",
-        "required_capabilities_all": [
-          "inspect"
-        ]
+        "required_capabilities_all": ["inspect"]
       },
-      "context_tags": [
-        "technical_system_represented",
-        "diagnostic_evidence_available"
-      ],
+      "context_tags": ["technical_system_represented", "diagnostic_evidence_available"],
       "resource_contract": {
         "required_resource_mode": "any",
-        "required_capabilities_any": [
-          "diagnostic_interface"
-        ],
-        "supporting_capabilities": [
-          "technical_documentation"
-        ]
+        "required_capabilities_any": ["diagnostic_interface"],
+        "supporting_capabilities": ["technical_documentation"]
       },
-      "outcome_dimensions": [
-        "feasibility",
-        "quality_precision",
-        "information_gained",
-        "partial_failure_recovery"
-      ],
+      "outcome_dimensions": ["feasibility", "quality_precision", "information_gained", "partial_failure_recovery"],
       "risk_class": "low",
       "evidence_policy": {
         "application_evidence": "deferred_until_action_integration",
@@ -57,27 +43,15 @@
       "target_contract": {
         "entity_type": "object",
         "definition_id": "represented_task:tactical_situation_assessment_simulator_v1",
-        "required_capabilities_all": [
-          "assess"
-        ]
+        "required_capabilities_all": ["assess"]
       },
-      "context_tags": [
-        "tactical_situation_represented",
-        "decision_objective_defined"
-      ],
+      "context_tags": ["tactical_situation_represented", "decision_objective_defined"],
       "resource_contract": {
         "required_resource_mode": "none",
         "required_capabilities_any": [],
-        "supporting_capabilities": [
-          "situational_intelligence"
-        ]
+        "supporting_capabilities": ["situational_intelligence"]
       },
-      "outcome_dimensions": [
-        "feasibility",
-        "quality_precision",
-        "information_gained",
-        "partial_failure_recovery"
-      ],
+      "outcome_dimensions": ["feasibility", "quality_precision", "information_gained", "partial_failure_recovery"],
       "risk_class": "low",
       "evidence_policy": {
         "application_evidence": "deferred_until_action_integration",
@@ -100,28 +74,15 @@
       "target_contract": {
         "entity_type": "object",
         "definition_id": "represented_task:tactical_maneuver_planning_simulator_v1",
-        "required_capabilities_all": [
-          "plan"
-        ]
+        "required_capabilities_all": ["plan"]
       },
-      "context_tags": [
-        "tactical_situation_represented",
-        "movement_objective_defined"
-      ],
+      "context_tags": ["tactical_situation_represented", "movement_objective_defined"],
       "resource_contract": {
         "required_resource_mode": "none",
         "required_capabilities_any": [],
-        "supporting_capabilities": [
-          "situational_intelligence",
-          "terrain_or_layout_information"
-        ]
+        "supporting_capabilities": ["situational_intelligence", "terrain_or_layout_information"]
       },
-      "outcome_dimensions": [
-        "feasibility",
-        "quality_precision",
-        "information_gained",
-        "partial_failure_recovery"
-      ],
+      "outcome_dimensions": ["feasibility", "quality_precision", "information_gained", "partial_failure_recovery"],
       "risk_class": "low",
       "evidence_policy": {
         "application_evidence": "deferred_until_action_integration",
@@ -144,27 +105,15 @@
       "target_contract": {
         "entity_type": "object",
         "definition_id": "represented_task:survival_field_navigation_simulator_v1",
-        "required_capabilities_all": [
-          "navigate"
-        ]
+        "required_capabilities_all": ["navigate"]
       },
-      "context_tags": [
-        "field_environment_represented",
-        "navigation_objective_defined"
-      ],
+      "context_tags": ["field_environment_represented", "navigation_objective_defined"],
       "resource_contract": {
         "required_resource_mode": "none",
         "required_capabilities_any": [],
-        "supporting_capabilities": [
-          "navigation_aid"
-        ]
+        "supporting_capabilities": ["navigation_aid"]
       },
-      "outcome_dimensions": [
-        "feasibility",
-        "quality_precision",
-        "information_gained",
-        "partial_failure_recovery"
-      ],
+      "outcome_dimensions": ["feasibility", "quality_precision", "information_gained", "partial_failure_recovery"],
       "risk_class": "low",
       "evidence_policy": {
         "application_evidence": "deferred_until_action_integration",
@@ -187,29 +136,15 @@
       "target_contract": {
         "entity_type": "object",
         "definition_id": "represented_task:survival_field_sustainment_simulator_v1",
-        "required_capabilities_all": [
-          "sustain"
-        ]
+        "required_capabilities_all": ["sustain"]
       },
-      "context_tags": [
-        "field_environment_represented",
-        "sustainment_need_defined"
-      ],
+      "context_tags": ["field_environment_represented", "sustainment_need_defined"],
       "resource_contract": {
         "required_resource_mode": "any",
-        "required_capabilities_any": [
-          "field_sustainment_materials"
-        ],
-        "supporting_capabilities": [
-          "field_toolkit"
-        ]
+        "required_capabilities_any": ["field_sustainment_materials"],
+        "supporting_capabilities": ["field_toolkit"]
       },
-      "outcome_dimensions": [
-        "feasibility",
-        "quality_precision",
-        "information_gained",
-        "partial_failure_recovery"
-      ],
+      "outcome_dimensions": ["feasibility", "quality_precision", "information_gained", "partial_failure_recovery"],
       "risk_class": "low",
       "evidence_policy": {
         "application_evidence": "deferred_until_action_integration",
@@ -219,6 +154,48 @@
       "provenance": {
         "source": "represented-skill-runtime-batch-v1",
         "notes": "Simulation-only sustainment exercise. Represented materials are task resources only; no inventory or shelter state is consumed or mutated."
+      }
+    },
+    "h2h_controlled_striking_spar_v1": {
+      "task_id": "h2h_controlled_striking_spar_v1",
+      "name": "Controlled Unarmed Striking Sparring",
+      "status": "active",
+      "skill_id": "hand_to_hand_combat",
+      "application_id": "engage_unarmed_striking",
+      "challenge_class": "standard",
+      "task_mode": "represented_consequential",
+      "target_contract": {
+        "entity_type": "object",
+        "definition_id": "represented_task:h2h_controlled_striking_sparring_session_v1",
+        "required_capabilities_all": ["spar", "controlled_sparring_session"]
+      },
+      "context_tags": ["unarmed_combat_context", "opponent_or_training_target_represented"],
+      "resource_contract": {
+        "required_resource_mode": "none",
+        "required_capabilities_any": [],
+        "supporting_capabilities": []
+      },
+      "outcome_dimensions": ["feasibility", "quality_precision", "error_probability_severity", "partial_failure_recovery"],
+      "risk_class": "moderate",
+      "interaction_contract": {
+        "participant_entity_type": "character",
+        "participant_count": 1,
+        "requires_distinct_actor": true,
+        "requires_colocation": true,
+        "required_participant_capabilities_all": ["controlled_sparring_consent"],
+        "authorization_mode": "explicit_participant_capability",
+        "consequence_mode": "scored_contact_only",
+        "injury_state_mutation": false,
+        "target_state_mutation": false
+      },
+      "evidence_policy": {
+        "application_evidence": "deferred_until_action_integration",
+        "learning_evidence": false,
+        "notes": "Controlled sparring application evidence remains distinct from the existing H2H Training Method learning path and never awards XP automatically."
+      },
+      "provenance": {
+        "source": "controlled-h2h-sparring-runtime-v1",
+        "notes": "First bounded multi-actor authorization exemplar. The session target is exact-definition bound and the opponent must be an explicitly consenting colocated character participant. V1 resolves scored contact only and does not mutate injury or participant state."
       }
     }
   }
