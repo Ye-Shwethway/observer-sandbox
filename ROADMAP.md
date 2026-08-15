@@ -77,7 +77,7 @@ Physical/profile:
 - grades — read-time derived interpretation only;
 - profile-change ledgers/notification baselines — observer UX state only.
 
-Skills:
+Skills today:
 - `character_skills.score` — authoritative current proficiency;
 - `character_skills.experience` — accumulated legitimate post-activation learning evidence;
 - persisted `tier` — legacy/compatibility only;
@@ -123,46 +123,97 @@ Current live-enabled progression:
 
 The explicit generic `practice` action is object-targeted, colocated and capability-gated. Only purpose-built registered practice targets advertise it. Ordinary `use`, `inspect`, `research`, `monitor` or generic terminal/medical-station activity does not become XP.
 
-## Remaining skill evidence gap
+## Newly identified structural gap — Skill meaning and creation contract
 
-Represented skills not yet enabled:
-- **Field Medicine** — current Diagnostic Station use is not treatment/practice evidence;
-- **Survival** — current obstacle work is conditioning/movement, not fieldcraft evidence;
-- **Weapons** — current Armory affordances are inspect/use, not weapon-practice evidence.
+The current runtime can **store and progress a skill score**, but it does not yet have a canonical reusable definition for what a skill *means*.
 
-Generic `research` has no topic/domain semantics and remains non-XP. Do not infer learning from action names or model prose.
+Current `character_skills` rows primarily carry:
+- `skill_key`;
+- broad `category`;
+- current `score`;
+- legacy `tier`;
+- `experience`;
+- free-form metadata.
+
+Current character seeds likewise name represented skills and scores but do not define authoritative scope or capability semantics.
+
+Therefore the engine cannot yet answer in a generic deterministic way:
+- what tasks/activities are inside vs outside a skill;
+- which knowledge/abilities/subskills compose it;
+- what prerequisite skills or knowledge are required;
+- what a proficiency score means behaviorally;
+- what difficulty/challenge levels the actor can attempt reliably;
+- how the skill modifies action validation, quality, speed, resource use, success/failure or consequences;
+- what kinds of evidence can legitimately teach/improve the skill;
+- how practice, live application and related-skill transfer differ;
+- what can decay, be retained, reacquired or transfer to another skill;
+- how broad umbrella skills relate to narrower component skills;
+- how future skill categories can be created consistently without bespoke engine code.
+
+This gap is now higher priority than adding more progression mappings. **Do not expand Field Medicine, Survival or Weapons progression until the Skill Definition/Capability contract is designed and accepted.**
+
+## Research direction — Skill Definition & Capability Framework
+
+Research/design should precede runtime implementation. Use established skill/competency taxonomies as references, but adapt them to Observer Sandbox rather than copying any one framework.
+
+The target should separate at least:
+- **knowledge** — facts/concepts/procedures known;
+- **skill** — ability to perform bounded tasks effectively;
+- **competency / demonstrated capability** — reliable application under contextual responsibility/risk;
+- **attributes/abilities** — underlying capacities that influence learning/performance but are not the skill itself.
+
+A reusable skill definition should be capable of expressing:
+1. stable identity and taxonomy;
+2. plain-language definition and explicit scope boundaries;
+3. parent/category and optional child/component relations;
+4. prerequisite knowledge/skills/attributes;
+5. task/action/application domains;
+6. proficiency-level behavioral descriptors or capability bands;
+7. difficulty/challenge model;
+8. deterministic gameplay effects and limits;
+9. legitimate acquisition/practice/application evidence families;
+10. learning/transfer/saturation/retention hooks;
+11. risk/failure/consequence semantics where relevant;
+12. observability/grading/presentation metadata;
+13. version/revision/source provenance.
+
+Avoid a giant universal skill engine in the first implementation. The first deliverable should be a **docs/research-backed canonical Skill Definition Format + validation rules**, followed by one bounded exemplar migrated into that format before batching the remaining current skills.
+
+## Current represented skills awaiting semantic definition review
+
+- Hand-to-Hand Combat
+- Weapons
+- Survival
+- Tactical Planning
+- Technology
+- Field Medicine
+
+Existing score/progression evidence remains valid unless the later semantic migration explicitly finds a conflict. Do not silently reinterpret historical evidence.
 
 ## Next development sequence
 
-1. **Skill Practice Coverage Batch v1 — Field Medicine + Survival — NEXT**;
-2. Weapons evidence only if a clean abstract/simulation-safe mapping is justified without unnecessary operational scope;
-3. Skill Retention / Reacquisition after acquisition-evidence coverage is broader;
-4. intellectual attributes;
-5. mental/emotion dynamics;
-6. broader relationship/social systems and partnered/contextual sexual behavior;
-7. broad Mind/Behavior architecture only after enough real feature families justify it.
+1. **Skill Definition & Capability Framework — research + canonical design — NEXT**;
+2. define the minimum reusable Skill Creation Format and validation rules;
+3. migrate **one bounded exemplar** to prove the format and gameplay-consumption contract;
+4. batch structurally equivalent definitions for the other represented skills;
+5. only then resume missing Skill Evidence/Progression coverage (Field Medicine, Survival, Weapons as justified);
+6. Skill Retention / Reacquisition after semantic + acquisition-evidence coverage is broad enough;
+7. intellectual attributes;
+8. mental/emotion dynamics;
+9. broader relationship/social systems and partnered/contextual sexual behavior;
+10. broad Mind/Behavior architecture only after enough real feature families justify it.
 
-## Skill Practice Coverage Batch v1 — NEXT
+## Next checkpoint — proposal/design stage
 
-The new `practice` evidence invariant is proven. The next slice should batch structurally equivalent simulation-safe mappings rather than introducing new engines.
+No runtime/schema implementation of the new Skill Definition architecture is yet canonical in this checkpoint.
 
-Planned bounded batch:
-- **Field Medicine** — purpose-built medical scenario/simulation practice target in the existing Medical Bay; explicit `field_medicine` relevance;
-- **Survival** — purpose-built fieldcraft scenario/simulation practice target in an existing appropriate training space; explicit `survival` relevance.
-
-Both should reuse exactly:
-`practice action -> registered practice target -> typed skill_practice evidence -> existing Skill Progression`.
-
-Constraints:
-- no ordinary Diagnostic Station/Obstacle Course reinterpretation;
-- no model-prose XP;
-- no new score/XP formula;
-- no new Telegram path;
-- no Skill Retention/Decay;
-- purpose-built targets remain simulation/training abstractions rather than claims that ordinary object use constitutes expertise;
-- one focused regression suite + one disposable production-copy batch validator should cover every batched mapping.
-
-Weapons remains deferred unless the existing abstraction can support it without broadening into operational weapon mechanics.
+Immediate work:
+- research authoritative real-world skill/competency frameworks;
+- audit current Observer Sandbox skill consumers/producers;
+- propose the minimum canonical Skill Creation Format;
+- identify what belongs in definition data vs generic engines vs per-domain adapters;
+- define migration compatibility for existing `character_skills` and progression evidence;
+- choose the first exemplar only after the definition contract is coherent.
 
 ## Deferred boundaries
 
@@ -172,4 +223,4 @@ Do not add economy/currency, careers/jobs/quests/salary, automatic restocking, d
 
 Re-read current live production and canonical repository first.
 
-**Skill Evidence Semantics v1 is complete/deployed/live-activated through PR #108 / Deploy #198. Technology now proves the generic purpose-built `practice` evidence path. The next canonical slice is Skill Practice Coverage Batch v1 for Field Medicine + Survival using the proven pattern, while Weapons stays deferred unless a clean safe abstraction is justified.**
+**Skill Evidence Semantics v1 is complete/deployed/live-activated through PR #108 / Deploy #198. Technology proves the generic explicit-practice evidence path. Before adding more skill progression mappings, the next canonical priority is research/design of a reusable Skill Definition & Capability Framework so every current and future skill has explicit meaning, scope, prerequisites, capability/application semantics and learning evidence rules.**
