@@ -5,7 +5,7 @@ Roadmap synchronized: 2026-08-15
 
 ## Operating principles
 
-- Current Creator instruction, current repo contracts/config/schema, and verified live production outrank remembered chat context.
+- Current Creator instruction, current canonical repo contracts/config/schema, and verified live production outrank remembered chat context.
 - AI proposes structured cognition; deterministic runtime validates and mutates.
 - Telegram is observer/control, never simulation authority.
 - Preserve: `Actor(s) + Action + Place + Simulation Time + Conditions/Modifiers + Resources/Targets -> Validation -> State Changes + Events`.
@@ -14,28 +14,29 @@ Roadmap synchronized: 2026-08-15
 
 ## Current verified deployment
 
-Latest runtime deployment: **Deploy #217 / run `31884052059` SUCCESS**, Represented Accident Casualty Producer v1, PR #144 merge `1068432c1933aa189f9ec4af5b7d33c86c54877d`.
+Latest runtime deployment: **Deploy #218 / run `31884823120` SUCCESS**, Field Medicine Assessment Read-Only Runtime v1, PR #146 merge `14274e409b36242eef376356f025d11749819e0f`.
 
-Final tested PR head: `5c380474d4b92a091b9af09cf48e9954aaf4ac4b`.
+Final tested PR head: `34708ef13076640e71ff5727f5444a2da3468ab9`.
 
 Validation:
-- **CI #876 / run `31884011651` SUCCESS**;
-- full suite: **486 passed in 27.59s**;
+- **CI #883 / run `31884762399` SUCCESS**;
+- full suite: **494 passed in 36.93s**;
 - fresh DB `sandboxctl init` succeeded;
 - fresh DB `sandboxctl status` healthy;
-- schema remains v5.
+- schema remains v5;
+- represented-task, Skill, Strength, eating, and nutrition acceptance gates all passed.
 
-Verified production readback after Deploy #217:
-- service active/healthy; production `sandboxctl init` succeeded; schema v5;
+Verified production readback after Deploy #218:
+- service active/healthy; production init succeeded; schema v5;
 - autonomy enabled, normal mode, 1x, retry `null`, pending action present;
 - Gemini `gemini-3.1-flash-lite` primary cognition binding preserved;
-- Groq `qwen/qwen3.6-27b` fallback remained healthy;
-- Telegram bot/API/owner/allowed-user configuration remained healthy;
-- live sim time advanced naturally to `2025-05-06T09:50:00+00:00`;
-- Darian was naturally `idle` in Darian's Master Suite;
-- no production accident/fall/casualty state/lifecycle event was fabricated or forced for proof.
+- Groq `qwen/qwen3.6-27b` fallback healthy;
+- Telegram bot/API/owner/allowed-user configuration healthy;
+- live sim time advanced naturally to `2025-05-06T10:10:00+00:00`;
+- Darian was naturally `shower`ing in the Master Bathroom;
+- no production casualty, accident, assessment session/action, or stabilization was fabricated or forced for proof.
 
-Exact accident-producer semantics are proven by CI and ephemeral fixtures. Production deployment proves safe install/init/service continuity only.
+Exact assessment semantics are CI/ephemeral-fixture evidence. Production deployment proves safe install/init/service continuity only.
 
 Production parent Skills remain authoritative:
 - H2H `90 / S`
@@ -56,96 +57,86 @@ Ability/Attribute != Knowledge != Skill != Task/Application != demonstrated reli
 
 ## Completed recent execution chain
 
-1. Represented Skill Runtime Batch v1 — PR #133 / Deploy #211
-2. Controlled H2H Sparring Runtime v1 — PR #134 / Deploy #212
-3. Controlled H2H Interaction Pattern Generalization v1 — PR #136 / Deploy #213
-4. Represented Consequence State Foundation v1 — PR #138 / Deploy #214
-5. Field Medicine Stabilization Consequence Consumer v1 — PR #140 / Deploy #215
-6. Casualty State Origin & Lifecycle Contract v1 — PR #142 / Deploy #216
-7. **Represented Accident Casualty Producer v1 — PR #144 / Deploy #217.**
+1. Represented Consequence State Foundation v1 — PR #138 / Deploy #214
+2. Field Medicine Stabilization Consequence Consumer v1 — PR #140 / Deploy #215
+3. Casualty State Origin & Lifecycle Contract v1 — PR #142 / Deploy #216
+4. Represented Accident Casualty Producer v1 — PR #144 / Deploy #217
+5. **Field Medicine Assessment Read-Only Runtime v1 — PR #146 / Deploy #218.**
 
-## Current casualty / consequence stack
+## Current casualty flow
 
-### Represented consequence foundation
+### 1. Typed casualty origin
 
-`validated represented task -> deterministic consequence authorization -> bounded pre-existing simulated-state mutation -> causal event evidence`
+`record_represented_accident_casualty(...)` currently supports exactly one accident kind: `represented_fall`.
 
-The generic consequence API cannot implicitly create state and cannot derive mutation authority from Skill score, IQ, prose, performance quality, or generic capability.
-
-### Casualty lifecycle
-
-Implementation: `src/observer_sandbox/casualty_state_lifecycle.py`.
-
-Canonical origin:
-`explicit source event + participant role casualty -> lifecycle-owned creation of simulated medical.deterioration_risk -> causal lifecycle event`.
-
-Canonical clear:
-`separate explicit casualty-bound handoff/context-resolution event -> lifecycle-owned deletion of medical.deterioration_risk`.
-
-Risk zero never auto-clears and does not assert healing, diagnosis resolution, or definitive treatment.
-
-### Field Medicine stabilization
-
-Task: `field_medicine_stabilize_for_evacuation_v1`
-Action: `stabilize`
-Application: `field_medicine.stabilize_for_evacuation`
-
-It requires one distinct colocated casualty with pre-existing simulated `medical.deterioration_risk` plus explicit represented `field_medical_supplies`. Authorized consequence scope remains deterioration-risk reduction only. No diagnosis, definitive treatment, resource depletion, or Field Medicine XP is implied.
-
-## Represented Accident Casualty Producer v1 — complete
-
-Implementation: `src/observer_sandbox/represented_accident_casualty.py`.
-Design note: `docs/REPRESENTED_ACCIDENT_CASUALTY_PRODUCER_V1.md`.
-
-This is the first legitimate real casualty-state producer.
-
-Canonical path:
-
-`typed represented accident -> represented_accident_occurred -> explicit casualty-role binding -> initialize_casualty_state(...) -> casualty_state_initialized`
-
-V1 proves exactly one accident kind:
-- `represented_fall`.
-
-Finite abstract deterioration-risk classes:
+Finite abstract initialization classes:
 - `low -> 25`
 - `moderate -> 50`
 - `high -> 75`
 
-These are simulation pressure classes only and do not encode wounds, diagnoses, incapacity, death, or treatment advice.
+Canonical path:
+`typed represented fall -> represented_accident_occurred with casualty role -> initialize_casualty_state(...) -> simulated medical.deterioration_risk`
 
-`record_represented_accident_casualty(...)` requires:
-- stable `incident_id`;
-- existing represented character casualty;
-- existing spatial location;
-- casualty's current location exactly matches the declared accident location;
-- explicit simulation time;
-- finite accident kind;
-- finite risk class.
+The producer requires stable incident identity, exact represented casualty and location, explicit sim time, finite accident/risk classes, and uses an atomic savepoint. It does not accept free-form accident prose or create wounds, diagnoses, incapacity, death, or treatment state.
 
-No free-form accident narrative is accepted by the producer API.
+### 2. Read-only Field Medicine assessment
 
-The source event itself mutates no state and explicitly records no injury/diagnosis/incapacity creation. It binds the character with participant role `casualty`, then calls the canonical lifecycle owner to initialize the abstract deterioration state.
+Task: `field_medicine_assess_field_casualty_v1`
+Application: `field_medicine.assess_field_casualty`
+Action: shared `assess`
+Exact target definition: `represented_task:field_medicine_casualty_assessment_session_v1`
 
-Source-event creation and lifecycle initialization share one SQLite savepoint. Failure rolls the source event back. Stable `incident_id` makes identical retries idempotent and conflicting reuse fails closed.
+Requirements:
+- exact assessment-session target;
+- one distinct represented casualty participant;
+- actor/casualty colocation;
+- existing numeric simulated `medical.deterioration_risk` in `0..100`.
 
-### Explicit non-goals
+The runtime reads existing deterioration state and maps it only to an abstract pressure band:
+- `0 -> none`
+- `>0..33 -> low`
+- `>33..66 -> moderate`
+- `>66..100 -> high`
 
-No autonomous random accidents, probability tables, universal Hazard Engine, Injury Engine, wound/bleeding taxonomy, diagnosis state, death/incapacity state, automatic deterioration/recovery, controlled-H2H casualty generation, Weapons lethality, Field Medicine XP, or production casualty fixture was added.
+It emits represented Skill application evidence only. It cannot create/mutate casualty state, diagnose, treat, settle a consequence, or award Field Medicine XP. Darian's current Field Medicine 75/A maps to `solid` assessment effectiveness.
 
-## Controlled H2H boundary
+`assess` is reusable vocabulary rather than domain identity. Exact represented target definition selects the consumer:
+- tactical assessment target -> Tactical Planning;
+- Field Medicine assessment target -> Field Medicine;
+- unknown `assess` target -> fail closed.
 
-Controlled striking/grappling remain scored-only and non-casualty-producing. Do not retrofit persistent injury merely to exercise medical systems.
+Ordinary actor physiology still progresses normally during actions. `read_only` is scoped to the casualty medical domain.
+
+### 3. Bounded stabilization consequence
+
+Task: `field_medicine_stabilize_for_evacuation_v1`
+Action: `stabilize`
+
+Requires one distinct colocated casualty with pre-existing simulated deterioration state plus explicit represented `field_medical_supplies`. It can reduce only `medical.deterioration_risk` through the generic represented consequence foundation. Darian's current 75/A Field Medicine maps to `solid`, reducing risk by 20 points in v1.
+
+No diagnosis, definitive treatment, medical-supply depletion, or XP is implied.
+
+### 4. Casualty lifecycle end
+
+`clear_casualty_state(...)` already exists and only clears lifecycle-owned deterioration state after a separate explicit casualty-bound source event with resolution kind:
+- `evacuated_or_handed_off`
+- `casualty_context_resolved`
+
+Risk reaching zero does not auto-clear and does not assert healing.
+
+## Explicit boundaries
+
+No Injury Engine, broad Hazard Engine, wounds/bleeding taxonomy, diagnosis engine, definitive-treatment graph, death/incapacity model, automatic deterioration/recovery, autonomous random accidents, Weapons lethality, controlled-H2H injury generation, medical-resource depletion, automatic Field Medicine XP, or synthetic production casualty fixtures.
 
 ## Next development sequence
 
-1. **Field Medicine Assessment Read-Only Runtime v1 — REVIEW NEXT / not yet implemented.**
-2. Reconcile the existing `field_medicine.assess_field_casualty` application and current represented-task contracts.
-3. Add the smallest represented assessment task/runtime that reads an explicitly represented casualty's existing `medical.deterioration_risk` without creating or mutating it.
-4. Assessment output should be informational/application evidence only unless a separately defined consequence contract later authorizes mutation.
-5. Do not turn assessment into a diagnosis engine or treatment graph.
-6. Keep Field Medicine application evidence separate from learning evidence; no automatic XP.
-7. Do not seed or force a production casualty solely for validation.
-8. Batch structurally equivalent read-only assessment follow-ons only after one bounded exemplar is proven.
+1. **Represented Casualty Handoff / Lifecycle-End Consumer v1 — REVIEW NEXT / not yet implemented.**
+2. Reconcile the lifecycle clear API and current event/world primitives.
+3. Select the smallest typed represented handoff/context-resolution producer that emits an explicit source event binding the casualty and invokes `clear_casualty_state(...)`.
+4. Handoff/context resolution must not imply healing, diagnosis resolution, or definitive treatment.
+5. Do not clear merely because deterioration risk reaches zero.
+6. Keep lifecycle/application/consequence evidence separate from learning evidence; no automatic XP.
+7. Do not create/force a production casualty merely for validation.
 
 ## Deferred boundaries
 
@@ -153,4 +144,4 @@ No hostile/non-consensual Combat Engine, Weapons lethality system, broad casualt
 
 ## Exact resume point
 
-**Represented Accident Casualty Producer v1 is complete through PR #144 final tested head `5c380474d4b92a091b9af09cf48e9954aaf4ac4b`, merge `1068432c1933aa189f9ec4af5b7d33c86c54877d`, CI #876 / run `31884011651` with 486 passing tests plus fresh-DB init/status, and Deploy #217 / run `31884052059` SUCCESS. The first real casualty-state producer now proves typed `represented_fall` + stable incident identity + exact represented casualty/location + finite abstract risk class -> explicit source event with casualty role -> atomic canonical lifecycle initialization of only simulated `medical.deterioration_risk`, with no injury diagnosis, incapacity, XP, autonomous random accident, or fabricated production casualty. Review Field Medicine assessment as a read-only represented consumer next.**
+**Field Medicine Assessment Read-Only Runtime v1 is complete through PR #146 final tested head `34708ef13076640e71ff5727f5444a2da3468ab9`, merge `14274e409b36242eef376356f025d11749819e0f`, CI #883 / run `31884762399` with 494 passing tests plus fresh-DB init/status and all relevant acceptance gates green, and Deploy #218 / run `31884823120` SUCCESS. The casualty stack now supports typed represented-fall origin -> lifecycle-owned simulated deterioration state -> exact-target read-only Field Medicine assessment -> existing bounded stabilization consequence; shared `assess` dispatch is target-definition-authoritative and unknown targets fail closed. No live casualty or assessment was fabricated. Review a real represented handoff/lifecycle-end producer next.**
