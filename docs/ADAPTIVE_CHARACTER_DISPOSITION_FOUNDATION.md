@@ -6,7 +6,7 @@ Status: ACTIVE FOUNDATION
 
 Character disposition must not be interpreted as permanently fixed just because a field is canonical or already reaches cognition. The vertical-completeness checkpoint means the profile surface is runnable; it does **not** mean all developmental lifecycles are complete.
 
-Observer Sandbox should model four different plasticity classes instead of one generic mutable-profile mechanism:
+Observer Sandbox models four different plasticity classes instead of one generic mutable-profile mechanism:
 
 1. **Personality — slow plasticity.** Stable dispositions may drift gradually from accumulated long-horizon evidence. Ordinary single events must not directly rewrite personality.
 2. **Preferences — medium plasticity.** Repeated exposure, outcomes, voluntary choice, aversion and satisfaction may strengthen, weaken or reverse preferences over time.
@@ -37,62 +37,62 @@ The implementation follows conservative behavioral-science principles rather tha
 
 These are design constraints, not clinical or population-frequency claims.
 
-## Implementation sequence
+## Implementation sequence / status
 
 Use exemplar-first, then batch-by-pattern:
 
-1. **Habit Formation / Extinction Exemplar v1 — implement now.**
-2. Hobby / Interest Lifecycle v1.
-3. Preference Adaptation v1.
+1. **Habit Formation / Extinction Exemplar v1 — COMPLETE.**
+2. **Hobby / Interest Lifecycle v1 — COMPLETE.**
+3. **Preference Adaptation v1 — NEXT.**
 4. Slow Personality Plasticity v1.
 
-Do not build all four at once.
+Do not build the remaining layers all at once.
 
-## Habit Formation / Extinction Exemplar v1
+## Habit Formation / Extinction Exemplar v1 — COMPLETE
 
-### Purpose
+PR #167 proved that completed represented behavior can create persistent learned disposition state without LLM mutation authority.
 
-Prove the reusable contract that completed represented behavior can create persistent learned disposition state without LLM mutation authority.
+A habit candidate is keyed by represented behavior plus a stable context cue. Formation is gradual, short-interval repetition is diminished, and long inactivity can weaken an established habit into dormant/lapsed states without deleting its history. Dynamic habit state persists in `character_habits`, coexists with canonical baseline rows, survives ordinary initialization/deploy, and reaches cognition as compact dynamic context.
 
-### Evidence
+The exemplar intentionally does not infer missed opportunities from arbitrary unrelated actions and excludes movement, idle, sleep, and private sexual actions from generic habit-learning evidence.
 
-A habit candidate is keyed by a represented behavior plus a stable context cue. The minimum v1 cue is the action's represented location; target may further distinguish the behavior when present.
+## Hobby / Interest Lifecycle v1 — COMPLETE
 
-Movement, idle and sleep are not habit-learning evidence in this exemplar. Private sexual actions are intentionally excluded from general habit cognition/disposition learning.
+See `docs/HOBBY_INTEREST_LIFECYCLE_V1.md`.
 
-### Formation
+PR #172 proves a second evidence-to-disposition pattern without adding a new schema.
 
-Each eligible repeated behavior in the same cue context reinforces the same candidate. Strength rises asymptotically and is bounded to 0..100. A candidate stays `emerging` until both repetition and strength thresholds are met; only then may it become `established`.
+Authority:
 
-There is no one-action habit creation and no fixed claim that every human habit requires the same number of days.
+`completed voluntary target engagement -> learned interest authority -> established hobby projection -> cognition`
 
-### Weakening / extinction
+Key boundaries:
+- v1 evidence is intentionally limited to target-based `read` and `use` completions;
+- one engagement creates only an emerging interest;
+- cross-day repeated engagement plus bounded strength/effective-engagement thresholds can progress emerging -> recurring -> established;
+- short-interval repetition receives reduced evidence weight;
+- learned-interest lifecycle authority uses existing `character_preferences(type='interest')` rows;
+- established learned interests materialize to `character_hobbies` as active projections;
+- dormant/lapsed state can remove the active learned-hobby projection while preserving the authoritative interest row/history;
+- canonical authored hobbies remain independent baseline rows;
+- cognition consumes the ordinary preference/hobby surfaces and has no lifecycle mutation authority.
 
-V1 implements conservative inactivity-based weakening:
+Production deployment deliberately did not force a `read`/`use` action merely to manufacture proof. Tests establish the deterministic lifecycle; natural production formation remains evidence-driven.
 
-- recent habits do not decay;
-- after an authored grace period, simulated-time inactivity produces gradual bounded decay;
-- sufficiently weakened established habits become `dormant` rather than being deleted;
-- very weak, long-unreinforced dynamic habits may become `lapsed` but their history remains persisted.
+## Preference Adaptation v1 — NEXT
 
-A later refinement may add explicit cue-present / behavior-omitted extinction evidence if the runtime gains a clean represented opportunity contract. V1 must not infer missed opportunities from every unrelated action in the same room.
+The next minimum slice should reuse the proven evidence-to-disposition architecture without conflating interests, hobbies, habits and preferences.
 
-### Persistence
+Minimum goals:
+- preserve authored preferences as starting baselines rather than immutable forever-values;
+- require legitimate repeated voluntary choice/outcome evidence before meaningful strengthening/weakening;
+- prevent one ordinary event from instantly reversing an authored preference;
+- keep adaptation bounded and auditable;
+- preserve history/state across initialization/deploy;
+- expose the adapted preference surface to cognition through the existing profile context;
+- keep the LLM proposal-only.
 
-Dynamic habit rows live in `character_habits` using the existing `strength` and `metadata_json` surface. Canonical seed rows and runtime-learned rows coexist.
-
-Profile initialization must:
-
-- ensure canonical baseline habits/preferences/hobbies exist;
-- preserve extra runtime-learned rows;
-- preserve runtime strength/status/evidence metadata;
-- never `DELETE` the whole adaptive table during ordinary initialization.
-
-This preservation rule applies immediately to preferences and hobbies too, even before their own adaptation engines arrive, because otherwise future learned state would be structurally unsafe.
-
-### Cognition
-
-Existing concise habit names remain available for compatibility. Cognition additionally receives compact dynamic metadata (strength/status/cue) for runtime-learned habits. It must not receive internal evidence ledgers or mutation commands.
+Exact evidence categories and reversal thresholds must be derived from current represented actions/outcomes rather than invented as a giant generic reward engine.
 
 ## Non-goals
 
@@ -100,25 +100,14 @@ This foundation does not add:
 
 - a giant psychology engine;
 - arbitrary LLM profile writes;
-- personality mutation in the habit slice;
-- hobby or preference formation in the habit slice;
 - relationship mechanics;
 - clinical psychiatric modeling;
 - hard daily behavior quotas;
 - instant deletion of old dispositions;
-- Darian-specific habit switch logic.
-
-## Completion standard for the exemplar
-
-Habit v1 is complete when focused regression proves:
-
-1. repeated eligible action+context evidence strengthens one persistent dynamic habit candidate;
-2. a single repetition does not establish a strong habit;
-3. repeated consistent evidence can transition `emerging -> established`;
-4. long simulated inactivity weakens and may transition an established habit to `dormant` without deleting it;
-5. canonical reinitialization preserves dynamic habit state and extra learned rows;
-6. preferences/hobbies are no longer destructively reset during seed import;
-7. cognition can see compact habit dynamics while deterministic runtime remains mutation authority.
+- Darian-specific disposition switches;
+- hobby proficiency/career systems;
+- universal reward scoring for every action;
+- personality mutation before the Preference Adaptation exemplar is proven.
 
 ## Later foundation review
 
