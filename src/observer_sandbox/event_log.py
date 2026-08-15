@@ -11,6 +11,11 @@ from .controlled_h2h_runtime import (
     controlled_h2h_application_evidence,
     controlled_h2h_outcome,
 )
+from .field_medicine_stabilization import (
+    STABILIZE_ACTION,
+    enrich_completed_stabilization_action,
+    settle_completed_stabilization_consequence,
+)
 from .nutrition_energy import energy_expenditure_evidence, nutrition_intake_evidence
 from .represented_skill_runtime_batch import (
     BATCH_ACTIONS,
@@ -279,6 +284,48 @@ def _enrich_controlled_h2h(
         raise
 
 
+def _enrich_field_medicine_stabilization(
+    conn: sqlite3.Connection,
+    payload: dict[str, Any],
+    event_type: str,
+    *,
+    actor_id: str | None,
+    action_id: str | None,
+) -> dict[str, Any]:
+    if (
+        event_type != "action_completed"
+        or payload.get("action") != STABILIZE_ACTION
+        or not actor_id
+        or not action_id
+        or "skill_application" in payload
+    ):
+        return payload
+    target = payload.get("target")
+    duration = payload.get("duration_minutes")
+    if not isinstance(target, str) or not isinstance(duration, (int, float)):
+        conn.rollback()
+        raise ValueError("Completed stabilize action requires target and duration")
+
+    try:
+        outcome, evidence = enrich_completed_stabilization_action(
+            conn,
+            action_id=action_id,
+            actor_id=actor_id,
+            target_id=target,
+            duration_minutes=int(duration),
+        )
+        return _persist_represented_skill_evidence(
+            conn,
+            payload,
+            action_id=action_id,
+            outcome=outcome,
+            evidence=evidence,
+        )
+    except Exception:
+        conn.rollback()
+        raise
+
+
 def _enrich_nutrition_energy(
     conn: sqlite3.Connection,
     payload: dict[str, Any],
@@ -380,6 +427,13 @@ def record_event(
         actor_id=actor_id,
         action_id=action_id,
     )
+    event_payload = _enrich_field_medicine_stabilization(
+        conn,
+        event_payload,
+        event_type,
+        actor_id=actor_id,
+        action_id=action_id,
+    )
     event_payload = _enrich_nutrition_energy(
         conn,
         event_payload,
@@ -435,4 +489,20 @@ def record_event(
                 json.dumps({}, ensure_ascii=False),
             ),
         )
+
+    if (
+        event_type == "action_completed"
+        and event_payload.get("action") == STABILIZE_ACTION
+        and action_id
+        and isinstance(event_payload.get("represented_skill_task"), dict)
+    ):
+        try:
+            settle_completed_stabilization_consequence(
+                conn,
+                action_id=action_id,
+                outcome=event_payload["represented_skill_task"],
+            )
+        except Exception:
+            conn.rollback()
+            raise
     return event_id
