@@ -24,20 +24,20 @@ Use **exemplar-first, then batch-by-pattern**. Never manipulate production merel
 
 ## Current verified deployment
 
-Latest runtime deployment: **Deploy #210 / run `31878236282` SUCCESS**, Tactical Planning Represented Assessment Runtime v1, PR #131 merge `aef123dc7840b69091c7264988b744c69d955396`.
+Latest runtime deployment: **Deploy #212 / run `31879753891` SUCCESS**, Controlled H2H Sparring Runtime v1, PR #134 merge `a4f8f8f84f71d77e87f7208bbac9546b3bdc4ca9`.
 
 Post-deploy evidence:
 - service active/healthy, schema v5;
 - autonomy enabled in normal mode at 1x;
 - `autonomy_retry` is `null` and a pending action exists;
-- cognition binding was preserved and resolved successfully;
+- cognition binding was preserved/resolved successfully;
 - Telegram API connectivity remained healthy;
-- production initialization completed successfully with the Tactical runtime seed code active;
-- no live Tactical action was forced for proof.
+- production initialization completed successfully with controlled-H2H action vocabulary seed code active;
+- live state continued naturally at `train` in the Home Gym;
+- no live `spar` action was forced for proof;
+- no production sparring partner or represented sparring-session fixture was fabricated solely for validation.
 
-The exact Tactical production seed row was not separately queried in a dedicated read-only workflow during this checkpoint. Exact seed/action behavior is proven by full CI, fresh-DB `init`/`status`, and Tactical runtime tests; do not overstate the live evidence.
-
-`main` and `test` are synchronized at `aef123dc7840b69091c7264988b744c69d955396` before this documentation checkpoint.
+The exact production `spar` action-definition row was not separately queried in a dedicated read-only workflow. Exact H2H contract/action/participant behavior is proven by full CI, fresh-DB `init`/`status`, and focused runtime tests; do not overstate the live evidence.
 
 Production parent Skill values remain:
 - H2H 90/S
@@ -60,7 +60,7 @@ Current application families are the subskill-like gameplay surface. **Do not cr
 
 ## Completed current execution chain
 
-Through the Skill/runtime line:
+Recent Skill/runtime line:
 - Skill Definition Refactor Batch v1 — PR #121 / Deploy #204
 - Represented Skill Task Instance Resolver v1 — PR #123 / Deploy #205
 - Cognition Capability Awareness v1 — PR #124 / Deploy #206
@@ -68,51 +68,49 @@ Through the Skill/runtime line:
 - Technology Represented Diagnostic Task Runtime v1 — PR #126 / Deploy #208
 - sanitized autonomy-error readback — PR #127, corrected by PR #128
 - Training Movement Contract Normalization v1 — PR #129 / Deploy #209
-- Tactical Planning Represented Assessment Runtime v1 — PR #131 / Deploy #210.
-
-Canonical docs for this line include:
-- `docs/SKILL_DEFINITION_REFACTOR_BATCH_V1.md`
-- `docs/REPRESENTED_SKILL_TASK_CONTRACT_V1.md`
-- `docs/REPRESENTED_SKILL_TASK_INSTANCE_RESOLVER_V1.md`
-- `docs/COGNITION_CAPABILITY_AWARENESS_V1.md`
-- `docs/COGNITIVE_PERFORMANCE_MODIFIER_CONTRACT_V1.md`
-- `docs/TECHNOLOGY_DIAGNOSTIC_TASK_RUNTIME_V1.md`
-- `docs/TACTICAL_ASSESSMENT_TASK_RUNTIME_V1.md`.
+- Tactical Planning Represented Assessment Runtime v1 — PR #131 / Deploy #210
+- Represented Skill Runtime Batch v1 — PR #133 / Deploy #211
+- Controlled H2H Sparring Runtime v1 — PR #134 / Deploy #212.
 
 ## Represented Skill runtime state
 
-### Technology exemplar — complete
+### Low-risk represented pattern — complete and batched
 
-Task: `technology_known_system_fault_diagnostic_sim_v1`
-Action: `diagnose`
-Target: `obj_thorne_estate_intel_known_fault_diagnostic_simulator`
-Definition: `represented_task:technology_known_fault_diagnostic_simulator_v1`
+Technology diagnostic and Tactical assessment established structurally different `required_resource_mode: any|none` exemplars. PR #133 then applied the proven pattern in one batch to:
+- `tactical_planning.plan_tactical_maneuver`;
+- `survival.navigate_field_environment`;
+- `survival.establish_field_sustainment`.
 
-### Tactical Planning second exemplar — complete
+The batch reuses exact represented target/context/resource resolution, cognition awareness, bounded modifiers, deterministic outcomes and immutable application evidence without movement execution, shelter mutation, represented-resource consumption or automatic XP.
 
-Task: `tactical_situation_assessment_sim_v1`
-Application: `tactical_planning.assess_tactical_situation`
-Action: `assess`
-Target: `obj_thorne_estate_intel_tactical_situation_assessment_simulator`
-Definition: `represented_task:tactical_situation_assessment_simulator_v1`
+### Controlled H2H consequential exemplar — complete
 
-The Tactical exemplar is deliberately distinct from Tactical training/practice targets. It proved the represented-task pattern can generalize beyond a tool-heavy Technology task to a cognitively heavy task with no hard external resource requirement.
+Task: `h2h_controlled_striking_spar_v1`
+Application: `hand_to_hand_combat.engage_unarmed_striking`
+Action: `spar`
+Session definition: `represented_task:h2h_controlled_striking_sparring_session_v1`
 
-Represented-task resource contracts now explicitly support `required_resource_mode: any|none` while preserving the underlying Skill application's mode. Supporting resources may make an otherwise eligible result constrained vs supported but cannot bypass hard requirements.
+The first bounded multi-actor authorization invariant is now proven:
+- represented sparring session remains the exact object target;
+- one opponent is carried in `Action.participants`;
+- opponent must be a distinct represented character;
+- opponent must be colocated;
+- opponent must expose explicit `controlled_sparring_consent`;
+- authorization is deterministic and separate from Skill/performance scoring;
+- outcome is scored contact only;
+- no injury or participant target state mutation occurs in v1;
+- no hostile/non-consensual combat is authorized;
+- no production test character/session was created just to prove the feature.
+
+H2H Skill score 90/S remains learned-capability authority. Bounded performance factors are Reflexes + Agility + Focus only. IQ is not used; legacy `raps_pa.combat_skill` is excluded.
 
 ## Cognition / IQ state
 
-Cognition receives read-only semantic capability awareness: definition scope/exclusions, application families, behavioral anchors, challenge/context/resource boundaries, and relevant reasoning context.
+Cognition receives read-only semantic capability awareness: definition scope/exclusions, application families, behavioral anchors, challenge/context/resource boundaries, and relevant performance context.
 
-IQ is not Skill or Knowledge. It can only affect an explicit task-specific modifier contract after deterministic Skill/task feasibility is established.
+IQ is not Skill or Knowledge. It can only affect an explicit task-specific modifier contract after deterministic Skill/task feasibility is established. It cannot create consent, authorization, resources, missing context, knowledge or consequences.
 
-Current Tactical assessment modifiers use bounded:
-- IQ;
-- Problem Solving;
-- Focus;
-- Adaptability.
-
-Legacy `raps_ia.tactical_thinking` is intentionally excluded from Tactical modifiers so the authoritative Tactical Planning Skill is not double-counted.
+Do not apply a universal IQ bonus. Tactical represented tasks may use bounded IQ when declared; Survival and controlled H2H deliberately do not.
 
 ## Evidence boundary
 
@@ -123,7 +121,9 @@ Active legitimate progression remains:
 - Tactical Planning — VR Tactical Drills / AI Combat Simulation;
 - Technology — `systems_diagnostic_practice`.
 
-Weapons, Survival and Field Medicine definitions do not activate XP by themselves. Generic actions, represented application evidence, object names, and model prose are not learning evidence.
+Controlled sparring application evidence does not become H2H XP automatically. Weapons, Survival and Field Medicine definitions do not activate XP by themselves.
+
+PR #134 also corrected the Skill Progression Foundation acceptance validator so it requires the durable historical zero-gain bootstrap to exist rather than incorrectly requiring bootstrap to remain the latest H2H settlement after legitimate later training.
 
 ## Training movement recovery contract
 
@@ -132,24 +132,25 @@ PR #129 remains active:
 - explicit movement subcatalog -> strict exact movement-id validation;
 - unknown/unbound target -> fail closed.
 
-Production recovered naturally after the previous retry backoff; no manual retry reset was used.
-
 ## Next canonical direction
 
-The Technology and Tactical exemplars have now proven the core represented-Skill runtime pattern across two structurally different cases. **Do not create a third bespoke exemplar by default. Move to batch-by-pattern.**
+**Controlled H2H Pattern Expansion v1** is next.
 
-Next work should first inspect the remaining Skill applications and form one bounded batch of structurally equivalent **low-risk / simulation-safe** represented runtimes. Prefer applications whose target/context/resource/outcome contracts fit the proven pattern without introducing a genuinely new safety or consequence invariant.
+First inspect the exact live `hand_to_hand_combat.control_unarmed_grapple` application contract against the new controlled-striking interaction pattern.
 
-Likely candidates should be evaluated from live canonical definitions rather than hard-coded from chat memory. Higher-risk H2H/Weapons consequential use should not be smuggled into this batch merely for completeness. Weapons/Survival/Field Medicine progression remains separate and requires legitimate learning evidence before XP activation.
+If structurally equivalent, reuse the same participant channel, distinct-character + colocation + explicit-authorization checks, Skill authority, bounded task-specific modifiers, deterministic outcome and immutable application-evidence path rather than creating another parallel engine.
 
-Preserve:
+If grapple introduces genuinely new restraint/control, release, incapacity, injury or authorization semantics, treat that as a new bounded structural invariant instead of hiding it inside a nominal follow-on.
+
+Do not pull Weapons or Field Medicine into the same slice for completeness. Preserve:
 - Skill score as learned-capability authority;
 - exact represented target/context/resource binding;
+- explicit participant authorization for consequential interaction;
 - bounded explicit modifiers only where task-relevant;
 - application evidence != learning evidence;
 - no invented child Skill scores;
-- no production forcing for proof.
+- no production forcing/fabricated second character for proof.
 
 ## Exact resume point
 
-**Represented-Skill gameplay is complete through Tactical Planning Represented Assessment Runtime v1, PR #131 / Deploy #210. The two-exemplar pattern is proven. Reconcile live repo/production, then design and implement the next minimum-runnable batch of structurally equivalent low-risk represented Skill applications under the existing deterministic Skill/cognition/evidence contracts.**
+**Represented Skill Runtime Batch v1 is complete through PR #133 / Deploy #211. Controlled H2H Sparring Runtime v1 is complete through PR #134 merge `a4f8f8f84f71d77e87f7208bbac9546b3bdc4ca9` / Deploy #212 run `31879753891` SUCCESS. Reconcile current repo/production, then inspect `control_unarmed_grapple` for structural equivalence to the proven explicit-consent/colocation/scored-contact participant pattern; reuse it if equivalent, otherwise isolate any genuinely new restraint/control/consequence invariant.**
