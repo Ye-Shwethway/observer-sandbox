@@ -8,6 +8,7 @@ from typing import Any
 from .actor_selection import resolve_actor_id
 from .ai_runtime import generate_character_decision
 from .character_config import configured_character_ids, load_character_autonomy_policy
+from .cognition_capability_awareness import cognition_capability_awareness
 from .eating_behavior import enrich_eating_action_options, validate_proposed_resources
 from .meal_choice_intelligence import meal_choice_context
 from .need_resolution import shape_action_options_for_needs
@@ -299,6 +300,10 @@ class ModelDecisionProvider:
             ),
         }
         enriched["character"] = self._character_context()
+        enriched["capability_awareness"] = cognition_capability_awareness(
+            self.conn,
+            self.character_id,
+        )
         enriched["autonomy_policy"] = self.policy
         enriched["decision_signals"] = decision_signals
         enriched["meal_choice_context"] = meal_choice_context(
