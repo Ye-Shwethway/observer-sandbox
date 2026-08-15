@@ -7,6 +7,7 @@ from typing import Any
 
 from .actor_selection import resolve_actor_id
 from .ai_runtime import generate_character_decision
+from .autonomy_livelock_watchdog import authoritative_recovery_action, repeated_pair_validation_livelock
 from .character_config import configured_character_ids, load_character_autonomy_policy
 from .cognition_capability_awareness import cognition_capability_awareness
 from .eating_behavior import enrich_eating_action_options, validate_proposed_resources
@@ -399,6 +400,14 @@ class ModelDecisionProvider:
             selected_target = decision["target"] or None
             corrected_pair = (str(decision["action"]), selected_target)
             if corrected_pair not in allowed_pairs:
+                if repeated_pair_validation_livelock(
+                    self.conn,
+                    self.character_id,
+                    sim_time=str(state["sim_time"]),
+                ):
+                    recovery = authoritative_recovery_action(enriched)
+                    if recovery is not None:
+                        return recovery
                 raise ValueError(
                     "Model selected an action/target pair outside authoritative action_options after one corrective retry; "
                     f"rejected={selected_pair!r}; corrected={corrected_pair!r}"
