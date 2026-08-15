@@ -17,7 +17,7 @@ TRAINING_HALL = "loc_thorne_estate_training_hall"
 NAVIGATION_TARGET = "obj_thorne_estate_training_field_navigation_practice_simulator"
 SUSTAINMENT_TARGET = "obj_thorne_estate_training_field_sustainment_practice_station"
 ORDINARY_OBSTACLE_COURSE = "obj_thorne_estate_training_obstacle_course"
-CURRENT_PROGRESSION_REVISION = "skill-progression-structured-evidence-v1.2-bladed-weapons"
+CURRENT_PROGRESSION_REVISION = "skill-progression-structured-evidence-v1.3-firearms"
 
 
 def _skill(conn, skill_key: str = SKILL):
