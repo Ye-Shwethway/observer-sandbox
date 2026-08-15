@@ -8,6 +8,11 @@ from typing import Any
 from . import telegram_bot as base
 from .creator_control import replenish_inventory_stack
 from .db import connect, migrate
+from .profile_change_observer import (
+    reset_all_stat_notification_baselines,
+    set_stat_notifications,
+    stat_notifications_enabled,
+)
 from .telegram_ai_control import callback_view as ai_callback_view
 from .telegram_ai_control import home_view as ai_home_view
 from .telegram_inventory import inventory_callback_view, inventory_command_view
@@ -22,6 +27,7 @@ _ORIGINAL_HOME_KEYBOARD = base._home_keyboard
 _ORIGINAL_HANDLE_COMMAND = base.handle_command
 _ORIGINAL_COMMAND_KEYBOARD = base._command_keyboard
 _ORIGINAL_HELP = base._help
+_ORIGINAL_CHARACTER_KEYBOARD_FOR_USER = base._character_keyboard_for_user
 _DELETE_SENTINEL = "__DELETE_OBSERVER_HOME__"
 _HOME_DELETE_DEADLINES: dict[tuple[int, int], float] = {}
 
@@ -46,6 +52,29 @@ def _home_keyboard() -> list[list[dict[str, str]]]:
     keyboard.append([{"text": "🎒 Inventory", "callback_data": "inv:home"}])
     keyboard.append([{"text": "⚙️ Creator Settings", "callback_data": "ai:home"}])
     keyboard.append([{"text": "✕ Close", "callback_data": "nav:close"}])
+    return keyboard
+
+
+def _character_keyboard_for_user(character_id: str, user_id: int) -> list[list[dict[str, str]]]:
+    keyboard = [list(row) for row in _ORIGINAL_CHARACTER_KEYBOARD_FOR_USER(character_id, user_id)]
+    if base._user_role(user_id) != "unauthorized":
+        # The current value is rendered by _callback_view where a connection exists;
+        # this placeholder remains usable for older direct keyboard callers.
+        keyboard.insert(1, [{"text": "🔔 Stat Updates", "callback_data": f"pref:statnotify:{character_id}:toggle"}])
+    return keyboard
+
+
+def _character_keyboard_with_stat_pref(conn, character_id: str, user_id: int) -> list[list[dict[str, str]]]:
+    keyboard = [list(row) for row in _ORIGINAL_CHARACTER_KEYBOARD_FOR_USER(character_id, user_id)]
+    if base._user_role(user_id) != "unauthorized":
+        enabled = stat_notifications_enabled(conn, user_id, character_id)
+        keyboard.insert(
+            1,
+            [{
+                "text": f"🔔 Stat Updates: {'ON' if enabled else 'OFF'}",
+                "callback_data": f"pref:statnotify:{character_id}:toggle",
+            }],
+        )
     return keyboard
 
 
@@ -111,9 +140,66 @@ def _edit(token: str, chat_id: int, message_id: int, text: str, keyboard: list[l
         _forget_home_delete(chat_id, message_id)
 
 
+def _resolve_character(conn, raw: str) -> tuple[str, str] | None:
+    query = raw.strip()
+    if not query:
+        return None
+    row = conn.execute(
+        """SELECT e.id,e.name
+        FROM entities e JOIN character_profiles p ON p.entity_id=e.id
+        WHERE e.entity_type='character' AND p.status='active'
+          AND (e.id=? OR lower(e.name)=lower(?))
+        LIMIT 1""",
+        (query, query),
+    ).fetchone()
+    if row is None:
+        return None
+    return str(row["id"]), str(row["name"])
+
+
+def _statnotify_status(conn, user_id: int) -> str:
+    rows = conn.execute(
+        """SELECT e.id,e.name
+        FROM entities e JOIN character_profiles p ON p.entity_id=e.id
+        WHERE e.entity_type='character' AND p.status='active'
+        ORDER BY e.name"""
+    ).fetchall()
+    lines = ["🔔 CHARACTER STAT UPDATES", "━━━━━━━━━━━━━━━━━━"]
+    if not rows:
+        lines.append("No active characters.")
+    for row in rows:
+        enabled = stat_notifications_enabled(conn, user_id, str(row["id"]))
+        lines.append(f"• {row['name']} · {'ON' if enabled else 'OFF'}")
+    lines.extend(["", "Use /statnotify <character> on|off."])
+    return "\n".join(lines)
+
+
 def _callback_view(conn, user_id: int, callback_data: str):
     if callback_data == "nav:close":
         return _DELETE_SENTINEL, None
+    if callback_data.startswith("pref:statnotify:"):
+        role = base._user_role(user_id)
+        if role == "unauthorized":
+            return "Not authorized.", None
+        parts = callback_data.split(":", 3)
+        if len(parts) != 4 or parts[3] != "toggle":
+            return "Unknown notification preference.", [[{"text": "⌂ Observer Home", "callback_data": "nav:home"}]]
+        character_id = parts[2]
+        found = _resolve_character(conn, character_id)
+        if found is None:
+            return "Unknown character.", [[{"text": "⌂ Observer Home", "callback_data": "nav:home"}]]
+        character_id, character_name = found
+        enabled = not stat_notifications_enabled(conn, user_id, character_id)
+        set_stat_notifications(conn, user_id, character_id, enabled)
+        text = base._character_view(conn, character_id, role=role)
+        text += f"\n\n🔔 Stat updates {'ON' if enabled else 'OFF'} for {character_name}."
+        return text, _character_keyboard_with_stat_pref(conn, character_id, user_id)
+    if callback_data.startswith("char:"):
+        role = base._user_role(user_id)
+        if role == "unauthorized":
+            return "Not authorized.", None
+        character_id = callback_data.split(":", 1)[1]
+        return base._character_view(conn, character_id, role=role), _character_keyboard_with_stat_pref(conn, character_id, user_id)
     if callback_data.startswith("inv:"):
         role = base._user_role(user_id)
         if role == "unauthorized":
@@ -145,6 +231,7 @@ def _callback_view(conn, user_id: int, callback_data: str):
 
 def _help(role: str) -> str:
     text = _ORIGINAL_HELP(role)
+    text += "\n/statnotify <character> on|off — Character profile/progression updates"
     text += "\n/inventory — Browse universe inventory"
     if role == "owner":
         text += "\n/replenish <stack_id> <quantity> — Add stock with Creator authority"
@@ -159,8 +246,27 @@ def handle_command(db_path: str | Path, *, user_id: int, text: str) -> str:
     command = first.split("@", 1)[0].lower()
     role = base._user_role(user_id)
 
-    if command in {"/inventory", "/replenish"} and role == "unauthorized":
+    if command in {"/inventory", "/replenish", "/statnotify"} and role == "unauthorized":
         return "Not authorized. Use /whoami to obtain your Telegram user id."
+
+    if command == "/statnotify":
+        with connect(db_path) as conn:
+            migrate(conn)
+            if len(parts) == 1:
+                return _statnotify_status(conn, user_id)
+            if len(parts) < 3 or parts[-1].lower() not in {"on", "off"}:
+                return "Usage: /statnotify <character name or id> on|off"
+            character_query = " ".join(parts[1:-1]).strip()
+            found = _resolve_character(conn, character_query)
+            if found is None:
+                return f"Unknown character: {character_query}"
+            character_id, character_name = found
+            enabled = set_stat_notifications(conn, user_id, character_id, parts[-1].lower() == "on")
+            return (
+                f"🔔 {character_name} stat updates {'ON' if enabled else 'OFF'}\n"
+                "━━━━━━━━━━━━━━━━━━\n"
+                "Preference saved. Notification baseline reset to current state; no historical backlog will be replayed."
+            )
 
     if command == "/inventory":
         with connect(db_path) as conn:
@@ -208,7 +314,18 @@ def handle_command(db_path: str | Path, *, user_id: int, text: str) -> str:
             migrate(conn)
             text_value, _ = ai_home_view(conn)
             return text_value
-    return _ORIGINAL_HANDLE_COMMAND(db_path, user_id=user_id, text=text)
+
+    reply = _ORIGINAL_HANDLE_COMMAND(db_path, user_id=user_id, text=text)
+    if command in {"/notify", "/notification", "/notifications", "/notion/on", "/notion/off"}:
+        explicit_toggle = (
+            command in {"/notion/on", "/notion/off"}
+            or (len(parts) >= 2 and parts[1].lower() in {"on", "off"})
+        )
+        if explicit_toggle:
+            with connect(db_path) as conn:
+                migrate(conn)
+                reset_all_stat_notification_baselines(conn, user_id)
+    return reply
 
 
 def _command_keyboard(command: str):
@@ -234,13 +351,14 @@ def _command_keyboard(command: str):
 
 
 # Install bounded Creator extensions into the existing polling loop. Telegram
-# remains an adapter; inventory/provider/fallback semantics live in reusable
-# domain/query/control services, while message deletion is presentation lifecycle only.
+# remains an adapter; inventory/provider/fallback/profile-change semantics live
+# in reusable services, while message deletion is presentation lifecycle only.
 base._api = _api
 base._send = _send
 base._edit = _edit
 base._home_message = _home_message
 base._home_keyboard = _home_keyboard
+base._character_keyboard_for_user = _character_keyboard_for_user
 base._callback_view = _callback_view
 base._help = _help
 base.handle_command = handle_command
