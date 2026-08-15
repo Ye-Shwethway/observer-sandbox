@@ -1,6 +1,6 @@
 # Read-Only Grading — Exemplar + Attribute Batch 1
 
-Status: COMPLETE / ACCEPTANCE VERIFIED / DEPLOYED; TELEGRAM PRESENTATION EXTENSION VALIDATION PENDING
+Status: COMPLETE / ACCEPTANCE VERIFIED / DEPLOYED; PROFILE-WIDE EXTENSION PLANNED
 
 ## Purpose
 
@@ -98,12 +98,42 @@ No aggregate grade is persisted. If an underlying authoritative value changes, i
 - aggregate grades are not persisted state;
 - progression engines remain independent of display grading.
 
-## Body grading boundary
+## Profile-wide extension
+
+The next grading work is now canonicalized in `docs/UNIVERSAL_PROFILE_GRADING_FRAMEWORK_V1.md` and intentionally occurs **before Skill Progression**.
+
+The framework generalizes grading through explicit named schemes rather than treating `raps-100-proof-v1` as universal.
+
+Planned scheme families include monotonic, target-range, target-proximity, composite and future reference-distribution evaluators.
+
+A numeric field is never gradeable merely because it is numeric.
+
+### Skills
+
+Learned skills are expected to use a monotonic proficiency scheme after the meaning and ownership of `character_skills.score`, `experience` and persisted `tier` are reconciled.
+
+Skill grading is presentation/interpretation only and must not itself mutate skill proficiency.
+
+### Body grading boundary
 
 Body measurements require a **separate evaluator family** and must not reuse `raps-100-proof-v1` by convenience.
 
-Height, weight, body-fat percentage and circumferences can require materially different context and mathematics: units, sex/height normalization, body composition, proportional relationships, target ranges and actor-specific genetic ceilings. Therefore body grading follows the same development policy at a higher semantic boundary:
+Height, weight, body-fat percentage and circumferences can require materially different context and mathematics: units, sex/height normalization, body composition, proportional relationships, target ranges and actor-specific genetic ceilings.
 
-`one body-measurement exemplar -> prove formula/context -> one separate body-measurement batch`
+Raw size is not a universal quality score. In particular, a larger circumference is not automatically a higher grade.
 
-Do not batch Body together with Attributes. Do not assume every body field should share one formula merely because all are displayed in one profile section.
+The planned body/physique layer therefore grades meaningful derived relationships and composites, such as shoulder/waist, chest/waist, waist/height where contextually appropriate, upper/lower balance and overall proportionality.
+
+Exact target bands must be evidence-backed/configurable. Do not promote a popularized golden-ratio number into universal biological truth without support.
+
+Health-oriented, general-aesthetic, bodybuilding and modelling interpretations may later be separate named schemes over the same authoritative body state.
+
+### Coverage closure
+
+Before Skill Progression begins, current profile surfaces should be classified as:
+- graded;
+- derived-grade candidate;
+- contextual-only;
+- not gradeable.
+
+Recovery, personality, preferences and intimate frequency/anatomy values must not acquire grades simply because a numeric representation exists.
