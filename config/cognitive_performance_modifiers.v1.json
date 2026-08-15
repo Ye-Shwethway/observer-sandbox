@@ -1,0 +1,69 @@
+{
+  "revision": "cognitive-performance-modifiers-v1",
+  "normalization_profiles": {
+    "raps_100_centered_v1": {
+      "kind": "centered_linear",
+      "center": 50.0,
+      "span": 50.0,
+      "clamp_min": -1.0,
+      "clamp_max": 1.0,
+      "note": "Gameplay normalization for 0..100 supporting Attributes. This does not alter the source Attribute or Skill score."
+    },
+    "iq_reasoning_context_v1": {
+      "kind": "centered_linear",
+      "center": 100.0,
+      "span": 30.0,
+      "clamp_min": -1.0,
+      "clamp_max": 1.0,
+      "note": "Observer Sandbox gameplay normalization for general reasoning context only. It is not an empirical claim that real-world performance is linearly determined by IQ."
+    }
+  },
+  "contracts": {
+    "technology.diagnose_known_system_fault": {
+      "contract_id": "technology_known_system_diagnosis_cognitive_performance_v1",
+      "skill_id": "technology",
+      "application_id": "diagnose_known_system_fault",
+      "status": "active",
+      "feasibility_policy": "never_modify",
+      "missing_input_policy": "neutral_zero_no_renormalization",
+      "knowledge_policy": "do_not_infer_or_create_knowledge",
+      "dimensions": {
+        "reasoning_quality": {
+          "base_multiplier": 1.0,
+          "max_abs_effect": 0.12,
+          "outcome_effects": ["information_gained", "partial_failure_recovery"],
+          "factors": [
+            {"field_key": "raps_ia.iq", "normalization": "iq_reasoning_context_v1", "weight": 0.40},
+            {"field_key": "raps_ia.problem_solving", "normalization": "raps_100_centered_v1", "weight": 0.40},
+            {"field_key": "raps_ma.focus", "normalization": "raps_100_centered_v1", "weight": 0.20}
+          ]
+        },
+        "precision": {
+          "base_multiplier": 1.0,
+          "max_abs_effect": 0.10,
+          "outcome_effects": ["quality_precision", "error_probability_severity"],
+          "factors": [
+            {"field_key": "raps_ma.focus", "normalization": "raps_100_centered_v1", "weight": 0.50},
+            {"field_key": "raps_ia.problem_solving", "normalization": "raps_100_centered_v1", "weight": 0.35},
+            {"field_key": "raps_ia.iq", "normalization": "iq_reasoning_context_v1", "weight": 0.15}
+          ]
+        },
+        "adaptation": {
+          "base_multiplier": 1.0,
+          "max_abs_effect": 0.10,
+          "outcome_effects": ["partial_failure_recovery", "time_speed"],
+          "factors": [
+            {"field_key": "raps_ma.adaptability", "normalization": "raps_100_centered_v1", "weight": 0.50},
+            {"field_key": "raps_ia.problem_solving", "normalization": "raps_100_centered_v1", "weight": 0.30},
+            {"field_key": "raps_ia.iq", "normalization": "iq_reasoning_context_v1", "weight": 0.20}
+          ]
+        }
+      },
+      "notes": [
+        "These modifiers shape bounded performance dimensions only after deterministic Skill/task feasibility has been established.",
+        "High IQ cannot create Technology proficiency, technical Knowledge, target access, required resources, or unsupported challenge capability.",
+        "Stress-related factors are intentionally absent from the first low-risk simulation contract and should be added only when task context explicitly represents meaningful pressure."
+      ]
+    }
+  }
+}
