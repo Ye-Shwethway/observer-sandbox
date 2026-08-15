@@ -11,6 +11,7 @@ from observer_sandbox.profile_observer import profile_section
 from observer_sandbox.runtime import initialize
 from observer_sandbox.simulation import Action, action_options, apply_action, snapshot
 from observer_sandbox.solo_sexual_regulation import solo_sexual_regulation_context
+from observer_sandbox.world import set_field
 
 ACTOR = "char_darian"
 PRIVATE_ROOM = "loc_thorne_estate_master_suite"
@@ -26,12 +27,27 @@ def main() -> int:
     initialize(db_path)
     with connect(db_path) as conn:
         before_events = int(conn.execute("SELECT COUNT(*) FROM events").fetchone()[0])
+
+        # The production copy may naturally be inside a recent-release cooldown
+        # or transient recovery state. Acceptance must prove the behavior contract,
+        # not depend on the wall-clock moment at which CI copied production.
+        # Establish eligibility only on this disposable database; live production
+        # remains read-only and untouched by the validation workflow.
+        conn.execute(
+            "DELETE FROM action_instances WHERE actor_id=? AND action_type='self_satisfaction'",
+            (ACTOR,),
+        )
         set_dynamic_location(conn, ACTOR, PRIVATE_ROOM)
+        set_field(conn, ACTOR, "needs.energy", 100.0, authority="validation_fixture", source="solo-regulation-acceptance")
+        set_field(conn, ACTOR, "needs.sleepiness", 0.0, authority="validation_fixture", source="solo-regulation-acceptance")
+        set_field(conn, ACTOR, "physiology.fatigue", 0.0, authority="validation_fixture", source="solo-regulation-acceptance")
         conn.commit()
+
         state = snapshot(conn, ACTOR)
         context = solo_sexual_regulation_context(conn, ACTOR, state=state)
         assert context["adult"] is True
         assert context["private_environment"]["safe_private"] is True
+        assert context["cooldown_remaining_hours"] == 0.0
         assert context["available_now"] is True
         assert any(option["action"] == "self_satisfaction" for option in action_options(conn, ACTOR))
 
@@ -86,6 +102,7 @@ def main() -> int:
         print(json.dumps({
             "ok": True,
             "disposable_production_copy": True,
+            "deterministic_disposable_preconditions": True,
             "adult_gate": True,
             "private_alone_gate": True,
             "cognition_option_available": True,
