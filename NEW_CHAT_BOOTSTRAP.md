@@ -36,35 +36,35 @@ Batch structurally equivalent work. Avoid repetitive one-field/one-PR or one-app
 
 ## Current verified deployment
 
-Latest runtime deployment: **Deploy #225 / run `31892433699` SUCCESS**, Firearms Progression Producer v1, PR #159 merge `d759ef7903f889517e76a48b803fba83bba09ba0`.
+Latest runtime deployment: **Deploy #226 / run `31893586685` SUCCESS**, Skills Closure Batch v1, PR #161 merge `7cbc92a38ee8b3f5d8220c6e33ff0c4d00f157b4`.
 
-Final tested head: `1553621a93e52cb52e948a856dec99a49bd4fc23`.
+Final tested head: `f502e7e0e0f438b2dfac9ffab01c547ef1b255b9`.
 
 Validation:
-- final **CI #918 / run `31892374935` SUCCESS**;
-- Skill Progression Foundation, Skill Evidence Semantics, Skill Definition Format/Refactor, Tactical progression, and Strength Live Cycle gates all green;
-- production init/status healthy; schema v5.
+- final **CI #923 / run `31893520852` SUCCESS**;
+- fresh DB init/status healthy; schema v5;
+- Skill Progression Foundation, Skill Evidence Semantics, Skill Definition Format/Refactor, Tactical progression, Strength Live Cycle, and Public Readiness Security gates all green;
+- first full CI attempt exposed only four stale progression contract assertions after 531 passing tests; they were updated narrowly;
+- no manual repeated full-suite rerun was requested.
 
-Production readback after Deploy #225:
-- service active/healthy; autonomy enabled, normal mode, retry null, pending action preserved;
-- speed **30x** at readback;
+Production readback after Deploy #226:
+- service active/healthy; autonomy enabled, normal mode, retry null, pending action present;
+- speed **10x** at readback;
 - Gemini `gemini-3.1-flash-lite` primary preserved;
 - Groq `qwen/qwen3.6-27b` fallback healthy;
 - Telegram configuration healthy;
-- sim time `2025-05-06T18:56:00+00:00`;
-- Darian remained naturally sleeping in Darian's Master Suite because the action was pending before the circadian correction;
-- Bladed Weapons 87/A, Firearms 87/A, Weapon Mastery 87/A, overall Skills A / 85.167;
-- no production weapon practice/application was fabricated for proof.
+- sim time `2025-05-07T06:24:00+00:00`;
+- Darian was naturally training in the Top-Class Home Gym;
+- Field Medicine 75/A, Bladed Weapons 87/A, Firearms 87/A, Weapon Mastery 87/A, overall Skills 85.167/A;
+- no production Field Medicine practice or casualty was fabricated for proof.
 
-## Circadian stabilization
+This morning training state also confirms that the earlier circadian correction has advanced beyond the old early-evening sleep lock.
 
-**Circadian Sleep Rhythm Stabilization v1** is complete through PR #158, merge `f63786c5f0f3d4c4b2098a0c6dc37d9ced9180db`, Deploy #224.
+## Skills section — CLOSED v1
 
-Ordinary 16-hour wakefulness no longer creates a strong overnight-sleep signal at any clock time. The normal 07:00–22:00 wake window resists ordinary early sleep, while 22:00–07:00 provides the normal circadian sleep pull. Severe >=20h wakefulness or critical raw sleepiness can override timing. The pre-existing pending sleep was deliberately not rewritten.
+Skills is **minimum-unlocked and closed for the current vertical-completeness pass**.
 
-## Skills v1 scope freeze
-
-Learned Skills in the minimum v1 pass:
+Frozen learned Skills:
 - Hand-to-Hand Combat
 - Bladed Weapons
 - Firearms
@@ -73,32 +73,60 @@ Learned Skills in the minimum v1 pass:
 - Technology
 - Field Medicine
 
-`Weapon Mastery` is a derived/non-executable parent over Bladed Weapons + Firearms and has no direct XP.
+`Weapon Mastery` remains a derived/non-executable parent over Bladed Weapons + Firearms and has no direct XP. Hidden legacy `weapons` is compatibility only.
 
-Skill-like compatibility/Attribute fields such as combat skill, weapons proficiency, survival skill, powerlifting capacity, focus/precision, practical skills, technological aptitude, and medical knowledge are not automatically independent Skills.
+All seven learned Skills now have authoritative score/grade semantics, profile/cognition visibility, meaningful represented application where safely runnable, and a legitimate learning path.
 
-Current coverage:
-- H2H: represented applications + progression active.
-- Bladed: simulation-safe application + explicit progression complete.
-- Firearms: simulation-safe application + explicit progression complete.
-- Survival: represented application + explicit progression complete.
-- Tactical Planning: represented application + progression complete.
-- Technology: represented application + explicit progression complete.
-- Field Medicine: casualty-context assessment/stabilization exists; minimum progression remains the final learned-Skill closure item.
+Field Medicine closure adds:
+- `field_medicine_scenario_practice`;
+- explicit simulation-safe `skill_practice` learning evidence;
+- dedicated Training Hall scenario simulator;
+- no live casualty requirement for practice;
+- no casualty creation, diagnosis/treatment graph, or application=>XP shortcut.
 
-## Active implementation
+Real Field Medicine assessment/stabilization remains casualty-context-bound.
 
-**Skills Closure Batch v1 — AUTHORIZED / ACTIVE.**
+Skill-like Attribute/compatibility fields are not automatically independent Skills. Deeper Skill trees are deferred until a represented task actually requires them.
 
-One batch should:
-- add one abstract simulation-safe Field Medicine practice producer using the proven `skill_practice` evidence pattern;
-- progress only `field_medicine` without requiring or fabricating a live casualty;
-- keep real assessment/stabilization casualty-context-bound and application evidence separate from learning evidence;
-- verify the frozen seven-Skill surface and compatibility classifications;
-- close **Skills section minimum-unlocked / CLOSED v1**;
-- avoid deep Skill trees, Injury Engine, treatment graph, H2H rewrite, hostile combat, or relationship expansion.
+See `docs/SKILLS_CLOSURE_V1.md`.
 
-After this batch, leave Skills and begin the **Remaining Profile Minimum Unlock Sweep** across identity, appearance, body, attributes, recovery, sexual, personality, preferences, and background. Existing mature sections receive closure review rather than rewrites; canonical/contextual sections receive only the smallest real runtime influence required by policy.
+Metadata note: active Field Medicine learning authority is the explicit progression/practice registries. The older universal Skill Definition learning-evidence description was not comprehensively refactored in the closure batch; treat that as deferred metadata normalization, never as implicit application-to-XP authority.
+
+## Next canonical phase
+
+**Remaining Profile Minimum Unlock Sweep — REVIEW/IMPLEMENT NEXT.**
+
+Do not deepen Skills now.
+
+Review all remaining Character Profile sections:
+- identity
+- appearance
+- body
+- attributes
+- recovery
+- sexual
+- personality
+- preferences
+- background
+
+For each, classify:
+1. already minimum-unlocked;
+2. closure-only gap;
+3. missing meaningful runtime influence.
+
+Then batch equivalent gaps rather than creating one PR per section.
+
+Likely grouping, subject to fresh repository inspection:
+- **Mature closure:** Body + Attributes + Recovery + Sexual — substantial foundations already exist; audit/close rather than rewrite.
+- **Canonical/context:** Identity + Appearance + Personality + Preferences + Background — add only the smallest real cognition/action influence required where missing.
+
+Static/canonical values do not need artificial mutation just to count as simulated. Their valid runtime role may be stable context that affects cognition, feasibility, choice, or presentation.
+
+## After the profile sweep
+
+Once every profile section is minimum-unlocked, review missing cross-cutting workflow foundations before deepening any section. Candidate areas include profile-to-cognition influence, generic task/action lifecycle, inventory/resources/consequences, environment context, knowledge/familiarity, inter-character participation, event/lifecycle handling, long-horizon progression/decay, and autonomy goal continuity.
+
+Choose exact order from future repository/live evidence.
 
 ## Hard boundaries
 
@@ -113,4 +141,4 @@ After this batch, leave Skills and begin the **Remaining Profile Minimum Unlock 
 
 ## Exact resume point
 
-**Vertical-completeness policy is active. Firearms Progression Producer v1 is deployed through PR #159 / merge `d759ef7903f889517e76a48b803fba83bba09ba0` / CI #918 / Deploy #225. Skills v1 is frozen to seven learned Skills plus derived Weapon Mastery. Complete Skills Closure Batch v1 in one batch by adding minimum simulation-safe Field Medicine progression and verifying/classifying the existing surface; then mark Skills CLOSED v1 and move immediately to the Remaining Profile Minimum Unlock Sweep.**
+**Vertical-completeness policy is active. Skills Closure Batch v1 is complete through PR #161 final head `f502e7e0e0f438b2dfac9ffab01c547ef1b255b9`, merge `7cbc92a38ee8b3f5d8220c6e33ff0c4d00f157b4`, CI #923, and Deploy #226 / run `31893586685` SUCCESS. Skills is CLOSED v1. Production is healthy; at readback Darian was naturally training at `2025-05-07T06:24:00+00:00`, speed 10x, and Field Medicine remained 75/A without fabricated practice/casualty. Review and batch the remaining nine profile sections next; do not deepen Skills.**
