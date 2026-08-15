@@ -91,7 +91,25 @@ def validate_training_movements_for_target(
     *,
     catalog: dict[str, Any] | None = None,
 ) -> tuple[str, ...]:
-    return validate_selected_movements(selected, allowed=movement_ids_for_target(target, catalog=catalog))
+    profile = training_profile_for_target(target, catalog=catalog)
+    if profile is None:
+        # Unknown/unbound targets do not gain permissive semantics from this
+        # adapter; any supplied movement label remains invalid.
+        return validate_selected_movements(selected, allowed=())
+    allowed = tuple(
+        str(item)
+        for item in profile.get("movement_pattern_ids", [])
+        if isinstance(item, str)
+    )
+    # Some authored training methods (combat rounds, cardio, tactical drills,
+    # etc.) are already semantically complete at the method level and do not
+    # define a movement/anatomy subcatalog. In that case training_movements is
+    # an inapplicable auxiliary field, so canonicalize any model-supplied labels
+    # to empty rather than turning an otherwise valid action into a retry loop.
+    # Methods that do publish an explicit movement contract remain strict.
+    if not allowed:
+        return ()
+    return validate_selected_movements(selected, allowed=allowed)
 
 
 def enrich_training_action_options(
