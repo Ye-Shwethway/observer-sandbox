@@ -11,6 +11,7 @@ from .ai import seed_builtin_providers
 from .composition_schema import seed_action_definitions
 from .controlled_h2h_runtime import seed_controlled_h2h_runtime
 from .db import connect, get_runtime_state, migrate
+from .field_medicine_stabilization import seed_field_medicine_stabilization_runtime
 from .inventory import seed_home_inventory
 from .profile_schema import seed_profile_field_definitions
 from .profile_schema_source_union import seed_source_union_extensions
@@ -72,6 +73,10 @@ def _initialize_conn(conn) -> None:
     # does not fabricate a production sparring partner or session; those must be
     # explicitly represented and authorized in live world state before use.
     seed_controlled_h2h_runtime(conn)
+    # Field Medicine stabilization likewise registers only action vocabulary.
+    # No casualty, session, casualty state, or medical supplies are fabricated in
+    # production merely to exercise the represented consequence foundation.
+    seed_field_medicine_stabilization_runtime(conn)
     defaults = {
         "paused": False,
         "speed": 1.0,
