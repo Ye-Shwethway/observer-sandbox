@@ -142,7 +142,7 @@ def test_field_medicine_assessment_reads_existing_state_without_mutation(tmp_pat
         assert outcome["learning_evidence"] is False
 
 
-def test_completed_assessment_persists_application_evidence_but_no_state_change_or_xp(tmp_path) -> None:
+def test_completed_assessment_persists_application_evidence_but_no_casualty_state_change_or_xp(tmp_path) -> None:
     db = tmp_path / "observer.sqlite3"
     initialize(db)
     with connect(db) as conn:
@@ -205,7 +205,13 @@ def test_completed_assessment_persists_application_evidence_but_no_state_change_
             "action_completed",
             "skill_application_evidence",
         ]
-        assert all(json.loads(row["state_changes_json"] or "{}") == {} for row in events)
+        # Ordinary action physiology may still be recorded on action completion;
+        # the assessment consumer itself must not emit a casualty consequence.
+        assert conn.execute(
+            "SELECT COUNT(*) FROM events WHERE action_id=? AND event_type='represented_consequence_applied'",
+            (action_id,),
+        ).fetchone()[0] == 0
+        assert json.loads(events[1]["state_changes_json"] or "{}") == {}
 
         maybe_settle_skill_progression(
             conn,
