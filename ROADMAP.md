@@ -1,7 +1,7 @@
 # Observer Sandbox Roadmap
 
 Status: ACTIVE
-Roadmap synchronized: 2026-08-15
+Roadmap synchronized: 2026-08-16
 
 ## Operating principles
 
@@ -40,7 +40,7 @@ PR #167 established deterministic habit adaptation from completed represented be
 
 ### Hobby / Interest Lifecycle v1 — COMPLETE
 
-PR #172 establishes the second adaptive-disposition exemplar. See `docs/HOBBY_INTEREST_LIFECYCLE_V1.md`.
+PR #172 established the second adaptive-disposition exemplar. See `docs/HOBBY_INTEREST_LIFECYCLE_V1.md`.
 
 Current contract:
 - completed represented voluntary target engagement is the only learning evidence;
@@ -54,6 +54,23 @@ Current contract:
 - canonical authored hobbies remain independent and untouched;
 - cognition reads existing preference/hobby surfaces but cannot mutate lifecycle state.
 
+### Preference Adaptation v1 — COMPLETE
+
+PR #174 established deterministic preference strengthening, weakening, and reversal at minimum-foundation depth. See `docs/PREFERENCE_ADAPTATION_V1.md`.
+
+Current contract:
+- repeated completed voluntary target-based `read` / `use` engagement supplies conservative positive evidence;
+- one engagement is evidence only and does not create an instant visible preference;
+- short-interval repetition receives diminished weight;
+- non-selection, inactivity, and unrelated actions are never negative preference evidence;
+- negative evidence requires an explicit represented aversive/outcome producer through the signed evidence API;
+- per-target signed evidence persists in `runtime_state` under `preference_adaptation_v1:`;
+- sufficiently repeated positive evidence projects an active dynamic `like`; sufficiently repeated negative evidence projects `dislike`;
+- opposing evidence must pass through a neutral band before reversal, preventing instant `like <-> dislike` flips;
+- authored canonical preferences remain untouched;
+- established dynamic preferences reach cognition through the existing preference context;
+- LLM cognition has no direct mutation authority.
+
 No schema migration was required; schema remains v5.
 
 ## Autonomy continuity — Livelock Watchdog v1 COMPLETE
@@ -64,29 +81,30 @@ The watchdog remains intentionally narrow: third consecutive same-sim-boundary a
 
 ## Current verified deployment
 
-Latest runtime deployment: **Deploy #233 / run `31899884337` SUCCESS**, Hobby / Interest Lifecycle v1, PR #172 merge `3822332c0fb5bca7295e83e0cc0bcebf06973be8`.
+Latest runtime deployment: **Deploy #234 / run `31900505874` SUCCESS**, Preference Adaptation v1, PR #174 merge `c72807dab416f64d459f4e4863efc15ce02c09e7`.
 
-Final tested PR head: `05388eba4c6e9e4870b3eb0e927c0247c0e68f06`.
+Final tested PR head: `6396ab34d190cfa894b69dcb9bdd52c743b4b02a`.
 
 Validation:
-- **CI #937 / run `31899806440` SUCCESS**;
-- **560 passed in 37.15s**;
+- **CI #938 / run `31900387940` SUCCESS**;
+- **566 passed in 114.85s**;
 - fresh DB init/status succeeded; schema remains v5;
-- body, attribute/progression, physical presentation, height, sexual lifecycle, and other task-relevant automatic gates were green;
-- Skill Progression Foundation production-copy acceptance initially hit an infrastructure-only SSH `Connection reset by peer` before its validator ran; only that failed job was retried, and the disposable production-copy validator then succeeded;
-- no code change was made for that transient infrastructure failure and no duplicate full Python suite was deliberately run.
+- Skill Progression Foundation, Physical Presentation, Strength, Stamina, Height, and other automatic gates were green;
+- Body Composition, Sexual Anatomy/Physiology, and Body Measurement production-copy gates each initially hit an infrastructure-only SSH/rsync `Connection reset by peer` during staging before validators ran;
+- only those three failed jobs were retried, and all three disposable production-copy validators then succeeded;
+- no code change was made for those transient infrastructure failures and no duplicate full Python suite was deliberately run.
 
-Verified production readback after Deploy #233:
+Verified production readback after Deploy #234:
 - service active and healthy; schema v5;
 - autonomy enabled, normal mode, retry null, pending action present;
 - speed **5x**;
-- sim time `2025-05-07T17:19:00+00:00`;
-- Darian was naturally idle in the Top-Class Home Gym at readback;
+- sim time `2025-05-07T18:09:00+00:00`;
+- Darian was naturally **reading in the Living Room** at readback;
 - Gemini `gemini-3.1-flash-lite` primary cognition binding preserved;
 - Groq `qwen/qwen3.6-27b` fallback preserved;
 - Telegram bot/API/owner/allowed-user configuration healthy.
 
-No production `read`/`use` action was fabricated to manufacture Hobby/Interest evidence. Therefore deployment proves the lifecycle is installed and healthy; it does **not** by itself prove that a new learned hobby has naturally formed in production yet.
+The natural in-progress `read` action is not claimed as an established learned preference. Preference evidence settles only on completed represented action boundaries. No production action or negative-outcome evidence was fabricated to manufacture proof.
 
 ## Skills — CLOSED v1
 
@@ -103,10 +121,10 @@ Frozen learned Skill surface:
 
 ## Near-term sequence
 
-1. Keep Habit and Hobby/Interest lifecycle contracts at minimum-foundation depth.
-2. Implement **Preference Adaptation v1** next: bounded strengthening/weakening from legitimate repeated voluntary choice/outcome evidence, without arbitrary LLM writes or instant preference reversal.
-3. Then implement slow Personality Plasticity v1 only after preference adaptation proves the reusable evidence-to-disposition pattern.
-4. Return to the broader Overall Workflow/Foundation Review after this adaptive-disposition foundation is minimally complete.
+1. Keep Habit, Hobby/Interest, and Preference adaptation contracts at minimum-foundation depth.
+2. Implement **Slow Personality Plasticity v1** next: only long-horizon accumulated evidence may produce a small bounded personality overlay/drift; ordinary single events must never rewrite personality.
+3. Keep authored personality as the stable baseline and the LLM proposal-only; do not build a giant trait taxonomy or generic reward engine.
+4. Return to the broader Overall Workflow/Foundation Review once slow Personality Plasticity minimally completes the Adaptive Character Disposition Foundation.
 5. Deeper psychology, richer hobby taxonomy/proficiency, identity transformation, relationships, and other local depth remain later work.
 
 ## Deferred boundaries
@@ -115,4 +133,4 @@ No relationship-system expansion, hostile/non-consensual Combat Engine, weapon l
 
 ## Exact resume point
 
-**Habit Formation/Extinction v1 and Hobby/Interest Lifecycle v1 are complete as the first two Adaptive Character Disposition exemplars. Hobby/Interest Lifecycle v1 is deployed through PR #172 final head `05388eba4c6e9e4870b3eb0e927c0247c0e68f06`, CI #937 with 560 passed, merge `3822332c0fb5bca7295e83e0cc0bcebf06973be8`, and Deploy #233 SUCCESS. Production is healthy at schema v5 with autonomy normal, retry null, pending action present, speed 5x, and sim time `2025-05-07T17:19:00+00:00`. No synthetic hobby evidence was created. Resume with Preference Adaptation v1 at minimum-foundation depth.**
+**Habit Formation/Extinction v1, Hobby/Interest Lifecycle v1, and Preference Adaptation v1 are complete as the first three Adaptive Character Disposition slices. Preference Adaptation v1 is deployed through PR #174 final head `6396ab34d190cfa894b69dcb9bdd52c743b4b02a`, CI #938 with 566 passed, merge `c72807dab416f64d459f4e4863efc15ce02c09e7`, and Deploy #234 SUCCESS. Production is healthy at schema v5 with autonomy normal, retry null, pending action present, speed 5x, and sim time `2025-05-07T18:09:00+00:00`; Darian was naturally reading in the Living Room. No synthetic preference evidence was created. Resume with Slow Personality Plasticity v1 at minimum-foundation depth.**
