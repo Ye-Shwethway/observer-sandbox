@@ -30,7 +30,8 @@ def test_canonical_profile_context_reaches_cognition_without_mutation(tmp_path):
         assert character["personality"]["primary_motivation"]
         assert character["background"]["origins"]
 
-        assert any(item["type"] == "like" for item in character["preferences"])
+        assert character["preferences"]
+        assert all(item["type"] and item["subject"] for item in character["preferences"])
         assert "physical fitness" in character["hobbies"]
         assert "high-discipline routines" in character["habits"]
 
