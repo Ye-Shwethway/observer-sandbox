@@ -22,11 +22,17 @@ During implementation use the smallest task-relevant tests/gates. Do not repeate
 
 Use **exemplar-first, then batch-by-pattern**. Never manipulate production merely to manufacture evidence.
 
-## Active direction
+## Strategic mode — vertical completeness first
 
-Development is **profile-first**. Current Character Profile focus: **Skills**.
+The active Creator direction is:
 
-Relationship/casualty-handoff expansion remains deferred until additional represented-character work resumes.
+**minimum unlock every Character Profile section first, complete the overall system workflow/foundations, then return later to deepen individual sections.**
+
+Follow `docs/MINIMUM_PROFILE_UNLOCK_POLICY_V1.md`.
+
+A minimum-unlocked section needs authoritative state, at least one meaningful runtime influence, and persistence/presentation where relevant. Exhaustive mechanics, deep taxonomies, and bespoke engines per field are not required during this pass.
+
+Batch structurally equivalent work. Avoid repetitive one-field/one-PR or one-application/one-PR cadence unless a genuinely new invariant needs an exemplar.
 
 ## Current verified deployment
 
@@ -37,8 +43,6 @@ Final tested head: `1553621a93e52cb52e948a856dec99a49bd4fc23`.
 Validation:
 - final **CI #918 / run `31892374935` SUCCESS**;
 - Skill Progression Foundation, Skill Evidence Semantics, Skill Definition Format/Refactor, Tactical progression, and Strength Live Cycle gates all green;
-- the immediately prior CI #917 had only one stale global revision assertion after 531 passing tests; that assertion alone was aligned;
-- no manual repeated full-suite rerun was requested;
 - production init/status healthy; schema v5.
 
 Production readback after Deploy #225:
@@ -46,95 +50,67 @@ Production readback after Deploy #225:
 - speed **30x** at readback;
 - Gemini `gemini-3.1-flash-lite` primary preserved;
 - Groq `qwen/qwen3.6-27b` fallback healthy;
-- Telegram token/API/owner/allowed-user configuration healthy;
+- Telegram configuration healthy;
 - sim time `2025-05-06T18:56:00+00:00`;
-- Darian still naturally sleeping in Darian's Master Suite because the sleep action had already been pending before the circadian fix;
+- Darian remained naturally sleeping in Darian's Master Suite because the action was pending before the circadian correction;
 - Bladed Weapons 87/A, Firearms 87/A, Weapon Mastery 87/A, overall Skills A / 85.167;
-- no production firearm practice/application was fabricated for proof.
+- no production weapon practice/application was fabricated for proof.
 
 ## Circadian stabilization
 
 **Circadian Sleep Rhythm Stabilization v1** is complete through PR #158, merge `f63786c5f0f3d4c4b2098a0c6dc37d9ced9180db`, Deploy #224.
 
-The prior sleep-pressure logic incorrectly made ordinary 16-hour wakefulness a strong sleep need at any clock time, allowing an early wake to phase-lock an early bedtime. Current behavior treats 07:00–22:00 as the normal wake window for ordinary accumulated wakefulness and applies the stronger circadian sleep pull in the 22:00–07:00 night window. Severe >=20h wakefulness or critical raw sleepiness still overrides daytime timing. The already-pending early sleep was deliberately not cancelled or rewritten.
+Ordinary 16-hour wakefulness no longer creates a strong overnight-sleep signal at any clock time. The normal 07:00–22:00 wake window resists ordinary early sleep, while 22:00–07:00 provides the normal circadian sleep pull. Severe >=20h wakefulness or critical raw sleepiness can override timing. The pre-existing pending sleep was deliberately not rewritten.
 
-## Weapon Mastery checkpoint
+## Skills v1 scope freeze
 
-`Weapon Mastery` — derived/non-executable parent
-- `Bladed Weapons` — learned component
-- `Firearms` — learned component
+Learned Skills in the minimum v1 pass:
+- Hand-to-Hand Combat
+- Bladed Weapons
+- Firearms
+- Survival
+- Tactical Planning
+- Technology
+- Field Medicine
 
-Parent rules:
-- equal-weight mean of components;
-- no direct application or XP;
-- excluded from overall Skills aggregation;
-- hidden legacy `weapons` remains only a compatibility projection;
-- component progression re-derives parent/legacy score without granting parent experience.
+`Weapon Mastery` is a derived/non-executable parent over Bladed Weapons + Firearms and has no direct XP.
 
-### Bladed Weapons — application + progression complete
+Skill-like compatibility/Attribute fields such as combat skill, weapons proficiency, survival skill, powerlifting capacity, focus/precision, practical skills, technological aptitude, and medical knowledge are not automatically independent Skills.
 
-Application runtime:
-- `bladed_weapons.employ_familiar_melee_weapon`;
-- action `blade_drill`;
-- exact simulation-safe capability `usable_bladed_training_weapon`;
-- low risk, solo-compatible;
-- application evidence only; no automatic XP/harm.
+Current coverage:
+- H2H: represented applications + progression active.
+- Bladed: simulation-safe application + explicit progression complete.
+- Firearms: simulation-safe application + explicit progression complete.
+- Survival: represented application + explicit progression complete.
+- Tactical Planning: represented application + progression complete.
+- Technology: represented application + explicit progression complete.
+- Field Medicine: casualty-context assessment/stabilization exists; minimum progression remains the final learned-Skill closure item.
 
-Learning producer:
-- `bladed_weapons_handling_practice`;
-- action `practice`, minimum 10 minutes;
-- dedicated Training Hall practice simulator distinct from `blade_drill`;
-- only explicit whitelisted practice evidence progresses Bladed Weapons.
+## Active implementation
 
-### Firearms — application + progression complete
+**Skills Closure Batch v1 — AUTHORIZED / ACTIVE.**
 
-Application runtime:
-- `firearms.employ_familiar_ranged_weapon`;
-- action `firearm_drill`;
-- exact simulation-safe capability `usable_firearms_training_weapon`;
-- low risk, solo-compatible;
-- application evidence only; `learning_evidence=false`;
-- no automatic XP, ammunition consumption, injury, casualty, hostile-use, lethality, or real-world technique semantics.
+One batch should:
+- add one abstract simulation-safe Field Medicine practice producer using the proven `skill_practice` evidence pattern;
+- progress only `field_medicine` without requiring or fabricating a live casualty;
+- keep real assessment/stabilization casualty-context-bound and application evidence separate from learning evidence;
+- verify the frozen seven-Skill surface and compatibility classifications;
+- close **Skills section minimum-unlocked / CLOSED v1**;
+- avoid deep Skill trees, Injury Engine, treatment graph, H2H rewrite, hostile combat, or relationship expansion.
 
-Learning producer:
-- `firearms_handling_practice`;
-- action `practice`, minimum 10 minutes;
-- relevance `{ "firearms": 1.0 }`;
-- dedicated Training Hall Firearms Practice Simulator distinct from `firearm_drill`;
-- only explicit whitelisted `skill_practice` evidence progresses Firearms;
-- Bladed Weapons remains an independent sibling;
-- legitimate Firearms learning re-derives Weapon Mastery/legacy projection while neither parent receives direct XP;
-- ordinary `firearm_drill` remains non-learning.
-
-See `docs/FIREARMS_SIMULATION_SAFE_RUNTIME_V1.md` and `docs/FIREARMS_PROGRESSION_V1.md`.
-
-## Other Skill coverage
-
-- H2H: controlled striking/grapple + progression; sparring needs another consenting colocated character.
-- Survival: represented navigation/sustainment + explicit solo progression.
-- Tactical Planning: represented assessment/planning + progression.
-- Technology: represented diagnostic + explicit practice progression.
-- Field Medicine: represented assessment/stabilization; casualty context required; progression/lifecycle continuation deferred.
+After this batch, leave Skills and begin the **Remaining Profile Minimum Unlock Sweep** across identity, appearance, body, attributes, recovery, sexual, personality, preferences, and background. Existing mature sections receive closure review rather than rewrites; canonical/contextual sections receive only the smallest real runtime influence required by policy.
 
 ## Hard boundaries
 
-- no relationship system expansion during the current Skills pass;
+- no relationship system expansion during the current minimum profile pass;
 - no hostile/non-consensual combat engine;
 - no weapon lethality/injury/casualty side effects;
 - no real-world weapon instructions;
 - no Injury Engine or deep weapon taxonomy;
 - no generic use/application => XP shortcut;
 - no H2H hierarchy rewrite as a side effect;
-- no fabricated production actors/actions merely for proof.
-
-## Next canonical direction
-
-**Skills Section Completion Review — REVIEW NEXT.**
-
-Audit the current Skills section against the profile-first goal. Confirm which Skills have authoritative learned/derived semantics, safe represented application, legitimate progression producers, cognition awareness, and correct profile rendering. Do not create fake producers just to make every row symmetrical: document intentional deferred constraints such as Field Medicine progression and H2H's second-character sparring requirement.
-
-Then decide whether Skills is meaningfully simulation-unlocked under the current scope and choose the next Character Profile section only after that review.
+- no fabricated production actors/actions/casualties merely for proof.
 
 ## Exact resume point
 
-**Firearms Progression Producer v1 is complete through PR #159 final tested head `1553621a93e52cb52e948a856dec99a49bd4fc23`, merge `d759ef7903f889517e76a48b803fba83bba09ba0`, final CI #918 with all relevant Skill/Strength acceptance gates green, and Deploy #225 / run `31892433699` SUCCESS. `firearms_handling_practice` is now explicit Firearms learning authority; `firearm_drill` remains application-only/non-learning; Bladed and Firearms progress independently; Weapon Mastery/legacy projection re-derive without direct XP; production stayed healthy and unchanged at 87/A without fabricated practice. Perform the Skills Section Completion Review next.**
+**Vertical-completeness policy is active. Firearms Progression Producer v1 is deployed through PR #159 / merge `d759ef7903f889517e76a48b803fba83bba09ba0` / CI #918 / Deploy #225. Skills v1 is frozen to seven learned Skills plus derived Weapon Mastery. Complete Skills Closure Batch v1 in one batch by adding minimum simulation-safe Field Medicine progression and verifying/classifying the existing surface; then mark Skills CLOSED v1 and move immediately to the Remaining Profile Minimum Unlock Sweep.**
