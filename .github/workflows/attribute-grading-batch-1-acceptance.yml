@@ -92,10 +92,12 @@ jobs:
                   assert expected_row in text
               physical = attributes["section"]["group_grades"]["raps_pa"]
               overall = attributes["section"]["overall_grade"]
-              physical_text = f"Physical ({physical[\"grade\"]}) · {physical[\"label\"]}"
-              overall_text = f"Overall ({overall[\"grade\"]}) · {overall[\"label\"]}"
-              assert physical_text in text
-              assert overall_text in text
+              physical_grade = physical["grade"]
+              physical_label = physical["label"]
+              overall_grade = overall["grade"]
+              overall_label = overall["label"]
+              assert f"Physical ({physical_grade}) · {physical_label}" in text
+              assert f"Overall ({overall_grade}) · {overall_label}" in text
               assert "IQ   140 (" not in text
               after = {
                   row["field_key"]: (row["value_json"], row["mode"])
