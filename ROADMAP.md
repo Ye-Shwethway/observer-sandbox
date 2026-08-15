@@ -5,77 +5,70 @@ Roadmap synchronized: 2026-08-15
 
 ## Operating principles
 
-- Current Creator instruction, current canonical repo contracts/config/schema, and verified live production outrank remembered chat context.
+- Current Creator instruction, canonical repo contracts/config/schema, and verified live production outrank remembered chat context.
 - AI proposes structured cognition; deterministic runtime validates and mutates.
 - Telegram is observer/control, never simulation authority.
 - Preserve: `Actor(s) + Action + Place + Simulation Time + Conditions/Modifiers + Resources/Targets -> Validation -> State Changes + Events`.
 - Use minimum-runnable reversible slices and **exemplar-first, then batch-by-pattern**.
 - Never manipulate production merely to manufacture evidence.
-- Development verification is focused-first: use task-relevant tests/gates while iterating and reserve the full suite for the final code/runtime PR checkpoint unless broader risk justifies another run. Docs-only changes do not need the full Python suite.
+- Verification is focused-first. Code/runtime PRs get one final full CI checkpoint by default; docs-only changes do not need the Python suite; do not deliberately repeat the full suite after merge.
 
-## Strategic development mode — vertical completeness first
+## Strategic development mode — workflow completeness before depth
 
-The Creator has explicitly prioritized **overall workflow completeness before subsystem depth**.
+The Creator's vertical-completeness pass has reached its first major checkpoint:
 
-Canonical sequence:
+`minimum unlock all Character Profile sections -> overall workflow/foundation review -> deepen highest-value systems later`
 
-`minimum unlock all Character Profile sections -> verify overall system workflow -> deepen highest-value systems later`
+All Character Profile sections now meet the minimum-unlock standard from `docs/MINIMUM_PROFILE_UNLOCK_POLICY_V1.md`.
 
-Follow `docs/MINIMUM_PROFILE_UNLOCK_POLICY_V1.md`.
-
-Minimum unlock means real, not cosmetic: authoritative state + at least one meaningful runtime influence + persistence/presentation where relevant. It does not require exhaustive mechanics, deep taxonomies, multiple bespoke applications, or a dedicated subsystem for every field.
-
-Batch structurally equivalent work. Do not return to one-field/one-PR or one-Skill-application/one-PR cadence unless a genuinely new invariant requires an exemplar.
+Do not reopen a section merely to add depth unless the upcoming foundation review finds a blocking cross-system requirement.
 
 ## Current verified deployment
 
-Latest runtime deployment: **Deploy #227 / run `31895171211` SUCCESS**, Solo Sexual Regulation Naturalism v2, PR #163 merge `13c57933b8136c014f6940b2647c2acdbc3b8eac`.
+Latest runtime deployment: **Deploy #228 / run `31896440459` SUCCESS**, Profile Minimum Unlock Sweep v1, PR #165 merge `736112054e3814f0f340ea5e919eb1729ea5837a`.
 
-Final tested PR head: `b9d7ee05f52555417afb9fc1272e0d921657be6b`.
+Final tested PR head: `2ebcfab51465ab4193e0bdcd0fee805ff196a442`.
 
 Validation:
-- final **CI #929 / run `31895111772` SUCCESS** with **538 passed**;
+- **CI #930 / run `31896373252` SUCCESS**;
+- **540 passed in 41.05s**;
 - fresh DB init/status succeeded; schema remains v5;
-- Solo Regulation Naturalism v2 Acceptance #23, Thorne Estate Training Environment v1 Acceptance #9, Research Action Semantics Acceptance #29, Strength Live Cycle Validation v1 #82, and Public Readiness Security Audit #113 all succeeded;
-- an earlier final-CI attempt exposed only stale world-revision assertions plus one incorrect older-age fixture after 535 passing tests; those assertions were corrected narrowly, without changing the runtime model;
-- no deliberate duplicate full-suite run was performed after merge.
+- Cognition Capability Awareness, Research Action Semantics, Training Movement Contract Normalization, Eating Behavior, and Solo Regulation Naturalism acceptances all succeeded;
+- no stale-contract fix cycle was needed and no deliberate duplicate full-suite run was performed.
 
-Verified production readback after Deploy #227:
-- service active/healthy; production init succeeded; schema v5;
+Verified production readback after Deploy #228:
+- service active/healthy; schema v5;
 - autonomy enabled, normal mode, retry null, pending action present;
-- runtime speed **5x** at readback;
-- world revision `thorne-estate-v3.4-private-activity-semantics` active;
+- runtime speed **3x** at readback;
 - Gemini `gemini-3.1-flash-lite` primary cognition binding preserved;
 - Groq `qwen/qwen3.6-27b` fallback preserved;
 - Telegram bot/API/owner/allowed-user configuration healthy;
-- live sim time `2025-05-07T10:54:00+00:00`;
-- Darian was in the Top-Class Home Gym, current action `idle`, energy 81.586, fatigue 24.277, sleepiness 23.9;
-- no production self-satisfaction action was forced or accelerated for proof.
+- world revision remains `thorne-estate-v3.4-private-activity-semantics`;
+- live sim time `2025-05-07T12:49:00+00:00`;
+- Darian was naturally resting in the Training Hall: energy 79.252, fatigue 20.402, hunger 29.743, cleanliness 82.46, sleepiness 29.65, thirst 37.935;
+- no production action/state was fabricated for validation.
 
-## Solo Sexual Regulation Naturalism v2 — COMPLETE
+Deployment proves the new cognition context is installed. The regression proves Identity/Appearance/Background context reaches cognition input; do not claim a live decision specifically relied on one of those fields without separate evidence.
 
-This bounded correction fixes the over-conservative v1 pacing model while preserving cognition discretion and avoiding any daily/weekly quota.
+## Character Profile — MINIMUM-UNLOCKED v1
 
-Current drive authority combines:
-- authored libido as the primary stable input;
-- bounded adult life-stage contribution;
-- positive recovery contribution for good energy / low fatigue / low sleepiness;
-- represented resident-scope solitude contribution;
-- libido-shaped release-recency recovery;
-- trailing-24-hour saturation penalty after completed releases;
-- adverse-state penalties only when recovery state is meaningfully poor.
+See `docs/PROFILE_MINIMUM_UNLOCK_SWEEP_V1.md`.
 
-The anti-loop behavioral cooldown is now 2 simulated hours. It is a pacing guard, not a clinical refractory-period claim. For Darian's authored young/high-libido/healthy/solitary state, same-day repeat can become legal when current state supports it; cognition still chooses whether to act.
+Current classification:
+- **Identity** — minimum-unlocked; canonical identity is persisted/presented, DOB already participates in legitimate age-dependent runtime logic, and compact identity context reaches cognition.
+- **Appearance** — minimum-unlocked; canonical appearance is persisted/presented and compact stable self/appearance context reaches cognition without granting mutation authority.
+- **Body** — minimum-unlocked through authoritative measurements/composition, body/training effects, progression/readback, and profile presentation.
+- **Attributes** — minimum-unlocked through authoritative scores, declared task/performance modifiers, progression where represented, and cognition/profile visibility.
+- **Recovery** — minimum-unlocked; energy/fatigue/sleepiness and recovery state directly shape cognition, action availability, and training readiness.
+- **Sexual** — minimum-unlocked; anatomy/physiology profile state plus Solo Sexual Regulation Naturalism v2 and deterministic private-action physiology are active.
+- **Personality** — minimum-unlocked; traits, motivation, and complexity notes reach autonomous cognition.
+- **Preferences** — minimum-unlocked; persisted preferences, hobbies, and habits reach autonomous cognition.
+- **Background** — minimum-unlocked; canonical origins/history now reaches cognition as bounded stable context.
+- **Skills** — minimum-unlocked / CLOSED v1; learned scores, represented applications, and legitimate progression paths are established.
 
-Privacy suitability is now separate from generic `world.access`. `world.metadata.private_activity` can mark appropriate personal/secluded spaces. Darian's Master Suite/Bathroom remain valid, while Library, Training Hall, Home Gym and other authored secluded estate spaces can also qualify when authorized and alone. Quasi's Room and Guest Rooms are explicitly excluded despite generic `access=private`.
+The canonical-context closure is read-only. It does not create an Appearance Engine, biography engine, arbitrary profile mutation, cosmetic progression, relationship mechanics, or universal personality reward model.
 
-Reachable safe private locations are discovered through the normal location graph with breadth-first search rather than only direct neighbors. Normal movement remains required.
-
-See `docs/SOLO_SEXUAL_REGULATION_NATURALISM_V2.md`.
-
-## Skills section — CLOSED v1 / minimum-unlocked
-
-The Skills section is now **minimum-unlocked and closed for the vertical-completeness pass**. Do not deepen it further until the overall profile/workflow sweep is complete unless a blocking cross-system requirement is discovered.
+## Skills — CLOSED v1
 
 Frozen learned Skill surface:
 - Hand-to-Hand Combat
@@ -86,86 +79,62 @@ Frozen learned Skill surface:
 - Technology
 - Field Medicine
 
-`Weapon Mastery` is a derived/non-executable parent over Bladed Weapons + Firearms. Hidden legacy `weapons` remains only a compatibility projection. Neither receives direct progression XP.
-
-Skill-like profile/Attribute compatibility fields such as combat skill, weapons proficiency, survival skill, powerlifting capacity, focus/precision, practical skills, technological aptitude, and medical knowledge are not independent Skills in this pass.
-
-Minimum coverage:
-- **Hand-to-Hand Combat** — represented applications + legitimate progression active; second-character sparring remains conditional on a distinct consenting colocated actor.
-- **Bladed Weapons** — simulation-safe represented application + explicit practice progression complete.
-- **Firearms** — simulation-safe represented application + explicit practice progression complete.
-- **Survival** — represented navigation/sustainment + explicit progression complete.
-- **Tactical Planning** — represented assessment/planning + progression complete.
-- **Technology** — represented diagnostic + explicit progression complete.
-- **Field Medicine** — casualty-context assessment/stabilization plus abstract simulation-safe `field_medicine_scenario_practice` progression complete.
-
-Field Medicine scenario practice does not create casualty state or imply diagnosis/treatment mechanics. Real assessment/stabilization remain casualty-context-bound and application evidence remains separate from learning evidence.
+`Weapon Mastery` remains a derived/non-executable parent over Bladed Weapons + Firearms. Hidden legacy `weapons` is compatibility only. Do not deepen Skills during the foundation review unless a cross-system blocker requires it.
 
 See `docs/SKILLS_CLOSURE_V1.md`.
 
-### Skills metadata debt
+## Solo Sexual Regulation Naturalism v2 — COMPLETE
 
-The active Field Medicine learning authority is the explicit Skill Progression + Skill Practice registries. The older universal Skill Definition `learning_evidence` description was not comprehensively refactored in the closure batch. It must not be interpreted as implicit application-to-XP authority. This is deferred metadata normalization, not a runtime blocker.
+The corrected baseline remains active:
+- authored libido is primary;
+- bounded young-adult/recovery/solitude contributions can be positive;
+- release-recency recovery is libido-shaped;
+- trailing-24h saturation resists loops without imposing a quota;
+- anti-loop cooldown is 2 simulated hours;
+- privacy suitability is authored separately from generic room access;
+- reachable safe private locations use the normal location graph.
 
-## Active next phase — Remaining Profile Minimum Unlock Sweep
+Cognition retains discretion; no daily/weekly quota exists.
 
-**REVIEW/IMPLEMENT NEXT.** Leave Skills closed. Solo Sexual Regulation Naturalism v2 is now a corrected baseline for the Sexual section review.
+See `docs/SOLO_SEXUAL_REGULATION_NATURALISM_V2.md`.
 
-Target Character Profile sections:
-- identity
-- appearance
-- body
-- attributes
-- recovery
-- sexual
-- personality
-- preferences
-- background
+## Active next phase — Overall Workflow/Foundation Review
 
-First inspect the current schema/profile/cognition/runtime influence for all nine sections and classify each as:
-- already minimum-unlocked;
-- closure-only gap;
-- missing meaningful runtime influence.
+**REVIEW NEXT BEFORE IMPLEMENTING MORE DOMAIN DEPTH.**
 
-Then batch by structural similarity rather than one section per PR.
+Audit the current end-to-end simulation workflow and identify the highest-leverage missing or weak cross-cutting foundation. Review repository/source and verified production evidence rather than assuming every candidate needs implementation.
 
-Expected speed-first grouping, subject to fresh repo inspection:
-1. **Mature closure group:** Body + Attributes + Recovery + Sexual — substantial foundations already exist; prefer audit/closure over rewrites.
-2. **Canonical/context group:** Identity + Appearance + Personality + Preferences + Background — add only the smallest meaningful cognition/action influence necessary where one is missing.
-
-Do not invent separate engines merely to make every field dynamic. Canonical/static fields may remain stable when their legitimate simulation role is contextual influence rather than mutation.
-
-## After the profile sweep
-
-Once every Character Profile section is minimum-unlocked, perform an overall workflow/foundation review before local deepening.
-
-Likely cross-cutting foundation areas include:
-- profile -> cognition influence;
-- generic action/task lifecycle;
+Candidate foundation areas:
+- profile -> cognition influence and context generality;
+- autonomy planning / goal continuity across decisions;
+- generic action/task lifecycle and represented outcomes;
+- environment/world context and purposeful movement;
 - resources/inventory/consequences;
-- environment/world context;
 - knowledge/familiarity;
-- inter-character participation;
+- inter-character participation contracts;
 - event/lifecycle handling;
-- long-horizon progression/decay;
-- autonomy planning and goal continuity.
+- long-horizon progression/decay.
 
-Ordering must be selected from repository/live evidence at that future checkpoint rather than prebuilding all of them now.
+For each candidate classify it as:
+1. already sufficient for the current runnable workflow;
+2. closure-only/documentation debt;
+3. real missing foundation;
+4. intentionally deferred domain depth.
 
-## CI cadence
-
-- focused task-relevant tests/gates during implementation;
-- one final full CI checkpoint for code/runtime PRs by default;
-- no deliberate second full-suite run merely because an already-tested PR merged to `main`;
-- docs-only pull requests skip the full Python suite;
-- manual full reruns only when broader risk actually warrants one.
-
-Some specialized acceptance workflows may still run automatically on matching pushes; do not mistake those for manually requested full-suite loops.
+Then select the **smallest highest-leverage runnable slice**. Prefer strengthening a reusable existing contract over creating a new engine.
 
 ## Deferred boundaries
 
-No relationship system expansion, casualty handoff consumer, hostile/non-consensual Combat Engine, weapon lethality, broad casualty simulator, universal Hazard/Injury Engine, bleeding/wound taxonomy, definitive-treatment engine, random-accident scheduler, full Knowledge Engine, H2H hierarchy rewrite, deep weapon taxonomy, economy/jobs/quests, real-world weapon instructions, or synthetic production actors/actions solely for proof.
+No relationship-system expansion, hostile/non-consensual Combat Engine, weapon lethality, broad casualty simulator, universal Hazard/Injury Engine, bleeding/wound taxonomy, definitive-treatment engine, random-accident scheduler, deep weapon taxonomy, economy/jobs/quests, real-world weapon instructions, arbitrary LLM profile mutation, or synthetic production actors/actions solely for proof.
+
+## CI cadence
+
+- focused task-relevant tests/gates while iterating;
+- one final full CI checkpoint for code/runtime PRs by default;
+- no deliberate second full-suite run merely because an already-tested PR merged;
+- docs-only PRs skip the full Python suite;
+- manual broad reruns only when structural risk genuinely warrants one.
 
 ## Exact resume point
 
-**Vertical-completeness mode is authoritative. Solo Sexual Regulation Naturalism v2 is complete through PR #163 final tested head `b9d7ee05f52555417afb9fc1272e0d921657be6b`, merge `13c57933b8136c014f6940b2647c2acdbc3b8eac`, CI #929 with 538 passed, and Deploy #227 / run `31895171211` SUCCESS. Production is healthy at schema v5 and world revision `thorne-estate-v3.4-private-activity-semantics`; at readback Darian was in the Home Gym at `2025-05-07T10:54:00+00:00`, speed 5x, with no fabricated private action. Skills remains CLOSED v1. Resume with the Remaining Profile Minimum Unlock Sweep, treating Naturalism v2 as the Sexual-section baseline.**
+**Profile Minimum Unlock Sweep v1 is complete through PR #165 final tested head `2ebcfab51465ab4193e0bdcd0fee805ff196a442`, merge `736112054e3814f0f340ea5e919eb1729ea5837a`, CI #930 with 540 passed, and Deploy #228 / run `31896440459` SUCCESS. Every Character Profile section is now minimum-unlocked; Skills remains CLOSED v1. Production is healthy at schema v5. At readback Darian was naturally resting in the Training Hall at `2025-05-07T12:49:00+00:00`, speed 3x. Resume with an Overall Workflow/Foundation Review, then choose one smallest highest-leverage cross-cutting slice before deepening any profile domain.**
