@@ -14,6 +14,7 @@ from .eating_behavior import enrich_eating_action_options, validate_proposed_res
 from .habit_adaptation import habit_dynamics_context
 from .meal_choice_intelligence import meal_choice_context
 from .need_resolution import shape_action_options_for_needs
+from .personality_plasticity import personality_plasticity_context
 from .resource_awareness import (
     enrich_options_with_usage,
     reachable_location_awareness,
@@ -177,6 +178,7 @@ class ModelDecisionProvider:
                 "traits": self._profile_value("personality.primary_traits", []),
                 "primary_motivation": self._profile_value("personality.primary_motivation", ""),
                 "complexity_notes": self._profile_value("personality.complexity_notes", ""),
+                "slow_adaptation": personality_plasticity_context(self.conn, self.character_id),
             },
             "background": {
                 "origins": self._profile_value("background.origins", ""),
