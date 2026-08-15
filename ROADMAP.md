@@ -167,20 +167,51 @@ Shared vocabulary:
 
 The accepted `raps-100-proof-v1` scheme preserves its 0..100 E..S thresholds; higher tiers remain available for future schemes with appropriate scale semantics. Telegram rows use `Strength 90 (S) · Expert`. Compatible group/overall values are arithmetic means evaluated at read time; IQ is excluded because its scale differs. Grades are never persisted state.
 
+## Universal Profile Grading Framework v1 — NEXT
+
+Canonical planning contract: `docs/UNIVERSAL_PROFILE_GRADING_FRAMEWORK_V1.md`.
+
+**This grading closure now precedes Skill Progression.**
+
+Goal: extend grading from the current Attribute-only implementation into a reusable profile-wide interpretation layer without making grades authoritative state.
+
+Planned principles:
+- explicit named grading schemes rather than one universal formula;
+- a numeric field is not automatically gradeable;
+- Attributes preserve the proven RAPS 0..100 scheme;
+- Skills receive monotonic proficiency grading from authoritative skill scores once score/tier/experience ownership is reconciled;
+- Body uses proportional/contextual grading rather than `larger = better`;
+- physique grading may use evidence-backed derived ratios/balance/composition and composite evaluation;
+- health, general aesthetics, bodybuilding and modelling may later be separate named schemes over the same authoritative body state;
+- popularized golden-ratio claims must not be hard-coded as universal truth without evidence;
+- Telegram consumes generic derived grade metadata;
+- future career/quest/job/salary systems may consume grade results without owning or persisting them.
+
+Before closure, profile areas should be classified `graded`, `derived-grade candidate`, `contextual-only`, or `not gradeable` so recovery/personality/preferences/intimate frequency/anatomy fields do not receive meaningless grades merely because they are numeric.
+
 ## Solo Sexual Regulation v1 — COMPLETE / DEPLOYED
 
 Canonical: `docs/SOLO_SEXUAL_REGULATION_V1.md`.
 
-Invariant:
+Current v1 invariant:
 `adult actor + authored libido + release recency + recovery state + authorized private/alone context -> bounded solo-regulation drive -> cognition may propose self_satisfaction -> deterministic validation -> temporary sexual physiology + immutable action evidence -> rolling 7-day count`
+
+Long-term drive contract:
+`baseline libido + transient sexual arousal/cues + release recency/satiety + current physiological state + later contextual/relationship/endocrine modifiers -> current sexual drive -> cognition may choose among legal actions`
 
 Key boundaries:
 - adult-only;
 - private authored location + resident authorization + no colocated represented character;
 - bounded drive threshold and anti-loop pacing guard;
 - no fixed weekly quota;
+- stress is **not** a prerequisite or mandatory trigger;
+- no single hormone/media/cue/relationship variable is a mandatory trigger;
 - no testosterone surrogate inferred from training/body composition;
-- no partnered sexual behavior or Relationship System dependency;
+- future sexual-media/cue exposure may modulate transient arousal only when real content/event evidence exists;
+- future endocrine effects require an explicit endocrine authority rather than invented testosterone values;
+- current v1 does not apply action-specific stress reduction, mood/fatigue/sleep bonus or endocrine cascade;
+- later stress/mood feedback must be contextual and conditional, not a reason to manufacture stress;
+- no partnered sexual behavior or Relationship System dependency in v1;
 - no structural anatomy or long-term erectile-capacity mutation from ordinary sexual activity.
 
 Cognition receives current drive, release recency, trailing-seven-day evidence, current private/aloneness status and reachable safe private rooms. Prompting explicitly permits the behavior as discretionary when authoritative `action_options` expose it and permits ordinary movement toward a reachable private room when context supports that choice. Stronger safety/physiology needs remain higher priority.
@@ -217,15 +248,18 @@ Public hardening is complete. Manual UI verification remains opportunistic where
 
 ## Next development sequence
 
-1. **Skill Progression Family**;
-2. intellectual attributes;
-3. mental/emotion dynamics;
-4. broader relationship/social systems and partnered/contextual sexual behavior;
-5. broad Mind/Behavior architecture only after enough real feature signals justify it.
+1. **Universal Profile Grading Framework v1**;
+2. **Profile Grading Coverage Closure**;
+3. **Skill Progression Foundation v1**;
+4. Skill Progression follow-on batches/retention as justified;
+5. intellectual attributes;
+6. mental/emotion dynamics, including later contextual Solo Regulation stress/mood feedback when a real state authority exists;
+7. broader relationship/social systems and partnered/contextual sexual behavior;
+8. broad Mind/Behavior architecture only after enough real feature signals justify it.
 
 Post-public GitHub settings verification remains opportunistic and non-blocking.
 
-## Skill Progression Family — NEXT
+## Skill Progression Family — AFTER GRADING CLOSURE
 
 Do not treat Skills as merely renamed RAPS physical attributes.
 
@@ -260,6 +294,6 @@ Do not add as side effects:
 
 Re-read live production and current canonical repository first.
 
-**Physical Profile Completion, Telegram Profile Schema-Driven UX, and Solo Sexual Regulation v1 are complete/deployed. The next canonical development family remains Skill Progression.**
+**Physical Profile Completion, Telegram Profile Schema-Driven UX, and Solo Sexual Regulation v1 are complete/deployed. The next canonical development slice is Universal Profile Grading Framework v1, followed by Profile Grading Coverage Closure; Skill Progression starts only after that grading foundation is complete.**
 
-Start by establishing skill-specific evidence/progression semantics from existing schema and action evidence rather than copying body/attribute progression formulas by convenience.
+Start by designing/implementing the explicit grading-scheme registry and preserving existing Attribute behavior, then add Skills grading presentation and evidence-backed Body/Physique grading without mutating underlying progression state.
