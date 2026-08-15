@@ -69,11 +69,16 @@ def test_profile_query_and_telegram_render_body_and_skill_grades_without_persist
         skills = profile_section(conn, "char_darian", "skills")
         by_skill = {item["key"]: item for item in skills["content"]}
         assert by_skill["hand_to_hand_combat"]["grade"]["grade"] == "S"
-        assert by_skill["weapons"]["grade"]["grade"] == "A"
+        assert by_skill["weapon_mastery"]["grade"]["grade"] == "A"
+        assert by_skill["bladed_weapons"]["grade"]["grade"] == "A"
+        assert by_skill["firearms"]["grade"]["grade"] == "A"
+        assert "weapons" not in by_skill
         assert skills["section"]["overall_grade"] is not None
         skill_text = _fmt_profile_section(skills)
         assert "Hand To Hand Combat   90 (S) · Expert" in skill_text
-        assert "Weapons   87 (A) · Advanced" in skill_text
+        assert "Weapon Mastery   87 (A) · Advanced" in skill_text
+        assert "Bladed Weapons   87 (A) · Advanced" in skill_text
+        assert "Firearms   87 (A) · Advanced" in skill_text
 
         body = profile_section(conn, "char_darian", "body")
         body_text = _fmt_profile_section(body)
