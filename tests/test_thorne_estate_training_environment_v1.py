@@ -20,7 +20,7 @@ NEW_TRAINING_OBJECTS = {
 
 def test_training_environment_config_matches_bounded_canonical_expansion() -> None:
     world = load_world_seed()
-    assert world["revision"] == "thorne-estate-v3.3-physical-attribute-training"
+    assert world["revision"] == "thorne-estate-v3.4-private-activity-semantics"
     by_id = {item["id"]: item for item in world["objects"]}
 
     for object_id, room_id in NEW_TRAINING_OBJECTS.items():

@@ -11,11 +11,17 @@ from .world import get_field, set_field
 
 ADULT_MIN_AGE_YEARS = 18
 MIN_DRIVE_FOR_ACTION = 60.0
-BEHAVIOR_COOLDOWN_HOURS = 6.0
-DRIVE_RAMP_HOURS = 96.0
-MAX_RELEASE_PRESSURE = 30.0
-UNOBSERVED_HISTORY_PRESSURE = 15.0
+BEHAVIOR_COOLDOWN_HOURS = 2.0
+MAX_RELEASE_PRESSURE = 24.0
+UNOBSERVED_HISTORY_PRESSURE = 12.0
+RECENT_RELEASE_PENALTY_PER_24H = 7.0
 POST_RELEASE_SUBSIDING_MINUTES = 30.0
+
+_ALLOWED_PRIVATE_ACTIVITY_POLICIES = {
+    "resident_private",
+    "secluded",
+    "secluded_when_alone",
+}
 
 
 def _clamp(value: float) -> float:
@@ -66,6 +72,36 @@ def _ancestor_locations(conn: sqlite3.Connection, location_id: str) -> set[str]:
     return seen
 
 
+def _descendant_locations(conn: sqlite3.Connection, root_id: str) -> set[str]:
+    seen = {root_id}
+    queue: deque[str] = deque([root_id])
+    while queue:
+        parent = queue.popleft()
+        rows = conn.execute(
+            """
+            SELECT r.target_id
+            FROM relations r
+            JOIN entities e ON e.id=r.target_id
+            WHERE r.relation_type='contains' AND r.source_id=? AND e.entity_type='location'
+            """,
+            (parent,),
+        ).fetchall()
+        for row in rows:
+            child = str(row[0])
+            if child not in seen:
+                seen.add(child)
+                queue.append(child)
+    return seen
+
+
+def _resident_roots(conn: sqlite3.Connection, actor_id: str) -> list[str]:
+    rows = conn.execute(
+        "SELECT source_id FROM relations WHERE relation_type='resident' AND target_id=? ORDER BY source_id",
+        (actor_id,),
+    ).fetchall()
+    return [str(row[0]) for row in rows]
+
+
 def _resident_scope(conn: sqlite3.Connection, actor_id: str, location_id: str) -> bool:
     ancestors = tuple(_ancestor_locations(conn, location_id))
     placeholders = ",".join("?" for _ in ancestors)
@@ -75,72 +111,125 @@ def _resident_scope(conn: sqlite3.Connection, actor_id: str, location_id: str) -
     ).fetchone() is not None
 
 
-def _other_characters_at(conn: sqlite3.Connection, actor_id: str, location_id: str) -> list[str]:
+def _character_ids_at(conn: sqlite3.Connection, location_ids: set[str], *, exclude_actor_id: str) -> list[str]:
+    if not location_ids:
+        return []
     ids: set[str] = set()
+    placeholders = ",".join("?" for _ in location_ids)
     rows = conn.execute(
-        """
+        f"""
         SELECT e.id FROM relations r
         JOIN entities e ON e.id=r.source_id
-        WHERE r.relation_type='located_at' AND r.target_id=?
+        WHERE r.relation_type='located_at' AND r.target_id IN ({placeholders})
           AND e.entity_type='character' AND e.id<>?
         """,
-        (location_id, actor_id),
+        (*sorted(location_ids), exclude_actor_id),
     ).fetchall()
     ids.update(str(row[0]) for row in rows)
-    encoded_location = json.dumps(location_id)
+
+    encoded_locations = [json.dumps(location_id) for location_id in sorted(location_ids)]
+    placeholders = ",".join("?" for _ in encoded_locations)
     rows = conn.execute(
-        """
+        f"""
         SELECT e.id FROM fields f
         JOIN entities e ON e.id=f.entity_id
-        WHERE f.field_key='runtime.location' AND f.value_json=?
+        WHERE f.field_key='runtime.location' AND f.value_json IN ({placeholders})
           AND e.entity_type='character' AND e.id<>?
         """,
-        (encoded_location, actor_id),
+        (*encoded_locations, exclude_actor_id),
     ).fetchall()
     ids.update(str(row[0]) for row in rows)
     return sorted(ids)
 
 
+def _other_characters_at(conn: sqlite3.Connection, actor_id: str, location_id: str) -> list[str]:
+    return _character_ids_at(conn, {location_id}, exclude_actor_id=actor_id)
+
+
+def _resident_scope_solitude(conn: sqlite3.Connection, actor_id: str) -> tuple[bool, list[str]]:
+    locations: set[str] = set()
+    for root_id in _resident_roots(conn, actor_id):
+        locations.update(_descendant_locations(conn, root_id))
+    others = _character_ids_at(conn, locations, exclude_actor_id=actor_id)
+    return not others, others
+
+
+def _private_activity_policy(conn: sqlite3.Connection, location_id: str) -> str:
+    metadata = get_field(conn, location_id, "world.metadata", {})
+    if isinstance(metadata, dict) and metadata.get("private_activity"):
+        return str(metadata["private_activity"])
+    # Compatibility fallback for worlds that predate explicit private-activity
+    # metadata. New authored worlds should prefer world.metadata.private_activity.
+    access = str(get_field(conn, location_id, "world.access", "open"))
+    return "resident_private" if access == "private" else "shared"
+
+
 def private_environment_context(conn: sqlite3.Connection, actor_id: str, location_id: str) -> dict[str, Any]:
     access = str(get_field(conn, location_id, "world.access", "open"))
+    policy = _private_activity_policy(conn, location_id)
     others = _other_characters_at(conn, actor_id, location_id)
-    private = access == "private"
+    privacy_suitable = policy in _ALLOWED_PRIVATE_ACTIVITY_POLICIES
     resident_scope = _resident_scope(conn, actor_id, location_id)
     return {
         "location_id": location_id,
         "access": access,
-        "private": private,
+        "privacy_policy": policy,
+        "private": privacy_suitable,
+        "privacy_suitable": privacy_suitable,
         "resident_scope": resident_scope,
         "alone": not others,
         "other_characters": others,
-        "safe_private": bool(private and resident_scope and not others),
+        "safe_private": bool(privacy_suitable and resident_scope and not others),
     }
 
 
-def _reachable_safe_private_locations(conn: sqlite3.Connection, actor_id: str, location_id: str) -> list[dict[str, str]]:
-    rows = conn.execute(
-        """
-        SELECT e.id,e.name FROM relations r
-        JOIN entities e ON e.id=r.target_id
-        WHERE r.source_id=? AND r.relation_type='connected_to' AND e.entity_type='location'
-        ORDER BY e.id
-        """,
-        (location_id,),
-    ).fetchall()
-    result: list[dict[str, str]] = []
-    for row in rows:
-        target_id = str(row["id"])
-        if private_environment_context(conn, actor_id, target_id)["safe_private"]:
-            result.append({"id": target_id, "name": str(row["name"])})
-    return result
+def _reachable_safe_private_locations(conn: sqlite3.Connection, actor_id: str, location_id: str) -> list[dict[str, Any]]:
+    queue: deque[tuple[str, int]] = deque([(location_id, 0)])
+    seen = {location_id}
+    result: list[dict[str, Any]] = []
+    while queue:
+        current, distance = queue.popleft()
+        rows = conn.execute(
+            """
+            SELECT e.id,e.name FROM relations r
+            JOIN entities e ON e.id=r.target_id
+            WHERE r.source_id=? AND r.relation_type='connected_to' AND e.entity_type='location'
+            ORDER BY e.id
+            """,
+            (current,),
+        ).fetchall()
+        for row in rows:
+            target_id = str(row["id"])
+            if target_id in seen:
+                continue
+            seen.add(target_id)
+            next_distance = distance + 1
+            queue.append((target_id, next_distance))
+            if private_environment_context(conn, actor_id, target_id)["safe_private"]:
+                result.append({
+                    "id": target_id,
+                    "name": str(row["name"]),
+                    "distance_steps": next_distance,
+                })
+    return sorted(result, key=lambda item: (int(item["distance_steps"]), str(item["id"])))
 
 
-def _release_times(conn: sqlite3.Connection, actor_id: str, *, as_of: datetime, days: int | None = None) -> list[datetime]:
+def _release_times(
+    conn: sqlite3.Connection,
+    actor_id: str,
+    *,
+    as_of: datetime,
+    days: int | None = None,
+    hours: float | None = None,
+) -> list[datetime]:
     params: list[Any] = [actor_id, as_of.isoformat()]
     where = "actor_id=? AND action_type='self_satisfaction' AND status='completed' AND ended_sim_time IS NOT NULL AND ended_sim_time<=?"
     if days is not None:
         where += " AND ended_sim_time>=?"
         params.append((as_of - timedelta(days=days)).isoformat())
+    elif hours is not None:
+        where += " AND ended_sim_time>=?"
+        params.append((as_of - timedelta(hours=hours)).isoformat())
     rows = conn.execute(
         f"SELECT ended_sim_time FROM action_instances WHERE {where} ORDER BY ended_sim_time",
         tuple(params),
@@ -148,17 +237,81 @@ def _release_times(conn: sqlite3.Connection, actor_id: str, *, as_of: datetime, 
     return [datetime.fromisoformat(str(row[0])) for row in rows]
 
 
-def _drive(*, libido: float, fatigue: float, sleepiness: float, energy: float, hours_since_release: float | None) -> float:
-    base = _clamp(libido) * 0.55
+def _age_drive_bonus(age_years: int) -> float:
+    # A bounded gameplay heuristic for adult life-stage vitality, not a
+    # population-frequency claim or clinical rule.
+    if age_years <= 24:
+        return 10.0
+    if age_years <= 34:
+        return 7.0
+    if age_years <= 44:
+        return 4.0
+    if age_years <= 54:
+        return 2.0
+    return 0.0
+
+
+def _recovery_bonus(*, fatigue: float, sleepiness: float, energy: float) -> float:
+    energy_bonus = min(4.0, max(0.0, (energy - 55.0) * 0.12))
+    fatigue_bonus = min(3.0, max(0.0, (30.0 - fatigue) * 0.10))
+    sleep_bonus = min(3.0, max(0.0, (45.0 - sleepiness) * 0.08))
+    return round(energy_bonus + fatigue_bonus + sleep_bonus, 3)
+
+
+def _drive_ramp_hours(libido: float) -> float:
+    # Higher authored libido rebuilds discretionary desire salience faster,
+    # while remaining bounded and separate from the short anti-loop cooldown.
+    return round(max(16.0, min(40.0, 48.0 - _clamp(libido) * 0.35)), 3)
+
+
+def _drive(
+    *,
+    libido: float,
+    age_years: int,
+    fatigue: float,
+    sleepiness: float,
+    energy: float,
+    hours_since_release: float | None,
+    recent_24h_count: int,
+    resident_scope_solitary: bool,
+) -> tuple[float, dict[str, float]]:
+    base = _clamp(libido) * 0.58
+    age_bonus = _age_drive_bonus(age_years)
+    recovery_bonus = _recovery_bonus(fatigue=fatigue, sleepiness=sleepiness, energy=energy)
+    solitude_bonus = 5.0 if resident_scope_solitary else 0.0
+    ramp_hours = _drive_ramp_hours(libido)
     release_pressure = (
         UNOBSERVED_HISTORY_PRESSURE
         if hours_since_release is None
-        else min(MAX_RELEASE_PRESSURE, max(0.0, hours_since_release) / DRIVE_RAMP_HOURS * MAX_RELEASE_PRESSURE)
+        else min(MAX_RELEASE_PRESSURE, max(0.0, hours_since_release) / ramp_hours * MAX_RELEASE_PRESSURE)
     )
-    fatigue_penalty = max(0.0, fatigue - 35.0) * 0.18
-    sleep_penalty = max(0.0, sleepiness - 65.0) * 0.15
-    energy_penalty = max(0.0, 35.0 - energy) * 0.20
-    return _clamp(base + release_pressure - fatigue_penalty - sleep_penalty - energy_penalty)
+    recent_release_penalty = max(0, recent_24h_count) * RECENT_RELEASE_PENALTY_PER_24H
+    fatigue_penalty = max(0.0, fatigue - 55.0) * 0.16
+    sleep_penalty = max(0.0, sleepiness - 75.0) * 0.12
+    energy_penalty = max(0.0, 30.0 - energy) * 0.20
+    drive = _clamp(
+        base
+        + age_bonus
+        + recovery_bonus
+        + solitude_bonus
+        + release_pressure
+        - recent_release_penalty
+        - fatigue_penalty
+        - sleep_penalty
+        - energy_penalty
+    )
+    return drive, {
+        "libido_base": round(base, 3),
+        "age_bonus": round(age_bonus, 3),
+        "recovery_bonus": round(recovery_bonus, 3),
+        "solitude_bonus": round(solitude_bonus, 3),
+        "release_pressure": round(release_pressure, 3),
+        "recent_24h_penalty": round(recent_release_penalty, 3),
+        "fatigue_penalty": round(fatigue_penalty, 3),
+        "sleep_penalty": round(sleep_penalty, 3),
+        "energy_penalty": round(energy_penalty, 3),
+        "drive_ramp_hours": ramp_hours,
+    }
 
 
 def solo_sexual_regulation_context(
@@ -177,34 +330,47 @@ def solo_sexual_regulation_context(
     last_release = releases[-1] if releases else None
     hours_since_release = None if last_release is None else max(0.0, (as_of - last_release).total_seconds() / 3600.0)
     recent_7d_count = len(_release_times(conn, actor_id, as_of=as_of, days=7)) if represented else 0
-    drive = _drive(
-        libido=libido,
-        fatigue=float(state.get("fatigue", 0.0)),
-        sleepiness=float(state.get("sleepiness", 0.0)),
-        energy=float(state.get("energy", 75.0)),
-        hours_since_release=hours_since_release,
-    ) if adult else 0.0
+    recent_24h_count = len(_release_times(conn, actor_id, as_of=as_of, hours=24.0)) if represented else 0
+    resident_scope_solitary, resident_scope_others = _resident_scope_solitude(conn, actor_id) if represented else (False, [])
+    if adult and age is not None:
+        drive, drive_components = _drive(
+            libido=libido,
+            age_years=age,
+            fatigue=float(state.get("fatigue", 0.0)),
+            sleepiness=float(state.get("sleepiness", 0.0)),
+            energy=float(state.get("energy", 75.0)),
+            hours_since_release=hours_since_release,
+            recent_24h_count=recent_24h_count,
+            resident_scope_solitary=resident_scope_solitary,
+        )
+    else:
+        drive, drive_components = 0.0, {}
     cooldown_remaining = 0.0 if hours_since_release is None else max(0.0, BEHAVIOR_COOLDOWN_HOURS - hours_since_release)
     environment = private_environment_context(conn, actor_id, location_id)
     available = bool(adult and environment["safe_private"] and cooldown_remaining <= 0.0 and drive >= MIN_DRIVE_FOR_ACTION)
     return {
-        "source": "solo-sexual-regulation-v1",
+        "source": "solo-sexual-regulation-v2-naturalism",
         "represented": represented,
         "adult": adult,
         "age_years": age,
         "baseline_libido": round(libido, 3),
         "drive": drive,
+        "drive_components": drive_components,
         "action_threshold": MIN_DRIVE_FOR_ACTION,
         "recent_7d_count": recent_7d_count,
+        "recent_24h_count": recent_24h_count,
         "last_release_sim_time": last_release.isoformat() if last_release else None,
         "hours_since_last_release": round(hours_since_release, 3) if hours_since_release is not None else None,
         "cooldown_remaining_hours": round(cooldown_remaining, 3),
+        "resident_scope_solitary": resident_scope_solitary,
+        "resident_scope_other_characters": resident_scope_others,
         "private_environment": environment,
         "reachable_safe_private_locations": _reachable_safe_private_locations(conn, actor_id, location_id) if adult else [],
         "available_now": available,
         "guidance": (
             "This is a legitimate private discretionary self-regulation option when available; it is never a weekly quota or mandatory routine. "
-            "If drive is meaningful but the current room is not safe/private, moving to an authorized private room may be considered before the behavior."
+            "Current drive reflects authored libido, adult life-stage, recovery condition, release recency, recent same-day activity, and represented home solitude. "
+            "If drive is meaningful but the current room is unsuitable, moving through the normal location graph to an authorized private-activity location may be considered before the behavior."
             if adult
             else "Solo sexual behavior is unavailable unless an adult sexual profile is represented for this actor."
         ),
@@ -223,6 +389,7 @@ def self_satisfaction_action_option(conn: sqlite3.Connection, actor_id: str, *, 
         "solo_regulation": {
             "drive": context["drive"],
             "recent_7d_count": context["recent_7d_count"],
+            "recent_24h_count": context["recent_24h_count"],
             "private_safe": True,
         },
     }
@@ -248,10 +415,10 @@ def begin_self_satisfaction_action(conn: sqlite3.Connection, actor_id: str, *, s
     arousal = _clamp(max(60.0, float(context["drive"])))
     firmness = _clamp(min(cap, baseline * (0.65 + 0.003 * float(context["drive"]))))
     erectile_state = "erect" if firmness >= 70.0 else "developing"
-    set_field(conn, actor_id, "sexual_state.solo_regulation_drive", float(context["drive"]), authority="sexual_behavior_engine", source="solo-sexual-regulation-v1")
-    set_field(conn, actor_id, "sexual_state.arousal_level", arousal, authority="sexual_physiology_engine", source="solo-sexual-regulation-v1")
-    set_field(conn, actor_id, "sexual_anatomy.erection_firmness", firmness, authority="sexual_physiology_engine", source="solo-sexual-regulation-v1")
-    set_field(conn, actor_id, "sexual_anatomy.erectile_state", erectile_state, authority="sexual_physiology_engine", source="solo-sexual-regulation-v1")
+    set_field(conn, actor_id, "sexual_state.solo_regulation_drive", float(context["drive"]), authority="sexual_behavior_engine", source="solo-sexual-regulation-v2-naturalism")
+    set_field(conn, actor_id, "sexual_state.arousal_level", arousal, authority="sexual_physiology_engine", source="solo-sexual-regulation-v2-naturalism")
+    set_field(conn, actor_id, "sexual_anatomy.erection_firmness", firmness, authority="sexual_physiology_engine", source="solo-sexual-regulation-v2-naturalism")
+    set_field(conn, actor_id, "sexual_anatomy.erectile_state", erectile_state, authority="sexual_physiology_engine", source="solo-sexual-regulation-v2-naturalism")
     return {
         "drive": float(context["drive"]),
         "arousal_level": arousal,
@@ -282,7 +449,7 @@ def _set_weekly_count(conn: sqlite3.Connection, actor_id: str, count: int, *, si
             observed_at=excluded.observed_at,
             updated_at=CURRENT_TIMESTAMP
         """,
-        (actor_id, field_key, json.dumps(count), "simulated", "sexual_behavior_engine", "solo-sexual-regulation-v1", sim_time),
+        (actor_id, field_key, json.dumps(count), "simulated", "sexual_behavior_engine", "solo-sexual-regulation-v2-naturalism", sim_time),
     )
     conn.execute(
         """
@@ -311,12 +478,9 @@ def settle_solo_sexual_regulation(
     ended_sim_time: str,
     state: dict[str, Any],
 ) -> dict[str, Any]:
-    # Generic composable actors may exist without a represented character
-    # profile. Ordinary action completion must remain independent of this
-    # optional domain; only represented profiles participate in settlement.
     if not _profile_exists(conn, actor_id):
         return {
-            "source": "solo-sexual-regulation-v1",
+            "source": "solo-sexual-regulation-v2-naturalism",
             "represented": False,
             "release_completed": False,
             "weekly_count_changed": False,
@@ -329,12 +493,12 @@ def settle_solo_sexual_regulation(
     if action_name == "self_satisfaction":
         libido = float(_profile_value(conn, actor_id, "raps_sa.libido", 0.0) or 0.0)
         post_drive = _clamp(libido * 0.25)
-        set_field(conn, actor_id, "sexual_state.solo_regulation_drive", post_drive, authority="sexual_behavior_engine", source="solo-sexual-regulation-v1")
-        set_field(conn, actor_id, "sexual_state.arousal_level", 5.0, authority="sexual_physiology_engine", source="solo-sexual-regulation-v1")
-        set_field(conn, actor_id, "sexual_anatomy.erection_firmness", 10.0, authority="sexual_physiology_engine", source="solo-sexual-regulation-v1")
-        set_field(conn, actor_id, "sexual_anatomy.erectile_state", "subsiding", authority="sexual_physiology_engine", source="solo-sexual-regulation-v1")
+        set_field(conn, actor_id, "sexual_state.solo_regulation_drive", post_drive, authority="sexual_behavior_engine", source="solo-sexual-regulation-v2-naturalism")
+        set_field(conn, actor_id, "sexual_state.arousal_level", 5.0, authority="sexual_physiology_engine", source="solo-sexual-regulation-v2-naturalism")
+        set_field(conn, actor_id, "sexual_anatomy.erection_firmness", 10.0, authority="sexual_physiology_engine", source="solo-sexual-regulation-v2-naturalism")
+        set_field(conn, actor_id, "sexual_anatomy.erectile_state", "subsiding", authority="sexual_physiology_engine", source="solo-sexual-regulation-v2-naturalism")
         return {
-            "source": "solo-sexual-regulation-v1",
+            "source": "solo-sexual-regulation-v2-naturalism",
             "represented": True,
             "release_completed": True,
             "weekly_count": weekly_count,
@@ -347,16 +511,16 @@ def settle_solo_sexual_regulation(
 
     context = solo_sexual_regulation_context(conn, actor_id, state={**state, "sim_time": ended_sim_time})
     if context["adult"]:
-        set_field(conn, actor_id, "sexual_state.solo_regulation_drive", float(context["drive"]), authority="sexual_behavior_engine", source="solo-sexual-regulation-v1")
+        set_field(conn, actor_id, "sexual_state.solo_regulation_drive", float(context["drive"]), authority="sexual_behavior_engine", source="solo-sexual-regulation-v2-naturalism")
         last_release = context.get("last_release_sim_time")
         if last_release:
             minutes_since = max(0.0, (as_of - datetime.fromisoformat(str(last_release))).total_seconds() / 60.0)
             if minutes_since >= POST_RELEASE_SUBSIDING_MINUTES:
-                set_field(conn, actor_id, "sexual_state.arousal_level", 0.0, authority="sexual_physiology_engine", source="solo-sexual-regulation-v1")
-                set_field(conn, actor_id, "sexual_anatomy.erection_firmness", 0.0, authority="sexual_physiology_engine", source="solo-sexual-regulation-v1")
-                set_field(conn, actor_id, "sexual_anatomy.erectile_state", "flaccid", authority="sexual_physiology_engine", source="solo-sexual-regulation-v1")
+                set_field(conn, actor_id, "sexual_state.arousal_level", 0.0, authority="sexual_physiology_engine", source="solo-sexual-regulation-v2-naturalism")
+                set_field(conn, actor_id, "sexual_anatomy.erection_firmness", 0.0, authority="sexual_physiology_engine", source="solo-sexual-regulation-v2-naturalism")
+                set_field(conn, actor_id, "sexual_anatomy.erectile_state", "flaccid", authority="sexual_physiology_engine", source="solo-sexual-regulation-v2-naturalism")
     return {
-        "source": "solo-sexual-regulation-v1",
+        "source": "solo-sexual-regulation-v2-naturalism",
         "represented": True,
         "release_completed": False,
         "weekly_count": weekly_count,

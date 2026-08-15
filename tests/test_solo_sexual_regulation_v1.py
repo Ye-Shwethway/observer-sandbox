@@ -27,7 +27,12 @@ from observer_sandbox.world import get_field
 
 ACTOR = "char_darian"
 MASTER_SUITE = "loc_thorne_estate_master_suite"
+MASTER_BATHROOM = "loc_thorne_estate_master_bathroom"
 LIVING_ROOM = "loc_thorne_estate_living_room"
+LIBRARY = "loc_thorne_estate_library"
+TRAINING_HALL = "loc_thorne_estate_training_hall"
+HOME_GYM = "loc_thorne_estate_home_gym"
+QUASI_ROOM = "loc_thorne_estate_quasi_room"
 
 
 def _profile_value(conn, field_key):
@@ -74,11 +79,13 @@ def test_private_environment_and_cognition_context_are_authoritative(tmp_path):
         solo = next(option for option in options if option["action"] == "self_satisfaction")
         assert solo["target"] is None
         assert solo["solo_regulation"]["private_safe"] is True
+        assert solo["solo_regulation"]["recent_24h_count"] == 0
 
         provider = ModelDecisionProvider(conn, character_id=ACTOR)
         enriched = provider._enrich_state(state)
         assert enriched["solo_sexual_regulation"]["private_environment"]["safe_private"] is True
         assert enriched["solo_sexual_regulation"]["available_now"] is True
+        assert enriched["solo_sexual_regulation"]["resident_scope_solitary"] is True
         assert any(option["action"] == "self_satisfaction" for option in enriched["action_options"])
 
         prompt = _decision_prompt(enriched, sorted({option["action"] for option in enriched["action_options"]}))
@@ -86,6 +93,90 @@ def test_private_environment_and_cognition_context_are_authoritative(tmp_path):
         assert "safe/private" in prompt
         assert "never a weekly quota" in prompt
         assert context["recent_7d_count"] == 0
+
+
+def test_private_activity_suitability_is_not_bathroom_or_access_exact_match(tmp_path):
+    db = tmp_path / "observer.sqlite3"
+    initialize(db)
+    with connect(db) as conn:
+        for location_id in (MASTER_SUITE, MASTER_BATHROOM, LIBRARY, TRAINING_HALL, HOME_GYM):
+            set_dynamic_location(conn, ACTOR, location_id)
+            conn.commit()
+            context = solo_sexual_regulation_context(conn, ACTOR, state=snapshot(conn, ACTOR))
+            assert context["private_environment"]["safe_private"] is True, location_id
+
+        set_dynamic_location(conn, ACTOR, QUASI_ROOM)
+        conn.commit()
+        other_personal_room = solo_sexual_regulation_context(conn, ACTOR, state=snapshot(conn, ACTOR))
+        assert other_personal_room["private_environment"]["access"] == "private"
+        assert other_personal_room["private_environment"]["privacy_policy"] == "personal_other"
+        assert other_personal_room["private_environment"]["safe_private"] is False
+
+        set_dynamic_location(conn, ACTOR, HOME_GYM)
+        conn.commit()
+        gym_context = solo_sexual_regulation_context(conn, ACTOR, state=snapshot(conn, ACTOR))
+        reachable = {item["id"]: item for item in gym_context["reachable_safe_private_locations"]}
+        assert MASTER_SUITE in reachable
+        assert reachable[MASTER_SUITE]["distance_steps"] >= 2
+
+
+def test_young_high_libido_recovered_solitary_actor_can_have_same_day_repeat(tmp_path):
+    db = tmp_path / "observer.sqlite3"
+    initialize(db)
+    with connect(db) as conn:
+        state, initial = _private_ready(conn)
+        components = initial["drive_components"]
+        assert initial["age_years"] == 22
+        assert initial["baseline_libido"] == 85.0
+        assert components["age_bonus"] > 0
+        assert components["recovery_bonus"] > 0
+        assert components["solitude_bonus"] > 0
+        assert initial["drive"] >= initial["action_threshold"]
+
+        action = Action("self_satisfaction", 15, None, "private self-regulation")
+        apply_action(conn, action, ACTOR)
+        release_time = datetime.fromisoformat(snapshot(conn, ACTOR)["sim_time"])
+
+        set_runtime_value(conn, "sim_time", (release_time + timedelta(hours=2)).isoformat())
+        conn.commit()
+        repeat = solo_sexual_regulation_context(conn, ACTOR, state=snapshot(conn, ACTOR))
+        assert repeat["recent_24h_count"] == 1
+        assert repeat["cooldown_remaining_hours"] == 0.0
+        assert repeat["drive_components"]["recent_24h_penalty"] > 0
+        assert repeat["available_now"] is True
+        validate_action(conn, ACTOR, action)
+
+        # Same-day repeat is legal for this high-drive recovered state, but the
+        # recent-release penalty increases so the engine still resists loops.
+        apply_action(conn, action, ACTOR)
+        second_release_time = datetime.fromisoformat(snapshot(conn, ACTOR)["sim_time"])
+        set_runtime_value(conn, "sim_time", (second_release_time + timedelta(hours=2)).isoformat())
+        conn.commit()
+        after_two = solo_sexual_regulation_context(conn, ACTOR, state=snapshot(conn, ACTOR))
+        assert after_two["recent_24h_count"] == 2
+        assert after_two["drive_components"]["recent_24h_penalty"] > repeat["drive_components"]["recent_24h_penalty"]
+
+
+def test_good_recovery_and_young_adult_state_add_bonuses_instead_of_penalty_only(tmp_path):
+    db = tmp_path / "observer.sqlite3"
+    initialize(db)
+    with connect(db) as conn:
+        state, young_healthy = _private_ready(conn)
+        assert young_healthy["drive_components"]["recovery_bonus"] > 0
+        assert young_healthy["drive_components"]["age_bonus"] > 0
+
+        older_dob = "1960-09-03"
+        _set_profile_value(conn, "identity.date_of_birth", older_dob)
+        older = solo_sexual_regulation_context(conn, ACTOR, state=state)
+        assert older["adult"] is True
+        assert older["drive_components"]["age_bonus"] == 0.0
+        assert older["drive"] < young_healthy["drive"]
+
+        _set_profile_value(conn, "identity.date_of_birth", "2002-09-03")
+        stressed_state = {**state, "energy": 20.0, "fatigue": 80.0, "sleepiness": 90.0}
+        depleted = solo_sexual_regulation_context(conn, ACTOR, state=stressed_state)
+        assert depleted["drive_components"]["recovery_bonus"] == 0.0
+        assert depleted["drive"] < young_healthy["drive"]
 
 
 def test_action_requires_adult_authorized_private_alone_context(tmp_path):
@@ -196,9 +287,6 @@ def test_intimate_action_is_owner_only_across_observer_surfaces(tmp_path):
         assert any(row.get("action") == "self_satisfaction" for row in owner_room["recent_activity"])
         assert all(row.get("action") != "self_satisfaction" for row in allowed_room["recent_activity"])
 
-        # The pacing cooldown is a minimum guard, while drive recovery is the
-        # stronger availability criterion. Advance far enough for the current
-        # drive to become legal again before testing pending-action redaction.
         now = datetime.fromisoformat(snapshot(conn, ACTOR)["sim_time"])
         set_runtime_value(conn, "sim_time", (now + timedelta(hours=48)).isoformat())
         conn.commit()
