@@ -17,6 +17,7 @@ from .height_lifecycle import maybe_settle_height_lifecycle
 from .hobby_interest_lifecycle import settle_hobby_interest_lifecycle
 from .physical_attribute_progression import maybe_settle_physical_attribute_batch
 from .physical_presentation import refresh_physical_presentation
+from .preference_adaptation import settle_preference_adaptation
 from .profile_change_observer import capture_profile_change_state, observe_profile_changes
 from .runtime import initialize
 from .secrets import load_runtime_secrets
@@ -90,6 +91,27 @@ def main() -> None:
                         # form interests; established interests project to hobbies.
                         try:
                             settle_hobby_interest_lifecycle(
+                                conn,
+                                actor_id,
+                                action_name=str(pending_before["action"]),
+                                target_id=(
+                                    str(pending_before["target"])
+                                    if pending_before.get("target") is not None
+                                    else None
+                                ),
+                                ended_sim_time=str(after["sim_time"]),
+                            )
+                            conn.commit()
+                        except Exception:
+                            conn.rollback()
+
+                        # Preference adaptation is deliberately more conservative
+                        # than hobby formation. Repeated voluntary target engagement
+                        # supplies positive evidence; non-selection is never dislike
+                        # evidence. Explicit negative evidence requires a represented
+                        # aversive/outcome producer through the signed evidence API.
+                        try:
+                            settle_preference_adaptation(
                                 conn,
                                 actor_id,
                                 action_name=str(pending_before["action"]),
