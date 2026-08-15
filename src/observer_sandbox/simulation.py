@@ -11,6 +11,11 @@ from typing import Any, Protocol
 from .actor_selection import list_actor_ids, resolve_actor_id
 from .event_log import record_event
 from .location_runtime import current_location, set_dynamic_location
+from .solo_sexual_regulation import (
+    self_satisfaction_action_option,
+    settle_solo_sexual_regulation,
+    validate_self_satisfaction_action,
+)
 from .training_modifiers import training_readiness_modifier
 from .training_stimulus import training_stimulus_evidence
 from .world import get_field, set_field
@@ -32,11 +37,11 @@ class DecisionProvider(Protocol):
     def choose(self, snapshot: dict[str, Any], available_actions: list[str]) -> Action: ...
 
 
-ACTION_NAMES = ["move", "sleep", "eat", "drink", "shower", "rest", "inspect", "use", "train", "read", "idle"]
+ACTION_NAMES = ["move", "sleep", "eat", "drink", "shower", "rest", "inspect", "use", "train", "read", "self_satisfaction", "idle"]
 ACTION_DURATION_BOUNDS: dict[str, tuple[int, int]] = {
     "move": (1, 30), "sleep": (30, 720), "eat": (5, 90), "drink": (1, 30),
     "shower": (5, 60), "rest": (5, 240), "inspect": (1, 60), "use": (1, 120),
-    "train": (10, 240), "read": (5, 240), "idle": (1, 120),
+    "train": (10, 240), "read": (5, 240), "self_satisfaction": (5, 45), "idle": (1, 120),
 }
 ACTION_CAPABILITY: dict[str, str] = {
     "sleep": "sleep", "eat": "eat", "drink": "drink", "shower": "shower", "rest": "rest",
@@ -228,6 +233,10 @@ def action_options(conn: sqlite3.Connection, actor_id: str | None = None) -> lis
                     option["modifiers"] = {"training_readiness": training_readiness_modifier(state)}
                 options.append(option)
 
+    solo_option = self_satisfaction_action_option(conn, actor_id, state=state)
+    if solo_option is not None:
+        options.append(solo_option)
+
     for name in ("rest", "idle"):
         definition = definitions[name]
         option = {
@@ -248,8 +257,11 @@ def validate_action(conn: sqlite3.Connection, actor_id: str, action: Action) -> 
     low, high = definition["min_duration_minutes"], definition["max_duration_minutes"]
     if not low <= action.duration_minutes <= high:
         raise ValueError(f"Action {action.name} duration must be between {low} and {high} minutes")
-    if action.name == "train" and snapshot(conn, actor_id)["fatigue"] >= TRAINING_FATIGUE_LIMIT:
+    state = snapshot(conn, actor_id)
+    if action.name == "train" and state["fatigue"] >= TRAINING_FATIGUE_LIMIT:
         raise ValueError("Training is unavailable while systemic fatigue is too high")
+    if action.name == "self_satisfaction":
+        validate_self_satisfaction_action(conn, actor_id, state=state)
 
     location = _required_actor_location(conn, actor_id)
     target_mode = definition["target_mode"]
@@ -461,6 +473,9 @@ def apply_action(
     if training_stimulus is not None:
         outcome["training_stimulus"] = training_stimulus
 
+    # Mark completion before the rolling seven-day query so the just-finished
+    # solo action participates in its own current evidence window. The entire
+    # transaction is still committed atomically with the completion event.
     conn.execute(
         """UPDATE action_instances
         SET status='completed',started_sim_time=COALESCE(started_sim_time,?),ended_sim_time=?,outcome_json=?,updated_at=CURRENT_TIMESTAMP
@@ -470,6 +485,19 @@ def apply_action(
             json.dumps(outcome, ensure_ascii=False), action_id,
         ),
     )
+    sexual_regulation = settle_solo_sexual_regulation(
+        conn,
+        actor_id,
+        action_name=action.name,
+        ended_sim_time=ended.isoformat(),
+        state=after,
+    )
+    outcome["solo_sexual_regulation"] = sexual_regulation
+    conn.execute(
+        "UPDATE action_instances SET outcome_json=?,updated_at=CURRENT_TIMESTAMP WHERE id=?",
+        (json.dumps(outcome, ensure_ascii=False), action_id),
+    )
+
     participants = [{"entity_id": participant, "role": "participant"} for participant in action.participants]
     payload: dict[str, Any] = {
         "action_id": action_id,
@@ -482,6 +510,7 @@ def apply_action(
         "after": after,
         "action_started_sim_time": started.isoformat(),
         "action_ended_sim_time": ended.isoformat(),
+        "solo_sexual_regulation": sexual_regulation,
     }
     if training_load is not None:
         payload["training_load"] = training_load
