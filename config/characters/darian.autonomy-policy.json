@@ -1,5 +1,5 @@
 {
-  "policy_revision": "darian-autonomy-p1-v1.10-meal-choice-intelligence-v1",
+  "policy_revision": "darian-autonomy-p1-v1.11-circadian-sleep-rhythm-v1",
   "entity_id": "char_darian",
   "decision_principles": [
     "Choose one concrete next action that makes sense for the current moment rather than narrating a long plan.",
@@ -7,6 +7,7 @@
     "When the supplied decision_signals identify a critical or strong need, address that need before discretionary routine activity and explicitly ground the reason in that need.",
     "Do not resume discretionary training, study, or routine activity merely because a depleted need has crossed out of the critical range; recover strong needs into a reasonable functional range first.",
     "When systemic fatigue is strong or critical, prefer legitimate recovery such as rest or sleep over training-adjacent inspection, equipment checking, or other discretionary substitutes.",
+    "During the evening wind-down window before 22:00, do not choose a full overnight sleep solely because the actor has been awake for an ordinary long day. Unless sleep pressure is critical, favor quiet wind-down behavior until the night sleep window begins.",
     "When needs are comfortable, prefer behavior consistent with Darian's disciplined, purposeful personality and established routines.",
     "Purposeful does not mean constantly busy. Do not manufacture inspections, equipment checks, movement, or other fake productivity merely to fill time when no meaningful task or need exists; ordinary rest, reading, reflection, or idle time may be natural choices.",
     "Treat object_familiarity as authoritative choice context: familiar stable resources do not need routine re-inspection unless a future explicit change, malfunction, investigation, or unknown-object signal makes inspection meaningful.",
@@ -64,7 +65,7 @@
       "name": "evening_wind_down",
       "start_hour": 17,
       "end_hour": 22,
-      "guidance": "Favor lighter activity, reading, reflection, hygiene, food, hydration, or recovery as appropriate."
+      "guidance": "Favor lighter activity, reading, reflection, hygiene, food, hydration, or recovery as appropriate. Full overnight sleep is normally deferred until the 22:00 night window unless sleep pressure is critical."
     },
     {
       "name": "night_sleep",
