@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+import pytest
+
 from observer_sandbox.ai_runtime import _compact_prompt_state
 from observer_sandbox.cognition_context_snapshots import (
     cognition_context_snapshots,
@@ -50,33 +52,38 @@ def test_actor_snapshot_ring_keeps_exact_last_three_newest_first(tmp_path):
 
 
 def test_model_provider_captures_the_exact_compact_context_before_primary_injection(tmp_path, monkeypatch):
+    class ExpectedModelBoundaryStop(RuntimeError):
+        pass
+
     db = tmp_path / "observer.sqlite3"
     initialize(db)
     monkeypatch.setattr(
         "observer_sandbox.model_decision.resolve_binding",
         lambda conn, *, role, character_id: {"provider_id": "gemini", "model_id": "test-model"},
     )
+
+    def stop_at_model_boundary(*args, **kwargs):
+        raise ExpectedModelBoundaryStop
+
     monkeypatch.setattr(
         "observer_sandbox.model_decision.generate_character_decision",
-        lambda *args, **kwargs: {
-            "action": "idle",
-            "duration_minutes": 10,
-            "target": None,
-            "reason": "Regression capture",
-            "resources": [],
-            "training_movements": [],
-        },
+        stop_at_model_boundary,
     )
 
     with connect(db) as conn:
         provider = ModelDecisionProvider(conn, character_id=ACTOR)
         state = snapshot(conn, ACTOR)
-        expected_context = _compact_prompt_state(provider._enrich_state(state))
-        provider.choose(state, ["idle"])
+        enriched = provider._enrich_state(state)
+        expected_context = _compact_prompt_state(enriched)
+        expected_actions = sorted({str(option["action"]) for option in enriched["action_options"]})
+
+        with pytest.raises(ExpectedModelBoundaryStop):
+            provider.choose(state, ["idle"])
+
         rows = cognition_context_snapshots(conn, ACTOR)
         assert rows[0]["context"] == expected_context
         assert rows[0]["injection_type"] == "primary"
-        assert "idle" in rows[0]["available_actions"]
+        assert rows[0]["available_actions"] == expected_actions
 
 
 def test_unknown_future_context_is_rendered_automatically_and_paged(tmp_path):
