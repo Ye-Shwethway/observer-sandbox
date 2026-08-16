@@ -31,7 +31,7 @@ Evidence:
 
 ## Completed foundation stack
 
-The current minimum foundation is deployed through:
+The current deployed minimum foundation includes:
 - Character Profile / Skills minimum foundations;
 - adaptive dispositions/habits/preferences/personality foundations;
 - Estate spatial-container and reachability foundation;
@@ -40,7 +40,7 @@ The current minimum foundation is deployed through:
 - Universal action satiation / movement-cycle shaping;
 - Character Memory Foundation v1;
 - Semantic Spatial Memory Migration;
-- **Human Memory Dynamics v1**.
+- Human Memory Dynamics v1.
 
 South Lake Tahoe remains intentionally paused.
 
@@ -53,133 +53,177 @@ Canonical docs:
 Preserve:
 `event/world truth != actor memory trace != currently recalled cognition context != current action authority`
 
-### Memory Foundation
+Memory now provides actor-owned episodic/semantic records, dynamic strength/detail/lifecycle, simulation-time forgetting, sleep-bounded consolidation, cue-driven recall, bounded reinforcement, generic spatial semantic knowledge and Telegram observability.
 
-Provides:
-- actor-owned episodic and semantic records;
-- source-event provenance;
-- represented entity/location associations;
-- automatic compact episodic encoding for completed actions;
-- bounded actor-scoped retrieval;
-- Telegram Memory observability.
+Character Profile has separate Working Memory / Encoding / Retention / Recall traits. Memory behavior may not branch on character identity.
 
-### Semantic spatial migration
+## Canonical Mind Engine architecture
 
-Spatial familiarity is now generic semantic Character Memory. The old named Darian familiarity file/path has been removed.
+Canonical contract:
+`docs/INTELLIGENT_MIND_ENGINE_FOUNDATION_V1.md`
 
-Known-world projection remains separate from current executable movement. Generic recall does not flood cognition with all known-map rows; spatial semantic memories become generic recall candidates only under direct represented location cue.
+The Mind Engine is the shared internal cognition substrate above raw injected context and below future intention/planning/social behavior.
 
-### Human Memory Dynamics v1
+Preserve:
 
-Lifecycle:
-`experience -> recent -> consolidation -> consolidated/remote -> fading possible -> cue recall/reinforcement`
+`world truth != perception != memory != mind state/thought != intention/plan != action proposal != action authority`
 
-Dynamic trace model includes:
-- memory strength;
-- detail strength;
-- emotional arousal;
-- personal relevance;
-- consolidation time;
-- last dynamics settlement time.
+### Mandatory future alignment rule
 
-Forgetting is simulation-time based and weakens accessibility/precision rather than deleting event truth. Represented sleep provides a consolidation boundary. Emotion/significance may protect gist more strongly than exact detail. Strong represented cues may make a faded trace accessible again. Successful recall gives bounded reinforcement.
+Every future system that can materially influence character perception, interpretation, thought, affect, active concerns, goals, intentions, planning, social cognition, communication or relationship appraisal **must read and align with the Mind Engine contract before implementation**.
 
-The v1 model is deterministic and intentionally small. It is not a literal neurological or clinical model.
+This rule includes external-world systems when they feed cognition, especially:
+- weather/environment appraisal;
+- economy/money concerns;
+- media/information exposure;
+- communications;
+- schedules/commitments/obligations;
+- social/relationship systems.
 
-## Memory Ability profile
+Do not create parallel hidden mind/planner/thought stores. Use the shared typed Mind sockets or explicitly document why a subsystem is outside mental cognition.
 
-Character Profile contains a separate `Memory Ability` domain:
-- Working Memory
-- Encoding
-- Retention
-- Recall
+### Foundation schema target
 
-Memory ability is not directly derived from IQ and is not automatically a Skill.
+Mind Foundation v1 establishes generic persistence for:
+- bounded `mental_cycles`;
+- typed `mental_episodes`;
+- persistent/semi-persistent `mental_artifacts`;
+- typed `mental_links` to represented memories/events/entities/actions/other mental artifacts.
 
-Darian's current factual seed through the shared generic memory-profile contract:
-- Working Memory 86
-- Encoding 89
-- Retention 84
-- Recall 91
+Initial episode vocabulary:
+- task-focused;
+- spontaneous;
+- reflective;
+- prospective;
+- social;
+- evaluative.
 
-No memory runtime behavior may branch on character identity.
+Reserved artifact vocabulary:
+- concern;
+- goal;
+- intention;
+- plan;
+- social inference;
+- appraisal;
+- working item.
+
+Foundation schema is not permission to activate every reserved subsystem immediately.
+
+## Why Cognition Context remains separate
+
+Current `Cognition Context` is the read-only inspector for the actual bounded model injection. It remains useful and intentionally raw.
+
+It is not the represented mind.
+
+Future observability should distinguish:
+- Profile — represented character facts;
+- Memory — retained knowledge/experience;
+- Mind — structured mental episodes and active artifacts;
+- Cognition Context — exact model-injection snapshots.
 
 ## Universal autonomy semantic lock
 
-A character-specific source may define factual identity/profile, biography, initial skills, possessions, relationships, preferences/hobbies, factual goals or factual initial knowledge.
+A character-specific source may define factual identity/profile, biography, initial skills, possessions, relationships, preferences/hobbies, factual goals, memory ability or factual initial knowledge.
 
-It may not define future behavior scripts such as:
-- named autonomy prompts/policies;
-- fixed daily routines or training schedules;
-- named-character destination preferences;
-- bespoke anti-repetition counter-prompts;
-- identity-keyed code branches.
+It may not define future behavior scripts such as named autonomy prompts/policies, fixed daily routines/training schedules, bespoke destination steering or identity-keyed code branches.
 
 Generic cognition derives behavior from represented state:
-`profile + needs/physiology + time + environment + affordances + goals + relationships + currently recallable memories/learning + recent context + deterministic constraints`.
+`profile + physiology + time + environment + affordances + goals + relationships + currently recallable memories + active mental context + deterministic constraints`.
+
+## External world input direction
+
+Mind does not exist in a vacuum, but the project does not need to finish every possible world system before continuing cognition work.
+
+Build minimum reusable world-input foundations as evidence requires them. External facts should feed cognition through represented exposure/perception and character-relative appraisal rather than direct arbitrary mental modifiers.
+
+Examples:
+- weather fact -> perception/comfort/affordance context -> appraisal;
+- financial state -> represented affordability/obligation exposure -> concern/appraisal;
+- media item -> source/publication -> character exposure -> interpretation/memory;
+- utterance -> perception -> social interpretation -> response intention.
+
+Avoid rules such as `rain -> mood -5` or `low cash -> anxiety +10`.
+
+## Active phase — Intelligent Mind Engine Foundation
+
+### MIND-F0 — Foundation Schema / Socket Contract — AUTHORIZED
+
+Goal: create the stable generic persistence and integration envelope without changing current autonomous behavior.
+
+Required:
+1. canonical architecture contract;
+2. mandatory future-system alignment rule in repository instructions;
+3. schema for mental cycles, episodes, artifacts and typed links;
+4. versioned generic runtime API to create/read those records;
+5. idempotent migration and character-generic tests;
+6. preserve current action/memory/world authority;
+7. do not auto-generate thoughts yet.
+
+### MIND-F1 — World Input Foundations — AFTER F0 / evidence-driven
+
+Candidate minimum channels:
+- weather/environment state and perception-ready exposure;
+- money/economy minimum character state;
+- media/information items + exposure;
+- communication exposure/event boundary;
+- commitments/obligations as needed.
+
+Do not build giant complete world simulations merely to unblock Mind.
+
+### MIND-F2 — Mental Episode Runtime
+
+At meaningful cognition/action boundaries, allow one model call to emit a small structured bundle of mental episodes alongside an action proposal.
+
+No continuous per-minute LLM polling.
+
+### MIND-F3 — Attention / Appraisal / Active Concerns
+
+Add small persistent mental context above raw prompt data.
+
+### MIND-F4 — Intention Foundation
+
+Introduce near-term future direction distinct from prospective thought and distinct from a multi-step plan.
+
+### MIND-F5 — Planning
+
+Planning consumes authoritative current state plus currently recallable memory and active mind artifacts. Plans remain interruptible and never bypass action validation.
+
+First useful consumers remain:
+- multi-day training/recovery balance;
+- purposeful destination + activity selection.
+
+### MIND-F6 — Social Cognition / Communication
+
+Target:
+`utterance -> perception -> memory/person context -> appraisal/social inference -> internal thought -> response intention -> utterance proposal`
+
+### MIND-F7 — Relationship Adaptation
+
+Relationship state should consume represented interpreted social evidence rather than arbitrary direct dialogue-to-trust increments.
+
+## Deferred depth
+
+Do not silently add:
+- artificial-consciousness claims;
+- full human emotion taxonomy;
+- false-memory fabrication;
+- clinical psychiatric simulation;
+- dreams/detailed sleep-stage modeling;
+- vector/embedding memory;
+- continuous thought polling;
+- giant monolithic Mind module;
+- character-specific mental scripts.
 
 ## World / spatial lock
 
-A location is an identifiable nested spatial container with extent, contents, boundaries/interfaces, local state, control and explicit relationships to surrounding space.
-
-Preserve:
-- `contains` = structural containment;
-- `connected_to` = traversable topology;
-- `located_at` = dynamic presence;
-- known geography != executable movement;
-- hidden/secret status is orthogonal to familiarity.
-
-Current outside boundary remains closed:
+Current Estate boundary remains closed:
 - no public-road edge from Main Security Gate;
 - no Tahoe-backcountry edge from Concealed Forest Passage;
 - no water-travel edge from Hidden Dock;
 - legacy Estate Exterior remains locked/non-traversable.
 
-## Telegram observability
-
-Current Character surfaces:
-- `📖 Profile`
-- `🗃️ Memory`
-- owner-only `🧠 Cognition Context`
-
-`🧩 Memory Ability` is available inside Profile.
-
-Memory view dynamically exposes lifecycle/strength/detail state while Cognition Context remains the actual model-injection inspector. Telegram is read-only for memory state.
-
-## Deferred memory depth
-
-Do not silently add these while working on planning:
-- false-memory fabrication;
-- clinical trauma/PTSD simulation;
-- dream generation or detailed sleep-stage modeling;
-- semantic reflection/consolidation from repeated episodes;
-- procedural memory;
-- vector/embedding retrieval;
-- stochastic recall unless deterministic behavior proves inadequate.
-
-They require separate evidence and scope decisions.
-
-## Candidate next phase — Minimal Mind / Planning
-
-### P0 — Minimal Mind / Planning Foundation — DISCUSSION ONLY
-
-Candidate flow:
-`present state + profile/traits + physiology + environment/affordances + goals + currently recallable memories -> bounded intention/plan -> local authoritative action execution`
-
-The planner must not receive perfect memory-database access. `stored != currently recallable` is now a hard prerequisite.
-
-Potential first consumers remain:
-
-**Multi-day training/recovery balance**
-- recent recalled training experience/history + authoritative load/readiness/adaptation + goals;
-- recovery-oriented days can emerge without fixed rest-day schedules.
-
-**Purposeful destination + activity planning**
-- represented destination plus represented activity/resource;
-- no outdoor quota and no invented resource/action.
-
-However, **P0 is not authorized yet**. The Creator explicitly wants further discussion after M3 deployment.
+Known geography never grants executable movement by itself.
 
 ## Current exact resume point
 
-**Human Memory Dynamics v1 is deployed. Stop implementation and discuss the remaining memory/mind/planning architecture with the Creator before starting P0. Do not solve outdoor use or daily training recurrence through character-specific rules. Preserve the current Estate boundary.**
+**Implement MIND-F0 — Intelligent Mind Engine Foundation Schema / Socket Contract. Keep behavior unchanged. After deployment, inspect and discuss which minimum world-input foundations should precede the first Mental Episode Runtime. All future cognition-affect-planning-social systems must align with the canonical Mind Engine contract.**
