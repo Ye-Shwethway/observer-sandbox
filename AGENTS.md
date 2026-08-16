@@ -64,14 +64,22 @@ Preserve the LEGO rule:
 
 ## Universal character autonomy
 
-Follow `docs/UNIVERSAL_CHARACTER_AUTONOMY_CONTRACT_V1.md`.
+Follow `docs/UNIVERSAL_CHARACTER_AUTONOMY_CONTRACT_V1.md` and `docs/CHARACTER_MEMORY_FOUNDATION_V1.md`.
 
 - Character-specific behavioral hard-coding is forbidden.
-- Character-specific files may seed represented facts/state, not command future behavior.
+- Character-specific files/data may seed represented facts/state, not command future behavior.
 - Do not add named-character autonomy prompts, bespoke daily-routine rules, destination preferences, anti-repetition counter-prompts, or behavior patches.
 - Autonomous behavior must emerge from universal systems consuming profile/state, needs/physiology, time, environment, affordances, history, goals, relationships, memory/learning, and deterministic constraints.
 - A new character must not require a new autonomy policy or character-specific behavior branch.
-- `config/characters/darian.spatial_familiarity.v1.json` is temporary factual bootstrap debt only; remove/migrate it when the general Memory System owns initial and evolving spatial knowledge.
+- Actor-known spatial facts belong to generic semantic Character Memory. Do not reintroduce named-character spatial-familiarity files or loader paths.
+
+## Character memory
+
+- Events/world state remain objective truth; memory is actor-owned knowledge/experience; retrieved memory is bounded cognition context; `action_options` remain execution authority.
+- Initial character-specific factual knowledge may be represented through the shared semantic-memory seed contract, not bespoke loaders.
+- Memory must not grant topology, access, possession, capability, resources or actions absent from deterministic state.
+- Keep memory dynamic and inspectable; do not dump the entire store into model context.
+- Do not fake future consolidation, forgetting or planning with arbitrary character-specific timers/rules.
 
 ## Creator controls
 
