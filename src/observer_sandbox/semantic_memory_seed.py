@@ -10,6 +10,10 @@ REPO_ROOT = Path(__file__).resolve().parents[2]
 DEFAULT_SEMANTIC_MEMORY_PATH = REPO_ROOT / "config" / "memory" / "initial.semantic.v1.json"
 SPATIAL_FAMILIARITY_LEVELS = ("unknown", "aware", "familiar", "intimate")
 LEGACY_SPATIAL_FIELD = "world.spatial_familiarity"
+# Initial authored knowledge predates autonomous observation. Keep occurrence /
+# known-since time at the canonical world bootstrap while encoded_sim_time records
+# when the generic Memory System materialized it.
+INITIAL_KNOWN_SIM_TIME = "2025-05-01T07:00:00+00:00"
 
 
 def load_initial_semantic_memory_seed(
@@ -85,9 +89,7 @@ def seed_initial_semantic_memories(
             content = _validate_spatial_memory(conn, raw)
             location_id = content["location_id"]
             memory_id = _memory_id(character_id, knowledge_kind, location_id)
-            summary = (
-                f"Knows {content['location_name']} with {content['familiarity']} familiarity"
-            )
+            summary = f"Knows {content['location_name']} with {content['familiarity']} familiarity"
             conn.execute(
                 """INSERT OR IGNORE INTO character_memories(
                     memory_id,character_id,memory_type,summary,content_json,source_type,
@@ -101,7 +103,7 @@ def seed_initial_semantic_memories(
                     json.dumps(content, ensure_ascii=False, sort_keys=True),
                     "seed",
                     None,
-                    sim_time,
+                    INITIAL_KNOWN_SIM_TIME,
                     sim_time,
                     0.7,
                     1.0,
