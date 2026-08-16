@@ -1,10 +1,16 @@
 name: Daytime Outdoor Diagnostic
 
+# Diagnostic policy:
+# - This workflow must never rewrite simulation time.
+# - It is location-only and refuses to run unless the live universe is already
+#   inside the authored daytime window and sleep pressure is comfortable.
+# - This prevents a diagnostic clock jump from manufacturing extended wakefulness.
+
 on:
-  push:
-    branches: [main]
-    paths:
-      - '.github/workflows/daytime-outdoor-diagnostic.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
 
 concurrency:
   group: observer-sandbox-production
@@ -28,7 +34,7 @@ jobs:
           chmod 600 ~/.ssh/id_ed25519
           ssh-keyscan -p "$VPS_PORT" -H "$VPS_HOST" >> ~/.ssh/known_hosts
 
-      - name: Place Darian outdoors in daytime once
+      - name: Place Darian outdoors only when live daytime state is clean
         env:
           VPS_HOST: ${{ secrets.VPS_HOST }}
           VPS_USER: ${{ secrets.VPS_USER }}
@@ -42,127 +48,104 @@ jobs:
           .venv/bin/python - <<'PY'
           import json
           import os
-          from datetime import datetime, timedelta, timezone
+          from datetime import datetime
 
           from observer_sandbox.actor_runtime import actor_runtime, set_actor_runtime, set_lease, set_retry
           from observer_sandbox.db import connect, migrate
           from observer_sandbox.event_log import record_event
           from observer_sandbox.location_runtime import set_dynamic_location
-          from observer_sandbox.simulation import runtime_value, set_runtime_value, snapshot
+          from observer_sandbox.simulation import snapshot
+          from observer_sandbox.sleep_pressure import sleep_pressure_signal
           from observer_sandbox.world import set_field
 
           db = os.environ['OBSERVER_SANDBOX_DB']
           actor_id = 'char_darian'
           target_id = 'loc_thorne_estate_core_grounds'
-          marker_key = 'creator_control_daytime_outdoor_diagnostic_20260817'
 
           with connect(db) as conn:
               migrate(conn)
-              marker = conn.execute(
-                  'SELECT value FROM schema_meta WHERE key=?',
-                  (marker_key,),
+              before = snapshot(conn, actor_id)
+              now = datetime.fromisoformat(before['sim_time'])
+              pressure = sleep_pressure_signal(conn, state=before, actor_id=actor_id)
+              if not (7 <= now.hour < 17):
+                  raise RuntimeError(f"Daytime diagnostic requires live 07:00-17:00 sim time; got {before['sim_time']}")
+              if pressure['level'] != 'comfortable':
+                  raise RuntimeError(f"Daytime diagnostic requires comfortable sleep pressure; got {pressure}")
+
+              actor = conn.execute(
+                  "SELECT id,name FROM entities WHERE id=? AND entity_type='character'",
+                  (actor_id,),
               ).fetchone()
-              if marker is not None:
-                  print(json.dumps({'ok': True, 'already_applied': True, 'marker': marker_key}, indent=2))
-              else:
-                  actor = conn.execute(
-                      "SELECT id,name FROM entities WHERE id=? AND entity_type='character'",
-                      (actor_id,),
-                  ).fetchone()
-                  target = conn.execute(
-                      "SELECT id,name FROM entities WHERE id=? AND entity_type='location'",
-                      (target_id,),
-                  ).fetchone()
-                  if actor is None:
-                      raise RuntimeError(f'Unknown character: {actor_id}')
-                  if target is None:
-                      raise RuntimeError(f'Unknown location: {target_id}')
+              target = conn.execute(
+                  "SELECT id,name FROM entities WHERE id=? AND entity_type='location'",
+                  (target_id,),
+              ).fetchone()
+              if actor is None or target is None:
+                  raise RuntimeError('Diagnostic actor or target location is unavailable')
 
-                  raw_time = runtime_value(conn, 'sim_time', None)
-                  if not raw_time:
-                      raise RuntimeError('Simulation time is not initialized')
-                  before_time = datetime.fromisoformat(raw_time)
-                  tz = before_time.tzinfo or timezone.utc
-                  target_time = before_time.replace(hour=13, minute=0, second=0, microsecond=0)
-                  if target_time <= before_time:
-                      target_time = target_time + timedelta(days=1)
-
-                  conn.execute('BEGIN IMMEDIATE')
-                  before = snapshot(conn, actor_id)
-                  runtime = actor_runtime(conn, actor_id)
-                  cancelled_action_id = runtime.get('pending_action_id')
-                  if cancelled_action_id:
-                      conn.execute(
-                          "UPDATE action_instances SET status='cancelled',updated_at=CURRENT_TIMESTAMP "
-                          "WHERE id=? AND status IN ('planned','in_progress')",
-                          (cancelled_action_id,),
-                      )
-
-                  set_runtime_value(conn, 'sim_time', target_time.isoformat())
-                  set_dynamic_location(conn, actor_id, target_id)
-                  set_field(
-                      conn,
-                      actor_id,
-                      'runtime.current_action',
-                      'idle',
-                      mode='simulated',
-                      authority='living_runtime',
-                      source='creator-daytime-outdoor-diagnostic',
-                  )
-                  set_actor_runtime(
-                      conn,
-                      actor_id,
-                      pending_action_id=None,
-                      wake_reason='creator_daytime_outdoor_diagnostic',
-                  )
-                  set_lease(conn, actor_id, None)
-                  set_retry(conn, actor_id, None)
-                  after = snapshot(conn, actor_id)
-
-                  record_event(
-                      conn,
-                      sim_time=after['sim_time'],
-                      actor_id=actor_id,
-                      event_type='creator_daytime_outdoor_diagnostic',
-                      location_id=target_id,
-                      state_changes={
-                          'sim_time': {'before': before['sim_time'], 'after': after['sim_time']},
-                          'location': {'before': before['location'], 'after': after['location']},
-                          'current_action': {'before': before['current_action'], 'after': after['current_action']},
-                      },
-                      payload={
-                          'authority': 'creator',
-                          'requested_by': 'github-actions:daytime-outdoor-diagnostic',
-                          'diagnostic_only': True,
-                          'target_location_id': target_id,
-                          'target_location_name': target['name'],
-                          'cancelled_action_id': cancelled_action_id,
-                          'before': before,
-                          'after': after,
-                      },
-                  )
+              conn.execute('BEGIN IMMEDIATE')
+              runtime = actor_runtime(conn, actor_id)
+              cancelled_action_id = runtime.get('pending_action_id')
+              if cancelled_action_id:
                   conn.execute(
-                      'INSERT INTO schema_meta(key,value) VALUES(?,?)',
-                      (marker_key, after['sim_time']),
+                      "UPDATE action_instances SET status='cancelled',updated_at=CURRENT_TIMESTAMP "
+                      "WHERE id=? AND status IN ('planned','in_progress')",
+                      (cancelled_action_id,),
                   )
-                  conn.commit()
-                  print(json.dumps({
-                      'ok': True,
-                      'already_applied': False,
-                      'actor_id': actor_id,
-                      'character_name': actor['name'],
+
+              set_dynamic_location(conn, actor_id, target_id)
+              set_field(
+                  conn,
+                  actor_id,
+                  'runtime.current_action',
+                  'idle',
+                  mode='simulated',
+                  authority='living_runtime',
+                  source='creator-daytime-outdoor-location-diagnostic',
+              )
+              set_actor_runtime(
+                  conn,
+                  actor_id,
+                  pending_action_id=None,
+                  wake_reason='creator_daytime_outdoor_location_diagnostic',
+              )
+              set_lease(conn, actor_id, None)
+              set_retry(conn, actor_id, None)
+              after = snapshot(conn, actor_id)
+
+              record_event(
+                  conn,
+                  sim_time=after['sim_time'],
+                  actor_id=actor_id,
+                  event_type='creator_daytime_outdoor_location_diagnostic',
+                  location_id=target_id,
+                  state_changes={
+                      'location': {'before': before['location'], 'after': after['location']},
+                      'current_action': {'before': before['current_action'], 'after': after['current_action']},
+                  },
+                  payload={
+                      'authority': 'creator',
+                      'requested_by': 'github-actions:daytime-outdoor-diagnostic',
+                      'diagnostic_only': True,
+                      'sim_time_preserved': True,
+                      'sleep_pressure_before': pressure,
                       'target_location_id': target_id,
                       'target_location_name': target['name'],
                       'cancelled_action_id': cancelled_action_id,
-                      'before_time': before['sim_time'],
-                      'after_time': after['sim_time'],
-                      'before_location': before['location'],
-                      'after_location': after['location'],
-                      'marker': marker_key,
-                  }, indent=2))
+                      'before': before,
+                      'after': after,
+                  },
+              )
+              conn.commit()
+              print(json.dumps({
+                  'ok': True,
+                  'sim_time_preserved': before['sim_time'] == after['sim_time'],
+                  'before_location': before['location'],
+                  'after_location': after['location'],
+                  'sleep_pressure': pressure,
+              }, indent=2, sort_keys=True))
           PY
 
-          echo '--- POST-DIAGNOSTIC PRODUCTION READBACK ---'
           .venv/bin/sandboxctl living-status
           .venv/bin/sandboxctl autonomy-status
           REMOTE
