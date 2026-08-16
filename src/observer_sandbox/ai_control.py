@@ -19,6 +19,9 @@ class AIControlError(RuntimeError):
     pass
 
 
+NANOGPT_CATALOG_MODES = {"subscription", "all"}
+
+
 def provider_summaries(conn: sqlite3.Connection) -> list[dict[str, Any]]:
     """Return Creator-safe provider metadata without exposing credential values."""
     load_runtime_secrets()
@@ -55,23 +58,77 @@ def _provider(conn: sqlite3.Connection, provider_id: str) -> sqlite3.Row:
     return row
 
 
-def _fetch_models_without_activation(provider: sqlite3.Row) -> list[dict[str, Any]]:
+def _tag_nanogpt_models(models: list[dict[str, Any]], billing_scope: str) -> list[dict[str, Any]]:
+    tagged: list[dict[str, Any]] = []
+    for raw in models:
+        model = dict(raw)
+        metadata = dict(model.get("metadata") or {})
+        metadata["observer_nanogpt_billing_scope"] = billing_scope
+        model["metadata"] = metadata
+        tagged.append(model)
+    return tagged
+
+
+def _fetch_nanogpt_paid(provider: sqlite3.Row) -> list[dict[str, Any]]:
+    base = provider["base_url"]
+    if not base:
+        raise AIConfigurationError("NanoGPT base_url is not configured")
+    payload = ai_backend._get_json(
+        f"{base.rstrip('/')}/paid/v1/models?detailed=true",
+        headers=ai_backend._auth_headers(provider),
+    )
+    models: list[dict[str, Any]] = []
+    for raw in payload.get("data", []):
+        model_id = raw.get("id")
+        if not model_id:
+            continue
+        models.append(
+            {
+                "model_id": model_id,
+                "display_name": raw.get("name") or model_id,
+                "context_window": raw.get("context_length") or raw.get("context_window"),
+                "capabilities": raw.get("capabilities") or {},
+                "metadata": {**raw, "observer_nanogpt_billing_scope": "paid"},
+            }
+        )
+    return models
+
+
+def _fetch_models_without_activation(
+    provider: sqlite3.Row,
+    *,
+    catalog_mode: str | None = None,
+) -> list[dict[str, Any]]:
     adapter = str(provider["adapter_type"])
     if adapter == "gemini":
         return ai_backend._fetch_gemini(provider)
     if adapter == "nanogpt":
-        return ai_backend._fetch_nanogpt(provider)
+        mode = catalog_mode or "subscription"
+        if mode not in NANOGPT_CATALOG_MODES:
+            raise AIConfigurationError(f"Unsupported NanoGPT catalog mode: {mode}")
+        subscription = _tag_nanogpt_models(ai_backend._fetch_nanogpt(provider), "subscription")
+        if mode == "subscription":
+            return subscription
+        merged = {str(model["model_id"]): model for model in subscription}
+        for model in _fetch_nanogpt_paid(provider):
+            merged[str(model["model_id"])] = model
+        return list(merged.values())
     if adapter == "openai_compatible":
         return ai_backend._fetch_openai_compatible(provider)
     raise AIConfigurationError(f"Unsupported adapter type: {adapter}")
 
 
-def refresh_provider_catalog(conn: sqlite3.Connection, provider_id: str) -> int:
+def refresh_provider_catalog(
+    conn: sqlite3.Connection,
+    provider_id: str,
+    *,
+    catalog_mode: str | None = None,
+) -> int:
     """Refresh a provider catalog without enabling it or changing any binding."""
     load_runtime_secrets()
     provider = _provider(conn, provider_id)
     try:
-        models = _fetch_models_without_activation(provider)
+        models = _fetch_models_without_activation(provider, catalog_mode=catalog_mode)
         conn.execute("UPDATE ai_models SET active=0 WHERE provider_id=?", (provider_id,))
         for model in models:
             conn.execute(
@@ -132,11 +189,11 @@ def _credential(provider: sqlite3.Row) -> str:
 def probe_model(conn: sqlite3.Connection, provider_id: str, model_id: str) -> dict[str, Any]:
     """Perform one tiny real inference against a candidate without mutating bindings."""
     provider = _provider(conn, provider_id)
-    exists = conn.execute(
-        "SELECT 1 FROM ai_models WHERE provider_id=? AND model_id=? AND active=1",
+    model_row = conn.execute(
+        "SELECT metadata_json FROM ai_models WHERE provider_id=? AND model_id=? AND active=1",
         (provider_id, model_id),
     ).fetchone()
-    if not exists:
+    if model_row is None:
         raise AIConfigurationError(f"Unknown or inactive model: {provider_id}/{model_id}")
 
     key = _credential(provider)
@@ -149,7 +206,16 @@ def probe_model(conn: sqlite3.Connection, provider_id: str, model_id: str) -> di
     if adapter == "gemini":
         decision = ai_runtime._generate_gemini(provider, key, model_id, prompt, {})
     elif adapter == "nanogpt":
-        decision = ai_runtime._generate_nanogpt(provider, key, model_id, prompt, {})
+        metadata = json.loads(model_row["metadata_json"] or "{}")
+        billing_scope = str(metadata.get("observer_nanogpt_billing_scope") or "subscription")
+        decision = ai_runtime._generate_nanogpt(
+            provider,
+            key,
+            model_id,
+            prompt,
+            {},
+            billing_scope=billing_scope,
+        )
     elif adapter == "openai_compatible":
         decision = ai_runtime._generate_openai_compatible(provider, key, model_id, prompt, {})
     else:
