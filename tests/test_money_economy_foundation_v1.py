@@ -21,7 +21,7 @@ DARIAN_ECON = "econ_char_darian"
 DARIAN_LIQUID = "acct_darian_primary_liquid"
 
 
-def test_w3_schema_v1_and_darian_seed(tmp_path):
+def test_w3_schema_and_darian_seed(tmp_path):
     db = tmp_path / "observer.sqlite3"
     initialize(db)
     with connect(db) as conn:
@@ -29,8 +29,8 @@ def test_w3_schema_v1_and_darian_seed(tmp_path):
         migrate_economy_schema(conn)
         schema = int(conn.execute("SELECT value FROM schema_meta WHERE key='schema_version'").fetchone()[0])
         economy_schema = int(conn.execute("SELECT value FROM schema_meta WHERE key='economy_schema_version'").fetchone()[0])
-        assert schema == SCHEMA_VERSION == 13
-        assert economy_schema == ECONOMY_SCHEMA_VERSION == 1
+        assert schema == SCHEMA_VERSION
+        assert economy_schema == ECONOMY_SCHEMA_VERSION
 
         account = financial_account(conn, DARIAN_LIQUID)
         assert account["currency_code"] == "USD"

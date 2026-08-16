@@ -11,6 +11,7 @@ from .ai import seed_builtin_providers
 from .composition_schema import seed_action_definitions
 from .controlled_h2h_runtime import seed_controlled_h2h_runtime
 from .db import connect, get_runtime_state, migrate
+from .economic_value import seed_economic_value_profiles, validate_current_value_coverage
 from .economy import seed_initial_economy
 from .estate_campus import seed_estate_campus
 from .field_medicine_stabilization import seed_field_medicine_stabilization_runtime
@@ -82,6 +83,11 @@ def _initialize_conn(conn) -> None:
     seed_represented_skill_runtime_batch(conn)
     seed_controlled_h2h_runtime(conn)
     seed_field_medicine_stabilization_runtime(conn)
+    # W3.1 runs after every current canonical object seeder, including the
+    # represented skill/task fixtures that are not declared in the base world
+    # JSON. This makes production-copy and fresh-database coverage equivalent.
+    seed_economic_value_profiles(conn)
+    validate_current_value_coverage(conn)
     defaults = {
         "paused": False,
         "speed": 1.0,

@@ -3,7 +3,7 @@ from __future__ import annotations
 import sqlite3
 
 
-ECONOMY_SCHEMA_VERSION = 1
+ECONOMY_SCHEMA_VERSION = 2
 
 ECONOMY_SCHEMA_SQL = """
 CREATE TABLE IF NOT EXISTS economic_entities (
@@ -120,6 +120,34 @@ CREATE TABLE IF NOT EXISTS economic_transaction_entries (
 
 CREATE INDEX IF NOT EXISTS idx_economic_transaction_entries_account
     ON economic_transaction_entries(account_id, entry_id);
+
+CREATE TABLE IF NOT EXISTS economic_value_profiles (
+    subject_type TEXT NOT NULL CHECK(subject_type IN ('entity','entity_definition')),
+    subject_id TEXT NOT NULL,
+    classification TEXT NOT NULL CHECK(classification IN (
+        'standalone_asset','component','consumable_stock','resource_proxy','economically_immaterial'
+    )),
+    currency_code TEXT,
+    market_value_minor INTEGER CHECK(market_value_minor IS NULL OR market_value_minor >= 0),
+    replacement_value_minor INTEGER CHECK(replacement_value_minor IS NULL OR replacement_value_minor >= 0),
+    unit_value_minor INTEGER CHECK(unit_value_minor IS NULL OR unit_value_minor >= 0),
+    unit_quantity REAL CHECK(unit_quantity IS NULL OR unit_quantity > 0),
+    unit_label TEXT,
+    net_worth_treatment TEXT NOT NULL CHECK(net_worth_treatment IN (
+        'independent','included_in_parent','derived_stock','excluded'
+    )),
+    included_in_asset_id TEXT REFERENCES economic_assets(asset_id) ON DELETE SET NULL,
+    valuation_method TEXT NOT NULL,
+    rule_key TEXT NOT NULL,
+    provenance_json TEXT NOT NULL DEFAULT '{}',
+    metadata_json TEXT NOT NULL DEFAULT '{}',
+    created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    updated_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    PRIMARY KEY(subject_type, subject_id)
+);
+
+CREATE INDEX IF NOT EXISTS idx_economic_value_profiles_classification
+    ON economic_value_profiles(classification, net_worth_treatment);
 """
 
 
