@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import json
 from datetime import datetime
 from typing import Any
 
@@ -23,6 +24,26 @@ def _character_name(conn, character_id: str) -> str:
     return str(row[0]) if row is not None else character_id
 
 
+def _sim_time(conn) -> str | None:
+    row = conn.execute("SELECT value_json FROM runtime_state WHERE key='sim_time'").fetchone()
+    if row is None:
+        return None
+    try:
+        value = json.loads(row[0])
+    except json.JSONDecodeError:
+        return None
+    return str(value) if value else None
+
+
+def _stage_label(stage: str) -> str:
+    return {
+        "recent": "Recent",
+        "consolidated": "Long-term",
+        "remote": "Remote",
+        "faded": "Faded",
+    }.get(stage, stage.replace("_", " ").title())
+
+
 def memory_view(
     conn,
     character_id: str,
@@ -31,13 +52,15 @@ def memory_view(
     page: int = 0,
 ) -> tuple[str, list[list[dict[str, str]]]]:
     kind = memory_type if memory_type in {"episodic", "semantic"} else "all"
+    current_sim_time = _sim_time(conn)
     memories = list_memories(
         conn,
         character_id,
         memory_type=None if kind == "all" else kind,
         limit=200,
+        current_sim_time=current_sim_time,
     )
-    overview = memory_overview(conn, character_id)
+    overview = memory_overview(conn, character_id, current_sim_time=current_sim_time)
     page_count = max(1, (len(memories) + PAGE_SIZE - 1) // PAGE_SIZE)
     page = max(0, min(int(page), page_count - 1))
     start = page * PAGE_SIZE
@@ -48,6 +71,7 @@ def memory_view(
         f"🧠 {character_name} · MEMORY",
         "━━━━━━━━━━━━━━━━━━",
         f"Active {overview['total']} · Episodic {overview['episodic']} · Knowledge {overview['semantic']}",
+        f"Recent {overview['recent']} · Long-term {overview['long_term']} · Faded {overview['faded']}",
         f"Latest encoded  {_fmt_time(overview['latest_encoded'])}",
         f"View  {kind.title()} · Page {page + 1}/{page_count}",
         "",
@@ -57,10 +81,13 @@ def memory_view(
     else:
         for item in visible:
             icon = "🎞" if item["type"] == "episodic" else "📚"
-            lines.append(f"{icon} {_fmt_time(item['event_sim_time'])}")
+            lines.append(f"{icon} {_fmt_time(item['event_sim_time'])} · {_stage_label(str(item['lifecycle_stage']))}")
             lines.append(f"• {str(item['summary']).replace('_', ' ').title()}")
             lines.append(
-                f"  Salience {item['salience']:.2f} · Confidence {item['confidence']:.2f} · Recalled {item['recall_count']}×"
+                f"  Strength {item['memory_strength'] * 100:.0f}% · Detail {item['detail_strength'] * 100:.0f}% · Recalled {item['recall_count']}×"
+            )
+            lines.append(
+                f"  Salience {item['salience']:.2f} · Confidence {item['confidence']:.2f}"
             )
             related = item.get("related_entities") or []
             if related:
