@@ -114,6 +114,8 @@ jobs:
             else
               echo "Cognition bootstrap skipped: no supported credential provisioned"
             fi
+            sudo -n /usr/bin/install -m 0644 deploy/observer-sandbox.service /etc/systemd/system/observer-sandbox.service
+            sudo -n /usr/bin/systemctl daemon-reload
             sudo -n /usr/bin/systemctl restart observer-sandbox
             sudo -n /usr/bin/systemctl is-active observer-sandbox
             .venv/bin/sandboxctl status
