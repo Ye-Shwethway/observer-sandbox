@@ -357,10 +357,8 @@ def ensure_weather_for_sim_time(
         location_id=str(provider["scope_location_id"]),
         sim_time=start.isoformat(),
     )
-    if current is not None:
-        metadata = current.get("metadata", {})
-        if current.get("source_type") == "open_meteo_historical_weather" or metadata.get("provider_id") == provider["id"]:
-            return current
+    if current is not None and current.get("source_type") == "open_meteo_historical_weather":
+        return current
 
     date_text = start.date().isoformat()
     try:
