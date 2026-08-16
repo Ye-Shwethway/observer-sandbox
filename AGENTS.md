@@ -62,6 +62,17 @@ Preserve the LEGO rule:
 - Events retain action/location/state-change linkage and participants where relevant.
 - Definitions, instances, and runtime state remain distinct.
 
+## Universal character autonomy
+
+Follow `docs/UNIVERSAL_CHARACTER_AUTONOMY_CONTRACT_V1.md`.
+
+- Character-specific behavioral hard-coding is forbidden.
+- Character-specific files may seed represented facts/state, not command future behavior.
+- Do not add named-character autonomy prompts, bespoke daily-routine rules, destination preferences, anti-repetition counter-prompts, or behavior patches.
+- Autonomous behavior must emerge from universal systems consuming profile/state, needs/physiology, time, environment, affordances, history, goals, relationships, memory/learning, and deterministic constraints.
+- A new character must not require a new autonomy policy or character-specific behavior branch.
+- `config/characters/darian.spatial_familiarity.v1.json` is temporary factual bootstrap debt only; remove/migrate it when the general Memory System owns initial and evolving spatial knowledge.
+
 ## Creator controls
 
 Privileged direct mutations follow `docs/CREATOR_CONTROL_POLICY.md`.

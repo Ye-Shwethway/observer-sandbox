@@ -59,19 +59,6 @@ def _reason_matches(action: Action, keywords: tuple[str, ...]) -> bool:
 
 SCENARIOS: tuple[BehaviorScenario, ...] = (
     BehaviorScenario(
-        name="morning_ready",
-        hour=8,
-        energy=85,
-        hunger=20,
-        thirst=15,
-        sleepiness=10,
-        cleanliness=80,
-        location="room_bedroom",
-        accepts=_move_to("room_living"),
-        intent="begin the morning training path toward the Home Gym",
-        reason_keywords=("train", "gym", "physical", "morning routine"),
-    ),
-    BehaviorScenario(
         name="strong_thirst",
         hour=13,
         energy=70,

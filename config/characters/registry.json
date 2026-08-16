@@ -1,10 +1,9 @@
 {
-  "revision": "character-config-registry-v1",
+  "revision": "character-config-registry-v2-no-behavior-policy",
   "characters": {
     "char_darian": {
       "canonical": "darian.canonical.json",
-      "runtime_defaults": "darian.runtime-defaults.json",
-      "autonomy_policy": "darian.autonomy-policy.json"
+      "runtime_defaults": "darian.runtime-defaults.json"
     }
   }
 }

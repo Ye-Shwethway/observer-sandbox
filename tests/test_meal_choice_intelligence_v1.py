@@ -59,7 +59,7 @@ def test_context_aggregates_today_last_meal_and_recent_training(tmp_path):
         }
         policy = {
             "nutrition_policy": {
-                "goal": "maintain lean muscular condition",
+                "goal": "fixture nutrition goal",
                 "energy_intent": "maintenance",
                 "protein_priority": "high after training",
                 "dietary_constraints": ["example constraint"],
@@ -76,7 +76,7 @@ def test_context_aggregates_today_last_meal_and_recent_training(tmp_path):
     assert context["recent_training"]["completed_sessions"] == 1
     assert context["recent_training"]["completed_minutes"] == 60.0
     assert context["recent_training"]["minutes_since_last_training"] == 150.0
-    assert context["character_nutrition_policy"]["goal"] == "maintain lean muscular condition"
+    assert context["character_nutrition_policy"]["goal"] == "fixture nutrition goal"
     assert context["resting_energy_reference"]["ree_kcal_day"] > 0.0
     assert "not a daily calorie target" in context["resting_energy_reference"]["note"]
 
@@ -96,5 +96,6 @@ def test_context_is_read_only_and_is_included_in_existing_cognition_state(tmp_pa
     assert context["source"] == "meal-choice-intelligence-v1"
     assert context["today"]["meal_count"] >= 0
     assert context["last_meal"] is None
-    assert "lean, muscular body composition" in context["character_nutrition_policy"]["goal"]
+    assert context["character_nutrition_policy"]["goal"].startswith("Support represented physiological needs")
+    assert "character-specific diet objective" in context["character_nutrition_policy"]["goal"]
     assert context["character_nutrition_policy"]["dietary_constraints"] == []

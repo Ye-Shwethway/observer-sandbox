@@ -9,6 +9,7 @@ from typing import Any
 REPO_ROOT = Path(__file__).resolve().parents[2]
 CHARACTER_CONFIG_DIR = REPO_ROOT / "config" / "characters"
 CHARACTER_REGISTRY_PATH = CHARACTER_CONFIG_DIR / "registry.json"
+UNIVERSAL_AUTONOMY_POLICY_PATH = REPO_ROOT / "config" / "autonomy" / "universal.autonomy-policy.v1.json"
 
 
 @lru_cache(maxsize=1)
@@ -41,12 +42,17 @@ def character_config_path(character_id: str, key: str) -> Path:
     return CHARACTER_CONFIG_DIR / relative
 
 
-def load_character_autonomy_policy(character_id: str) -> dict[str, Any]:
-    path = character_config_path(character_id, "autonomy_policy")
-    policy = json.loads(path.read_text(encoding="utf-8"))
-    configured_entity = policy.get("entity_id")
-    if configured_entity not in (None, character_id):
-        raise ValueError(
-            f"Autonomy policy entity mismatch: expected {character_id}, got {configured_entity}"
-        )
+def load_universal_autonomy_policy(
+    path: str | Path = UNIVERSAL_AUTONOMY_POLICY_PATH,
+) -> dict[str, Any]:
+    """Load the character-agnostic cognition policy used by every actor."""
+    policy = json.loads(Path(path).read_text(encoding="utf-8"))
+    if policy.get("entity_id") is not None:
+        raise ValueError("Universal autonomy policy must not bind to a character entity")
     return policy
+
+
+def load_character_autonomy_policy(character_id: str) -> dict[str, Any]:
+    """Compatibility shim: autonomy policy is universal, never character-specific."""
+    character_config(character_id)
+    return load_universal_autonomy_policy()

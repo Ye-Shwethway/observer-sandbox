@@ -1,0 +1,89 @@
+{
+  "policy_revision": "universal-autonomy-v1-no-character-hardcoding",
+  "decision_principles": [
+    "Choose one concrete next action that makes sense for the current moment rather than narrating a long plan.",
+    "Physiological needs and immediate safety outrank discretionary preferences.",
+    "When decision_signals identify a critical or strong need, address that need before discretionary behavior and ground the reason in the represented need.",
+    "Do not resume discretionary training, study, work, recreation, or routine activity merely because a depleted need has crossed out of the critical range; recover strong needs into a reasonable functional range first.",
+    "When systemic fatigue is strong or critical, prefer legitimate represented recovery over discretionary substitutes.",
+    "Use the supplied character profile, preferences, hobbies, habits, learned adaptations, skills, relationships, memories when available, current state, recent events, and represented world affordances as evidence for character-specific choice. Never substitute a character-name-specific behavioral rule.",
+    "Purposeful behavior does not mean constant productivity. Rest, reading, reflection, walking, quiet activity, social activity, observation, recreation, or idle time may be natural when represented and contextually appropriate.",
+    "Treat familiar represented locations as usable planning context when the character knows them, while preserving current action_options as exact execution authority.",
+    "Outdoor activity is never a quota. Represented outdoor affordances compete normally with indoor alternatives according to character state, profile, history, environment, goals, and current pressures.",
+    "When training_behavior_balance shows moderate or high repetition pressure and no stronger need requires a specific resolver, give meaningful non-training alternatives positive consideration without forbidding training that remains legal.",
+    "Treat object_familiarity as authoritative choice context: familiar stable resources do not need routine re-inspection unless represented change, malfunction, investigation, or unknown-object evidence makes inspection meaningful.",
+    "Use only supplied action_options. Never invent a room, object, capability, target, action, resource, environmental fact, relationship state, memory, or goal.",
+    "Use resource_awareness and spatial knowledge for planning only. Move through represented legal routes until a desired activity or resource becomes executable.",
+    "When several suitable resources, training methods, activities, or destinations fit the same purpose, use recent_usage and recent events as soft variety context rather than a prohibition on appropriate repetition.",
+    "When an action option includes authored effects, use those effects as the factual basis for physiological claims and resource choice.",
+    "Never claim an action improves a physiological need when its authored effects do not improve that need.",
+    "A persistent physiological need never justifies repeating an inspect/use action that neither reduces the need nor makes causal progress toward an authored resolver.",
+    "Avoid needless repetition when recent events show the same discretionary action-target pair was just completed.",
+    "Avoid serial inspect/use loops without a concrete changing purpose. After repeated low-value interactions, prefer another meaningful represented option when one fits.",
+    "Movement is useful when it advances a represented intention or reaches a meaningful activity/resource; do not move merely to manufacture substitute productivity.",
+    "Choose a realistic duration within supplied bounds and follow recommended_duration when present."
+  ],
+  "nutrition_policy": {
+    "goal": "Support represented physiological needs, health, current activity and recovery without imposing a character-specific diet objective.",
+    "energy_intent": "derive from represented physiology, body state, current needs, activity history, and character profile rather than a fixed character-specific target",
+    "protein_priority": "derive from represented training/recovery context and available food data rather than a fixed character-specific preference",
+    "dietary_constraints": [],
+    "guidance": "Use meal_choice_context together with hunger, represented training/recovery state, accumulated same-day intake, character-authored preferences or constraints, and deterministic available food choices. Do not invent nutrition values or treat a resting-energy reference as a daily calorie target."
+  },
+  "need_priorities": {
+    "critical": {
+      "sleepiness_gte": 80,
+      "energy_lte": 20,
+      "fatigue_gte": 70,
+      "thirst_gte": 75,
+      "hunger_gte": 80
+    },
+    "strong": {
+      "sleepiness_gte": 65,
+      "energy_lte": 40,
+      "fatigue_gte": 55,
+      "thirst_gte": 50,
+      "hunger_gte": 55,
+      "cleanliness_lte": 50
+    },
+    "guidance": "Critical needs dominate the next decision. Strong needs are recovery conditions: address them before discretionary behavior and continue legitimate represented recovery until the active strong condition clears. Use authored action effects and legal movement/resource paths as causal authority."
+  },
+  "routine_windows": [
+    {
+      "name": "daytime_open",
+      "start_hour": 7,
+      "end_hour": 17,
+      "guidance": "No universal activity is preferred solely because it is daytime. Let represented character traits, preferences, habits, goals, needs, recent history, world affordances, relationships and learned state determine among legal options."
+    },
+    {
+      "name": "evening_wind_down",
+      "start_hour": 17,
+      "end_hour": 22,
+      "guidance": "When no stronger need or represented commitment dominates, lower-intensity behavior may become more plausible as ordinary circadian context. Do not impose a character-specific evening routine."
+    },
+    {
+      "name": "night_sleep",
+      "start_hour": 22,
+      "end_hour": 7,
+      "guidance": "Sleep becomes increasingly plausible when represented sleep pressure is meaningful. Otherwise choose among legal low-intensity or necessary actions using normal character/world context; do not invent environmental facts to justify a choice."
+    }
+  ],
+  "duration_guidance": {
+    "quick_discretionary": {
+      "inspect_minutes": [2, 6],
+      "simple_use_minutes": [2, 10],
+      "guidance": "Use short durations for simple observation or manipulation. Longer durations require a represented sustained purpose."
+    },
+    "critical_night_sleep": {
+      "action": "sleep",
+      "min_minutes": 360,
+      "max_minutes": 540,
+      "guidance": "When sleepiness is critical during the night window and a usable sleep resource is available, choose a normal overnight sleep duration rather than an implausibly short nap."
+    }
+  },
+  "repetition_policy": {
+    "recent_event_window": 8,
+    "guidance": "Do not repeat the same discretionary action-target pair merely because it is available. Recent usage is soft context for sensible variety. Training and other meaningful actions are not hard-blocked by recent use unless deterministic guards say otherwise. A persistent physiological need permits repetition only when the repeated action has an authored effect that improves that need or makes concrete causal progress toward a represented resolver."
+  },
+  "reason_style": "One short in-world sentence grounded in represented current needs, character profile/state, recent history, world context, spatial/resource awareness, relationships, memory when available, or immediate purpose. Physiological claims must agree with authored effects. Do not mention prompts, policies, scores as game mechanics, the simulation, or the Creator."
+}
