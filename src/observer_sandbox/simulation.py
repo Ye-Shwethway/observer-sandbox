@@ -8,6 +8,7 @@ from dataclasses import dataclass, field
 from datetime import datetime, timedelta, timezone
 from typing import Any, Protocol
 
+from .active_modifiers import resolve_active_modifier_value
 from .actor_selection import list_actor_ids, resolve_actor_id
 from .event_log import record_event
 from .location_runtime import current_location, set_dynamic_location
@@ -119,22 +120,42 @@ def _required_actor_location(conn: sqlite3.Connection, actor_id: str) -> str:
     return location
 
 
+def _effective_runtime_field(
+    conn: sqlite3.Connection,
+    actor_id: str,
+    field_key: str,
+    default: float,
+    *,
+    sim_time: str,
+) -> float:
+    base = float(get_field(conn, actor_id, field_key, default))
+    resolved = resolve_active_modifier_value(
+        conn,
+        actor_id,
+        field_key,
+        base,
+        as_of_sim_time=sim_time,
+    )
+    return _clamp(float(resolved["effective_value"]))
+
+
 def snapshot(conn: sqlite3.Connection, actor_id: str | None = None) -> dict[str, Any]:
     actor_id = resolve_actor_id(conn, actor_id)
     location = _required_actor_location(conn, actor_id)
     room = conn.execute("SELECT name FROM entities WHERE id=?", (location,)).fetchone()
+    sim_time = ensure_sim_clock(conn).isoformat()
     return {
         "actor_id": actor_id,
-        "sim_time": ensure_sim_clock(conn).isoformat(),
+        "sim_time": sim_time,
         "location": location,
         "location_name": room[0] if room else location,
         "current_action": get_field(conn, actor_id, "runtime.current_action", "idle"),
-        "energy": float(get_field(conn, actor_id, "needs.energy", 75.0)),
-        "hunger": float(get_field(conn, actor_id, "needs.hunger", 20.0)),
-        "thirst": float(get_field(conn, actor_id, "needs.thirst", 15.0)),
-        "sleepiness": float(get_field(conn, actor_id, "needs.sleepiness", 15.0)),
-        "cleanliness": float(get_field(conn, actor_id, "physiology.cleanliness", 80.0)),
-        "fatigue": float(get_field(conn, actor_id, "physiology.fatigue", 0.0)),
+        "energy": _effective_runtime_field(conn, actor_id, "needs.energy", 75.0, sim_time=sim_time),
+        "hunger": _effective_runtime_field(conn, actor_id, "needs.hunger", 20.0, sim_time=sim_time),
+        "thirst": _effective_runtime_field(conn, actor_id, "needs.thirst", 15.0, sim_time=sim_time),
+        "sleepiness": _effective_runtime_field(conn, actor_id, "needs.sleepiness", 15.0, sim_time=sim_time),
+        "cleanliness": _effective_runtime_field(conn, actor_id, "physiology.cleanliness", 80.0, sim_time=sim_time),
+        "fatigue": _effective_runtime_field(conn, actor_id, "physiology.fatigue", 0.0, sim_time=sim_time),
     }
 
 
