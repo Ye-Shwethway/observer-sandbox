@@ -9,6 +9,7 @@ from pathlib import Path
 from .actor_runtime import pending_action
 from .agility_progression_activation import maybe_settle_agility_progression
 from .autonomy_intent import autonomy_tick
+from .autonomy_recovery import recover_decision_livelock
 from .body_composition_progression import maybe_settle_body_composition
 from .body_measurement_progression import maybe_settle_body_measurements
 from .db import connect
@@ -66,6 +67,16 @@ def _sync_registered_weather(conn, sim_time: str) -> None:
             continue
 
 
+def _autonomy_tick_with_recovery(conn, actor_id: str):
+    """Run one autonomy boundary and recover only repeated deterministic livelocks."""
+    result = autonomy_tick(conn, actor_id=actor_id)
+    if result.get("state") in {"decision_error", "backoff"}:
+        recovered = recover_decision_livelock(conn, actor_id)
+        if recovered is not None:
+            return recovered
+    return result
+
+
 def main() -> None:
     signal.signal(signal.SIGTERM, _stop)
     signal.signal(signal.SIGINT, _stop)
@@ -94,7 +105,7 @@ def main() -> None:
                 for actor_id in actor_ids:
                     pending_before = pending_action(conn, actor_id)
                     before = snapshot(conn, actor_id) if pending_before else None
-                    result = autonomy_tick(conn, actor_id=actor_id)
+                    result = _autonomy_tick_with_recovery(conn, actor_id)
                     if result.get("state") == "completed" and pending_before and before:
                         after = result["after"]
                         profile_before = capture_profile_change_state(conn, actor_id)
@@ -274,7 +285,7 @@ def main() -> None:
                             sim_time=str(after["sim_time"]),
                         )
 
-                        next_result = autonomy_tick(conn, actor_id=actor_id)
+                        next_result = _autonomy_tick_with_recovery(conn, actor_id)
                         next_pending = next_result.get("pending") if next_result.get("state") == "planned" else None
                         dispatch_action_completion(
                             conn,
@@ -292,7 +303,9 @@ def main() -> None:
                             sim_time=str(after["sim_time"]),
                         )
         except Exception:
-            pass
+            # Fatal service-loop faults must reach systemd so the existing
+            # Restart=on-failure contract can actually restart the process.
+            raise
         time.sleep(2)
 
 
