@@ -103,32 +103,31 @@ def _settled_values(row: sqlite3.Row, retention: float, current_sim_time: str) -
     return strength, detail, stage
 
 
-def settle_memory_dynamics(conn: sqlite3.Connection, character_id: str, current_sim_time: str) -> None:
-    initialize_trace_strengths(conn, character_id, current_sim_time)
-    retention = memory_trait(conn, character_id, "memory.retention") / 100.0
-    rows = conn.execute(
-        """SELECT memory_id,memory_type,event_sim_time,encoded_sim_time,salience,lifecycle_stage,
-                  memory_strength,detail_strength,emotional_arousal,personal_relevance,last_dynamics_sim_time
-           FROM character_memories WHERE character_id=? AND status='active'""",
-        (character_id,),
-    ).fetchall()
-    for row in rows:
-        strength, detail, stage = _settled_values(row, retention, current_sim_time)
-        conn.execute(
-            """UPDATE character_memories SET memory_strength=?,detail_strength=?,lifecycle_stage=?,
-                   last_dynamics_sim_time=?,updated_at=CURRENT_TIMESTAMP WHERE memory_id=?""",
-            (strength, detail, stage, current_sim_time, row["memory_id"]),
-        )
+def _latest_completed_sleep_time(conn: sqlite3.Connection, character_id: str, current_sim_time: str) -> str | None:
+    row = conn.execute(
+        """SELECT sim_time FROM events
+           WHERE actor_id=? AND event_type='action_completed'
+             AND json_extract(payload_json,'$.action')='sleep'
+             AND sim_time<=?
+           ORDER BY sim_time DESC,id DESC LIMIT 1""",
+        (character_id, current_sim_time),
+    ).fetchone()
+    return str(row["sim_time"]) if row is not None else None
 
 
-def consolidate_after_sleep(conn: sqlite3.Connection, character_id: str, current_sim_time: str) -> int:
-    settle_memory_dynamics(conn, character_id, current_sim_time)
+def _consolidate_recent_through(
+    conn: sqlite3.Connection,
+    character_id: str,
+    *,
+    sleep_sim_time: str,
+) -> int:
     encoding = memory_trait(conn, character_id, "memory.encoding") / 100.0
     rows = conn.execute(
         """SELECT memory_id,salience,memory_strength,detail_strength,emotional_arousal,personal_relevance
            FROM character_memories
-           WHERE character_id=? AND status='active' AND memory_type='episodic' AND lifecycle_stage='recent'""",
-        (character_id,),
+           WHERE character_id=? AND status='active' AND memory_type='episodic'
+             AND lifecycle_stage='recent' AND event_sim_time<=?""",
+        (character_id, sleep_sim_time),
     ).fetchall()
     count = 0
     for row in rows:
@@ -145,10 +144,37 @@ def consolidate_after_sleep(conn: sqlite3.Connection, character_id: str, current
         conn.execute(
             """UPDATE character_memories SET lifecycle_stage='consolidated',memory_strength=?,detail_strength=?,
                    consolidated_sim_time=?,last_dynamics_sim_time=?,updated_at=CURRENT_TIMESTAMP WHERE memory_id=?""",
-            (strength, detail, current_sim_time, current_sim_time, row["memory_id"]),
+            (strength, detail, sleep_sim_time, sleep_sim_time, row["memory_id"]),
         )
         count += 1
     return count
+
+
+def settle_memory_dynamics(conn: sqlite3.Connection, character_id: str, current_sim_time: str) -> None:
+    initialize_trace_strengths(conn, character_id, current_sim_time)
+    retention = memory_trait(conn, character_id, "memory.retention") / 100.0
+    rows = conn.execute(
+        """SELECT memory_id,memory_type,event_sim_time,encoded_sim_time,salience,lifecycle_stage,
+                  memory_strength,detail_strength,emotional_arousal,personal_relevance,last_dynamics_sim_time
+           FROM character_memories WHERE character_id=? AND status='active'""",
+        (character_id,),
+    ).fetchall()
+    for row in rows:
+        strength, detail, stage = _settled_values(row, retention, current_sim_time)
+        conn.execute(
+            """UPDATE character_memories SET memory_strength=?,detail_strength=?,lifecycle_stage=?,
+                   last_dynamics_sim_time=?,updated_at=CURRENT_TIMESTAMP WHERE memory_id=?""",
+            (strength, detail, stage, current_sim_time, row["memory_id"]),
+        )
+    sleep_sim_time = _latest_completed_sleep_time(conn, character_id, current_sim_time)
+    if sleep_sim_time is not None:
+        _consolidate_recent_through(conn, character_id, sleep_sim_time=sleep_sim_time)
+
+
+def consolidate_after_sleep(conn: sqlite3.Connection, character_id: str, current_sim_time: str) -> int:
+    """Explicit consolidation hook; normal cognition also settles lazily from represented sleep history."""
+    initialize_trace_strengths(conn, character_id, current_sim_time)
+    return _consolidate_recent_through(conn, character_id, sleep_sim_time=current_sim_time)
 
 
 def recall_accessibility(
@@ -160,7 +186,8 @@ def recall_accessibility(
     cue_strength: float,
 ) -> float:
     recall = memory_trait(conn, character_id, "memory.recall") / 100.0
-    return _clamp(0.58 * memory_strength + 0.20 * recall + 0.14 * relevance_score + 0.20 * cue_strength)
+    strength_term = 0.70 * memory_strength * (0.55 + 0.45 * recall)
+    return _clamp(strength_term + 0.12 * relevance_score + 0.30 * cue_strength)
 
 
 def reinforce_recalled_memories(
