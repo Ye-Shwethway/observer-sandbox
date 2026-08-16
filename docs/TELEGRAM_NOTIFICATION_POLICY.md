@@ -50,7 +50,9 @@ The notification should include:
 - completed simulated duration and approximate real wait at the action's recorded speed;
 - short cognition reason when available;
 - location or location transition;
-- changed basic physiological stats as before -> after values and deltas when present.
+- the six core physiological transition rows: Energy, Fatigue, Hunger, Thirst, Sleepiness and Cleanliness.
+
+Core physiology rows are a stable Creator-facing status surface and must not disappear merely because the action produced a zero or sub-display-threshold delta. When the before/after values are effectively unchanged at display precision, the row remains visible with a neutral no-change marker. Meaningful changes continue to show their directional delta and beneficial/ordinary marker. This presentation rule does not alter physiology authority or simulation state.
 
 ### Mandatory next-update block
 
