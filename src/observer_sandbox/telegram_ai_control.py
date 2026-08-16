@@ -12,6 +12,7 @@ from .ai_control import (
     remove_cognition_fallback,
 )
 from .simulation import runtime_value, set_runtime_value
+from .telegram_creator_diagnostics import callback_view as diagnostic_callback_view
 
 AI_PAGE_SIZE = 8
 AI_CANDIDATE_PREFIX = "telegram_ai_candidate:"
@@ -47,6 +48,7 @@ def _home_keyboard() -> list[list[dict[str, str]]]:
     return [
         [{"text": "🧠 Primary Cognition", "callback_data": "ai:providers"}],
         [{"text": "🛟 Fallback Model", "callback_data": "af:providers"}],
+        [{"text": "🧪 Diagnostics", "callback_data": "ai:diag:home"}],
         [{"text": "⌂ Observer Home", "callback_data": "nav:home"}],
     ]
 
@@ -73,6 +75,8 @@ def home_view(conn) -> tuple[str, list[list[dict[str, str]]]]:
     lines.extend([
         "",
         "Primary is tried first. A configured fallback is used only when the provider/model call itself fails; deterministic action validation never triggers fallback.",
+        "",
+        "🧪 Diagnostics provides explicit Creator-only runtime controls for controlled experiments.",
     ])
     return "\n".join(lines), _home_keyboard()
 
@@ -358,6 +362,14 @@ def _save_selected_candidate(conn, user_id: int, *, mode: str):
 def callback_view(conn, user_id: int, callback_data: str) -> tuple[str, list[list[dict[str, str]]] | None]:
     if callback_data == "ai:home":
         return home_view(conn)
+
+    if callback_data.startswith("ai:diag:"):
+        return diagnostic_callback_view(
+            conn,
+            user_id,
+            "diag:" + callback_data[len("ai:diag:"):],
+            requested_by=f"telegram:{user_id}",
+        )
 
     if callback_data in {"ai:providers", "af:providers"}:
         return _providers_view(conn, "fallback" if callback_data.startswith("af:") else "primary")
