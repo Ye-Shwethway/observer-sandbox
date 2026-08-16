@@ -1,12 +1,12 @@
 # Active Modifier Runtime Foundation v1
 
-Status: IMPLEMENTATION CANDIDATE
+Status: COMPLETE v1 / DEPLOYED
 
 ## Why this slice exists
 
 The composable runtime has long carried a first-class `active_modifiers` schema socket with source, time bounds, field key, operation, stack key/policy and conditions. Domain-specific modifiers are already real runtime behavior: Training Readiness shapes training cost/effectiveness, and Cognitive Performance contracts shape declared represented-task outcome dimensions.
 
-The remaining cross-system gap is different: persisted temporary modifiers in `active_modifiers` could be stored but had no generic resolver and therefore no effective runtime influence.
+The remaining cross-system gap was different: persisted temporary modifiers in `active_modifiers` could be stored but had no generic resolver and therefore no effective runtime influence.
 
 This slice closes that minimum lifecycle without replacing the existing domain contracts or creating a universal hidden bonus engine.
 
@@ -73,9 +73,9 @@ The six living-state outputs remain clamped to the existing 0..100 runtime range
 - Existing Training Readiness and Cognitive Performance contracts remain independent domain-specific systems.
 - No modifier may bypass ordinary action target/capability/resource validation.
 - Schema remains v5.
-- Deploy/init must not fabricate active modifier rows.
+- Deploy/init does not fabricate active modifier rows through this slice.
 
-## Focused acceptance
+## Acceptance evidence
 
 Regression coverage proves:
 - half-open activation/expiry without row deletion;
@@ -86,8 +86,30 @@ Regression coverage proves:
 - a temporary fatigue modifier can make training deterministically unavailable through the existing action legality path, then restore ordinary availability after expiry;
 - the underlying fatigue base remains unchanged by the temporary modifier itself.
 
+Canonical checkpoint:
+- PR #180 final head `49000d37542ec80cf489f8bd5c78876aaba16201`;
+- CI #941 / run `31921368331`: SUCCESS;
+- full suite: **590 passed in 58.12s**;
+- Minimum Training Stimulus Acceptance #27: SUCCESS;
+- Strength Live Cycle Validation v1 #83: SUCCESS;
+- Solo Regulation Naturalism v2 Acceptance #30: SUCCESS;
+- merge `74a0d9db25b3249192c24954feed11a45a7c961d`;
+- Deploy #237 / run `31921444434`: SUCCESS.
+
+Production readback after Deploy #237:
+- service active/healthy; schema v5;
+- autonomy enabled/normal, retry null, pending action preserved, speed 1x;
+- Darian remained naturally asleep in Darian's Master Suite;
+- living-state readback: cleanliness 98.491, energy 88.791, fatigue 6.305, hunger 7.578, sleepiness 58.55, thirst 23.15;
+- deploy output exposed sim time only as `2025-05-07T***:27:00+00:00`; the masked hour is not inferred;
+- Gemini `gemini-3.1-flash-lite` primary cognition binding preserved;
+- Groq `qwen/qwen3.6-27b` fallback preserved;
+- Telegram bot/API/owner/allowed-user configuration healthy.
+
+The deploy workflow does not query `active_modifiers` row count. This checkpoint therefore does **not** claim a verified live row count or claim that a modifier was naturally active in production. No modifier producer was introduced by this slice.
+
 ## Non-goals
 
 V1 does not add modifier authoring UI, automatic item/status-effect producers, weather, medication/drug systems, generalized profile-field modification, hidden Skill/IQ bonuses, arbitrary expression conditions, modifier cleanup jobs, or universal application across every domain.
 
-The slice is complete when focused regression + the normal one-time final PR CI + deploy/readback prove the resolver is installed without fabricating production modifier state or disturbing existing autonomy/runtime state.
+Do not deepen this system merely for completeness. Return to the Overall Workflow/Foundation Review and select the next genuine cross-system gap from current canonical/live evidence.
