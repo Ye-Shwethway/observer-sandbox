@@ -28,7 +28,7 @@ def test_catalog_refresh_does_not_enable_provider_or_change_binding(tmp_path, mo
         "capabilities": {"text": True},
         "metadata": {},
     }]
-    monkeypatch.setattr(ai_control, "_fetch_models_without_activation", lambda provider: fetched)
+    monkeypatch.setattr(ai_control, "_fetch_models_without_activation", lambda provider, catalog_mode=None: fetched)
 
     with connect(db) as conn:
         assert conn.execute("SELECT enabled FROM ai_providers WHERE id='openrouter'").fetchone()[0] == 0
@@ -37,6 +37,32 @@ def test_catalog_refresh_does_not_enable_provider_or_change_binding(tmp_path, mo
         assert conn.execute("SELECT enabled FROM ai_providers WHERE id='openrouter'").fetchone()[0] == 0
         assert resolve_binding(conn, role="cognition", character_id="char_darian") is None
         assert ai_control.models_for_provider(conn, "openrouter")[0]["model_id"] == "candidate/model"
+
+
+def test_nanogpt_provider_view_exposes_subscription_and_all_fetch_modes(tmp_path, monkeypatch):
+    db = tmp_path / "observer.sqlite3"
+    initialize(db)
+    monkeypatch.setenv("OBSERVER_TELEGRAM_OWNER_ID", "111")
+    calls: list[tuple[str, str | None]] = []
+
+    def fake_refresh(conn, provider_id, *, catalog_mode=None):
+        calls.append((provider_id, catalog_mode))
+        return 12 if catalog_mode == "subscription" else 34
+
+    monkeypatch.setattr(telegram_ai_control, "refresh_provider_catalog", fake_refresh)
+    with connect(db) as conn:
+        text, keyboard = _callback_view(conn, 111, "ai:p:nanogpt")
+        callbacks = [button["callback_data"] for row in keyboard for button in row]
+        assert "Subscription Only" in text
+        assert "Paid" in text
+        assert "ai:r:nanogpt:subscription" in callbacks
+        assert "ai:r:nanogpt:all" in callbacks
+
+        subscription_text, _ = _callback_view(conn, 111, "ai:r:nanogpt:subscription")
+        all_text, _ = _callback_view(conn, 111, "ai:r:nanogpt:all")
+        assert "Subscription-only catalog refreshed: 12" in subscription_text
+        assert "All-model catalog refreshed: 34" in all_text
+        assert calls == [("nanogpt", "subscription"), ("nanogpt", "all")]
 
 
 def test_probe_is_real_adapter_path_but_non_mutating(tmp_path, monkeypatch):
