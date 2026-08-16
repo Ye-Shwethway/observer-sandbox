@@ -17,18 +17,17 @@ Roadmap synchronized: 2026-08-16
 
 ## Current production checkpoint
 
-**Character Memory Foundation v1 is COMPLETE / DEPLOYED.**
+**Human Memory Dynamics v1 is COMPLETE / DEPLOYED.**
 
 Evidence:
-- PR #209
-- final tested head `0a59bb2e24a30eca81144935e5631019e947c5bc`
-- CI #972 / run `31948233699`: SUCCESS
-- Inventory Foundation Acceptance #59: SUCCESS
-- Attribute Grading Batch 1 Acceptance #44: SUCCESS
-- Read-Only Grading Proof Acceptance #45: SUCCESS
-- merge `516414a1a6b1d5471206145e11c30407515398cc`
-- Deploy #251 / run `31948315106`: SUCCESS
-- schema v6
+- PR #212
+- final tested head `1cad8d9188e49f42f9c00b8026eccd917a9fc073`
+- CI #980 / run `31950039890`: SUCCESS
+- all triggered acceptance gates on the final head: SUCCESS
+- merge `b8343d12b5204a0f3a049cbfb7632b617df77495`
+- Deploy #253 / run `31950111179`: SUCCESS
+- final install/configure cognition/restart/verify: SUCCESS
+- schema v7
 
 ## Completed foundation stack
 
@@ -36,43 +35,74 @@ The current minimum foundation is deployed through:
 - Character Profile / Skills minimum foundations;
 - adaptive dispositions/habits/preferences/personality foundations;
 - Estate spatial-container and reachability foundation;
-- Spatial Familiarity Foundation v1;
 - Outdoor Spatial Affordance Cognition v1;
 - Universal Character Autonomy v1;
 - Universal action satiation / movement-cycle shaping;
-- **Character Memory Foundation v1**.
+- Character Memory Foundation v1;
+- Semantic Spatial Memory Migration;
+- **Human Memory Dynamics v1**.
 
 South Lake Tahoe remains intentionally paused.
 
 ## Memory architecture lock
 
-Canonical contract:
-`docs/CHARACTER_MEMORY_FOUNDATION_V1.md`
+Canonical docs:
+- `docs/CHARACTER_MEMORY_FOUNDATION_V1.md`
+- `docs/HUMAN_MEMORY_DYNAMICS_V1.md`
 
 Preserve:
-`event/world truth != actor memory != retrieved cognition context != current action authority`
+`event/world truth != actor memory trace != currently recalled cognition context != current action authority`
 
-V1 memory provides:
-- `episodic` and `semantic` actor-owned records;
+### Memory Foundation
+
+Provides:
+- actor-owned episodic and semantic records;
 - source-event provenance;
-- associated represented entities/locations;
-- automatic compact episodic encoding for new completed actions;
+- represented entity/location associations;
+- automatic compact episodic encoding for completed actions;
 - bounded actor-scoped retrieval;
-- recency + salience + local/action relevance ranking;
-- dynamic recall metadata;
-- live Telegram Character → Memory observability.
+- Telegram Memory observability.
 
-Current lifecycle:
-`experience -> encode -> retrieve -> recall metadata`
+### Semantic spatial migration
 
-Deferred until evidence justifies them:
-- consolidation/reflection;
-- reconsolidation;
-- forgetting/fading/retirement policy;
-- vector/embedding retrieval;
-- full daily/weekly planning.
+Spatial familiarity is now generic semantic Character Memory. The old named Darian familiarity file/path has been removed.
 
-Do not simulate deferred capabilities with arbitrary timers or character-specific prompt instructions.
+Known-world projection remains separate from current executable movement. Generic recall does not flood cognition with all known-map rows; spatial semantic memories become generic recall candidates only under direct represented location cue.
+
+### Human Memory Dynamics v1
+
+Lifecycle:
+`experience -> recent -> consolidation -> consolidated/remote -> fading possible -> cue recall/reinforcement`
+
+Dynamic trace model includes:
+- memory strength;
+- detail strength;
+- emotional arousal;
+- personal relevance;
+- consolidation time;
+- last dynamics settlement time.
+
+Forgetting is simulation-time based and weakens accessibility/precision rather than deleting event truth. Represented sleep provides a consolidation boundary. Emotion/significance may protect gist more strongly than exact detail. Strong represented cues may make a faded trace accessible again. Successful recall gives bounded reinforcement.
+
+The v1 model is deterministic and intentionally small. It is not a literal neurological or clinical model.
+
+## Memory Ability profile
+
+Character Profile contains a separate `Memory Ability` domain:
+- Working Memory
+- Encoding
+- Retention
+- Recall
+
+Memory ability is not directly derived from IQ and is not automatically a Skill.
+
+Darian's current factual seed through the shared generic memory-profile contract:
+- Working Memory 86
+- Encoding 89
+- Retention 84
+- Recall 91
+
+No memory runtime behavior may branch on character identity.
 
 ## Universal autonomy semantic lock
 
@@ -86,7 +116,7 @@ It may not define future behavior scripts such as:
 - identity-keyed code branches.
 
 Generic cognition derives behavior from represented state:
-`profile + needs/physiology + time + environment + affordances + goals + relationships + relevant memories/learning + recent context + deterministic constraints`.
+`profile + needs/physiology + time + environment + affordances + goals + relationships + currently recallable memories/learning + recent context + deterministic constraints`.
 
 ## World / spatial lock
 
@@ -99,76 +129,57 @@ Preserve:
 - known geography != executable movement;
 - hidden/secret status is orthogonal to familiarity.
 
-Spatial familiarity vocabulary remains:
-`unknown -> aware -> familiar -> intimate`.
-
-Current lifestyle destinations include Mansion Exterior, Core Estate Grounds, Private Lake Access and Rear Forested Estate. Outdoor attraction is soft, never a quota.
-
 Current outside boundary remains closed:
 - no public-road edge from Main Security Gate;
 - no Tahoe-backcountry edge from Concealed Forest Passage;
 - no water-travel edge from Hidden Dock;
 - legacy Estate Exterior remains locked/non-traversable.
 
-## Active phase — Memory integration → Minimal Mind / Planning
-
-### M2 — Semantic Spatial Memory Migration — NEXT
-
-Goal: remove the remaining named-character spatial-familiarity bootstrap debt now that generic Character Memory exists.
-
-Required:
-1. map valid existing spatial-familiarity facts into generic semantic memory/knowledge initialization;
-2. preserve familiarity vocabulary and concealed/secret knowledge;
-3. preserve world truth vs actor knowledge vs current action authority;
-4. make the bootstrap path character-generic;
-5. prove existing known-world cognition/reachability behavior remains equivalent;
-6. remove `config/characters/darian.spatial_familiarity.v1.json`;
-7. remove Darian-specific familiarity loader/path dependencies.
-
-Not in scope:
-- Tahoe expansion;
-- automatic forgetting policy;
-- full planner;
-- character-specific behavior steering.
-
-### P0 — Minimal Mind / Planning Foundation — AFTER M2
-
-Create a small persistent intention/planning layer above local action selection.
-
-Target flow:
-`profile/state + physiology + environment/affordances + goals + relevant memories -> bounded intention/plan -> local authoritative action execution`
-
-Planning must be adaptive, not a scripted calendar. It must remain interruptible by needs, safety and deterministic action constraints.
-
-### P1 — First Planning Consumers
-
-Use the shared planning foundation for two observed gaps:
-
-**Multi-day training/recovery balance**
-- consume recent training memories/history, recovery/readiness/adaptation and goals;
-- allow recovery-oriented days to emerge naturally;
-- do not encode fixed named rest days or athlete schedules.
-
-**Purposeful destination + activity planning**
-- allow cognition to form intentions such as destination plus activity across known Estate space;
-- use represented affordances/resources only;
-- do not force outdoor quotas or invent unavailable activities/resources.
-
-Example distinction:
-- `relax -> Private Lake Access` may be planned if represented and reachable;
-- `read outdoors` requires an actual represented readable resource/affordance and must not be invented merely because an outdoor location exists.
-
-## Telegram observability direction
-
-Keep observability alongside each cognition subsystem rather than bolting it on later.
+## Telegram observability
 
 Current Character surfaces:
-- `📖 Profile` — represented character data;
-- `🧠 Memory` — live actor-owned memory/knowledge;
-- Creator-only `🧠 Cognition Context` — actual model injection snapshots.
+- `📖 Profile`
+- `🗃️ Memory`
+- owner-only `🧠 Cognition Context`
 
-Future planning should receive a similarly read-only observer surface once the planning representation is stable enough to inspect.
+`🧩 Memory Ability` is available inside Profile.
+
+Memory view dynamically exposes lifecycle/strength/detail state while Cognition Context remains the actual model-injection inspector. Telegram is read-only for memory state.
+
+## Deferred memory depth
+
+Do not silently add these while working on planning:
+- false-memory fabrication;
+- clinical trauma/PTSD simulation;
+- dream generation or detailed sleep-stage modeling;
+- semantic reflection/consolidation from repeated episodes;
+- procedural memory;
+- vector/embedding retrieval;
+- stochastic recall unless deterministic behavior proves inadequate.
+
+They require separate evidence and scope decisions.
+
+## Candidate next phase — Minimal Mind / Planning
+
+### P0 — Minimal Mind / Planning Foundation — DISCUSSION ONLY
+
+Candidate flow:
+`present state + profile/traits + physiology + environment/affordances + goals + currently recallable memories -> bounded intention/plan -> local authoritative action execution`
+
+The planner must not receive perfect memory-database access. `stored != currently recallable` is now a hard prerequisite.
+
+Potential first consumers remain:
+
+**Multi-day training/recovery balance**
+- recent recalled training experience/history + authoritative load/readiness/adaptation + goals;
+- recovery-oriented days can emerge without fixed rest-day schedules.
+
+**Purposeful destination + activity planning**
+- represented destination plus represented activity/resource;
+- no outdoor quota and no invented resource/action.
+
+However, **P0 is not authorized yet**. The Creator explicitly wants further discussion after M3 deployment.
 
 ## Current exact resume point
 
-**Implement M2 — Semantic Spatial Memory Migration next. Do not yet build a large Mind System. Once named spatial-familiarity bootstrap debt is removed and generic semantic memory is proven, implement the smallest useful P0 planning foundation, then evaluate the two first planning consumers against live observation. Preserve universal behavior, schema/runtime/Telegram observability, and the current Estate boundary.**
+**Human Memory Dynamics v1 is deployed. Stop implementation and discuss the remaining memory/mind/planning architecture with the Creator before starting P0. Do not solve outdoor use or daily training recurrence through character-specific rules. Preserve the current Estate boundary.**
