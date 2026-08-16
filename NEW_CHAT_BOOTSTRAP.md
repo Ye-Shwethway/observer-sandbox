@@ -18,7 +18,7 @@ Authority:
 Default workflow:
 `branch -> focused tests + final PR CI -> merge main -> automatic deploy when runtime-affecting -> read-only production check`
 
-Do not repeatedly run the full suite. Code/runtime PRs get one final full CI checkpoint by default; docs-only changes skip the Python suite. Use **exemplar-first, then batch-by-pattern** and prefer vertical completeness before local depth.
+Docs-only planning work does not require the Python suite or runtime deploy. Use exemplar-first only for genuinely new invariants, then batch structurally equivalent follow-ons.
 
 ## Strategic checkpoint
 
@@ -27,107 +27,110 @@ All Character Profile sections are minimum-unlocked v1. Skills remains CLOSED v1
 Adaptive Character Disposition Foundation is COMPLETE v1:
 `Habit Formation/Extinction -> Hobby/Interest Lifecycle -> Preference Adaptation -> Slow Personality Plasticity`.
 
-The **Overall Workflow/Foundation Review v1 is COMPLETE / CLOSED**. The bounded final closure pass found no additional blocking cross-system foundation gap. Do not continue open-ended gap hunting by default.
+Overall Workflow/Foundation Review v1 remains COMPLETE / CLOSED. Its four evidence-selected closures remain:
+1. Autonomy Intent Continuity v1 — PR #178 / Deploy #236.
+2. Active Modifier Runtime Foundation v1 — PR #180 / Deploy #237.
+3. Action Condition Runtime Foundation v1 — PR #182 / Deploy #238.
+4. Participant-Aware Recent Event Context v1 — PR #184 / Deploy #239.
 
-Four evidence-selected structural gaps were closed during that review:
-1. **Autonomy Intent Continuity v1** — PR #178 / Deploy #236.
-2. **Active Modifier Runtime Foundation v1** — PR #180 / Deploy #237.
-3. **Action Condition Runtime Foundation v1** — PR #182 / Deploy #238.
-4. **Participant-Aware Recent Event Context v1** — PR #184 / Deploy #239.
+Character-side foundation depth is no longer the immediate priority. The current bottleneck is world substrate: the represented world remains largely limited to the Thorne Estate interior, while the canonical Estate exterior boundary is intentionally locked because no sufficiently represented outside world exists yet.
 
-Relevant docs:
-- `docs/OVERALL_WORKFLOW_FOUNDATION_REVIEW_V1.md`
-- `docs/AUTONOMY_INTENT_CONTINUITY_V1.md`
-- `docs/ACTIVE_MODIFIER_RUNTIME_V1.md`
-- `docs/ACTION_CONDITION_RUNTIME_V1.md`
-- `docs/PARTICIPANT_RECENT_EVENT_CONTEXT_V1.md`
-- `docs/ADAPTIVE_CHARACTER_DISPOSITION_FOUNDATION.md`
-- `docs/TELEGRAM_COGNITION_CONTEXT_INSPECTOR_V1.md`
-- `docs/COGNITION_CONTEXT_EFFICIENCY_V1.md`
+## Active phase — World Foundation Expansion
 
-## Foundation closure state
+Status: **DOCUMENTATION FIRST / IMPLEMENTATION NOT YET STARTED**.
 
-Minimum foundations classified present:
-- generic action/task lifecycle;
-- resources/inventory/state consequences;
-- environment/world topology/context;
-- object knowledge/familiarity;
-- generic inter-character participation socket;
-- event/lifecycle evidence;
-- participant-aware bounded recent-event cognition;
-- long-horizon progression/decay exemplars;
-- profile -> cognition/runtime integration;
-- autonomy purpose continuity;
-- persistent temporary modifier lifecycle;
-- action-definition prerequisite runtime.
+Read:
+- `docs/WORLD_FOUNDATION_EXPANSION_PLAN_V1.md`
+- `docs/WORLD_LOCATION_NODE_MODEL.md`
+- task-relevant world/action/resource source only when implementation is later authorized.
 
-Absence of exhaustive depth is not a foundation defect. Rich relationships, generalized group coordination, broad episodic memory, witness inference, weather, economy, vehicles and similar domains are explicit feature/depth candidates only.
+### Phase intent
 
-## Current phase — Creator Feature Planning
+Build the world foundations required to expand autonomous life from the mansion into the Estate campus and eventually a bounded South Lake Tahoe region, without falling back to prompt-only geography or world-state invention.
 
-The project is implementing explicitly requested product features as minimum-runnable slices.
+Preserve:
+- recursively nestable location graph;
+- stable globally scoped entity IDs;
+- `contains` != `connected_to` != `located_at` != ownership/possession;
+- deterministic route/access/world-state authority;
+- LLM proposes actions but cannot invent legal topology, access, weather, prices, resources or other authoritative world facts;
+- cognition receives only a decision-relevant local world projection, never the entire regional graph/catalog.
 
-For each proposed feature:
-- define the user-visible capability;
-- identify current-contract dependencies;
-- separate minimum-runnable scope from later depth;
-- compare value, implementation cost and runtime risk;
-- use one exemplar only for a genuinely new invariant, then batch equivalent follow-ons.
+### Planned documentation/implementation sequence
 
-Reopen the Overall Workflow/Foundation Review only when concrete feature work exposes a cross-system invariant the current runtime cannot represent or execute safely.
+1. WF-1 — World Spatial Hierarchy & Topology v1
+2. WF-2 — Property, Place Classification & Access v1
+3. WF-3 — Local Travel & Route Runtime v1
+4. WF-4 — Thorne Estate Campus Expansion v1
+5. WF-5 — South Lake Tahoe Regional Anchor v1
+6. WF-6 — Environment / Daylight / Weather Foundation v1
+7. WF-7 — Venue & Service Foundation v1
+8. WF-8 — World Resource Distribution v1
+9. WF-9 — Ambient Population / Presence v1
+10. WF-10 — Basic World Economy v1
+
+Representation foundations precede living-world depth. Do not jump to vehicles, traffic, economy depth, city-scale agents, law, jobs or institutions before spatial/access/travel foundations are settled.
+
+### Planning-only boundary
+
+Current documentation does not authorize runtime implementation or production mutation.
+
+Until explicit implementation authorization:
+- keep `loc_thorne_estate_exterior_boundary` locked;
+- create no traversable Estate-exterior/public edge;
+- do not fabricate production travel for proof;
+- do not implement weather/economy/vehicles/population out of sequence;
+- continue refining milestone contracts, Estate-campus geography, regional source policy and cognition/query boundaries.
+
+## World baseline already present
+
+`docs/WORLD_LOCATION_NODE_MODEL.md` is an ACTIVE CONTRACT and already supports the expansion direction:
+- locations are graph nodes rather than hard-coded screen names;
+- the model can insert `loc_south_lake_tahoe` above `loc_thorne_estate` without renaming existing Estate identities;
+- `src/observer_sandbox/location_runtime.py` is the generic dynamic-location boundary;
+- routing derives from authored `connected_to` relations;
+- current Estate interior nodes and objects use scoped identities;
+- Estate exterior is recorded as a locked boundary with no legal movement edge.
+
+The new World Foundation Expansion plan extends this model rather than replacing it.
+
+## Recently completed Creator features
 
 ### Telegram Cognition Context Inspector v1
 
-Status: **COMPLETE / DEPLOYED**.
+COMPLETE / DEPLOYED through PR #187, CI #950 with 605 passing tests, merge `c1ee61ad335ea3fd37509e868c8b406e20d714b7`, Deploy #240 SUCCESS.
 
-The owner-only selected-character Telegram page exposes the actual compact runtime context captured immediately before production cognition injection, retains the latest three actor-scoped injections, distinguishes primary versus corrective retry, generically renders future context keys, and pages long snapshots without Telegram message splitting.
+### Cognition Context Efficiency v1
 
-Runtime PR #187:
-- final tested head `b4e0248b5fbf1d4fbc65c62181b8d1bfb74dc8ff`;
-- CI #950 / run `31929295850`: SUCCESS, **605 passed in 45.27s**;
-- merge `c1ee61ad335ea3fd37509e868c8b406e20d714b7`;
-- Deploy #240 / run `31929343421`: SUCCESS.
-
-No production cognition call was fabricated solely to populate the viewer.
-
-### Latest completed feature — Cognition Context Efficiency v1
-
-Status: **COMPLETE / DEPLOYED / CLOSED**.
-
-The inspector exposed a real production prompt-bloat issue. A read-only pre-compaction audit on Deploy #242 measured **66,952 full-prompt characters** and **64,575 runtime-context characters**. `capability_awareness` contributed 24,404 characters (37.8%) and `action_options` 17,866 (27.7%); `training_method` metadata alone contributed 8,411 characters.
-
-PR #191 compacted only the model-facing projection. It removes repeated capability-definition/application prose and repeated training catalog/planning metadata while preserving executable action/target/duration/resource, movement-ID, proficiency, requirement, risk and supporting-knowledge semantics. Deterministic state/validation/mutation contracts are unchanged, and the Telegram inspector still observes the same `_compact_prompt_state()` projection sent to the model.
-
-Runtime PR #191:
+COMPLETE / DEPLOYED / CLOSED through PR #191:
 - final tested head `b4febc29ad7ba37d67547346abd5bb9fff73b772`;
-- CI #954: SUCCESS, **613 passed in 53.34s**;
-- task-relevant acceptance workflows green;
+- CI #954 SUCCESS, 613 passed;
 - merge `25d709ddc0cc36d7d7ba30a3e0f7357ce1348dd6`;
-- Deploy #243 / run `31931381264`: **SUCCESS**, including production cognition-context audit execution.
+- Deploy #243 / run `31931381264` SUCCESS.
 
-The GitHub connector confirmed the successful deploy/audit job but did not expose the raw redirected job-log body, so no post-deploy reduction percentage is invented. The v1 closure is based on measured baseline targeting, deterministic serialized-size reduction coverage, semantic-preservation regressions, full CI, and successful production deploy/audit execution. See `docs/COGNITION_CONTEXT_EFFICIENCY_V1.md`.
+Measured pre-compaction baseline was 66,952 full-prompt characters / 64,575 runtime-context characters. Do not continue speculative context trimming without new measured evidence.
 
 ## Current verified deployment
 
-Latest runtime deployment: **Deploy #243 / run `31931381264` SUCCESS**, Cognition Context Efficiency v1.
+Latest runtime deployment remains **Deploy #243 / run `31931381264` SUCCESS**.
 
-Verified deployment evidence:
+Verified evidence:
 - runtime merge `25d709ddc0cc36d7d7ba30a3e0f7357ce1348dd6` deployed;
-- install/configure/restart/verify step succeeded;
-- production cognition-context audit step completed successfully;
-- schema remains v5;
-- no schema migration and no synthetic production cognition call were required for this slice.
+- install/configure/restart/verify succeeded;
+- production cognition-context audit execution succeeded;
+- schema v5;
+- World Foundation Expansion planning has made no runtime/schema/production change.
 
 ## Development boundaries
 
 - LLM proposes; deterministic runtime validates/mutates.
-- Do not repeatedly run the full suite.
-- Do not reopen planning, modifiers, action-condition syntax, routines, participant history, relationships, memory or environment merely for depth.
-- Do not infer a missing foundation merely because an existing one lacks exhaustive mechanics.
-- Do not continue speculative cognition-context trimming after v1; reopen only with measured prompt-size/cognition-quality evidence.
-- No giant planner/task graph, universal episodic-memory engine, witness model, weather/economy/vehicles merely for completeness, hostile/non-consensual combat engine, weapon lethality, universal Injury/Hazard Engine, deep weapon taxonomy, modifier authoring UI/status-effect taxonomy, universal condition language, or real-world weapon instructions unless separately planned within policy and project scope.
-- Do not fabricate production actions/actors/casualties/modifiers/shared events/cognition calls solely for proof.
+- Do not reopen closed character/profile/psychology foundations merely for depth.
+- Do not infer that a future world system must be built deeply just because it appears in the planning map.
+- Prefer representation before simulation depth.
+- Reuse existing generic entity/relation/location/action/resource contracts before adding schema.
+- Do not create mansion-only runtime shortcuts that block regional expansion.
+- No full GIS, city-scale LLM NPC population, detailed traffic/transit, climate simulation, macroeconomy, law/crime, universal permission language, universal injury/hazard engine, or synthetic production world events merely for completeness.
 
 ## Exact resume point
 
-**Overall Workflow/Foundation Review v1 remains COMPLETE / CLOSED. Telegram Cognition Context Inspector v1 and Cognition Context Efficiency v1 are COMPLETE / DEPLOYED. The latest runtime checkpoint is PR #191, final tested head `b4febc29ad7ba37d67547346abd5bb9fff73b772`, CI #954 with 613 passing tests, merge `25d709ddc0cc36d7d7ba30a3e0f7357ce1348dd6`, and Deploy #243 SUCCESS. Cognition prompt compaction is CLOSED v1: it targets the two measured dominant metadata sources while preserving deterministic/runtime semantics and exact decision-relevant identifiers. Resume with the next Creator-prioritized product feature, not further speculative context trimming or generic gap hunting.**
+**The active phase is World Foundation Expansion, documentation-first. `docs/WORLD_FOUNDATION_EXPANSION_PLAN_V1.md` is the planning authority and defines WF-1 through WF-10, beginning with spatial hierarchy/topology, property/access and local travel before Estate-campus and South Lake Tahoe unlock. `docs/WORLD_LOCATION_NODE_MODEL.md` remains the active spatial contract. No implementation or production world unlock has started. Continue logical discussion/documentation until the near-term world roadmap is sufficiently explicit for a consecutive coding phase with low architectural drift. Latest verified runtime remains Deploy #243 at schema v5.**
