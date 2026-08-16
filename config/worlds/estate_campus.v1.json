@@ -1,114 +1,33 @@
 {
   "revision": "thorne-estate-campus-v1",
   "locations": [
-    {
-      "id": "loc_thorne_estate_mansion_exterior",
-      "name": "Mansion Exterior",
-      "parent": "loc_thorne_estate",
-      "kind": "outdoor_zone",
-      "access": "resident",
-      "canon": false,
-      "metadata": {"source_status": "structurally_inferred", "layout_status": "provisional_layout", "role": "ordinary_mansion_exterior_interface"},
-      "spatial": {"container": true, "source_status": "structurally_inferred", "layout_status": "provisional_layout", "exposure": "outdoor", "interface_model": "ordinary_entrance", "completeness": "L2"}
-    },
-    {
-      "id": "loc_thorne_estate_core_grounds",
-      "name": "Core Estate Grounds",
-      "parent": "loc_thorne_estate",
-      "kind": "outdoor_zone",
-      "access": "resident",
-      "canon": false,
-      "metadata": {"source_status": "structurally_inferred", "layout_status": "provisional_layout", "role": "minimal_campus_connector"},
-      "spatial": {"container": true, "source_status": "structurally_inferred", "layout_status": "provisional_layout", "exposure": "outdoor", "terrain": "managed_estate_ground", "interface_model": "topology_derived", "completeness": "L2"}
-    },
-    {
-      "id": "loc_thorne_estate_tactical_obstacle_course",
-      "name": "Tactical Obstacle Course",
-      "parent": "loc_thorne_estate",
-      "kind": "outdoor_zone",
-      "access": "resident",
-      "canon": true,
-      "metadata": {"source_status": "source_confirmed", "layout_status": "provisional_layout", "activity": "agility_endurance_training"},
-      "spatial": {"container": true, "source_status": "source_confirmed", "layout_status": "provisional_layout", "exposure": "outdoor", "terrain": "training_course", "interface_model": "topology_derived", "completeness": "L3"}
-    },
-    {
-      "id": "loc_thorne_estate_private_lake_access",
-      "name": "Private Lake Access",
-      "parent": "loc_thorne_estate",
-      "kind": "outdoor_zone",
-      "access": "resident",
-      "canon": true,
-      "metadata": {"source_status": "source_confirmed", "layout_status": "provisional_layout", "role": "private_water_edge"},
-      "spatial": {"container": true, "source_status": "source_confirmed", "layout_status": "provisional_layout", "exposure": "outdoor", "terrain": "water_edge", "interface_model": "topology_derived", "completeness": "L3"}
-    },
-    {
-      "id": "loc_thorne_estate_hidden_dock",
-      "name": "Hidden Dock",
-      "parent": "loc_thorne_estate_private_lake_access",
-      "kind": "service_area",
-      "access": "resident",
-      "canon": true,
-      "metadata": {"source_status": "source_confirmed", "layout_status": "provisional_layout", "outside_water_route": "locked_unimplemented"},
-      "spatial": {"container": true, "source_status": "source_confirmed", "layout_status": "provisional_layout", "exposure": "outdoor", "terrain": "dock", "boundary_type": "water_egress", "interface_model": "locked_external_continuation", "completeness": "L3"}
-    },
-    {
-      "id": "loc_thorne_estate_rear_forest",
-      "name": "Rear Forested Estate",
-      "parent": "loc_thorne_estate",
-      "kind": "wilderness",
-      "access": "resident",
-      "canon": true,
-      "metadata": {"source_status": "story_established", "layout_status": "provisional_layout", "role": "forested_private_property"},
-      "spatial": {"container": true, "source_status": "story_established", "layout_status": "provisional_layout", "exposure": "outdoor", "terrain": "forest", "interface_model": "topology_derived", "completeness": "L3"}
-    },
-    {
-      "id": "loc_thorne_estate_concealed_forest_passage",
-      "name": "Concealed Forest Passage",
-      "parent": "loc_thorne_estate",
-      "kind": "boundary",
-      "access": "resident",
-      "canon": true,
-      "metadata": {"source_status": "story_established", "layout_status": "provisional_layout", "outside_backcountry_route": "locked_unimplemented"},
-      "spatial": {"container": true, "source_status": "story_established", "layout_status": "provisional_layout", "exposure": "outdoor", "boundary_type": "concealed_property_egress", "interface_model": "locked_external_continuation", "completeness": "L2"}
-    },
-    {
-      "id": "loc_thorne_estate_main_approach",
-      "name": "Main Estate Approach",
-      "parent": "loc_thorne_estate",
-      "kind": "path",
-      "access": "resident",
-      "canon": false,
-      "metadata": {"source_status": "structurally_inferred", "layout_status": "provisional_layout", "role": "main_gate_connector"},
-      "spatial": {"container": true, "source_status": "structurally_inferred", "layout_status": "provisional_layout", "exposure": "outdoor", "terrain": "estate_drive", "interface_model": "topology_derived", "completeness": "L2"}
-    },
-    {
-      "id": "loc_thorne_estate_main_security_gate",
-      "name": "Main Security Gate",
-      "parent": "loc_thorne_estate",
-      "kind": "boundary",
-      "access": "resident",
-      "canon": false,
-      "metadata": {"source_status": "structurally_inferred", "layout_status": "provisional_layout", "outside_road_route": "locked_unimplemented"},
-      "spatial": {"container": true, "source_status": "structurally_inferred", "layout_status": "provisional_layout", "exposure": "outdoor", "boundary_type": "primary_property_egress", "interface_model": "locked_external_continuation", "completeness": "L2"}
-    }
+    {"id":"loc_thorne_estate_mansion_exterior","name":"Mansion Exterior","parent":"loc_thorne_estate","kind":"outdoor_zone","access":"resident","canon":false,"metadata":{"source_status":"structurally_inferred","layout_status":"provisional_layout","role":"ordinary_mansion_exterior_interface"},"spatial":{"container":true,"source_status":"structurally_inferred","layout_status":"provisional_layout","exposure":"outdoor","interface_model":"ordinary_entrance","completeness":"L2"}},
+    {"id":"loc_thorne_estate_core_grounds","name":"Core Estate Grounds","parent":"loc_thorne_estate","kind":"outdoor_zone","access":"resident","canon":false,"metadata":{"source_status":"structurally_inferred","layout_status":"provisional_layout","role":"minimal_campus_connector"},"spatial":{"container":true,"source_status":"structurally_inferred","layout_status":"provisional_layout","exposure":"outdoor","terrain":"managed_estate_ground","interface_model":"topology_derived","completeness":"L2"}},
+    {"id":"loc_thorne_estate_tactical_obstacle_course","name":"Tactical Obstacle Course","parent":"loc_thorne_estate","kind":"outdoor_zone","access":"resident","canon":true,"metadata":{"source_status":"source_confirmed","layout_status":"provisional_layout","activity":"agility_endurance_training"},"spatial":{"container":true,"source_status":"source_confirmed","layout_status":"provisional_layout","exposure":"outdoor","terrain":"training_course","interface_model":"topology_derived","completeness":"L3"}},
+    {"id":"loc_thorne_estate_private_lake_access","name":"Private Lake Access","parent":"loc_thorne_estate","kind":"outdoor_zone","access":"resident","canon":true,"metadata":{"source_status":"source_confirmed","layout_status":"provisional_layout","role":"private_water_edge"},"spatial":{"container":true,"source_status":"source_confirmed","layout_status":"provisional_layout","exposure":"outdoor","terrain":"water_edge","interface_model":"topology_derived","completeness":"L3"}},
+    {"id":"loc_thorne_estate_hidden_dock","name":"Hidden Dock","parent":"loc_thorne_estate_private_lake_access","kind":"service_area","access":"resident","canon":true,"metadata":{"source_status":"source_confirmed","layout_status":"provisional_layout","outside_water_route":"locked_unimplemented","discovery_visibility":"hidden"},"spatial":{"container":true,"source_status":"source_confirmed","layout_status":"provisional_layout","exposure":"outdoor","terrain":"dock","boundary_type":"water_egress","interface_model":"locked_external_continuation","completeness":"L3"}},
+    {"id":"loc_thorne_estate_rear_forest","name":"Rear Forested Estate","parent":"loc_thorne_estate","kind":"wilderness","access":"resident","canon":true,"metadata":{"source_status":"story_established","layout_status":"provisional_layout","role":"forested_private_property"},"spatial":{"container":true,"source_status":"story_established","layout_status":"provisional_layout","exposure":"outdoor","terrain":"forest","interface_model":"topology_derived","completeness":"L3"}},
+    {"id":"loc_thorne_estate_concealed_forest_passage","name":"Concealed Forest Passage","parent":"loc_thorne_estate","kind":"boundary","access":"resident","canon":true,"metadata":{"source_status":"story_established","layout_status":"provisional_layout","outside_backcountry_route":"locked_unimplemented","discovery_visibility":"hidden"},"spatial":{"container":true,"source_status":"story_established","layout_status":"provisional_layout","exposure":"outdoor","boundary_type":"concealed_property_egress","interface_model":"locked_external_continuation","completeness":"L2"}},
+    {"id":"loc_thorne_estate_main_approach","name":"Main Estate Approach","parent":"loc_thorne_estate","kind":"path","access":"resident","canon":false,"metadata":{"source_status":"structurally_inferred","layout_status":"provisional_layout","role":"main_gate_connector"},"spatial":{"container":true,"source_status":"structurally_inferred","layout_status":"provisional_layout","exposure":"outdoor","terrain":"estate_drive","interface_model":"topology_derived","completeness":"L2"}},
+    {"id":"loc_thorne_estate_main_security_gate","name":"Main Security Gate","parent":"loc_thorne_estate","kind":"boundary","access":"resident","canon":false,"metadata":{"source_status":"structurally_inferred","layout_status":"provisional_layout","outside_road_route":"locked_unimplemented"},"spatial":{"container":true,"source_status":"structurally_inferred","layout_status":"provisional_layout","exposure":"outdoor","boundary_type":"primary_property_egress","interface_model":"locked_external_continuation","completeness":"L2"}}
   ],
   "objects": [
-    {"id": "obj_thorne_estate_outdoor_obstacle_course", "name": "Outdoor Tactical Obstacle Course", "location": "loc_thorne_estate_tactical_obstacle_course", "capabilities": ["train", "inspect"]},
-    {"id": "obj_thorne_estate_lake_water_purification", "name": "Water Purification System", "location": "loc_thorne_estate_private_lake_access", "capabilities": ["inspect", "use"]},
-    {"id": "obj_thorne_estate_hidden_dock_fixture", "name": "Hidden Dock Facility", "location": "loc_thorne_estate_hidden_dock", "capabilities": ["inspect", "use"]},
-    {"id": "obj_thorne_estate_rear_forest_trail", "name": "Private Forest Trail", "location": "loc_thorne_estate_rear_forest", "capabilities": ["inspect", "use"]},
-    {"id": "obj_thorne_estate_main_gate_control", "name": "Security Gate Control", "location": "loc_thorne_estate_main_security_gate", "capabilities": ["inspect", "use"]}
+    {"id":"obj_thorne_estate_outdoor_obstacle_course","name":"Outdoor Tactical Obstacle Course","location":"loc_thorne_estate_tactical_obstacle_course","capabilities":["train","inspect"]},
+    {"id":"obj_thorne_estate_lake_water_purification","name":"Water Purification System","location":"loc_thorne_estate_private_lake_access","capabilities":["inspect","use"]},
+    {"id":"obj_thorne_estate_hidden_dock_fixture","name":"Hidden Dock Facility","location":"loc_thorne_estate_hidden_dock","capabilities":["inspect","use"]},
+    {"id":"obj_thorne_estate_rear_forest_trail","name":"Private Forest Trail","location":"loc_thorne_estate_rear_forest","capabilities":["inspect","use"]},
+    {"id":"obj_thorne_estate_main_gate_control","name":"Security Gate Control","location":"loc_thorne_estate_main_security_gate","capabilities":["inspect","use"]}
   ],
   "connections": [
-    ["loc_thorne_estate_foyer", "loc_thorne_estate_mansion_exterior"],
-    ["loc_thorne_estate_mansion_exterior", "loc_thorne_estate_core_grounds"],
-    ["loc_thorne_estate_garage", "loc_thorne_estate_core_grounds"],
-    ["loc_thorne_estate_core_grounds", "loc_thorne_estate_tactical_obstacle_course"],
-    ["loc_thorne_estate_core_grounds", "loc_thorne_estate_private_lake_access"],
-    ["loc_thorne_estate_private_lake_access", "loc_thorne_estate_hidden_dock"],
-    ["loc_thorne_estate_core_grounds", "loc_thorne_estate_rear_forest"],
-    ["loc_thorne_estate_rear_forest", "loc_thorne_estate_concealed_forest_passage"],
-    ["loc_thorne_estate_core_grounds", "loc_thorne_estate_main_approach"],
-    ["loc_thorne_estate_main_approach", "loc_thorne_estate_main_security_gate"]
+    ["loc_thorne_estate_foyer","loc_thorne_estate_mansion_exterior"],
+    ["loc_thorne_estate_mansion_exterior","loc_thorne_estate_core_grounds"],
+    ["loc_thorne_estate_garage","loc_thorne_estate_core_grounds"],
+    ["loc_thorne_estate_core_grounds","loc_thorne_estate_tactical_obstacle_course"],
+    ["loc_thorne_estate_core_grounds","loc_thorne_estate_private_lake_access"],
+    ["loc_thorne_estate_private_lake_access","loc_thorne_estate_hidden_dock"],
+    ["loc_thorne_estate_core_grounds","loc_thorne_estate_rear_forest"],
+    ["loc_thorne_estate_rear_forest","loc_thorne_estate_concealed_forest_passage"],
+    ["loc_thorne_estate_core_grounds","loc_thorne_estate_main_approach"],
+    ["loc_thorne_estate_main_approach","loc_thorne_estate_main_security_gate"]
   ]
 }
