@@ -14,7 +14,7 @@ from .body_measurement_progression import maybe_settle_body_measurements
 from .db import connect
 from .habit_adaptation import settle_habit_adaptation
 from .height_lifecycle import maybe_settle_height_lifecycle
-from .historical_weather_provider import ensure_weather_for_sim_time
+from .historical_weather_provider import ensure_weather_for_sim_time, load_weather_provider_config
 from .hobby_interest_lifecycle import settle_hobby_interest_lifecycle
 from .personality_plasticity import settle_personality_plasticity
 from .physical_attribute_progression import maybe_settle_physical_attribute_batch
@@ -45,6 +45,27 @@ def _active_actor_ids(conn) -> list[str]:
     return [row[0] for row in conn.execute("SELECT actor_id FROM actor_runtime WHERE autonomy_enabled=1 ORDER BY actor_id").fetchall()]
 
 
+def _sync_registered_weather(conn, sim_time: str) -> None:
+    """Synchronize every enabled regional provider against shared universe time.
+
+    Each provider remains independently cached/fallback-isolated by the existing
+    Historical Weather Provider contract. A failing region must not block another
+    region or character autonomy.
+    """
+    config = load_weather_provider_config()
+    for provider in config.get("providers") or []:
+        if not provider.get("enabled", True):
+            continue
+        try:
+            ensure_weather_for_sim_time(
+                conn,
+                sim_time=sim_time,
+                config={"providers": [provider]},
+            )
+        except Exception:
+            continue
+
+
 def main() -> None:
     signal.signal(signal.SIGTERM, _stop)
     signal.signal(signal.SIGINT, _stop)
@@ -63,10 +84,10 @@ def main() -> None:
                 if actor_ids:
                     # Weather belongs to shared world time, not to any character.
                     # Use one active actor only to read the shared simulation clock;
-                    # provider failures/fallback handling may never stop autonomy.
+                    # every enabled registered region is synchronized independently.
                     try:
                         world_now = snapshot(conn, actor_ids[0])
-                        ensure_weather_for_sim_time(conn, sim_time=str(world_now["sim_time"]))
+                        _sync_registered_weather(conn, str(world_now["sim_time"]))
                     except Exception:
                         pass
 
