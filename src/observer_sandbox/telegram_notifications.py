@@ -7,6 +7,7 @@ from datetime import datetime, timedelta
 from typing import Any
 
 from .action_privacy import action_visible_to_role
+from .environment_weather import current_environment_state
 from .simulation import runtime_value, set_runtime_value
 from .telegram_bot import (
     _allowed_user_ids,
@@ -110,6 +111,60 @@ def _meal_lines(action: dict[str, Any]) -> list[str]:
     return lines
 
 
+def _weather_icon(condition: str | None) -> str:
+    return {
+        "clear": "☀️",
+        "partly_cloudy": "🌤",
+        "cloudy": "☁️",
+        "fog": "🌫",
+        "rain": "🌧",
+        "snow": "🌨",
+        "storm": "⛈",
+        "mixed": "🌦",
+    }.get(str(condition or ""), "🌤")
+
+
+def _weather_label(condition: str | None) -> str:
+    return str(condition or "unknown").replace("_", " ").title()
+
+
+def _notification_weather(conn, after: dict[str, Any]) -> dict[str, Any] | None:
+    """Read represented local weather for Creator presentation only.
+
+    This is intentionally a DB-only lookup. It does not fetch a provider and does
+    not create exposure, perception, Memory or Mind records.
+    """
+    location_id = after.get("location") or after.get("location_id")
+    sim_time = after.get("sim_time")
+    if not location_id or not sim_time:
+        return None
+    try:
+        state = current_environment_state(
+            conn,
+            location_id=str(location_id),
+            sim_time=str(sim_time),
+        )
+    except ValueError:
+        return None
+    if state is None:
+        return None
+    return {
+        "condition": state.get("condition"),
+        "temperature_c": state.get("temperature_c"),
+    }
+
+
+def _weather_line(weather: dict[str, Any] | None) -> str | None:
+    if not weather:
+        return None
+    condition = weather.get("condition")
+    temperature = weather.get("temperature_c")
+    text = f"{_weather_icon(condition)} Weather · {_weather_label(condition)}"
+    if isinstance(temperature, (int, float)):
+        text += f" · {float(temperature):.1f} °C"
+    return text
+
+
 def format_action_completion(
     action: dict[str, Any],
     before: dict[str, Any],
@@ -117,15 +172,21 @@ def format_action_completion(
     *,
     actor_name: str | None = None,
     next_action: dict[str, Any] | None = None,
+    weather: dict[str, Any] | None = None,
 ) -> str:
     display_actor = actor_name or after.get("actor_name") or after.get("actor_id") or "Character"
     lines = [
         "✨ CHARACTER UPDATE",
         "━━━━━━━━━━━━━━━━━━",
         f"👤 {display_actor}",
+    ]
+    weather_line = _weather_line(weather)
+    if weather_line:
+        lines.append(weather_line)
+    lines.extend([
         f"🎬 {_action_title(action)}",
         f"🕒 {_fmt_time(after.get('sim_time'))}",
-    ]
+    ])
     duration_line = _duration_line(action, completed=True)
     if duration_line:
         lines.append(duration_line)
@@ -236,6 +297,7 @@ def dispatch_action_completion(
 
     actor_id = str(after.get("actor_id") or before.get("actor_id") or "") or None
     actor_name = _entity_name(conn, actor_id)
+    weather = _notification_weather(conn, after)
 
     sent = 0
     for user_id in sorted(recipients):
@@ -256,6 +318,7 @@ def dispatch_action_completion(
             after,
             actor_name=actor_name,
             next_action=recipient_next,
+            weather=weather,
         )
         try:
             _send(token, user_id, message)
