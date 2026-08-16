@@ -15,6 +15,18 @@ MEANINGFUL_RESOURCE_CAPABILITIES = {
     "train", "use", "read", "eat", "drink", "shower", "sleep", "rest", "research", "monitor",
 }
 
+_EFFECT_STATE_KEYS = {
+    "needs.energy": ("energy", 1),
+    "needs.hunger": ("hunger", -1),
+    "needs.thirst": ("thirst", -1),
+    "needs.sleepiness": ("sleepiness", -1),
+    "physiology.cleanliness": ("cleanliness", 1),
+    "physiology.fatigue": ("fatigue", -1),
+}
+LOW_MARGINAL_BENEFIT = 5.0
+RECENT_SATIATION_DISTANCE = 3
+REPEATED_MOVE_TARGET_COUNT = 2
+
 
 def _action_definitions(conn: sqlite3.Connection) -> list[dict[str, Any]]:
     return [
@@ -112,8 +124,8 @@ def recent_action_usage(
         (actor_id, int(limit)),
     ).fetchall()
     counts: Counter[tuple[str, str | None]] = Counter()
-    latest: dict[tuple[str, str | None], str] = {}
-    for row in rows:
+    latest: dict[tuple[str, str | None], dict[str, Any]] = {}
+    for event_distance, row in enumerate(rows):
         payload = json.loads(row["payload_json"] or "{}")
         action = payload.get("action")
         if not isinstance(action, str):
@@ -121,32 +133,139 @@ def recent_action_usage(
         target = payload.get("target")
         key = (action, target if isinstance(target, str) else None)
         counts[key] += 1
-        latest.setdefault(key, row["sim_time"])
+        latest.setdefault(
+            key,
+            {
+                "last_used_sim_time": row["sim_time"],
+                "event_distance": int(event_distance),
+                "last_before": payload.get("before") if isinstance(payload.get("before"), dict) else {},
+                "last_after": payload.get("after") if isinstance(payload.get("after"), dict) else {},
+            },
+        )
     return {
         key: {
             "recent_uses": int(count),
-            "last_used_sim_time": latest[key],
+            "last_used_sim_time": latest[key]["last_used_sim_time"],
             "recently_repeated": count >= 2,
+            "event_distance": latest[key]["event_distance"],
+            "last_before": latest[key]["last_before"],
+            "last_after": latest[key]["last_after"],
         }
         for key, count in counts.items()
     }
+
+
+def _project_effect(current: float, spec: Any) -> float:
+    value = float(current)
+    if isinstance(spec, (int, float)):
+        return value + float(spec)
+    if not isinstance(spec, dict):
+        return value
+    if "add" in spec:
+        value += float(spec["add"])
+    if "multiply" in spec:
+        value *= float(spec["multiply"])
+    if "set" in spec:
+        value = float(spec["set"])
+    if "clamp_min" in spec:
+        value = max(value, float(spec["clamp_min"]))
+    if "clamp_max" in spec:
+        value = min(value, float(spec["clamp_max"]))
+    return max(0.0, min(100.0, value))
+
+
+def _marginal_physiological_benefit(option: dict[str, Any], recent: dict[str, Any]) -> float | None:
+    effects = option.get("effects")
+    after = recent.get("last_after")
+    if not isinstance(effects, dict) or not isinstance(after, dict):
+        return None
+    benefits: list[float] = []
+    for field_key, spec in effects.items():
+        mapped = _EFFECT_STATE_KEYS.get(str(field_key))
+        if mapped is None:
+            continue
+        state_key, direction = mapped
+        current = after.get(state_key)
+        if not isinstance(current, (int, float)):
+            continue
+        projected = _project_effect(float(current), spec)
+        benefits.append(max(0.0, (projected - float(current)) * direction))
+    if not benefits:
+        return None
+    return round(sum(benefits), 3)
 
 
 def enrich_options_with_usage(
     options: list[dict[str, Any]],
     usage: dict[tuple[str, str | None], dict[str, Any]],
 ) -> list[dict[str, Any]]:
+    """Attach recent-use context and suppress clear low-value autonomy loops.
+
+    This layer is character-agnostic. It uses only recent completed actions,
+    authored effects, and bounded physiology evidence. It does not impose daily
+    routines or forbid an action merely because it was used before.
+    """
     enriched: list[dict[str, Any]] = []
+    suppressed: list[dict[str, Any]] = []
     for option in options:
         row = dict(option)
         key = (str(row.get("action")), row.get("target") if isinstance(row.get("target"), str) else None)
         recent = usage.get(key)
         if recent is None:
-            row["recent_usage"] = {"recent_uses": 0, "last_used_sim_time": None, "recently_repeated": False}
-        else:
-            row["recent_usage"] = dict(recent)
+            row["recent_usage"] = {
+                "recent_uses": 0,
+                "last_used_sim_time": None,
+                "recently_repeated": False,
+                "event_distance": None,
+            }
+            enriched.append(row)
+            continue
+
+        public_recent = {
+            "recent_uses": int(recent.get("recent_uses", 0)),
+            "last_used_sim_time": recent.get("last_used_sim_time"),
+            "recently_repeated": bool(recent.get("recently_repeated", False)),
+            "event_distance": recent.get("event_distance"),
+        }
+        row["recent_usage"] = public_recent
+
+        action = str(row.get("action"))
+        if action == "move" and int(recent.get("recent_uses", 0)) >= REPEATED_MOVE_TARGET_COUNT:
+            suppressed.append({"action": action, "target": row.get("target"), "basis": "repeated_move_target"})
+            continue
+
+        distance = recent.get("event_distance")
+        marginal = _marginal_physiological_benefit(row, recent)
+        if (
+            isinstance(distance, int)
+            and distance <= RECENT_SATIATION_DISTANCE
+            and marginal is not None
+            and marginal <= LOW_MARGINAL_BENEFIT
+        ):
+            suppressed.append({
+                "action": action,
+                "target": row.get("target"),
+                "basis": "recently_satiated_low_marginal_benefit",
+                "marginal_benefit": marginal,
+            })
+            continue
+
         enriched.append(row)
-    return enriched
+
+    # Never erase the complete legal surface. This is choice shaping only; hard
+    # validity and need resolution remain authoritative elsewhere.
+    return enriched or [
+        {
+            **dict(option),
+            "recent_usage": {
+                "recent_uses": int((usage.get((str(option.get("action")), option.get("target") if isinstance(option.get("target"), str) else None)) or {}).get("recent_uses", 0)),
+                "last_used_sim_time": (usage.get((str(option.get("action")), option.get("target") if isinstance(option.get("target"), str) else None)) or {}).get("last_used_sim_time"),
+                "recently_repeated": bool((usage.get((str(option.get("action")), option.get("target") if isinstance(option.get("target"), str) else None)) or {}).get("recently_repeated", False)),
+                "event_distance": (usage.get((str(option.get("action")), option.get("target") if isinstance(option.get("target"), str) else None)) or {}).get("event_distance"),
+            },
+        }
+        for option in options
+    ]
 
 
 def familiar_object_targets(
