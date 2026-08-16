@@ -1,6 +1,6 @@
 # Action Condition Runtime Foundation v1
 
-Status: IMPLEMENTATION CANDIDATE
+Status: **COMPLETE v1 / DEPLOYED**
 
 ## Why this slice exists
 
@@ -109,8 +109,38 @@ Regression coverage proves:
 - expiry restores ordinary legality;
 - re-initialize restores canonical definition conditions on an existing schema-v5 DB.
 
+## Production checkpoint
+
+PR #182 completed this foundation.
+
+- final tested head: `fd86ef8a7a1d40fd58e42922e6fe7678a9bee1cf`;
+- final PR CI: **CI #943 / run `31921888887` SUCCESS**;
+- full suite: **596 passed in 46.28s**;
+- fresh DB initialize/status healthy; schema remains v5;
+- Research Action Semantics Acceptance #43: SUCCESS;
+- Strength Live Cycle Validation v1 #85: SUCCESS;
+- Solo Regulation Naturalism v2 Acceptance #32: SUCCESS;
+- Inventory Foundation v1 Acceptance #49: SUCCESS;
+- Minimum Training Stimulus Acceptance #29: SUCCESS;
+- merge: `a79d5930b0fb206139d9c8359f3e35aa9499b68e`;
+- Deploy #238 / run `31922007671`: SUCCESS.
+
+The first final-CI attempt exposed one stale regression assertion that still expected the old bespoke `"systemic fatigue"` message. Runtime behavior itself was correct under the new generic condition contract. The test was narrowed to the canonical prerequisite semantics, after which CI #943 passed 596/596.
+
+Production readback after Deploy #238 confirmed:
+- service active and healthy;
+- schema v5;
+- autonomy enabled in normal mode with retry null and pending action preserved;
+- speed 1x;
+- Darian remained naturally sleeping in Darian's Master Suite;
+- living state: cleanliness 98.491, energy 88.791, fatigue 6.305, hunger 7.578, sleepiness 58.55, thirst 23.15;
+- deploy output exposed sim time only as `2025-05-07T***:27:00+00:00`; the masked hour is not inferred;
+- Gemini `gemini-3.1-flash-lite` primary cognition binding preserved;
+- Groq `qwen/qwen3.6-27b` fallback preserved;
+- Telegram bot/API/owner/allowed-user configuration healthy.
+
+No production action or physiology state was manipulated to manufacture condition evidence. The deployment/readback establishes compatibility and runtime health; the deterministic condition contract itself is proven by focused regression plus final CI and task-relevant acceptance gates.
+
 ## Non-goals
 
 V1 does not add a universal policy language, condition authoring UI, environmental/weather engine, cross-actor relationship predicates, inventory expressions, scripted conditions, new action vocabulary, or new character-specific branches.
-
-The slice is complete when focused regression, the normal one-time final PR CI, task-relevant automatic gates, deploy and production readback prove the generic condition seam without disturbing current runtime state.
