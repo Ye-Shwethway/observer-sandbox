@@ -78,10 +78,6 @@ def test_outdoor_walk_executes_without_becoming_travel_or_hard_requirement(tmp_p
 
     with connect(db) as conn:
         _place(conn, "loc_thorne_estate_core_grounds")
-        before = conn.execute(
-            "SELECT value_json FROM fields WHERE entity_id=? AND field_key='needs.energy' ORDER BY id DESC LIMIT 1",
-            (DAR,),
-        ).fetchone()
         apply_action(conn, Action("walk", 30, None, "take an easy walk around the grounds"), DAR)
 
         located = conn.execute(
