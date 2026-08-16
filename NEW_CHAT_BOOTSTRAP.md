@@ -44,6 +44,7 @@ Relevant docs:
 - `docs/ACTION_CONDITION_RUNTIME_V1.md`
 - `docs/PARTICIPANT_RECENT_EVENT_CONTEXT_V1.md`
 - `docs/ADAPTIVE_CHARACTER_DISPOSITION_FOUNDATION.md`
+- `docs/TELEGRAM_COGNITION_CONTEXT_INSPECTOR_V1.md`
 
 ## Foundation closure state
 
@@ -72,7 +73,7 @@ Absence of exhaustive depth is not a foundation defect. Rich relationships, gene
 
 ## Current phase — Creator Feature Planning
 
-Next work should collect and prioritize the Creator's desired product features.
+The project is now implementing explicitly requested product features as minimum-runnable slices.
 
 For each proposed feature:
 - define the user-visible capability;
@@ -83,26 +84,31 @@ For each proposed feature:
 
 Reopen the Overall Workflow/Foundation Review only when concrete feature work exposes a cross-system invariant the current runtime cannot represent or execute safely.
 
+### Latest completed feature — Telegram Cognition Context Inspector v1
+
+Status: **COMPLETE / DEPLOYED**.
+
+The selected Character Telegram page now gives the configured owner a `Cognition Context` viewer directly below `Profile`. It shows the actual compact runtime context captured immediately before production cognition injection, keeps only the latest three actor-scoped injections, labels primary versus corrective retry, renders future context keys generically, and uses a single-message Prev/Next pager for long snapshots rather than message splitting.
+
+Runtime PR: **#187 — Telegram Cognition Context Inspector v1**
+- final tested head: `b4e0248b5fbf1d4fbc65c62181b8d1bfb74dc8ff`;
+- merge: `c1ee61ad335ea3fd37509e868c8b406e20d714b7`;
+- CI #950 / run `31929295850`: **SUCCESS**;
+- **605 passed in 45.27s**;
+- fresh DB init/status healthy; schema v5;
+- final-head task-relevant acceptance workflows green;
+- Deploy #240 / run `31929343421`: **SUCCESS**.
+
+No production cognition call was fabricated solely to populate the new viewer. Snapshot history begins naturally on the next real production cognition injection.
+
 ## Current verified deployment
 
-Latest runtime deployment: **Deploy #239 / run `31924581764` SUCCESS**.
+Latest runtime deployment: **Deploy #240 / run `31929343421` SUCCESS**.
 
-Runtime PR: **#184 — Participant-Aware Recent Event Context v1**
-- final tested head: `09f629b197b55f0abc8271e22e86a9a11f2cab0c`;
-- merge: `13d4a9270f3c372a5180438f92f13441d98e804a`;
-- **CI #944 / run `31924499307`: SUCCESS**;
-- **600 passed in 44.52s**;
-- fresh DB init/status healthy; schema v5;
-- Cognition Capability Awareness v1 Acceptance #24: SUCCESS;
-- Solo Regulation Naturalism v2 Acceptance #33: SUCCESS;
-- Eating Behavior v1 Acceptance #46: SUCCESS;
-- Training Movement Contract Normalization v1 Acceptance #14: SUCCESS;
-- Research Action Semantics Acceptance #45: SUCCESS.
-
-Production readback after Deploy #239:
+Production readback after Deploy #240:
 - service active/healthy;
 - schema v5;
-- autonomy enabled, normal mode, retry null, pending action preserved;
+- autonomy enabled, normal mode, retry null, pending action `09c5b034-d175-48db-87c5-32557993561e` preserved;
 - speed **1x**;
 - Darian remained naturally **sleeping in Darian's Master Suite**;
 - living state: cleanliness 98.491, energy 88.791, fatigue 6.305, hunger 7.578, sleepiness 58.55, thirst 23.15;
@@ -111,8 +117,6 @@ Production readback after Deploy #239:
 - Groq `qwen/qwen3.6-27b` fallback preserved;
 - Telegram bot/API/owner/allowed-user configuration healthy.
 
-No production shared event was fabricated to manufacture participant-aware cognition evidence.
-
 ## Development boundaries
 
 - LLM proposes; deterministic runtime validates/mutates.
@@ -120,8 +124,8 @@ No production shared event was fabricated to manufacture participant-aware cogni
 - Do not reopen planning, modifiers, action-condition syntax, routines, participant history, relationships, memory or environment merely for depth.
 - Do not infer a missing foundation merely because an existing one lacks exhaustive mechanics.
 - No giant planner/task graph, universal episodic-memory engine, witness model, weather/economy/vehicles merely for completeness, hostile/non-consensual combat engine, weapon lethality, universal Injury/Hazard Engine, deep weapon taxonomy, modifier authoring UI/status-effect taxonomy, universal condition language, or real-world weapon instructions unless separately planned within policy and project scope.
-- Do not fabricate production actions/actors/casualties/modifiers/shared events solely for proof.
+- Do not fabricate production actions/actors/casualties/modifiers/shared events/cognition calls solely for proof.
 
 ## Exact resume point
 
-**Overall Workflow/Foundation Review v1 is COMPLETE / CLOSED after a final bounded read-only audit found no fifth blocking foundation gap. The four evidence-selected closures remain Autonomy Intent Continuity v1 through PR #178 / Deploy #236; Active Modifier Runtime Foundation v1 through PR #180 / Deploy #237; Action Condition Runtime Foundation v1 through PR #182 / Deploy #238; and Participant-Aware Recent Event Context v1 through PR #184 / Deploy #239. Latest verified production remains healthy at schema v5, autonomy normal, retry null, pending action preserved, speed 1x. The active next phase is Creator Feature Planning: collect and rank desired product features, then implement minimum-runnable slices. Do not resume generic gap hunting unless concrete feature work proves a missing cross-system invariant.**
+**Overall Workflow/Foundation Review v1 remains COMPLETE / CLOSED. Telegram Cognition Context Inspector v1 is COMPLETE / DEPLOYED through PR #187, final tested head `b4e0248b5fbf1d4fbc65c62181b8d1bfb74dc8ff`, CI #950 with 605 passing tests, merge `c1ee61ad335ea3fd37509e868c8b406e20d714b7`, and Deploy #240 SUCCESS. Production is healthy at schema v5 with autonomy normal, retry null, pending action preserved and speed 1x. The owner-only Cognition Context viewer will naturally accumulate its latest-three snapshot history starting with the next real production cognition injection; no synthetic call was made for proof. Resume with the next Creator-prioritized product feature rather than generic gap hunting.**
