@@ -27,11 +27,9 @@ All Character Profile sections are minimum-unlocked v1. Skills remains CLOSED v1
 Adaptive Character Disposition Foundation is COMPLETE v1:
 `Habit Formation/Extinction -> Hobby/Interest Lifecycle -> Preference Adaptation -> Slow Personality Plasticity`.
 
-The **Overall Workflow/Foundation Review v1 is COMPLETE / CLOSED**.
+The **Overall Workflow/Foundation Review v1 is COMPLETE / CLOSED**. The bounded final closure pass found no additional blocking cross-system foundation gap. Do not continue open-ended gap hunting by default.
 
-The bounded final closure pass found no additional blocking cross-system foundation gap. Do not continue open-ended gap hunting by default.
-
-Four evidence-selected structural gaps were closed during the review:
+Four evidence-selected structural gaps were closed during that review:
 1. **Autonomy Intent Continuity v1** — PR #178 / Deploy #236.
 2. **Active Modifier Runtime Foundation v1** — PR #180 / Deploy #237.
 3. **Action Condition Runtime Foundation v1** — PR #182 / Deploy #238.
@@ -45,6 +43,7 @@ Relevant docs:
 - `docs/PARTICIPANT_RECENT_EVENT_CONTEXT_V1.md`
 - `docs/ADAPTIVE_CHARACTER_DISPOSITION_FOUNDATION.md`
 - `docs/TELEGRAM_COGNITION_CONTEXT_INSPECTOR_V1.md`
+- `docs/COGNITION_CONTEXT_EFFICIENCY_V1.md`
 
 ## Foundation closure state
 
@@ -62,18 +61,11 @@ Minimum foundations classified present:
 - persistent temporary modifier lifecycle;
 - action-definition prerequisite runtime.
 
-Final bounded reinspection also confirmed:
-- actor scheduler/runtime state is actor-scoped and authoritative;
-- cognition receives authoritative action options and deterministic validation remains downstream authority;
-- model dry-run enforces proposal-only/no-mutation behavior;
-- authored time windows + simulation time + physiological priorities already influence cognition;
-- world topology/location and reachable-resource context already participate in planning/execution.
-
 Absence of exhaustive depth is not a foundation defect. Rich relationships, generalized group coordination, broad episodic memory, witness inference, weather, economy, vehicles and similar domains are explicit feature/depth candidates only.
 
 ## Current phase — Creator Feature Planning
 
-The project is now implementing explicitly requested product features as minimum-runnable slices.
+The project is implementing explicitly requested product features as minimum-runnable slices.
 
 For each proposed feature:
 - define the user-visible capability;
@@ -84,38 +76,47 @@ For each proposed feature:
 
 Reopen the Overall Workflow/Foundation Review only when concrete feature work exposes a cross-system invariant the current runtime cannot represent or execute safely.
 
-### Latest completed feature — Telegram Cognition Context Inspector v1
+### Telegram Cognition Context Inspector v1
 
 Status: **COMPLETE / DEPLOYED**.
 
-The selected Character Telegram page now gives the configured owner a `Cognition Context` viewer directly below `Profile`. It shows the actual compact runtime context captured immediately before production cognition injection, keeps only the latest three actor-scoped injections, labels primary versus corrective retry, renders future context keys generically, and uses a single-message Prev/Next pager for long snapshots rather than message splitting.
+The owner-only selected-character Telegram page exposes the actual compact runtime context captured immediately before production cognition injection, retains the latest three actor-scoped injections, distinguishes primary versus corrective retry, generically renders future context keys, and pages long snapshots without Telegram message splitting.
 
-Runtime PR: **#187 — Telegram Cognition Context Inspector v1**
-- final tested head: `b4e0248b5fbf1d4fbc65c62181b8d1bfb74dc8ff`;
-- merge: `c1ee61ad335ea3fd37509e868c8b406e20d714b7`;
-- CI #950 / run `31929295850`: **SUCCESS**;
-- **605 passed in 45.27s**;
-- fresh DB init/status healthy; schema v5;
-- final-head task-relevant acceptance workflows green;
-- Deploy #240 / run `31929343421`: **SUCCESS**.
+Runtime PR #187:
+- final tested head `b4e0248b5fbf1d4fbc65c62181b8d1bfb74dc8ff`;
+- CI #950 / run `31929295850`: SUCCESS, **605 passed in 45.27s**;
+- merge `c1ee61ad335ea3fd37509e868c8b406e20d714b7`;
+- Deploy #240 / run `31929343421`: SUCCESS.
 
-No production cognition call was fabricated solely to populate the new viewer. Snapshot history begins naturally on the next real production cognition injection.
+No production cognition call was fabricated solely to populate the viewer.
+
+### Latest completed feature — Cognition Context Efficiency v1
+
+Status: **COMPLETE / DEPLOYED / CLOSED**.
+
+The inspector exposed a real production prompt-bloat issue. A read-only pre-compaction audit on Deploy #242 measured **66,952 full-prompt characters** and **64,575 runtime-context characters**. `capability_awareness` contributed 24,404 characters (37.8%) and `action_options` 17,866 (27.7%); `training_method` metadata alone contributed 8,411 characters.
+
+PR #191 compacted only the model-facing projection. It removes repeated capability-definition/application prose and repeated training catalog/planning metadata while preserving executable action/target/duration/resource, movement-ID, proficiency, requirement, risk and supporting-knowledge semantics. Deterministic state/validation/mutation contracts are unchanged, and the Telegram inspector still observes the same `_compact_prompt_state()` projection sent to the model.
+
+Runtime PR #191:
+- final tested head `b4febc29ad7ba37d67547346abd5bb9fff73b772`;
+- CI #954: SUCCESS, **613 passed in 53.34s**;
+- task-relevant acceptance workflows green;
+- merge `25d709ddc0cc36d7d7ba30a3e0f7357ce1348dd6`;
+- Deploy #243 / run `31931381264`: **SUCCESS**, including production cognition-context audit execution.
+
+The GitHub connector confirmed the successful deploy/audit job but did not expose the raw redirected job-log body, so no post-deploy reduction percentage is invented. The v1 closure is based on measured baseline targeting, deterministic serialized-size reduction coverage, semantic-preservation regressions, full CI, and successful production deploy/audit execution. See `docs/COGNITION_CONTEXT_EFFICIENCY_V1.md`.
 
 ## Current verified deployment
 
-Latest runtime deployment: **Deploy #240 / run `31929343421` SUCCESS**.
+Latest runtime deployment: **Deploy #243 / run `31931381264` SUCCESS**, Cognition Context Efficiency v1.
 
-Production readback after Deploy #240:
-- service active/healthy;
-- schema v5;
-- autonomy enabled, normal mode, retry null, pending action `09c5b034-d175-48db-87c5-32557993561e` preserved;
-- speed **1x**;
-- Darian remained naturally **sleeping in Darian's Master Suite**;
-- living state: cleanliness 98.491, energy 88.791, fatigue 6.305, hunger 7.578, sleepiness 58.55, thirst 23.15;
-- deploy output exposed sim time only as `2025-05-07T***:27:00+00:00`; do not guess the masked hour;
-- Gemini `gemini-3.1-flash-lite` primary cognition binding preserved;
-- Groq `qwen/qwen3.6-27b` fallback preserved;
-- Telegram bot/API/owner/allowed-user configuration healthy.
+Verified deployment evidence:
+- runtime merge `25d709ddc0cc36d7d7ba30a3e0f7357ce1348dd6` deployed;
+- install/configure/restart/verify step succeeded;
+- production cognition-context audit step completed successfully;
+- schema remains v5;
+- no schema migration and no synthetic production cognition call were required for this slice.
 
 ## Development boundaries
 
@@ -123,9 +124,10 @@ Production readback after Deploy #240:
 - Do not repeatedly run the full suite.
 - Do not reopen planning, modifiers, action-condition syntax, routines, participant history, relationships, memory or environment merely for depth.
 - Do not infer a missing foundation merely because an existing one lacks exhaustive mechanics.
+- Do not continue speculative cognition-context trimming after v1; reopen only with measured prompt-size/cognition-quality evidence.
 - No giant planner/task graph, universal episodic-memory engine, witness model, weather/economy/vehicles merely for completeness, hostile/non-consensual combat engine, weapon lethality, universal Injury/Hazard Engine, deep weapon taxonomy, modifier authoring UI/status-effect taxonomy, universal condition language, or real-world weapon instructions unless separately planned within policy and project scope.
 - Do not fabricate production actions/actors/casualties/modifiers/shared events/cognition calls solely for proof.
 
 ## Exact resume point
 
-**Overall Workflow/Foundation Review v1 remains COMPLETE / CLOSED. Telegram Cognition Context Inspector v1 is COMPLETE / DEPLOYED through PR #187, final tested head `b4e0248b5fbf1d4fbc65c62181b8d1bfb74dc8ff`, CI #950 with 605 passing tests, merge `c1ee61ad335ea3fd37509e868c8b406e20d714b7`, and Deploy #240 SUCCESS. Production is healthy at schema v5 with autonomy normal, retry null, pending action preserved and speed 1x. The owner-only Cognition Context viewer will naturally accumulate its latest-three snapshot history starting with the next real production cognition injection; no synthetic call was made for proof. Resume with the next Creator-prioritized product feature rather than generic gap hunting.**
+**Overall Workflow/Foundation Review v1 remains COMPLETE / CLOSED. Telegram Cognition Context Inspector v1 and Cognition Context Efficiency v1 are COMPLETE / DEPLOYED. The latest runtime checkpoint is PR #191, final tested head `b4febc29ad7ba37d67547346abd5bb9fff73b772`, CI #954 with 613 passing tests, merge `25d709ddc0cc36d7d7ba30a3e0f7357ce1348dd6`, and Deploy #243 SUCCESS. Cognition prompt compaction is CLOSED v1: it targets the two measured dominant metadata sources while preserving deterministic/runtime semantics and exact decision-relevant identifiers. Resume with the next Creator-prioritized product feature, not further speculative context trimming or generic gap hunting.**
