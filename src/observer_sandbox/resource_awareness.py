@@ -25,7 +25,6 @@ _EFFECT_STATE_KEYS = {
 }
 LOW_MARGINAL_BENEFIT = 5.0
 RECENT_SATIATION_DISTANCE = 3
-REPEATED_MOVE_TARGET_COUNT = 2
 
 
 def _action_definitions(conn: sqlite3.Connection) -> list[dict[str, Any]]:
@@ -199,11 +198,12 @@ def enrich_options_with_usage(
     options: list[dict[str, Any]],
     usage: dict[tuple[str, str | None], dict[str, Any]],
 ) -> list[dict[str, Any]]:
-    """Attach recent-use context and suppress clear low-value autonomy loops.
+    """Attach recent-use context and suppress only low-value non-mobility loops.
 
-    This layer is character-agnostic. It uses only recent completed actions,
-    authored effects, and bounded physiology evidence. It does not impose daily
-    routines or forbid an action merely because it was used before.
+    Legal movement is navigation authority, not a consumable choice. Repetition may
+    inform character choice through ``recent_usage`` metadata, but it must never
+    remove an otherwise legal move destination from cognition. Other actions may
+    still be suppressed when authored physiology proves negligible recent benefit.
     """
     enriched: list[dict[str, Any]] = []
     suppressed: list[dict[str, Any]] = []
@@ -230,8 +230,8 @@ def enrich_options_with_usage(
         row["recent_usage"] = public_recent
 
         action = str(row.get("action"))
-        if action == "move" and int(recent.get("recent_uses", 0)) >= REPEATED_MOVE_TARGET_COUNT:
-            suppressed.append({"action": action, "target": row.get("target"), "basis": "repeated_move_target"})
+        if action == "move":
+            enriched.append(row)
             continue
 
         distance = recent.get("event_distance")
