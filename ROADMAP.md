@@ -15,23 +15,22 @@ Roadmap synchronized: 2026-08-16
 
 ## Current production checkpoint
 
-**W2 Commitments / Obligations Foundation v1 is COMPLETE / DEPLOYED.**
+**W3 Money / Economy Foundation v1 and W3.1 Universe Object Valuation & Creation Rules v1 are COMPLETE / DEPLOYED.**
 
 Latest evidence:
-- Telegram physiology presentation repair:
-  - PR #228
-  - CI #996 / run `31958374868`: SUCCESS
-  - merge `088728fcabd6fa624a97ec81c2f128df6afa1e34`
-  - Deploy #262 / run `31958476747`: SUCCESS
-- W2 implementation:
-  - PR #229 — `Add W2 Commitments and Obligations Foundation v1`
-  - final tested head `a985c5b63ce8371544306ffc321f2cb34030dd03`
-  - final CI #999 / run `31958910987`: SUCCESS
-  - merge `0a24e7e700abf2c1e0fffcb8047a05f3f04c1891`
-  - **Deploy #263 / run `31959001632`: SUCCESS**
-- schema v12; commitment schema v1; environment schema v2; world-input schema v1; mind schema v1.
-
-The first W2 CI run (#997) had 696 passing tests and one stale historical-weather expectation pinned to main schema v11. The compatibility assertion was corrected to follow `SCHEMA_VERSION`; W2 behavior was not the failure.
+- W3:
+  - PR #232 — `Add W3 Money Economy Foundation v1`
+  - final tested head `b47fe188ea064308a2c83e3b21c4014d3364245d`
+  - CI #1001 / run `31961595256`: SUCCESS — 705 passed
+  - merge `135fee320c5f137b6f748f312d4105aa00b010e7`
+  - Deploy #265 / run `31961742114`: SUCCESS
+- W3.1:
+  - PR #233 — `Add W3.1 Universe Object Valuation Rules v1`
+  - final tested head `68fdb631e828bc4707bce631a19decb3e970ab03`
+  - CI #1004 / run `31962052231`: SUCCESS — 710 passed
+  - merge `ac07817979a55ca3846e5efee570c56493bd23c3`
+  - **Deploy #266 / run `31962148301`: SUCCESS**
+- main schema **v14**; economy schema **v2**; commitment schema v1; environment schema v2; world-input schema v1; mind schema v1.
 
 ## Completed foundation stack
 
@@ -46,7 +45,9 @@ Deployed:
 - W1.1 Historical Weather Provider
 - Creator Universe Weather & Geography Observability
 - Weather Region Registry v1
-- **W2 Commitments / Obligations Foundation v1**
+- W2 Commitments / Obligations Foundation v1
+- **W3 Money / Economy Foundation v1**
+- **W3.1 Universe Object Valuation & Creation Rules v1**
 
 South Lake Tahoe traversal remains intentionally paused.
 
@@ -56,6 +57,8 @@ Required docs:
 - `docs/INTELLIGENT_MIND_ENGINE_FOUNDATION_V1.md`
 - `docs/WORLD_STIMULUS_EXPOSURE_FOUNDATION_V1.md`
 - `docs/COMMITMENTS_OBLIGATIONS_FOUNDATION_V1.md`
+- `docs/MONEY_ECONOMY_FOUNDATION_V1.md`
+- `docs/UNIVERSE_OBJECT_VALUATION_RULES_V1.md`
 - `docs/ENVIRONMENT_WEATHER_FOUNDATION_V1.md`
 - `docs/HISTORICAL_WEATHER_PROVIDER_V1.md`
 - `docs/WEATHER_REGION_REGISTRY_V1.md`
@@ -66,9 +69,8 @@ Required docs:
 Preserve:
 `world/event truth != stimulus availability != exposure != perception/interpretation != memory != mind state/thought != intention/plan != action proposal != action authority`.
 
-## MIND-F0 — Intelligent Mind Engine Foundation — DEPLOYED
-
-Generic persistence exists for bounded mental cycles, typed mental episodes, persistent/semi-persistent mental artifacts and typed links. It remains behavior-neutral; current autonomy does not automatically create thoughts or plans.
+For economy preserve:
+`economic truth != financial notice availability != exposure != perception/interpretation != memory != concern/thought != intention/plan != action proposal != action authority`.
 
 ## W0 — World Stimulus / Exposure — DEPLOYED
 
@@ -76,46 +78,56 @@ Shared external-input boundary: `world_stimuli`, `world_stimulus_scopes`, `chara
 
 ## W1 / W1.1 Weather — DEPLOYED
 
-W1 stores authoritative environment state and publishes direct ambient W0 stimuli only through represented outdoor exposure boundaries. No direct weather-to-mood/action rule exists.
+W1 stores authoritative environment state and publishes direct ambient W0 stimuli only through represented outdoor exposure boundaries. W1.1 replays historical weather from universe simulation time with bounded caching and explicit deterministic fallback.
 
-W1.1 uses universe simulation time with Open-Meteo historical replay, bounded daily cache, and explicit deterministic synthetic fallback when historical data is unavailable.
+Weather remains registry-driven:
+`represented region -> enabled registered provider -> universe sim-time query -> cache -> W1 -> W0`.
 
-## Weather Region Registry — DEPLOYED
+Only South Lake Tahoe is currently represented/registered. Telegram Universe Weather/Regions/Locations remains DB-only observer presentation.
 
-Canonical contract: `docs/WEATHER_REGION_REGISTRY_V1.md`.
+## W2 — Commitments / Obligations — DEPLOYED
 
-Runtime policy:
-`represented region -> enabled registered provider -> universe sim-time coordinate/date query -> provider cache -> W1 state -> W0 ambient boundary`.
+Commitment truth supports appointment, promise, deadline and scheduled responsibility, with start/due times, lifecycle, flexibility and provenance. Explicit W0 obligation notices remain availability-only and do not create exposure, Memory, Mind, plans or action authority.
 
-Current registered region:
-- South Lake Tahoe -> Open-Meteo historical provider -> Thorne Estate W1 scope.
+## W3 — Money / Economy Foundation — DEPLOYED
 
-The provider capability is global, but Earth-wide weather is not preloaded. Adding a future represented region requires a geography record and matching provider record; service synchronization and Creator Weather rendering are not region-name hard-coded.
+Canonical contract: `docs/MONEY_ECONOMY_FOUNDATION_V1.md`.
 
-## Creator Universe observability — DEPLOYED
+W3 provides a socket-style financial spine suitable for later Jobs/Careers, companies, governments and broader economy systems without activating those systems yet:
+- economic entities;
+- financial accounts with integer minor-unit balances;
+- immutable transaction headers + signed ledger entries;
+- assets;
+- liabilities;
+- append-only valuations;
+- deterministic affordability and same-currency settlement;
+- explicit W0 financial notices.
 
-Telegram `/start -> Universe` exposes Weather, Regions and Locations. Weather is registry-driven and DB-only. Regions currently show South Lake Tahoe -> Thorne Estate while travel topology stays Estate-only. Character Update notifications show current local represented weather from DB without provider fetch or cognition mutation.
+Darian's Creator-approved opening economy seed is **USD 25.0M net worth**:
+- Thorne Estate: USD 16.5M;
+- investments: USD 6.5M;
+- primary liquid holdings: USD 1.8M;
+- other personal assets: USD 0.7M;
+- liabilities: USD 0.5M.
 
-Core Character Update physiology rows are now stable Creator-facing presentation: Energy, Fatigue, Hunger, Thirst, Sleepiness and Cleanliness remain visible even when a value has zero or sub-display-threshold change.
+`net worth != spendable balance`.
 
-## W2 — Commitments / Obligations Foundation — DEPLOYED
+The schema is intentionally expandable toward payroll, employment, business ownership, property, investments, debt, markets and later regional/global economy aggregation. Future world-wealth calculations must distinguish real assets, financial claims, liabilities and consolidated net wealth to avoid double counting.
 
-Canonical contract: `docs/COMMITMENTS_OBLIGATIONS_FOUNDATION_V1.md`.
+## W3.1 — Universe Object Valuation & Creation Rules — DEPLOYED
 
-W2 represents factual future expectations before planning. Initial generic types:
-- appointment;
-- promise;
-- deadline;
-- scheduled responsibility.
+Canonical contract: `docs/UNIVERSE_OBJECT_VALUATION_RULES_V1.md`.
 
-Commitment truth supports start/due simulation times, optional represented entity/location targets, lifecycle status, flexibility/reschedulability, provenance and metadata.
+Canonical rule:
+`has economic value != contributes independent net worth`.
 
-Canonical W2 separation:
-`commitment truth != reminder/notice stimulus != exposure != perception/interpretation != concern/intention/plan != action proposal != action authority`.
+All currently represented object entities and all current item definitions have explicit economic-value policy coverage, including the runtime-seeded training/diagnostic simulator objects discovered by production-copy validation.
 
-An explicit W2 notice can publish a character-scoped W0 `obligation` stimulus. Foundation notices remain availability-only and do not automatically create exposure, Character Memory, Mind artifacts, intentions, plans or action authority. Terminal commitments retire linked active notices.
+Estate fixtures/facilities receive replacement-value truth but use `included_in_parent -> asset_thorne_estate`; they do not inflate Darian's USD 25.0M net worth.
 
-No calendar, phone, alarm or communication endpoint is prebuilt. Add those only when a concrete delivery path needs represented possession/location/access/capability semantics.
+Legacy food/water interaction proxies are excluded from independent value because inventory/resource authorities hold the real stock truth. Current food inventory derives value from live stack quantities and canonical definition unit prices; the current canonical stock value is USD 2,443.50.
+
+Canonical initialization fails closed if a represented `object` or `item` definition is added without an explicit economic-value policy. Future runtime object-creation APIs must use the same policy boundary or atomically create the object and approved policy together.
 
 ## World element expansion policy
 
@@ -123,27 +135,16 @@ Phones, televisions, radios, computers, internet/network access, accounts, calen
 
 ## Active phase — remaining minimum World Input producers
 
-### W3 — Money / Economy Minimum Foundation — NEXT
+### W4 — Information / Media Foundation — NEXT
 
-Goal: represent minimum authoritative financial truth and deterministic affordability without allowing economy state to directly script emotion, cognition or behavior.
-
-Minimum direction:
-- represented balance/resource/account facts where needed;
-- transactions with source/provenance;
-- income/expense/payable facts where required;
-- deterministic affordability/resource checks owned by the relevant domain/runtime;
-- explicit financial notices through W0 when represented;
-- no direct mood/anxiety/action-selection modifier;
-- no automatic Memory/Mind concern/intention/plan creation.
-
-Potential expansion only when required:
-- represented accounts or payment instruments;
-- economic counterparties;
-- devices/interfaces needed for a concrete financial-information exposure path.
-
-### W4 — Information / Media Foundation
-
-Information/media items, sources/publishers, publication/availability, credibility metadata, represented device/media exposure through W0, and `world knows != character knows`.
+Represent information/media truth separately from character knowledge. Minimum direction:
+- information/media items;
+- sources/publishers;
+- publication/availability;
+- credibility/provenance metadata;
+- represented device/media exposure through W0 when a concrete access path exists;
+- `world knows != character knows`;
+- no automatic belief, Memory, concern, intention or action authority.
 
 ### W5 — Communication Exposure Foundation
 
@@ -170,4 +171,4 @@ Current Estate boundary remains closed: no public-road edge from Main Security G
 
 ## Current exact resume point
 
-**W2 Commitments / Obligations Foundation v1 is production-green through Deploy #263. Implement W3 Money / Economy Minimum Foundation next on `test`, aligned with W0 and the Mind Engine contract. Expand accounts/devices/economic actors only when a concrete W3 consumer requires them. Do not activate Mental Episode/Planning yet.**
+**W3 + W3.1 are production-green through Deploy #266. The canonical next minimum World Input slice is W4 Information / Media Foundation on `test`. Do not activate Mental Episode/Planning yet. Broader economy expansion remains socketed for future concrete consumers such as Jobs/Careers rather than being activated preemptively.**
