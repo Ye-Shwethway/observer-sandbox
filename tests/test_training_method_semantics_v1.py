@@ -34,6 +34,7 @@ EXPECTED_TARGETS = {
     "obj_thorne_estate_training_practice_dummy",
     "obj_thorne_estate_training_ai_combat_sim",
     "obj_thorne_estate_training_obstacle_course",
+    "obj_thorne_estate_outdoor_obstacle_course",
     "obj_thorne_estate_training_combat_pit",
     "obj_thorne_estate_training_vr_tactical_sim",
 }
