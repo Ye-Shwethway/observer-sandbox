@@ -1,5 +1,5 @@
 {
-  "revision": "observer-geography-v1",
+  "revision": "observer-geography-v1.1-weather-registry",
   "regions": [
     {
       "id": "south_lake_tahoe",
@@ -8,6 +8,7 @@
       "world_id": "world_primary",
       "representation": "regional_context",
       "traversal_status": "locked_unimplemented",
+      "weather_provider_id": "open_meteo_south_lake_tahoe_historical_v1",
       "locations": ["loc_thorne_estate"],
       "note": "Regional context is represented for Creator observability. Public Tahoe traversal remains unavailable until the bounded regional graph is explicitly implemented."
     }
