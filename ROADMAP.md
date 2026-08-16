@@ -77,39 +77,59 @@ For each desired feature:
 
 A deferred capability is not a foundation defect. Reopen the foundation review only if a concrete feature exposes a cross-system invariant that cannot currently be represented or executed safely.
 
-### Completed Creator feature slice — Telegram Cognition Context Inspector v1
+### Completed Creator feature — Telegram Cognition Context Inspector v1
 
 Status: **COMPLETE / DEPLOYED**.
 
 See `docs/TELEGRAM_COGNITION_CONTEXT_INSPECTOR_V1.md`.
 
-The owner-only Telegram viewer now exposes the actual compact cognition context captured immediately before production model injection, keeps the latest three actor-scoped snapshots, distinguishes primary and corrective-retry injections, recursively renders future context keys, and uses a single-message Prev/Next pager for long snapshots instead of Telegram message splitting.
+The owner-only Telegram viewer exposes the actual compact cognition context captured immediately before production model injection, retains the latest three actor-scoped snapshots, distinguishes primary and corrective-retry injections, recursively renders future context keys, and pages long snapshots without message splitting.
 
 Runtime PR #187:
 - final tested head `b4e0248b5fbf1d4fbc65c62181b8d1bfb74dc8ff`;
-- CI #950 / run `31929295850`: SUCCESS;
-- **605 passed in 45.27s**;
-- fresh DB init/status healthy; schema v5;
-- final-head task-relevant acceptance workflows green;
+- CI #950 / run `31929295850`: SUCCESS, **605 passed in 45.27s**;
 - merge `c1ee61ad335ea3fd37509e868c8b406e20d714b7`;
 - Deploy #240 / run `31929343421`: SUCCESS.
 
-No production cognition call was fabricated solely to populate the viewer. Its bounded snapshot history begins naturally on the next real cognition injection.
+No production cognition call was fabricated solely to populate the viewer.
+
+### Latest completed Creator feature — Cognition Context Efficiency v1
+
+Status: **COMPLETE / DEPLOYED / CLOSED**.
+
+See `docs/COGNITION_CONTEXT_EFFICIENCY_V1.md`.
+
+The cognition inspector exposed excessive model-facing metadata. The read-only production baseline audit before compaction measured:
+- full prompt **66,952 characters**;
+- runtime context **64,575 characters**;
+- `capability_awareness` **24,404 characters (37.8%)**;
+- `action_options` **17,866 characters (27.7%)**;
+- repeated `training_method` metadata **8,411 characters**.
+
+PR #191 compacted the model-facing projection only. It removes repeated capability definition/application prose and repeated training catalog/planning metadata while retaining executable action/target/duration/resource contracts, exact movement IDs, proficiency/behavioral anchors, machine-relevant requirements, risk and supporting knowledge/attributes. Deterministic engine state and validation/mutation paths remain unchanged.
+
+Runtime PR #191:
+- final tested head `b4febc29ad7ba37d67547346abd5bb9fff73b772`;
+- CI #954: SUCCESS, **613 passed in 53.34s**;
+- fresh DB init/status healthy; schema v5;
+- task-relevant acceptance workflows green;
+- merge `25d709ddc0cc36d7d7ba30a3e0f7357ce1348dd6`;
+- Deploy #243 / run `31931381264`: **SUCCESS**, including production cognition-context audit execution.
+
+The GitHub connector confirmed successful deploy/audit execution but did not expose the raw redirected job-log body. Therefore the canonical checkpoint records no fabricated post-deploy percentage. Closure is supported by the measured production baseline, deterministic serialized-size reduction regression, semantic-preservation regression, full CI and successful deployment.
+
+Do not continue speculative trimming by default. Reopen cognition-context efficiency only when measured prompt size, provider cost/latency, or observed cognition quality justifies another bounded slice.
 
 ## Current verified deployment
 
-Latest runtime deployment: **Deploy #240 / run `31929343421` SUCCESS**, Telegram Cognition Context Inspector v1.
+Latest runtime deployment: **Deploy #243 / run `31931381264` SUCCESS**, Cognition Context Efficiency v1.
 
-Verified production readback after Deploy #240:
-- service active/healthy; schema v5;
-- autonomy enabled, normal mode, retry null, pending action `09c5b034-d175-48db-87c5-32557993561e` preserved;
-- speed **1x**;
-- Darian remained naturally **sleeping in Darian's Master Suite**;
-- living state: cleanliness 98.491, energy 88.791, fatigue 6.305, hunger 7.578, sleepiness 58.55, thirst 23.15;
-- deploy log exposed sim time only as `2025-05-07T***:27:00+00:00`; the masked hour is not inferred;
-- Gemini `gemini-3.1-flash-lite` primary cognition binding preserved;
-- Groq `qwen/qwen3.6-27b` fallback preserved;
-- Telegram bot/API/owner/allowed-user configuration healthy.
+Verified deployment evidence:
+- runtime merge `25d709ddc0cc36d7d7ba30a3e0f7357ce1348dd6` deployed;
+- install/configure/restart/verify completed successfully;
+- production cognition-context audit execution succeeded;
+- schema remains v5;
+- no schema migration or synthetic production cognition call was required for this slice.
 
 ## Deferred boundaries
 
@@ -119,4 +139,4 @@ These may become explicit feature candidates where appropriate; they are not aut
 
 ## Exact resume point
 
-**Overall Workflow/Foundation Review v1 remains COMPLETE / CLOSED. Telegram Cognition Context Inspector v1 is the first completed Creator feature slice after foundation closure: PR #187, final head `b4e0248b5fbf1d4fbc65c62181b8d1bfb74dc8ff`, CI #950 with 605 passing tests, merge `c1ee61ad335ea3fd37509e868c8b406e20d714b7`, and Deploy #240 SUCCESS. Production is healthy at schema v5 with autonomy normal, retry null, pending action preserved and speed 1x. No synthetic cognition call was made to populate the viewer; snapshots begin on the next real production cognition injection. Next work is the next Creator-prioritized feature, not generic gap hunting.**
+**Overall Workflow/Foundation Review v1 remains COMPLETE / CLOSED. Telegram Cognition Context Inspector v1 and Cognition Context Efficiency v1 are COMPLETE / DEPLOYED. Latest runtime checkpoint: PR #191, final tested head `b4febc29ad7ba37d67547346abd5bb9fff73b772`, CI #954 with 613 passing tests, merge `25d709ddc0cc36d7d7ba30a3e0f7357ce1348dd6`, Deploy #243 SUCCESS. Prompt compaction v1 is closed after targeting the measured dominant duplicate metadata while preserving deterministic/runtime semantics. Next work is the next Creator-prioritized product feature, not generic gap hunting or speculative context trimming.**
