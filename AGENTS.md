@@ -15,9 +15,13 @@ Before material work, read `NEW_CHAT_BOOTSTRAP.md` and the directly relevant can
 
 ## Development workflow
 
+Persistent repository branches are **only `main` and `test`**.
+
 Default to the shortest reliable loop:
 
-`branch -> focused tests + CI -> merge -> automatic deploy when runtime-affecting -> read-only production check`
+`develop on test -> focused tests + final CI/PR -> merge test into main -> automatic deploy when runtime-affecting -> read-only production check -> sync test to final main checkpoint when needed`
+
+Do **not** create per-slice `agent/*` branches in normal development. A temporary branch is allowed only for a genuinely exceptional isolation need explicitly approved by the Creator, and it must be deleted immediately after merge/closure.
 
 Follow `docs/PRODUCTION_VALIDATION_AND_RELEASE_PROTOCOL.md`.
 
@@ -25,7 +29,7 @@ Follow `docs/PRODUCTION_VALIDATION_AND_RELEASE_PROTOCOL.md`.
 - Use the repository full CI suite as a final code/runtime PR checkpoint, not as the default inner development loop. A second full-suite run requires a concrete reason such as a broad shared-runtime change or unresolved cross-domain regression.
 - Docs-only changes do not require the full Python suite.
 - Do not create extra release PRs, release-marker ceremony, deploy-authorization helpers, or duplicate compatibility gates by default.
-- Disposable production-copy validation is optional. Use it only when a stateful/migration/runtime risk cannot be covered adequately by local tests and CI.
+- Disposable production-copy validation is optional. Use it only when a stateful/migration/runtime risk cannot be covered adequately by tests and CI.
 - When production-copy validation is used, reuse the existing shared helper/workflow instead of inventing new SSH/copy infrastructure.
 - Runtime-affecting changes deploy through `.github/workflows/deploy.yml` after merge to `main`.
 - Prefer small reversible changes and Git revert/rollback over defensive process layers.
@@ -101,6 +105,24 @@ Preserve:
 - Future social dialogue should use perception/interpretation/social-cognition stages rather than direct chatbot ping-pong or arbitrary utterance-to-relationship mutations.
 - Avoid a giant monolithic mind module. Add bounded modules against the shared schema/contracts.
 
+## World stimulus / exposure — mandatory world-input alignment
+
+`docs/WORLD_STIMULUS_EXPOSURE_FOUNDATION_V1.md` is the canonical contract for externally available signals that may feed character cognition.
+
+**Before implementing weather/environment, media/information, money/economy notices, communication delivery, obligations/reminders, devices or other world-side cognition inputs, read and align with both the World Stimulus/Exposure contract and the Mind Engine contract.**
+
+Preserve:
+
+`world/event truth != stimulus availability != character exposure != perception/interpretation != appraisal/thought != memory != action authority`
+
+- A world fact must not become character knowledge merely because it exists.
+- Stimulus eligibility queries do not automatically record exposure.
+- Exposure means a signal reached the actor boundary; it does not prove understanding, belief, importance, durable memory or behavioral change.
+- Do not inject every active world stimulus into cognition.
+- World-input producers must document authoritative source truth, stimulus creation, scope, exposure proof, perception handoff and retirement/expiry.
+- Phones, televisions, computers, internet access, radios and similar channels are represented world entities/resources when their possession, location, access or capabilities matter. Add them when a concrete world-input consumer needs them; do not treat them as magical omniscient channels.
+- Do not create parallel weather/media/message exposure stores when the common W0 contract fits.
+
 ## Creator controls
 
 Privileged direct mutations follow `docs/CREATOR_CONTROL_POLICY.md`.
@@ -140,6 +162,8 @@ Creator-facing Telegram output follows `docs/TELEGRAM_OBSERVER_ARCHITECTURE.md`.
 ## Expansion policy
 
 Use exemplar-first only when a genuinely new invariant is introduced. Once a pattern is proven, batch structurally equivalent follow-ons in one reviewable change.
+
+Add world elements such as devices, network access, accounts, calendars or communication endpoints when an active feature actually needs them. Expand the represented world in the same bounded slice rather than inventing unrepresented affordances in cognition.
 
 Do not force a production-copy acceptance or separate deploy ceremony for every batch. Use focused tests, CI, merge, and the standard deploy unless concrete risk requires more.
 
