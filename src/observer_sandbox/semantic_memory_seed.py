@@ -84,7 +84,7 @@ def seed_initial_semantic_memories(
                 (
                     memory_id, character_id, "semantic", summary,
                     json.dumps(content, ensure_ascii=False, sort_keys=True), "seed", None,
-                    INITIAL_KNOWN_SIM_TIME, sim_time, 0.7, 1.0, "active", "consolidated",
+                    INITIAL_KNOWN_SIM_TIME, sim_time, 0.1, 1.0, "active", "consolidated",
                     1.0, 1.0, 0.05, 0.8, sim_time, sim_time,
                     json.dumps({"seed_revision": revision, "semantic_key": f"spatial_familiarity:{location_id}"}, ensure_ascii=False, sort_keys=True),
                 ),
