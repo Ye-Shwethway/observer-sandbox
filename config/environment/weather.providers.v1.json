@@ -1,8 +1,10 @@
 {
-  "revision": "weather-providers-v1.0-historical-replay",
+  "revision": "weather-providers-v1.1-region-registry",
   "providers": [
     {
       "id": "open_meteo_south_lake_tahoe_historical_v1",
+      "enabled": true,
+      "region_id": "south_lake_tahoe",
       "provider": "open_meteo",
       "mode": "historical_reanalysis",
       "endpoint": "https://archive-api.open-meteo.com/v1/archive",
@@ -30,7 +32,8 @@
       "fallback": {
         "enabled": true,
         "mode": "deterministic_seasonal_continuity",
-        "mark_synthetic": true
+        "mark_synthetic": true,
+        "profile": "south_lake_tahoe_high_elevation_v1"
       }
     }
   ]
