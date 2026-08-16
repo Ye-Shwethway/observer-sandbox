@@ -25,6 +25,7 @@ from .observer_query import (
 )
 from .secrets import load_runtime_secrets
 from .simulation import runtime_value, set_runtime_value
+from .telegram_cognition_context import cognition_context_view
 from .telegram_profile_browser import character_keyboard, profile_callback_view
 
 DEFAULT_DB = Path(os.environ.get("OBSERVER_SANDBOX_DB", "/var/lib/observer-sandbox/observer.sqlite3"))
@@ -244,7 +245,8 @@ def _back_home_keyboard() -> list[list[dict[str, str]]]:
 def _character_keyboard_for_user(character_id: str, user_id: int) -> list[list[dict[str, str]]]:
     keyboard = character_keyboard(character_id)
     if _user_role(user_id) == "owner":
-        keyboard.insert(1, [{"text": "🩺 Restore Basic Stats", "callback_data": f"ctl:restore_prompt:{character_id}"}])
+        keyboard.insert(1, [{"text": "🧠 Cognition Context", "callback_data": f"cog:{character_id}:1:0"}])
+        keyboard.insert(2, [{"text": "🩺 Restore Basic Stats", "callback_data": f"ctl:restore_prompt:{character_id}"}])
     return keyboard
 
 
@@ -486,6 +488,19 @@ def _callback_view(conn, user_id: int, callback_data: str) -> tuple[str, list[li
         return _fmt_status(observer_status(conn, role=role)), _back_home_keyboard()
     if callback_data == "nav:history":
         return _fmt_history(recent_history(conn, limit=16, role=role)), _back_home_keyboard()
+    if callback_data.startswith("cog:"):
+        parts = callback_data.split(":")
+        if len(parts) != 4:
+            return "Unknown cognition context destination.", _back_home_keyboard()
+        character_id, raw_slot, raw_page = parts[1], parts[2], parts[3]
+        if role != "owner":
+            return "🔒 Creator authority required for cognition context.", character_keyboard(character_id)
+        try:
+            slot = int(raw_slot)
+            page = int(raw_page)
+        except ValueError:
+            slot, page = 1, 0
+        return cognition_context_view(conn, character_id, slot=slot, page=page)
     if callback_data.startswith("ctl:restore_prompt:"):
         character_id = callback_data.split(":", 2)[2]
         if role != "owner":
@@ -502,7 +517,7 @@ def _callback_view(conn, user_id: int, callback_data: str) -> tuple[str, list[li
             return "🔒 Creator authority required for this control.", character_keyboard(character_id)
         result = restore_basic_stats(conn, character_id, authority="creator", requested_by=f"telegram:{user_id}")
         return _fmt_restore_result(result), _character_keyboard_for_user(character_id, user_id)
-    profile_view = profile_callback_view(conn, callback_data)
+    profile_view = profile_callback_view(conn, callback_data, role=role)
     if profile_view is not None:
         return profile_view
     if callback_data.startswith("loc:"):

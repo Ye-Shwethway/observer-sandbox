@@ -55,12 +55,24 @@ def _home_keyboard() -> list[list[dict[str, str]]]:
     return keyboard
 
 
+def _stat_control_index(keyboard: list[list[dict[str, str]]]) -> int:
+    """Keep owner-only Cognition Context immediately below Profile when present."""
+    if len(keyboard) > 1 and keyboard[1]:
+        callback = str(keyboard[1][0].get("callback_data") or "")
+        if callback.startswith("cog:"):
+            return 2
+    return 1
+
+
 def _character_keyboard_for_user(character_id: str, user_id: int) -> list[list[dict[str, str]]]:
     keyboard = [list(row) for row in _ORIGINAL_CHARACTER_KEYBOARD_FOR_USER(character_id, user_id)]
     if base._user_role(user_id) != "unauthorized":
         # The current value is rendered by _callback_view where a connection exists;
         # this placeholder remains usable for older direct keyboard callers.
-        keyboard.insert(1, [{"text": "🔔 Stat Updates", "callback_data": f"pref:statnotify:{character_id}:toggle"}])
+        keyboard.insert(
+            _stat_control_index(keyboard),
+            [{"text": "🔔 Stat Updates", "callback_data": f"pref:statnotify:{character_id}:toggle"}],
+        )
     return keyboard
 
 
@@ -69,7 +81,7 @@ def _character_keyboard_with_stat_pref(conn, character_id: str, user_id: int) ->
     if base._user_role(user_id) != "unauthorized":
         enabled = stat_notifications_enabled(conn, user_id, character_id)
         keyboard.insert(
-            1,
+            _stat_control_index(keyboard),
             [{
                 "text": f"🔔 Stat Updates: {'ON' if enabled else 'OFF'}",
                 "callback_data": f"pref:statnotify:{character_id}:toggle",

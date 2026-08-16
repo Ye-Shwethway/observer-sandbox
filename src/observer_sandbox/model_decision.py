@@ -6,10 +6,12 @@ from datetime import datetime
 from typing import Any
 
 from .actor_selection import resolve_actor_id
-from .ai_runtime import generate_character_decision
+from .ai import resolve_binding
+from .ai_runtime import _compact_prompt_state, generate_character_decision
 from .autonomy_livelock_watchdog import authoritative_recovery_action, repeated_pair_validation_livelock
 from .character_config import configured_character_ids, load_character_autonomy_policy
 from .cognition_capability_awareness import cognition_capability_awareness
+from .cognition_context_snapshots import record_cognition_context_snapshot
 from .eating_behavior import enrich_eating_action_options, validate_proposed_resources
 from .habit_adaptation import habit_dynamics_context
 from .meal_choice_intelligence import meal_choice_context
@@ -30,11 +32,7 @@ from .training_modifiers import training_readiness_modifier
 
 
 def load_autonomy_policy(character_id: str | None = None) -> dict[str, Any]:
-    """Load the selected character's authored policy from the character registry.
-
-    The no-argument form remains convenient while exactly one character config is
-    registered. Once multiple configured characters exist, callers must select one.
-    """
+    """Load the selected character's authored policy from the character registry."""
     if character_id is None:
         configured = configured_character_ids()
         if len(configured) != 1:
@@ -79,11 +77,7 @@ def _shape_discretionary_repetition(
 
 
 class ModelDecisionProvider:
-    """Model-backed decision provider for any registered character.
-
-    Character-specific facts and routine guidance come from config/profile data;
-    runtime cognition and validation remain identity-agnostic.
-    """
+    """Model-backed decision provider for any registered character."""
 
     def __init__(
         self,
@@ -92,11 +86,13 @@ class ModelDecisionProvider:
         character_id: str | None = None,
         role: str = "cognition",
         policy: dict[str, Any] | None = None,
+        capture_context: bool = True,
     ) -> None:
         self.conn = conn
         self.character_id = resolve_actor_id(conn, character_id)
         self.role = role
         self.policy = policy if policy is not None else load_character_autonomy_policy(self.character_id)
+        self.capture_context = capture_context
 
     def _profile_value(self, field_key: str, default: Any = None) -> Any:
         row = self.conn.execute(
@@ -388,6 +384,23 @@ class ModelDecisionProvider:
         enriched["recent_events"] = recent_events
         return enriched
 
+    def _capture_injection(self, state: dict[str, Any], available_actions: list[str], injection_type: str) -> None:
+        if not self.capture_context:
+            return
+        binding = resolve_binding(self.conn, role=self.role, character_id=self.character_id)
+        if binding is None:
+            return
+        record_cognition_context_snapshot(
+            self.conn,
+            character_id=self.character_id,
+            role=self.role,
+            injection_type=injection_type,
+            provider_id=str(binding["provider_id"]),
+            model_id=str(binding["model_id"]),
+            available_actions=available_actions,
+            context=_compact_prompt_state(state),
+        )
+
     def choose(self, state: dict[str, Any], available_actions: list[str]) -> Action:
         enriched = self._enrich_state(state)
         option_actions = {str(option["action"]) for option in enriched["action_options"]}
@@ -397,6 +410,7 @@ class ModelDecisionProvider:
             for option in enriched["action_options"]
         }
 
+        self._capture_injection(enriched, known_actions, "primary")
         decision = generate_character_decision(
             self.conn,
             character_id=self.character_id,
@@ -426,6 +440,7 @@ class ModelDecisionProvider:
                     )
                 ],
             }
+            self._capture_injection(correction_state, known_actions, "corrective_retry")
             decision = generate_character_decision(
                 self.conn,
                 character_id=self.character_id,
@@ -492,7 +507,12 @@ def dry_run_model_decision(
     character_id = resolve_actor_id(conn, character_id)
     before = snapshot(conn, character_id)
     event_count_before = int(conn.execute("SELECT COUNT(*) FROM events").fetchone()[0])
-    action = ModelDecisionProvider(conn, character_id=character_id, role=role).choose(before, ACTION_NAMES)
+    action = ModelDecisionProvider(
+        conn,
+        character_id=character_id,
+        role=role,
+        capture_context=False,
+    ).choose(before, ACTION_NAMES)
     validate_action(conn, character_id, action)
     after = snapshot(conn, character_id)
     event_count_after = int(conn.execute("SELECT COUNT(*) FROM events").fetchone()[0])
