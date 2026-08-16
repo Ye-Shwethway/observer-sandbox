@@ -6,13 +6,15 @@ Status: PLANNING AUTHORITY — IMPLEMENTATION NOT YET AUTHORIZED
 
 This document refines WF-4 and WF-5. It defines how Observer Sandbox expands from the current Thorne Estate interior into the Estate campus and then into a bounded South Lake Tahoe regional world without pretending to model the full real city.
 
+For exact Estate-campus canon/provisional classification, read `docs/THORNE_ESTATE_CAMPUS_CANON_MAP_V1.md` as the authoritative content map.
+
 ## Expansion rule
 
 Open geography in concentric, usable rings:
 
 1. mansion interior;
 2. Estate campus;
-3. Estate gate/public connector;
+3. Estate boundary connectors;
 4. bounded South Lake Tahoe destinations;
 5. later town/wilderness/institutional expansion.
 
@@ -20,107 +22,115 @@ A ring is not opened merely because its parent region exists. It opens only when
 
 ## Canon versus provisional layout
 
-Three geography states are permitted:
-- `canonical`: source-supported or explicitly Creator-approved;
-- `provisional_layout`: necessary spatial arrangement not established by source;
-- `planned`: discussed but not yet represented.
+Geography/content may be classified as:
+- `source_confirmed` / canonical — directly supported by the original Estate source;
+- `story_established` / canonical — explicitly reaffirmed Creator-approved storyline continuity;
+- `structurally_inferred` / `provisional_layout` — needed for traversal but not directly sourced;
+- `planned_unapproved` — discussed but not canonical and not represented.
 
-Technical IDs must remain stable where possible even if provisional layout metadata later improves.
-
-Do not silently convert inferred geometry into canon.
+Technical IDs must remain stable where possible even if provisional layout metadata later improves. Do not silently convert inferred geometry or old memory into canon.
 
 ## Estate campus v1
 
-Candidate campus surface:
-- Main Mansion exterior / primary entrance;
-- front grounds;
-- rear grounds;
-- garden;
-- pool area;
-- tennis court;
-- driveway;
-- garage exterior / vehicle approach;
-- security gate;
-- bounded perimeter/path nodes only where useful.
+The campus content baseline is defined by `THORNE_ESTATE_CAMPUS_CANON_MAP_V1.md`.
 
-The exact graph should favor meaningful navigation over architectural micromapping. A lawn does not need ten nodes unless distinct gameplay/runtime semantics justify them.
+Source/story-backed anchors include:
+- Main Mansion and Garage & Workshop;
+- Tactical Obstacle Course;
+- Private Lake Access;
+- Hidden Dock;
+- rear forested Estate zone;
+- concealed forest passage;
+- underground escape capability.
 
-## Estate campus functional requirement
+Structurally inferred connectors may include:
+- Mansion Exterior / Primary Entrance;
+- Core Estate Grounds;
+- Main Approach;
+- Main Security Gate;
+- minimal internal connector paths/edges.
 
-Each authored campus node should provide at least one of:
-- traversal significance;
-- facility/resource significance;
-- environmental significance;
-- activity affordance;
-- access/boundary significance.
+Garden, swimming pool and tennis court are not supported by the supplied mansion source and remain `planned_unapproved` unless the Creator explicitly adopts them later.
 
-Decorative labels alone are insufficient reason for a node.
+The exact graph should favor meaningful navigation over architectural micromapping.
 
-## Estate gate semantics
+## Estate mobility directions
 
-The gate is both a physical transition and an access boundary.
+The Estate canon map establishes three conceptually distinct mobility directions:
+
+1. **Road / ordinary access** — through the formal main security gate to a future public-road connector.
+2. **Forest / backcountry access** — through the rear forested Estate and concealed forest passage to a future bounded Tahoe backcountry connector.
+3. **Water / covert access** — through Private Lake Access and Hidden Dock; water travel remains later explicit work.
+
+Main security gate, concealed forest passage and tactical escape tunnels are separate semantics and must not collapse into one generic exit.
+
+## Estate boundary semantics
 
 Before WF-5:
-- Estate-side gate node may exist;
-- actor may reach it from inside the Estate;
-- outward public-world route remains absent/locked.
+- Estate-side main gate may exist and be reachable;
+- Estate-side concealed forest passage may exist and be reachable;
+- Hidden Dock may exist as a campus destination;
+- outward public-road, backcountry and water routes remain absent/locked.
 
 After WF-5:
-- a represented public connector exists outside the gate;
-- the gate transition composes private-property access with public-road topology;
-- only authored regional destinations become reachable.
+- road and forest outside-world edges may be opened independently after their destination graph is represented;
+- only authored regional destinations become reachable;
+- water travel remains a separate later slice unless explicitly authorized.
 
 ## Regional parent insertion
 
 `loc_south_lake_tahoe` becomes the structural regional parent of `loc_thorne_estate` and future Tahoe locations.
 
-This parent insertion must not require renaming existing Estate IDs or invalidate actor/object identity. Structural hierarchy can evolve while stable entity IDs remain path-independent.
+This insertion must not require renaming existing Estate IDs or invalidate actor/object identity.
 
 ## Bounded regional representation
 
 South Lake Tahoe v1 is a simulation region, not a complete geographic database.
 
-The region should initially contain only locations needed for meaningful loops, such as:
+Initially represent only locations needed for meaningful loops:
 - the Estate;
 - immediate road/public connector network;
+- a bounded rear-forest/backcountry connector when authorized;
 - a small set of public/service destinations;
-- selected outdoor/recreation destinations later;
-- other residences only when required.
+- selected outdoor/recreation destinations later.
 
-Unrepresented real places are simply unavailable to simulation until authored. The LLM may not fabricate them into authoritative topology.
+Unrepresented real places remain unavailable to simulation until authored. The LLM may not fabricate them into authoritative topology.
 
 ## Real-world source policy
 
 For public real-world geography:
-- use current reputable map/official/business sources when exact existence/location matters;
+- use current reputable official/map/business sources when exact existence/location matters;
 - store only the precision needed by the simulation;
 - distinguish durable place identity from volatile facts such as opening hours;
 - do not assume a business remains open or unchanged without current verification at authoring/update time;
-- avoid unnecessary copying of full external datasets.
+- avoid unnecessary copying of external datasets.
 
-Creator-authored fictional/private locations may coexist with real public geography and should be clearly classifiable as fictional/private world content.
+Official Tahoe geography may establish plausibility of forest/backcountry context, but it does not establish the fictional Estate's exact parcel, legal boundary, named adjacent trail, or precise shoreline/road geometry.
+
+Creator-authored fictional/private locations may coexist with real public geography and should be clearly classified as fictional/private world content.
 
 ## Address and coordinates
 
-V1 may keep human-readable locality/address metadata and optional coordinates for orientation. Coordinates are not the routing authority unless a later routing implementation explicitly adopts them.
+V1 may keep human-readable locality/address metadata and optional coordinates for orientation. Coordinates are not routing authority unless a later routing implementation explicitly adopts them.
 
 The authored relation graph remains authoritative for legal simulation traversal.
 
-## Road representation
+## Road and backcountry representation
 
-Do not model every street segment.
+Do not model every street or trail segment.
 
 Use coarse connector nodes/edges sufficient to represent:
 - leaving the Estate;
-- reaching first selected destinations;
+- entering bounded public-road or backcountry space;
+- reaching selected destinations;
 - meaningful route duration;
 - later insertion of additional destinations without redesign.
 
-Road/connector topology should be expandable and not destination-specific hard-coded travel tables.
+Do not claim a named public trail directly borders the Estate unless separately sourced/authored.
 
 ## Regional destination admission test
 
-A new public destination should not be added merely because it exists in real life. It should satisfy at least one simulation need:
+A new public destination should satisfy at least one simulation need:
 - service/resource loop;
 - social/character destination;
 - recreation/activity;
@@ -136,16 +146,12 @@ WF-5 is ready only after Estate Campus is usable.
 
 First public-world proof should demonstrate:
 1. actor begins inside Estate;
-2. traverses campus to security gate;
-3. legally crosses into a represented public connector;
-4. can reach one bounded regional destination or public waypoint;
+2. traverses campus to one represented boundary connector;
+3. legally crosses into represented public-road or backcountry topology;
+4. can reach one bounded regional destination or waypoint;
 5. travel duration advances simulation time;
 6. ordinary return route remains valid;
 7. no unrepresented Tahoe locations appear as legal cognition options.
-
-## Telegram/observer expectation
-
-World browsing should eventually show recursive geography with friendly names and access/reachability state, but geography authority remains in generic world queries rather than Telegram-specific structures.
 
 ## Deferred depth
 
@@ -155,12 +161,14 @@ Not required for Estate/Tahoe v1:
 - live traffic map;
 - exhaustive business directory;
 - turn-by-turn street navigation;
+- exact named-trail adjacency to the fictional Estate;
+- boat/water runtime;
 - broad NPC population;
 - civic/legal systems;
 - region-wide event simulator.
 
 ## Unlock relationship
 
-WF-4 completes when Estate campus is traversable and usable while the gate remains a hard world edge.
+WF-4 completes when source/story-backed Estate campus locations and necessary provisional connectors are traversable and useful while all outside-world edges remain hard boundaries.
 
-WF-5 completes when the gate connects to a bounded represented South Lake Tahoe graph. This then unlocks environment, venues/services, resources and later world-process planning on genuinely reachable outside locations.
+WF-5 completes when at least one Estate boundary connects to a bounded represented South Lake Tahoe graph. This then unlocks environment, venues/services, resources and later world-process work on genuinely reachable outside locations.
