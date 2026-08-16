@@ -1,0 +1,72 @@
+name: Sleep Pressure Live Read
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - '.github/workflows/sleep-pressure-live-read.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  read-sleep-pressure:
+    if: ${{ vars.VPS_DEPLOY_ENABLED == 'true' }}
+    runs-on: ubuntu-latest
+    steps:
+      - name: Configure SSH
+        env:
+          VPS_SSH_KEY: ${{ secrets.VPS_SSH_KEY }}
+          VPS_HOST: ${{ secrets.VPS_HOST }}
+          VPS_PORT: ${{ secrets.VPS_PORT || '22' }}
+        run: |
+          test -n "$VPS_HOST"
+          test -n "$VPS_SSH_KEY"
+          install -m 700 -d ~/.ssh
+          printf '%s\n' "$VPS_SSH_KEY" > ~/.ssh/id_ed25519
+          chmod 600 ~/.ssh/id_ed25519
+          ssh-keyscan -p "$VPS_PORT" -H "$VPS_HOST" >> ~/.ssh/known_hosts
+
+      - name: Read live sleep pressure
+        env:
+          VPS_HOST: ${{ secrets.VPS_HOST }}
+          VPS_USER: ${{ secrets.VPS_USER }}
+          VPS_PORT: ${{ secrets.VPS_PORT || '22' }}
+        run: |
+          ssh -p "$VPS_PORT" "$VPS_USER@$VPS_HOST" bash -s <<'REMOTE'
+          set -euo pipefail
+          cd /opt/observer-sandbox
+          export OBSERVER_SANDBOX_DB=/var/lib/observer-sandbox/observer.sqlite3
+          .venv/bin/python - <<'PY'
+          import json
+          import os
+          from observer_sandbox.db import connect, migrate
+          from observer_sandbox.simulation import snapshot
+          from observer_sandbox.sleep_pressure import sleep_pressure_signal, last_restorative_sleep_end
+
+          db = os.environ['OBSERVER_SANDBOX_DB']
+          actor_id = 'char_darian'
+          with connect(db) as conn:
+              migrate(conn)
+              state = snapshot(conn, actor_id)
+              pressure = sleep_pressure_signal(conn, state=state, actor_id=actor_id)
+              rows = conn.execute(
+                  "SELECT sim_time,payload_json FROM events WHERE actor_id=? AND event_type='action_completed' ORDER BY id DESC LIMIT 30",
+                  (actor_id,),
+              ).fetchall()
+              recent_sleep = []
+              for row in rows:
+                  payload = json.loads(row['payload_json'] or '{}')
+                  if payload.get('action') == 'sleep':
+                      recent_sleep.append({
+                          'sim_time': row['sim_time'],
+                          'duration_minutes': payload.get('duration_minutes'),
+                          'action_ended_sim_time': payload.get('action_ended_sim_time'),
+                      })
+              print('LIVE_STATE=' + json.dumps(state, sort_keys=True))
+              print('SLEEP_PRESSURE=' + json.dumps(pressure, sort_keys=True))
+              print('LAST_RESTORATIVE_SLEEP_END=' + json.dumps(None if last_restorative_sleep_end(conn, actor_id) is None else last_restorative_sleep_end(conn, actor_id).isoformat()))
+              print('RECENT_SLEEP=' + json.dumps(recent_sleep[:5], sort_keys=True))
+          PY
+          .venv/bin/sandboxctl autonomy-status
+          REMOTE
