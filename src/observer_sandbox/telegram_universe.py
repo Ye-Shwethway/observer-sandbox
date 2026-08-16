@@ -81,7 +81,7 @@ def weather_view(conn) -> tuple[str, list[list[dict[str, str]]]]:
     provider = providers[0] if providers else None
     location_id = str(provider.get("scope_location_id")) if provider else ""
     anchor = (provider or {}).get("geographic_anchor") or {}
-    anchor_name = str(anchor.get("name") or "South Lake Tahoe city-area")
+    anchor_name = str(anchor.get("label") or "South Lake Tahoe city-area")
 
     state = None
     if sim_time and location_id:
