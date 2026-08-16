@@ -1,7 +1,7 @@
 # Observer Sandbox — New Chat Bootstrap
 
 Status: **ACTIVE DEVELOPMENT**
-Last synchronized: 2026-08-16
+Last synchronized: 2026-08-17
 
 ## Startup / authority
 
@@ -22,19 +22,23 @@ Default workflow:
 
 ## Current canonical checkpoint
 
-**W3 Money / Economy Foundation v1 and W3.1 Universe Object Valuation & Creation Rules v1 are COMPLETE / DEPLOYED.**
+**W3 Money / Economy Foundation v1, W3.1 Universe Object Valuation & Creation Rules v1, and Telegram Economy/Identity Observability Parity are COMPLETE / DEPLOYED.**
 
 Latest production evidence:
 - W3 PR #232 — `Add W3 Money Economy Foundation v1`
-  - tested head `b47fe188ea064308a2c83e3b21c4014d3364245d`
-  - CI #1001 / run `31961595256`: SUCCESS — 705 passed
+  - CI #1001: SUCCESS — 705 passed
   - merge `135fee320c5f137b6f748f312d4105aa00b010e7`
   - Deploy #265 / run `31961742114`: SUCCESS
 - W3.1 PR #233 — `Add W3.1 Universe Object Valuation Rules v1`
-  - tested head `68fdb631e828bc4707bce631a19decb3e970ab03`
   - CI #1004 / run `31962052231`: SUCCESS — 710 passed
   - merge `ac07817979a55ca3846e5efee570c56493bd23c3`
-  - **Deploy #266 / run `31962148301`: SUCCESS**
+  - Deploy #266 / run `31962148301`: SUCCESS
+- Telegram observability parity PR #235 — `Add Telegram observability parity for economy and identity`
+  - final tested head `1308a07ae96b0987b1a7fe5fe748ac96dc2c9301`
+  - CI #1006 / run `31963175830`: SUCCESS — 717 passed
+  - Inventory Operations, Solo Regulation, Strength Live Cycle, Read-Only Grading and Attribute Grading acceptance gates: SUCCESS
+  - merge `cd291e993318cf54243a2383fcbc42ede58727a1`
+  - **Deploy #267 / run `31963307250`: SUCCESS**
 - main schema **v14**
 - economy schema **v2**
 - commitment schema v1
@@ -49,13 +53,14 @@ Latest production evidence:
 3. `docs/COMMITMENTS_OBLIGATIONS_FOUNDATION_V1.md`
 4. `docs/MONEY_ECONOMY_FOUNDATION_V1.md`
 5. `docs/UNIVERSE_OBJECT_VALUATION_RULES_V1.md`
-6. `docs/ENVIRONMENT_WEATHER_FOUNDATION_V1.md`
-7. `docs/HISTORICAL_WEATHER_PROVIDER_V1.md`
-8. `docs/WEATHER_REGION_REGISTRY_V1.md`
-9. `docs/TELEGRAM_UNIVERSE_OBSERVABILITY_V1.md`
-10. `docs/HUMAN_MEMORY_DYNAMICS_V1.md`
-11. `docs/CHARACTER_MEMORY_FOUNDATION_V1.md`
-12. task-relevant world/profile/runtime docs only.
+6. `docs/TELEGRAM_OBSERVER_ARCHITECTURE.md`
+7. `docs/ENVIRONMENT_WEATHER_FOUNDATION_V1.md`
+8. `docs/HISTORICAL_WEATHER_PROVIDER_V1.md`
+9. `docs/WEATHER_REGION_REGISTRY_V1.md`
+10. `docs/TELEGRAM_UNIVERSE_OBSERVABILITY_V1.md`
+11. `docs/HUMAN_MEMORY_DYNAMICS_V1.md`
+12. `docs/CHARACTER_MEMORY_FOUNDATION_V1.md`
+13. task-relevant world/profile/runtime docs only.
 
 ## Canonical layer separation
 
@@ -66,6 +71,45 @@ Economy specifically:
 `economic truth != financial notice availability != exposure != perception/interpretation != memory != concern/thought != intention/plan != action proposal != action authority`.
 
 MIND-F0 remains behavior-neutral. Current autonomy does not automatically create thoughts or plans.
+
+## Telegram observability parity — DEPLOYED / MANDATORY
+
+Creator-facing Telegram observability is part of vertical completeness when a relevant observer surface exists.
+
+For every future subsystem that introduces authoritative state materially useful to the Creator:
+- expose it in the semantically relevant Telegram view in the same bounded slice; or
+- explicitly document why Telegram presentation is not relevant yet.
+
+Do not leave Creator-useful state implemented but invisible by default.
+
+Placement rule:
+- character/account/owner state -> Character or owner-facing detail;
+- location/property state -> Location detail;
+- concrete object state/value -> Object detail;
+- inventory quantity/value -> Inventory stack detail;
+- cross-entity summaries only when they add real value.
+
+Telegram remains downstream/read-only. Viewing state must not mutate simulation/economy, create exposure, or create cognition/Memory/Mind state. Existing role/sensitivity restrictions still apply.
+
+### Current economy Telegram surfaces
+
+- Character -> **💰 Finances** (Owner only): net worth, accounts, assets, liabilities; explicitly distinguishes net worth from spendable balance.
+- Thorne Estate location detail: represented property valuation, owner and asset type.
+- Object detail: market/replacement value and W3.1 net-worth treatment. Estate fixtures show that their value is included in the Estate parent asset rather than independently double-counted.
+- Inventory stack detail: live current stock value plus canonical unit value.
+
+These are generic entity-driven query/presentation paths, not Darian/Estate-specialized economy logic.
+
+### Identity presentation correction
+
+Darian's canonical profile already contains:
+- `identity.sex = male`
+- `identity.gender = male`
+- `identity.sexual_orientation = heterosexual`
+
+Telegram Identity presentation now intentionally shows **Gender + Sexual orientation** for Owner and does not duplicate Sex beside Gender.
+
+`identity.sex` remains canonical underlying data for anatomy/compatibility consumers; it was not deleted. `identity.sexual_orientation` remains private and is not exposed to ordinary Allowed users. This field is available for later relationship-system consumers without inventing a new relationship fact store.
 
 ## Deployed World Input stack
 
@@ -149,11 +193,12 @@ Completed:
 6. W2 Commitments / Obligations
 7. W3 Money / Economy Foundation
 8. W3.1 Universe Object Valuation & Creation Rules
+9. Telegram Economy/Identity Observability Parity
 
 Next:
-9. **W4 Information / Media Foundation**
-10. W5 Communication Exposure Foundation
-11. MIND-F2 Mental Episode Runtime only after minimum external-input foundations are sufficient.
+10. **W4 Information / Media Foundation**
+11. W5 Communication Exposure Foundation
+12. MIND-F2 Mental Episode Runtime only after minimum external-input foundations are sufficient.
 
 ## W4 direction
 
@@ -166,6 +211,8 @@ Represent information/media truth before interpretation:
 - `world knows != character knows`;
 - no automatic belief, Memory, concern, intention, plan or action authority.
 
+Apply the Telegram observability-parity rule during W4: if Creator-useful media/information state has a relevant mobile observer surface, expose it in the same slice rather than deferring presentation silently.
+
 ## Exact resume point
 
-**W3 + W3.1 are production-green through Deploy #266. Final continuity sync is documentation-only. Once `main`/`test` are synchronized at that docs checkpoint, W4 Information / Media Foundation is canonical NEXT unless the Creator gives a different instruction. Do not activate Mental Episode/Planning runtime yet.**
+**W3 + W3.1 + Telegram Economy/Identity Observability Parity are production-green through Deploy #267. W4 Information / Media Foundation is canonical NEXT unless the Creator gives a different instruction. Do not activate Mental Episode/Planning runtime yet.**
