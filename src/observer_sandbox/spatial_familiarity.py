@@ -2,112 +2,80 @@ from __future__ import annotations
 
 import json
 import sqlite3
-from pathlib import Path
 from typing import Any
 
-from .world import get_field, set_field
+from .semantic_memory_seed import SPATIAL_FAMILIARITY_LEVELS, seed_initial_semantic_memories
+from .world import get_field
 
 
-REPO_ROOT = Path(__file__).resolve().parents[2]
-DEFAULT_FAMILIARITY_PATH = REPO_ROOT / "config" / "characters" / "darian.spatial_familiarity.v1.json"
-FAMILIARITY_FIELD = "world.spatial_familiarity"
-FAMILIARITY_LEVELS = ("unknown", "aware", "familiar", "intimate")
+FAMILIARITY_LEVELS = SPATIAL_FAMILIARITY_LEVELS
 
 
-def load_spatial_familiarity_seed(path: str | Path = DEFAULT_FAMILIARITY_PATH) -> dict[str, Any]:
-    return json.loads(Path(path).read_text(encoding="utf-8"))
+def seed_spatial_familiarity(conn: sqlite3.Connection) -> None:
+    """Compatibility entrypoint for generic semantic-memory initialization.
 
-
-def _validate_seed(conn: sqlite3.Connection, seed: dict[str, Any]) -> tuple[str, str, dict[str, dict[str, Any]]]:
-    revision = str(seed.get("revision") or "").strip()
-    actor_id = str(seed.get("actor_id") or "").strip()
-    if not revision or not actor_id:
-        raise ValueError("Spatial familiarity seed requires revision and actor_id")
-    actor = conn.execute(
-        "SELECT 1 FROM entities WHERE id=? AND entity_type='character'",
-        (actor_id,),
-    ).fetchone()
-    if actor is None:
-        raise ValueError(f"Unknown spatial familiarity actor: {actor_id}")
-
-    authored: dict[str, dict[str, Any]] = {}
-    for raw in seed.get("locations", []):
-        if not isinstance(raw, dict):
-            continue
-        location_id = str(raw.get("location_id") or "").strip()
-        level = str(raw.get("familiarity") or "unknown").strip()
-        if not location_id or level not in FAMILIARITY_LEVELS:
-            raise ValueError(f"Invalid spatial familiarity row: {raw!r}")
-        exists = conn.execute(
-            "SELECT 1 FROM entities WHERE id=? AND entity_type='location'",
-            (location_id,),
-        ).fetchone()
-        if exists is None:
-            raise ValueError(f"Unknown spatial familiarity location: {location_id}")
-        authored[location_id] = {
-            "familiarity": level,
-            "secret": bool(raw.get("secret", False)),
-            "basis": str(raw.get("basis") or "authored_character_knowledge"),
-        }
-    return revision, actor_id, authored
-
-
-def seed_spatial_familiarity(
-    conn: sqlite3.Connection,
-    *,
-    path: str | Path = DEFAULT_FAMILIARITY_PATH,
-) -> None:
-    """Seed explicit character-known geography without inventing episodic memory.
-
-    This is authored world knowledge, not a general memory system. Unlisted
-    locations remain unspecified/unknown to cognition rather than being inferred
-    from world existence or event history.
+    Spatial knowledge is no longer stored in a named-character familiarity file
+    or compatibility field. The underlying authority is actor-owned semantic
+    Character Memory.
     """
-    seed = load_spatial_familiarity_seed(path)
-    revision, actor_id, authored = _validate_seed(conn, seed)
-    set_field(
-        conn,
-        actor_id,
-        FAMILIARITY_FIELD,
-        {
-            "revision": revision,
-            "levels": list(FAMILIARITY_LEVELS),
-            "locations": authored,
-        },
-        mode="static",
-        authority="character_definition",
-        source=revision,
-    )
-    conn.execute(
-        """
-        INSERT INTO runtime_state(key,value_json) VALUES('spatial_familiarity_revision',?)
-        ON CONFLICT(key) DO UPDATE SET value_json=excluded.value_json,updated_at=CURRENT_TIMESTAMP
-        """,
-        (json.dumps(revision),),
-    )
-    conn.commit()
+    row = conn.execute("SELECT value_json FROM runtime_state WHERE key='sim_time'").fetchone()
+    sim_time = json.loads(row[0]) if row is not None else "2025-05-01T07:00:00+00:00"
+    seed_initial_semantic_memories(conn, sim_time=str(sim_time))
 
 
 def spatial_familiarity_state(conn: sqlite3.Connection, actor_id: str) -> dict[str, Any] | None:
-    value = get_field(conn, actor_id, FAMILIARITY_FIELD, None)
-    return value if isinstance(value, dict) else None
+    rows = conn.execute(
+        """SELECT memory_id,content_json,metadata_json
+           FROM character_memories
+           WHERE character_id=? AND memory_type='semantic' AND status='active'
+             AND json_extract(content_json,'$.knowledge_kind')='spatial_familiarity'
+           ORDER BY memory_id""",
+        (actor_id,),
+    ).fetchall()
+    if not rows:
+        return None
+
+    locations: dict[str, dict[str, Any]] = {}
+    revisions: set[str] = set()
+    for row in rows:
+        content = json.loads(row["content_json"] or "{}")
+        metadata = json.loads(row["metadata_json"] or "{}")
+        location_id = str(content.get("location_id") or "").strip()
+        familiarity = str(content.get("familiarity") or "unknown").strip()
+        if not location_id or familiarity not in FAMILIARITY_LEVELS:
+            continue
+        locations[location_id] = {
+            "familiarity": familiarity,
+            "secret": bool(content.get("secret", False)),
+            "basis": str(content.get("basis") or "semantic_memory"),
+            "memory_id": str(row["memory_id"]),
+        }
+        revision = str(metadata.get("seed_revision") or "").strip()
+        if revision:
+            revisions.add(revision)
+    if not locations:
+        return None
+    return {
+        "revision": sorted(revisions)[-1] if revisions else "dynamic-semantic-memory",
+        "levels": list(FAMILIARITY_LEVELS),
+        "locations": locations,
+        "source": "character_semantic_memory",
+    }
 
 
 def location_familiarity(conn: sqlite3.Connection, actor_id: str, location_id: str) -> dict[str, Any] | None:
     state = spatial_familiarity_state(conn, actor_id)
     if state is None:
         return None
-    locations = state.get("locations")
-    if not isinstance(locations, dict):
-        return None
-    row = locations.get(location_id)
+    row = state["locations"].get(location_id)
     return dict(row) if isinstance(row, dict) else None
 
 
 def location_known(conn: sqlite3.Connection, actor_id: str, location_id: str) -> bool:
     state = spatial_familiarity_state(conn, actor_id)
     if state is None:
-        # Characters without an authored familiarity model keep legacy behavior.
+        # Characters without represented spatial knowledge retain legacy behavior
+        # until their knowledge is explicitly initialized or learned.
         return True
     row = location_familiarity(conn, actor_id, location_id)
     return bool(row and row.get("familiarity") in {"aware", "familiar", "intimate"})
@@ -118,12 +86,7 @@ def filter_cognition_action_options(
     actor_id: str,
     action_options: list[dict[str, Any]],
 ) -> list[dict[str, Any]]:
-    """Hide movement targets the actor does not know without changing world truth.
-
-    Deterministic movement topology remains authoritative. This gate only shapes
-    autonomous character cognition; Creator/manual runtime authority is not
-    rewritten into a memory rule.
-    """
+    """Hide unknown movement targets from cognition without changing topology."""
     if spatial_familiarity_state(conn, actor_id) is None:
         return action_options
     filtered: list[dict[str, Any]] = []
@@ -177,10 +140,10 @@ def spatial_familiarity_context(conn: sqlite3.Connection, actor_id: str) -> dict
     if state is None:
         return {
             "mode": "legacy_unspecified",
-            "guidance": "No authored spatial familiarity model exists for this character; do not infer hidden knowledge from this field.",
+            "guidance": "No represented spatial knowledge exists for this character; do not infer hidden knowledge from objective world truth.",
         }
 
-    raw_locations = state.get("locations") if isinstance(state.get("locations"), dict) else {}
+    raw_locations = state["locations"]
     known_ids = {
         location_id
         for location_id, row in raw_locations.items()
@@ -209,13 +172,11 @@ def spatial_familiarity_context(conn: sqlite3.Connection, actor_id: str) -> dict
     if known_ids:
         placeholders = ",".join("?" for _ in known_ids)
         rows = conn.execute(
-            f"""
-            SELECT source_id,target_id FROM relations
-            WHERE relation_type='connected_to'
-              AND source_id IN ({placeholders})
-              AND target_id IN ({placeholders})
-            ORDER BY source_id,target_id
-            """,
+            f"""SELECT source_id,target_id FROM relations
+                WHERE relation_type='connected_to'
+                  AND source_id IN ({placeholders})
+                  AND target_id IN ({placeholders})
+                ORDER BY source_id,target_id""",
             tuple(sorted(known_ids)) + tuple(sorted(known_ids)),
         ).fetchall()
         for row in rows:
@@ -231,23 +192,19 @@ def spatial_familiarity_context(conn: sqlite3.Connection, actor_id: str) -> dict
     known_secrets = sorted(
         id_to_name[location_id]
         for location_id in known_ids
-        if location_id in id_to_name
-        and isinstance(raw_locations.get(location_id), dict)
-        and bool(raw_locations[location_id].get("secret"))
+        if location_id in id_to_name and bool(raw_locations[location_id].get("secret"))
     )
     return {
-        "mode": "authored_spatial_familiarity_v1",
+        "mode": "semantic_memory_spatial_familiarity_v1",
         "revision": state.get("revision"),
         "known_locations_by_familiarity": grouped,
         "known_connections": connections,
         "known_secret_or_concealed_locations": known_secrets,
         "outdoor_lifestyle_destinations": outdoor_lifestyle_destinations,
         "outdoor_guidance": (
-            "Familiar outdoor lifestyle destinations are ordinary lived spaces, not merely transit nodes. Walking, quiet relaxation, and observing the surroundings may be worthwhile discretionary activities when no stronger physiological or safety need dominates. "
-            "Treat them as positive alternatives to repeatedly defaulting to indoor rest or productivity, but never as a quota or forced outing."
+            "Known outdoor lifestyle destinations are ordinary lived spaces, not merely transit nodes. Walking, quiet relaxation, and observing represented surroundings may be worthwhile discretionary activities when no stronger need dominates. Treat them as alternatives, never quotas or forced outings."
         ),
         "guidance": (
-            "This is character knowledge for planning, not immediate reachability. The character may know a distant familiar place while still needing ordinary multi-step movement to reach it. "
-            "Locations absent from this projection must not be assumed known. Exact executable movement remains limited to current action_options."
+            "This projection is retrieved actor knowledge for planning, not immediate reachability. A known distant place still requires ordinary multi-step movement. Locations absent from represented semantic memory must not be assumed known. Exact executable movement remains limited to current action_options."
         ),
     }
