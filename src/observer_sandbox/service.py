@@ -14,6 +14,7 @@ from .body_measurement_progression import maybe_settle_body_measurements
 from .db import connect
 from .habit_adaptation import settle_habit_adaptation
 from .height_lifecycle import maybe_settle_height_lifecycle
+from .historical_weather_provider import ensure_weather_for_sim_time
 from .hobby_interest_lifecycle import settle_hobby_interest_lifecycle
 from .personality_plasticity import settle_personality_plasticity
 from .physical_attribute_progression import maybe_settle_physical_attribute_batch
@@ -58,7 +59,18 @@ def main() -> None:
     while RUNNING:
         try:
             with connect(DB_PATH) as conn:
-                for actor_id in _active_actor_ids(conn):
+                actor_ids = _active_actor_ids(conn)
+                if actor_ids:
+                    # Weather belongs to shared world time, not to any character.
+                    # Use one active actor only to read the shared simulation clock;
+                    # provider failures/fallback handling may never stop autonomy.
+                    try:
+                        world_now = snapshot(conn, actor_ids[0])
+                        ensure_weather_for_sim_time(conn, sim_time=str(world_now["sim_time"]))
+                    except Exception:
+                        pass
+
+                for actor_id in actor_ids:
                     pending_before = pending_action(conn, actor_id)
                     before = snapshot(conn, actor_id) if pending_before else None
                     result = autonomy_tick(conn, actor_id=actor_id)
