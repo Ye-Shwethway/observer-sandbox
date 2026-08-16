@@ -1,0 +1,76 @@
+{
+  "revision": "darian-economy-v1",
+  "represented_entity_id": "char_darian",
+  "valuation_sim_time": "2025-05-01T00:00:00+00:00",
+  "provenance": {
+    "authority": "creator-approved W3 canonical seed",
+    "basis": "Thorne Estate scale, represented facilities, and inherited/family wealth fit",
+    "scope": "fictional Observer Sandbox economy"
+  },
+  "economic_entity": {
+    "economic_entity_id": "econ_char_darian",
+    "entity_type": "character",
+    "display_name": "Darian Thorne",
+    "metadata": {
+      "wealth_origin": "Thorne family / inherited wealth",
+      "canonical_net_worth_usd": 25000000
+    }
+  },
+  "accounts": [
+    {
+      "account_id": "acct_darian_primary_liquid",
+      "account_type": "primary_liquid",
+      "currency_code": "USD",
+      "opening_balance_minor": 180000000,
+      "metadata": {
+        "spendable": true,
+        "note": "Liquid holdings are distinct from total net worth."
+      }
+    }
+  ],
+  "assets": [
+    {
+      "asset_id": "asset_thorne_estate",
+      "asset_type": "real_estate",
+      "represented_entity_id": "loc_thorne_estate",
+      "valuation": {
+        "valuation_id": "valuation_thorne_estate_v1",
+        "amount_minor": 1650000000,
+        "currency_code": "USD",
+        "method": "creator_canonical_seed"
+      }
+    },
+    {
+      "asset_id": "asset_darian_investments",
+      "asset_type": "investment_portfolio",
+      "valuation": {
+        "valuation_id": "valuation_darian_investments_v1",
+        "amount_minor": 650000000,
+        "currency_code": "USD",
+        "method": "creator_canonical_seed"
+      }
+    },
+    {
+      "asset_id": "asset_darian_personal",
+      "asset_type": "personal_assets",
+      "valuation": {
+        "valuation_id": "valuation_darian_personal_v1",
+        "amount_minor": 70000000,
+        "currency_code": "USD",
+        "method": "creator_canonical_seed"
+      }
+    }
+  ],
+  "liabilities": [
+    {
+      "liability_id": "liability_darian_general",
+      "liability_type": "general_secured_and_operating",
+      "principal_minor": 50000000,
+      "outstanding_minor": 50000000,
+      "currency_code": "USD",
+      "metadata": {
+        "note": "Aggregate seed only; detailed debt instruments are not represented in W3 v1."
+      }
+    }
+  ]
+}

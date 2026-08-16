@@ -6,12 +6,13 @@ from pathlib import Path
 
 from .commitment_schema import migrate_commitment_schema
 from .composition_schema import migrate_composition_schema
+from .economy_schema import migrate_economy_schema
 from .environment_schema import migrate_environment_schema
 from .memory_schema import migrate_memory_schema
 from .mind_schema import migrate_mind_schema
 from .world_input_schema import migrate_world_input_schema
 
-SCHEMA_VERSION = 12
+SCHEMA_VERSION = 13
 
 SCHEMA_SQL = """
 PRAGMA foreign_keys = ON;
@@ -251,6 +252,7 @@ def migrate(conn: sqlite3.Connection) -> None:
     migrate_mind_schema(conn)
     migrate_world_input_schema(conn)
     migrate_commitment_schema(conn)
+    migrate_economy_schema(conn)
     migrate_environment_schema(conn)
     conn.execute(
         "INSERT INTO schema_meta(key, value) VALUES('schema_version', ?) "
