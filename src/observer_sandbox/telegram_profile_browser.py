@@ -4,6 +4,7 @@ from typing import Any
 
 from .profile_change_observer import attach_profile_display_deltas
 from .profile_observer import profile_menu, profile_section
+from .telegram_memory import memory_callback_view
 
 
 _DOMAIN_LABELS = {
@@ -18,6 +19,7 @@ _DOMAIN_LABELS = {
 def character_keyboard(character_id: str) -> list[list[dict[str, str]]]:
     return [
         [{"text": "📖 Profile", "callback_data": f"prof:{character_id}"}],
+        [{"text": "🧠 Memory", "callback_data": f"mem:{character_id}:all:0"}],
         [{"text": "← Characters", "callback_data": "nav:characters"}],
         [{"text": "⌂ Observer Home", "callback_data": "nav:home"}],
     ]
@@ -29,6 +31,9 @@ def profile_callback_view(
     *,
     role: str = "allowed",
 ) -> tuple[str, list[list[dict[str, str]]]] | None:
+    memory_view = memory_callback_view(conn, callback_data)
+    if memory_view is not None:
+        return memory_view
     if callback_data.startswith("prof:"):
         character_id = callback_data.split(":", 1)[1]
         data = profile_menu(conn, character_id, role=role)
