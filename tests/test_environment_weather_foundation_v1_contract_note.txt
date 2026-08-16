@@ -1,2 +1,0 @@
-Environment / Weather Foundation v1 focused validation is implemented in tests/test_environment_weather_foundation_v1.py.
-This marker exists only to make the W1 test scope discoverable in repository search; it carries no runtime authority.
