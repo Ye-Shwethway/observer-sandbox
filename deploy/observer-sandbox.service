@@ -9,8 +9,8 @@ User=observer
 Group=observer
 WorkingDirectory=/opt/observer-sandbox
 Environment=OBSERVER_SANDBOX_DB=/var/lib/observer-sandbox/observer.sqlite3
-ExecStart=/opt/observer-sandbox/.venv/bin/python -m observer_sandbox.service_supervisor
-Restart=always
+ExecStart=/opt/observer-sandbox/.venv/bin/python -m observer_sandbox.service
+Restart=on-failure
 RestartSec=5
 NoNewPrivileges=true
 PrivateTmp=true
