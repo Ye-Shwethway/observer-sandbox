@@ -109,6 +109,13 @@ def _providers_view(conn, mode: str = "primary") -> tuple[str, list[list[dict[st
     return "\n".join(lines), keyboard
 
 
+def _nanogpt_fetch_buttons(prefix: str) -> list[list[dict[str, str]]]:
+    return [
+        [{"text": "🟢 Fetch Subscription Only", "callback_data": f"{prefix}:r:nanogpt:subscription"}],
+        [{"text": "💳 Fetch All · Subscription + Paid", "callback_data": f"{prefix}:r:nanogpt:all"}],
+    ]
+
+
 def _provider_view(
     conn,
     provider_id: str,
@@ -131,15 +138,25 @@ def _provider_view(
     ]
     if provider.get("last_refresh_at"):
         lines.append(f"🕒 Last refresh: {provider['last_refresh_at']}")
+    if provider_id == "nanogpt":
+        lines.extend([
+            "",
+            "🟢 Subscription Only: models included in the NanoGPT subscription.",
+            "💳 All: subscription models plus paid/premium models. Paid-model tests and runtime calls may use account balance.",
+        ])
     if notice:
         lines.extend(["", notice])
     lines.extend(["", "Fetching a catalog does not change primary or fallback cognition settings."])
-    keyboard = [
-        [{"text": "🔄 Fetch Models", "callback_data": f"{prefix}:r:{provider_id}"}],
+    keyboard: list[list[dict[str, str]]] = []
+    if provider_id == "nanogpt":
+        keyboard.extend(_nanogpt_fetch_buttons(prefix))
+    else:
+        keyboard.append([{"text": "🔄 Fetch Models", "callback_data": f"{prefix}:r:{provider_id}"}])
+    keyboard.extend([
         [{"text": "📚 Browse Models", "callback_data": f"{prefix}:page:{provider_id}:0"}],
         [{"text": "← Providers", "callback_data": f"{prefix}:providers"}],
         [{"text": "⌂ Observer Home", "callback_data": "nav:home"}],
-    ]
+    ])
     return "\n".join(lines), keyboard
 
 
@@ -151,7 +168,7 @@ def _models_page(conn, provider_id: str, page: int, *, mode: str = "primary") ->
         return "Unknown AI provider.", [[{"text": "← Providers", "callback_data": f"{prefix}:providers"}]]
     models = models_for_provider(conn, provider_id)
     if not models:
-        return _provider_view(conn, provider_id, mode=mode, notice="No cached models yet. Tap Fetch Models first.")
+        return _provider_view(conn, provider_id, mode=mode, notice="No cached models yet. Fetch a model catalog first.")
     pages = max(1, (len(models) + AI_PAGE_SIZE - 1) // AI_PAGE_SIZE)
     page = max(0, min(int(page), pages - 1))
     start = page * AI_PAGE_SIZE
@@ -163,13 +180,19 @@ def _models_page(conn, provider_id: str, page: int, *, mode: str = "primary") ->
         "",
         "Select a candidate model. Selection alone changes nothing.",
     ]
+    if provider_id == "nanogpt":
+        lines.append("🟢 = subscription included · 💳 = paid/balance model")
     keyboard: list[list[dict[str, str]]] = []
     for offset, model in enumerate(visible):
         index = start + offset
         label = str(model.get("display_name") or model["model_id"])
         if len(label) > 48:
             label = label[:45] + "…"
-        keyboard.append([{"text": f"🧠 {label}", "callback_data": f"{prefix}:m:{provider_id}:{index}"}])
+        icon = "🧠"
+        if provider_id == "nanogpt":
+            scope = str((model.get("metadata") or {}).get("observer_nanogpt_billing_scope") or "subscription")
+            icon = "💳" if scope == "paid" else "🟢"
+        keyboard.append([{"text": f"{icon} {label}", "callback_data": f"{prefix}:m:{provider_id}:{index}"}])
     nav: list[dict[str, str]] = []
     if page > 0:
         nav.append({"text": "◀️", "callback_data": f"{prefix}:page:{provider_id}:{page - 1}"})
@@ -177,10 +200,11 @@ def _models_page(conn, provider_id: str, page: int, *, mode: str = "primary") ->
         nav.append({"text": "▶️", "callback_data": f"{prefix}:page:{provider_id}:{page + 1}"})
     if nav:
         keyboard.append(nav)
-    keyboard.extend([
-        [{"text": "🔄 Refresh Catalog", "callback_data": f"{prefix}:r:{provider_id}"}],
-        [{"text": f"← {provider['display_name']}", "callback_data": f"{prefix}:p:{provider_id}"}],
-    ])
+    if provider_id == "nanogpt":
+        keyboard.extend(_nanogpt_fetch_buttons(prefix))
+    else:
+        keyboard.append([{"text": "🔄 Refresh Catalog", "callback_data": f"{prefix}:r:{provider_id}"}])
+    keyboard.append([{"text": f"← {provider['display_name']}", "callback_data": f"{prefix}:p:{provider_id}"}])
     return "\n".join(lines), keyboard
 
 
@@ -202,6 +226,11 @@ def _candidate_view(conn, user_id: int, *, notice: str | None = None) -> tuple[s
         f"Model: {model_id}",
         f"Test: {'✅ Passed' if tested else '⚪ Not passed'}",
     ]
+    if provider_id == "nanogpt":
+        scope = str(candidate.get("billing_scope") or "subscription")
+        lines.append(f"Billing: {'💳 Paid / balance' if scope == 'paid' else '🟢 Subscription included'}")
+        if scope == "paid":
+            lines.append("⚠️ Test Model and future runtime calls may consume NanoGPT balance.")
     if candidate.get("latency_ms") is not None:
         lines.append(f"Latency: {candidate['latency_ms']} ms")
     if notice:
@@ -251,6 +280,7 @@ def _select_model(conn, user_id: int, provider_id: str, index_text: str, *, mode
     if index < 0 or index >= len(models):
         return "That model selection is stale. Refresh the model list.", [[{"text": "← Providers", "callback_data": f"{prefix}:providers"}]]
     selected = models[index]
+    billing_scope = str((selected.get("metadata") or {}).get("observer_nanogpt_billing_scope") or "subscription")
     _save_candidate(
         conn,
         user_id,
@@ -258,6 +288,7 @@ def _select_model(conn, user_id: int, provider_id: str, index_text: str, *, mode
             "mode": mode,
             "provider_id": provider_id,
             "model_id": selected["model_id"],
+            "billing_scope": billing_scope if provider_id == "nanogpt" else None,
             "probe_ok": False,
         },
     )
@@ -339,10 +370,18 @@ def callback_view(conn, user_id: int, callback_data: str) -> tuple[str, list[lis
     if callback_data.startswith(f"{prefix}:p:"):
         return _provider_view(conn, callback_data.split(":", 2)[2], mode=mode)
     if callback_data.startswith(f"{prefix}:r:"):
-        provider_id = callback_data.split(":", 2)[2]
+        parts = callback_data.split(":")
+        provider_id = parts[2] if len(parts) >= 3 else ""
+        catalog_mode = parts[3] if len(parts) >= 4 else None
         try:
-            count = refresh_provider_catalog(conn, provider_id)
-            return _provider_view(conn, provider_id, mode=mode, notice=f"✅ Catalog refreshed: {count} models available.")
+            count = refresh_provider_catalog(conn, provider_id, catalog_mode=catalog_mode)
+            if provider_id == "nanogpt" and catalog_mode == "subscription":
+                notice = f"✅ Subscription-only catalog refreshed: {count} included models available."
+            elif provider_id == "nanogpt" and catalog_mode == "all":
+                notice = f"✅ All-model catalog refreshed: {count} subscription + paid models available. 💳 Paid models may consume balance."
+            else:
+                notice = f"✅ Catalog refreshed: {count} models available."
+            return _provider_view(conn, provider_id, mode=mode, notice=notice)
         except Exception as exc:
             return _provider_view(conn, provider_id, mode=mode, notice=f"❌ Catalog refresh failed safely.\n{str(exc)[:900]}")
     if callback_data.startswith(f"{prefix}:page:"):
