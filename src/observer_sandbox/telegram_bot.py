@@ -302,9 +302,27 @@ def _fmt_restore_result(result: dict[str, Any]) -> str:
     )
 
 
+def _access_presentation(value: Any) -> tuple[str, str]:
+    """Present the authored access policy without inventing actor-relative denial."""
+    access = str(value or "open").strip().lower()
+    known = {
+        "open": ("🔓", "Open"),
+        "public": ("🔓", "Public"),
+        "resident": ("🏠", "Resident"),
+        "owner_or_resident": ("🏠", "Owner Or Resident"),
+        "private": ("🔐", "Private"),
+        "authorized": ("🪪", "Authorized"),
+        "restricted": ("⚠️", "Restricted"),
+        "closed": ("⛔", "Closed"),
+        "locked": ("🔒", "Locked"),
+    }
+    return known.get(access, ("ℹ️", access.replace("_", " ").title() or "Unknown"))
+
+
 def _location_icon(location: dict[str, Any]) -> str:
-    if location.get("access") != "open":
-        return "🔒"
+    access = str(location.get("access") or "open").strip().lower()
+    if access in {"closed", "locked"}:
+        return _access_presentation(access)[0]
     kind = str(location.get("kind") or "").lower()
     if kind in {"estate", "residence", "building"}:
         return "🏛"
@@ -322,8 +340,8 @@ def _fmt_location(data: dict[str, Any], conn=None) -> str:
     kind = str(loc.get("kind") or "location").replace("_", " ").title()
     if kind and kind != "Location":
         lines.append(f"🧭 {kind}")
-    if loc.get("access") != "open":
-        lines.append("🔒 Access unavailable")
+    access_icon, access_label = _access_presentation(loc.get("access"))
+    lines.append(f"{access_icon} Access · {access_label}")
     if conn is not None:
         lines.extend(location_asset_lines(conn, str(loc["id"])))
     child_locations = data.get("child_locations") or []
