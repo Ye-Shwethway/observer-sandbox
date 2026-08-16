@@ -8,57 +8,50 @@ Roadmap synchronized: 2026-08-16
 - Current Creator instruction, canonical repo contracts/config/schema, and verified live production outrank remembered chat context.
 - AI proposes structured cognition; deterministic runtime validates and mutates.
 - Telegram is observer/control, never simulation authority.
-- Preserve: `Actor(s) + Action + Place + Simulation Time + Conditions/Modifiers + Resources/Targets -> Validation -> State Changes + Events`.
+- Preserve the composable runtime and the separation of world truth, exposure, perception, memory, Mind and action authority.
 - Use minimum-runnable reversible slices and **exemplar-first, then batch-by-pattern**.
-- Prefer vertical completeness before local depth.
-- Never manipulate production merely to manufacture evidence.
-- Code/runtime PRs get one final full CI checkpoint by default; docs-only changes do not need the Python suite.
 - Character-specific behavioral hard-coding is forbidden.
 - Persistent repository branches are only `main` and `test`; normal development occurs on `test` and is promoted to `main` after validation.
 
 ## Current production checkpoint
 
-**W1 — Environment / Weather Foundation v1 is COMPLETE / DEPLOYED.**
+**W1.1 — Historical Weather Provider v1 is COMPLETE / DEPLOYED.**
 
 Evidence:
-- PR #218 — `Add Environment / Weather Foundation v1`
-- final tested head `432cdabeee8c099b13fe70545498cf6730abe751`
-- CI #985 / run `31953779921`: SUCCESS
-- Inventory Foundation v1 Acceptance #70: SUCCESS
-- merge `7279fc15dc2e83ba1703913db649e9968fdb9fdd`
-- Deploy #256 / run `31953861367`: SUCCESS
-- final sync/install/configure cognition/restart/verify: SUCCESS
-- schema v10
-- environment schema v1
+- PR #220 — `Add Historical Weather Replay Provider v1`
+- final tested head `3f7dedef03832876c263a97708103053c13e9b0d`
+- CI #987 / run `31954748630`: SUCCESS
+- merge `f719274598d0c5f21c492a2d20d2eb204e6cfe00`
+- Deploy #257 / run `31954905811`: SUCCESS
+- install/configure/restart/verify: SUCCESS
+- schema v11
+- environment schema v2
 - world-input schema v1
 - mind schema v1
 
-Production intentionally contains **no fabricated current weather**. W1 is source-neutral until an authoritative environment producer/source writes a state.
+Two production-copy acceptance jobs on the PR failed at SSH configuration before their validators ran; final full CI and standard production deploy were successful.
 
 ## Completed foundation stack
 
-The current deployed minimum foundation includes:
-- Character Profile / Skills minimum foundations;
-- adaptive dispositions/habits/preferences/personality foundations;
-- Estate spatial-container and reachability foundation;
-- Outdoor Spatial Affordance Cognition v1;
-- Universal Character Autonomy v1;
-- Universal action satiation / movement-cycle shaping;
-- Character Memory Foundation v1;
-- Semantic Spatial Memory Migration;
-- Human Memory Dynamics v1;
+The deployed minimum foundation includes:
+- Character Profile / Skills and adaptive profile foundations;
+- Estate spatial/reachability and outdoor affordance foundation;
+- Universal Character Autonomy;
+- Character Memory + Semantic Spatial Memory + Human Memory Dynamics;
 - Intelligent Mind Engine Foundation v1;
 - World Stimulus / Exposure Foundation v1;
-- **Environment / Weather Foundation v1**.
+- Environment / Weather Foundation v1;
+- **Historical Weather Provider v1**.
 
-South Lake Tahoe remains intentionally paused.
+South Lake Tahoe traversal remains intentionally paused.
 
 ## Canonical cognition / world-input chain
 
-Canonical docs:
+Required docs:
 - `docs/INTELLIGENT_MIND_ENGINE_FOUNDATION_V1.md`
 - `docs/WORLD_STIMULUS_EXPOSURE_FOUNDATION_V1.md`
 - `docs/ENVIRONMENT_WEATHER_FOUNDATION_V1.md`
+- `docs/HISTORICAL_WEATHER_PROVIDER_V1.md`
 - `docs/CHARACTER_MEMORY_FOUNDATION_V1.md`
 - `docs/HUMAN_MEMORY_DYNAMICS_V1.md`
 
@@ -66,193 +59,107 @@ Preserve:
 
 `world/event truth != stimulus availability != exposure != perception/interpretation != memory != mind state/thought != intention/plan != action proposal != action authority`.
 
-No later subsystem may collapse these layers merely to simplify prompting.
-
 ## MIND-F0 — Intelligent Mind Engine Foundation — DEPLOYED
 
-Generic persistence exists for:
-- bounded `mental_cycles`;
-- typed `mental_episodes`;
-- persistent/semi-persistent `mental_artifacts`;
-- typed `mental_links`.
-
-MIND-F0 remains behavior-neutral. Current autonomy does not automatically create mental cycles or thoughts.
+Generic persistence exists for bounded mental cycles, typed mental episodes, persistent/semi-persistent mental artifacts and typed links. It remains behavior-neutral; current autonomy does not automatically create thoughts or plans.
 
 ## W0 — World Stimulus / Exposure Foundation — DEPLOYED
 
-W0 is the shared world-input boundary for weather, media, money, obligations, communications and other external cognition inputs.
+Shared external-input boundary:
+- `world_stimuli`
+- `world_stimulus_scopes`
+- `character_exposures`
 
-Deployed schema/API:
-- `world_stimuli`;
-- `world_stimulus_scopes`;
-- `character_exposures`;
-- bounded eligibility queries;
-- explicit exposure recording/readback.
-
-Authority guarantees:
-- eligibility != exposure;
-- exposure != perception/belief/memory/thought;
-- exposure never grants action authority.
+Eligibility is not exposure; exposure is not perception/belief/memory/thought; exposure never grants action authority.
 
 ## W1 — Environment / Weather Foundation — DEPLOYED
 
-Canonical contract:
-`docs/ENVIRONMENT_WEATHER_FOUNDATION_V1.md`
+Canonical contract: `docs/ENVIRONMENT_WEATHER_FOUNDATION_V1.md`.
 
-Implementation/acceptance companions:
-- `docs/ENVIRONMENT_WEATHER_FOUNDATION_V1_IMPLEMENTATION_NOTES.md`
-- `docs/ENVIRONMENT_WEATHER_FOUNDATION_V1_ACCEPTANCE.md`
+Runtime provides authoritative `environment_states`, containment-aware applicability, environmental fields, W0 direct ambient publication, and explicit outdoor exposure boundaries. It has no direct weather-to-mood/action rule.
 
-Deployed runtime:
-- authoritative historical `environment_states`;
-- weather condition, temperature, precipitation, wind, visibility, cloud cover and daylight/light fields;
-- simulation-time validity and source provenance;
-- represented-containment environment resolution;
-- most-specific location state override;
-- W0 direct ambient stimulus publication;
-- direct ambient exposure only at explicit `world.spatial_container.exposure="outdoor"` locations;
-- generic second-character/location support;
-- same-scope state supersession with old direct-ambient W0 stimulus retirement.
+## W1.1 — Historical Weather Provider — DEPLOYED
 
-Canonical flow:
+Canonical architecture:
+- `docs/HISTORICAL_WEATHER_PROVIDER_V1.md`
+- `docs/HISTORICAL_WEATHER_PROVIDER_V1_IMPLEMENTATION.md`
+- `docs/HISTORICAL_WEATHER_PROVIDER_V1_ACCEPTANCE.md`
+- `config/environment/weather.providers.v1.json`
 
-`environment truth -> location applicability -> W0 environment stimulus -> direct outdoor exposure -> future perception/appraisal -> Mind`.
+Runtime policy:
 
-Explicit non-effects:
-- no weather-to-mood arithmetic;
-- no weather-to-action steering;
-- no automatic Memory or Mind records;
-- no default live weather fabrication;
-- no live weather API, forecast engine or stochastic climate simulation yet.
+`universe sim time -> configured South Lake Tahoe sampling anchor -> Open-Meteo historical archive/cache -> W1 normalized environment state -> W0 direct outdoor stimulus/exposure`.
 
-Indoor locations may resolve geographic environment truth for future mediated consumers, but they do not receive direct ambient exposure.
+Key guarantees:
+- universe simulation time, not real wall-clock time, chooses the weather hour;
+- South Lake Tahoe coordinate is an external weather sampling anchor, not an invented exact Estate location;
+- daily cache prevents per-tick API calls;
+- exact state IDs are stable by provider + sim hour;
+- provider failure does not stop autonomy;
+- deterministic seasonal fallback is explicitly synthetic;
+- recovered historical data can supersede fallback after retry cooldown;
+- raw provider/cache data never becomes character knowledge;
+- future forecast/app/TV weather is separate Information/Media content requiring represented device/media exposure.
 
 ## World element expansion policy
 
-Phones, televisions, radios, computers, internet/network access, accounts, calendars, communication endpoints and similar elements are represented world entities/resources when possession, location, access, availability or capability matters.
-
-Add them in the bounded slice where a concrete producer/consumer requires them. Do not prebuild decorative complexity and do not treat devices/internet as omniscient cognition channels.
-
-For environment information specifically:
-`weather truth != forecast publication != device/service availability != character exposure != belief`.
+Phones, televisions, radios, computers, internet/network access, accounts, calendars, communication endpoints and similar elements are represented world entities/resources when a concrete feature needs possession/location/access/capability semantics. Do not treat devices/internet as omniscient cognition channels.
 
 ## Active phase — remaining minimum World Input producers
 
 ### W2 — Commitments / Obligations Foundation — NEXT
 
-Goal: represent factual future obligations before planning so the character can later distinguish what is desired from what is expected/promised/scheduled.
+Goal: represent factual future obligations before planning so later Mind can distinguish desired actions from expected/promised/scheduled duties.
 
 Minimum target:
 - obligation/commitment records;
-- types such as appointment, promise, deadline and scheduled responsibility;
+- appointment, promise, deadline and scheduled-responsibility types;
 - start/due simulation times;
 - optional represented person/entity/location target;
 - status/lifecycle;
 - flexibility/reschedulability metadata;
 - provenance/source;
-- W0 reminder/notice stimulus production when represented;
+- W0 reminder/notice production where represented;
 - no automatic Mind concern, intention or plan creation.
 
-Potential world expansion when needed:
+Potential world expansion only when required:
 - calendar/reminder representation;
 - communication endpoint/source for externally delivered commitments;
-- devices only if a concrete reminder/delivery path requires them.
+- devices if a concrete reminder/delivery path requires them.
 
-Keep commitment truth separate from reminder exposure and separate again from the actor mentally prioritizing it.
+Keep commitment truth separate from reminder exposure and separate again from mental prioritization.
 
 ### W3 — Money / Economy Minimum Foundation
 
-Minimum target:
-- balances/financial resources;
-- transactions;
-- income/expenses/obligations;
-- deterministic affordability;
-- financial notices through W0;
-- no direct anxiety/behavior modifier.
+Minimum target: balances/resources, transactions, income/expenses/obligations, deterministic affordability, financial notices through W0, no direct anxiety/behavior modifier.
 
 ### W4 — Information / Media Foundation
 
-Minimum target:
-- information/media items;
-- sources/publishers;
-- publication/availability;
-- credibility/source metadata;
-- represented device/media exposure through W0;
-- `world knows != character knows`.
+Minimum target: information/media items, sources/publishers, publication/availability, credibility metadata, represented device/media exposure through W0, and `world knows != character knows`.
 
 ### W5 — Communication Exposure Foundation
 
-Minimum target:
-- sender/recipient/channel/content/delivery boundary;
-- utterance/message stimulus creation;
-- actual read/heard/exposure boundary;
-- later interpretation/response through Social Cognition, not direct chatbot ping-pong.
+Minimum target: sender/recipient/channel/content/delivery boundary, message/utterance stimulus creation, actual read/heard exposure, and later interpretation/response through Social Cognition rather than direct chatbot ping-pong.
 
-Use exemplar-first, then batch-by-pattern. W2-W5 do not need giant parallel architectures if they share the proven W0 pattern.
+## Mind sequence after minimum world inputs
 
-## MIND-F2 — Mental Episode Runtime — AFTER MINIMUM WORLD INPUTS
+- MIND-F2 Mental Episode Runtime
+- MIND-F3 Attention / Appraisal / Active Concerns
+- MIND-F4 Intention Foundation
+- MIND-F5 Planning
+- MIND-F6 Social Cognition / Communication
+- MIND-F7 Relationship Adaptation
 
-At meaningful cognition/action boundaries, one cognition call may emit a small structured mental-episode bundle alongside an action proposal.
-
-No continuous per-minute LLM polling.
-
-Mind input should consume bounded actor-relative exposure/perception handoffs, not global world tables.
-
-## MIND-F3 — Attention / Appraisal / Active Concerns
-
-Add small persistent mental context above raw prompt data. External facts flow through exposure/perception and character-relative appraisal rather than direct arbitrary mental modifiers.
-
-## MIND-F4 — Intention Foundation
-
-Introduce near-term future direction distinct from prospective thought and distinct from a multi-step plan.
-
-## MIND-F5 — Planning
-
-Planning consumes authoritative current state plus currently recallable memory and active Mind artifacts. Plans remain interruptible and never bypass action validation.
-
-First useful consumers remain:
-- multi-day training/recovery balance;
-- purposeful destination + activity selection.
-
-## MIND-F6 — Social Cognition / Communication
-
-Target:
-`utterance -> exposure/perception -> memory/person context -> appraisal/social inference -> internal thought -> response intention -> utterance proposal`.
-
-## MIND-F7 — Relationship Adaptation
-
-Relationship state should consume represented interpreted social evidence rather than arbitrary direct dialogue-to-trust increments.
+No continuous per-minute LLM thought polling. Plans remain interruptible and never bypass deterministic action validation.
 
 ## Universal autonomy semantic lock
 
-Character-specific factual seeds are allowed. Character-specific behavioral scripts are not.
-
-No named-character autonomy prompt, routine, destination steering, anti-repetition counter-prompt, memory formula, world-input interpretation or mental script may be introduced.
-
-## Deferred depth
-
-Do not silently add:
-- artificial-consciousness claims;
-- full human emotion taxonomy;
-- false-memory fabrication;
-- clinical psychiatric simulation;
-- dreams/detailed sleep-stage modeling;
-- vector/embedding memory;
-- continuous thought polling;
-- giant monolithic Mind module;
-- full unused device/media/economy ecosystems before a consumer needs them;
-- fabricated weather simply to avoid an empty environment state.
+Character-specific factual seeds are allowed. Character-specific behavioral scripts, world-input interpretations, mental scripts, destination steering or bespoke autonomy prompts are not.
 
 ## World / spatial lock
 
-Current Estate boundary remains closed:
-- no public-road edge from Main Security Gate;
-- no Tahoe-backcountry edge from Concealed Forest Passage;
-- no water-travel edge from Hidden Dock;
-- legacy Estate Exterior remains locked/non-traversable.
-
-Known geography never grants executable movement by itself.
+Current Estate boundary remains closed: no public-road edge from Main Security Gate, no Tahoe-backcountry edge from Concealed Forest Passage, and no water-travel edge from Hidden Dock.
 
 ## Current exact resume point
 
-**W1 Environment / Weather Foundation v1 is deployed. Implement W2 Commitments / Obligations Foundation next on `test`, aligned with W0 and the Mind Engine contract. Expand calendars/devices/communication endpoints only when the active obligation/reminder consumer requires them. Do not activate the Mental Episode/Planning runtime yet.**
+**W1.1 Historical Weather Provider v1 is deployed. Implement W2 Commitments / Obligations Foundation next on `test`, aligned with W0 and the Mind Engine contract. Expand calendars/devices/communication endpoints only when a concrete W2 consumer requires them. Do not activate Mental Episode/Planning yet.**
