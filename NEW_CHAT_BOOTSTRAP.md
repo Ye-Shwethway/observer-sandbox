@@ -22,7 +22,7 @@ Default workflow:
 
 ## Current canonical checkpoint
 
-**W3 Money / Economy Foundation v1, W3.1 Universe Object Valuation & Creation Rules v1, and Telegram Economy/Identity Observability Parity are COMPLETE / DEPLOYED.**
+**W3 Money / Economy Foundation v1, W3.1 Universe Object Valuation & Creation Rules v1, Telegram Economy/Identity Observability Parity, and the Transit Route / Telegram Access Semantics correction are COMPLETE / DEPLOYED.**
 
 Latest production evidence:
 - W3 PR #232 — `Add W3 Money Economy Foundation v1`
@@ -38,7 +38,13 @@ Latest production evidence:
   - CI #1006 / run `31963175830`: SUCCESS — 717 passed
   - Inventory Operations, Solo Regulation, Strength Live Cycle, Read-Only Grading and Attribute Grading acceptance gates: SUCCESS
   - merge `cd291e993318cf54243a2383fcbc42ede58727a1`
-  - **Deploy #267 / run `31963307250`: SUCCESS**
+  - Deploy #267 / run `31963307250`: SUCCESS
+- Transit Route / Telegram Access Semantics correction PR #237 — `Preserve transit routes and Telegram access semantics`
+  - final tested head `9bef51b30ce27df27b4576c80f8441a45fae78ae`
+  - CI #1011 / run `31965205934`: SUCCESS
+  - Solo Regulation Naturalism v2 Acceptance #59: SUCCESS
+  - merge `e08fd3743ed2202030aab9d818826fadeee3162b`
+  - **Deploy #268 / run `31965320235`: SUCCESS**
 - main schema **v14**
 - economy schema **v2**
 - commitment schema v1
@@ -91,6 +97,20 @@ Placement rule:
 
 Telegram remains downstream/read-only. Viewing state must not mutate simulation/economy, create exposure, or create cognition/Memory/Mind state. Existing role/sensitivity restrictions still apply.
 
+### Location access presentation invariant
+
+Telegram formatting must preserve authored location-access semantics and must not infer actor-relative denial from a generic policy string.
+
+Examples:
+- `open` -> Open;
+- `resident` -> Resident;
+- `private` -> Private;
+- `restricted` -> Restricted;
+- `closed` -> Closed;
+- `locked` -> Locked.
+
+A non-`open` value is not automatically `Access unavailable`. Renderer formatting may transform presentation only; access authority remains in canonical world/runtime services.
+
 ### Current economy Telegram surfaces
 
 - Character -> **💰 Finances** (Owner only): net worth, accounts, assets, liabilities; explicitly distinguishes net worth from spendable balance.
@@ -110,6 +130,20 @@ Darian's canonical profile already contains:
 Telegram Identity presentation now intentionally shows **Gender + Sexual orientation** for Owner and does not duplicate Sex beside Gender.
 
 `identity.sex` remains canonical underlying data for anatomy/compatibility consumers; it was not deleted. `identity.sexual_orientation` remains private and is not exposed to ordinary Allowed users. This field is available for later relationship-system consumers without inventing a new relationship fact store.
+
+## Transit route visibility invariant — DEPLOYED
+
+Canonical boundary:
+`legal route existence != ordinary choice preference`.
+
+- Raw topology/access authority determines whether a one-hop move is legal.
+- Ordinary recent-use/repetition shaping must preserve every otherwise legal move option.
+- Repeated destinations remain visible and carry `recent_usage` context; repetition may inform choice but cannot silently remove a transit edge.
+- Preferences, habits and discretionary behavior may affect which legal destination the character chooses, not whether the topology exists.
+- Strong/critical biological need-resolution is a separate deliberate causal guard. It may temporarily narrow the current proposal surface to the resolver action or shortest resolver-route first hops.
+- Do not add Darian-specific outdoor quotas, destination steering or campus scripts.
+
+This invariant is required before broader outside-world traversal: future transit hubs must not self-seal merely because a character has traversed them repeatedly.
 
 ## Deployed World Input stack
 
@@ -194,11 +228,12 @@ Completed:
 7. W3 Money / Economy Foundation
 8. W3.1 Universe Object Valuation & Creation Rules
 9. Telegram Economy/Identity Observability Parity
+10. Transit Route / Telegram Access Semantics correction
 
 Next:
-10. **W4 Information / Media Foundation**
-11. W5 Communication Exposure Foundation
-12. MIND-F2 Mental Episode Runtime only after minimum external-input foundations are sufficient.
+11. **W4 Information / Media Foundation**
+12. W5 Communication Exposure Foundation
+13. MIND-F2 Mental Episode Runtime only after minimum external-input foundations are sufficient.
 
 ## W4 direction
 
@@ -215,4 +250,4 @@ Apply the Telegram observability-parity rule during W4: if Creator-useful media/
 
 ## Exact resume point
 
-**W3 + W3.1 + Telegram Economy/Identity Observability Parity are production-green through Deploy #267. W4 Information / Media Foundation is canonical NEXT unless the Creator gives a different instruction. Do not activate Mental Episode/Planning runtime yet.**
+**Transit Route / Telegram Access Semantics correction is production-green through Deploy #268 on top of W3 + W3.1 + Telegram Economy/Identity Observability Parity. Ordinary repetition no longer hides legal transit edges; strong/critical biological need-resolution remains a deliberate causal override. W4 Information / Media Foundation is canonical NEXT unless the Creator gives a different instruction. Do not activate Mental Episode/Planning runtime yet.**
