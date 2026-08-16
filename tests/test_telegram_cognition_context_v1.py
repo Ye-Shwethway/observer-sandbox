@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+import json
+
 import pytest
 
 from observer_sandbox.ai_runtime import _compact_prompt_state
@@ -74,7 +76,7 @@ def test_model_provider_captures_the_exact_compact_context_before_primary_inject
         provider = ModelDecisionProvider(conn, character_id=ACTOR)
         state = snapshot(conn, ACTOR)
         enriched = provider._enrich_state(state)
-        expected_context = _compact_prompt_state(enriched)
+        expected_context = json.loads(json.dumps(_compact_prompt_state(enriched)))
         expected_actions = sorted({str(option["action"]) for option in enriched["action_options"]})
 
         with pytest.raises(ExpectedModelBoundaryStop):
