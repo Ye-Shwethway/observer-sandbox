@@ -13,6 +13,7 @@ ACTOR = "char_darian"
 KITCHEN = "loc_thorne_estate_kitchen"
 MEAL_TARGET = "obj_thorne_estate_kitchen_meal_ingredients"
 PROBE_ACTION = "acceptance-eating-behavior-v1"
+MIN_SCHEMA_VERSION = 5
 
 
 def main() -> int:
@@ -24,7 +25,7 @@ def main() -> int:
 
     with connect(db_path) as conn:
         schema = int(conn.execute("SELECT value FROM schema_meta WHERE key='schema_version'").fetchone()[0])
-        assert schema == 5
+        assert schema >= MIN_SCHEMA_VERSION
         sim_time = json.loads(conn.execute("SELECT value_json FROM runtime_state WHERE key='sim_time'").fetchone()[0])
         actor_runtime_before = dict(conn.execute("SELECT * FROM actor_runtime WHERE actor_id=?", (ACTOR,)).fetchone())
 
@@ -99,6 +100,7 @@ def main() -> int:
             "ok": True,
             "disposable_production_copy": True,
             "schema": schema,
+            "minimum_supported_schema": MIN_SCHEMA_VERSION,
             "sim_time_preserved": sim_time,
             "actor_runtime_preserved": True,
             "legacy_empty_resource_pending_compatible": legacy_pending_checked if pending_id else "not_present",
