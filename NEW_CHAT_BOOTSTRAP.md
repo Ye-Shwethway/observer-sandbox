@@ -18,17 +18,13 @@ Authority:
 Default workflow:
 `branch -> focused tests + final PR CI -> merge main -> automatic deploy when runtime-affecting -> read-only production check`
 
-Docs-only planning work does not require the Python suite or runtime deploy.
-
 ## Strategic checkpoint
 
-Character-side foundations are closed enough for the current purpose. The immediate priority is making the Thorne Estate a coherent spatial world before opening South Lake Tahoe.
+Character-side minimum foundations remain closed enough for the current purpose.
 
-## Active phase — Estate-first World Foundation
+The Estate-first world sequence has now reached **Estate Campus Reachability v1 COMPLETE / DEPLOYED**. South Lake Tahoe remains intentionally paused.
 
-Status: **LOCATION ONTOLOGY DOCUMENTATION FIRST; IMPLEMENTATION NEXT**.
-
-### Required read order
+## Required world read order
 
 1. `docs/WORLD_FOUNDATION_EXPANSION_PLAN_V1.md`
 2. `docs/WORLD_LOCATION_NODE_MODEL.md`
@@ -37,12 +33,11 @@ Status: **LOCATION ONTOLOGY DOCUMENTATION FIRST; IMPLEMENTATION NEXT**.
 5. `docs/WORLD_GEOGRAPHY_EXPANSION_CONTRACT_V1.md`
 6. `docs/THORNE_ESTATE_CAMPUS_CANON_MAP_V1.md`
 7. `docs/WORLD_FOUNDATION_IMPLEMENTATION_SEQUENCE_V1.md`
-
-Read later environment/venue/resource/population/economy contracts only when their phase becomes active.
+8. `docs/ESTATE_CAMPUS_REACHABILITY_V1.md`
 
 ## Location semantic rule
 
-A location is **not a dimensionless point**.
+A location is not a dimensionless point.
 
 Canonical definition:
 
@@ -50,97 +45,108 @@ Canonical definition:
 
 The graph node is the stable identity/hierarchy/topology representation of that container.
 
-Key distinctions:
+Preserve:
 - `contains` = structural spatial membership;
 - `located_at` = dynamic presence;
-- `connected_to` = legal traversable topology;
+- `connected_to` = traversable topology;
 - adjacency/proximity != traversability;
 - ownership/control != containment/presence;
 - access policy != operating/open state;
-- entrance/exit/door/gate/passage = spatial interface concept, not automatically a location node.
+- entrances/exits/doors/gates/passages are spatial-interface semantics, not automatically independent nodes.
 
-GIS polygons, exact dimensions and doorway-per-node modeling are not required for v1.
-
-## Current Estate canon/source checkpoint
-
-Original mansion source supports:
-- approximately 50 acres private land in the forested outskirts of South Lake Tahoe;
-- Main Mansion;
-- Garage & Workshop;
-- Tactical Obstacle Course;
-- Private Lake Access;
-- Hidden Dock;
-- Underground Bunker;
-- tactical escape tunnels/safe exit capability.
-
-Creator-reaffirmed storyline canon adds:
-- rear/western Estate forest/backcountry continuity;
-- Concealed Forest Passage as a distinct low-visibility Estate boundary/egress concept.
-
-The Main Security Gate, Concealed Forest Passage and tactical escape tunnels are distinct semantics. Garden, swimming pool and tennis court are not automatic canon from the supplied mansion source.
-
-## Active near-term sequence
+## Completed Estate-first sequence
 
 ### A0 — Location Spatial Container Contract v1
 
-Current documentation checkpoint. Complete and canonicalize the ontology before runtime mutation.
+COMPLETE through PR #196 / merge `d1167771ddb9c358a464c6efb863d9edf6800e18`.
 
 ### A1 — Existing Estate Location Refactor
 
-Next implementation slice after A0:
-- audit current Estate locations against container semantics;
-- preserve stable IDs wherever possible;
-- confirm parent/kind/exposure/access/source confidence;
-- align contained children/fixtures/resources;
-- make entrances/exits/interfaces coherent with topology;
-- align facilities/affordances with machine-readable capabilities;
-- avoid inventing unsourced layout.
+COMPLETE / DEPLOYED through PR #197:
+- generic `world.spatial_container` metadata;
+- stable IDs/topology preserved;
+- source/layout confidence separated;
+- Estate represented as approximately 50-acre private spatial container;
+- legacy exterior boundary remains locked.
 
-No new campus/public traversal in A1.
+CI #955 SUCCESS; Strength Live Cycle Validation #86 SUCCESS.
+Merge `886001a1d5d1cc62e5e9aab26a64fc08dedf08f1`.
+Deploy #244 SUCCESS.
 
 ### A2 — Gameplay Runtime Reconnection / Regression
 
-Then verify/fix current location consumers:
-- actor `located_at` and compatibility location;
-- movement/routing;
-- action-target/place validation;
-- inventory/resource/object location queries;
-- training/physiology/place-context consumers;
-- cognition compact projection;
-- scheduler/pending action location references;
-- event/history location linkage;
-- Telegram/generic location browsing.
+COMPLETE through PR #198.
 
-A2 must be green before campus reachability.
+Regression coverage proves current snapshot/location resolution, movement/options, move settlement, event/history linkage, object/location query behavior, training consumers and exterior lock remain coherent after the refactor.
 
-### B — Estate Campus Reachability
+Final CI #957 SUCCESS.
+Merge `3425315d2a3f564f0f3f5beb15084fda214c3036`.
 
-After A1/A2:
-- author Estate-side source-confirmed/story-established containers plus minimal provisional connector spaces;
-- create coherent ordinary mansion exterior and Estate-private walking topology;
-- make meaningful campus facilities/affordances usable;
-- expand cognition-visible **choosable options** only from generic executable action/target/resource/facility rules;
-- prove Darian can leave the mansion, use multiple campus locations and return through normal gameplay/runtime.
+### B — Estate Campus Reachability v1
 
-Estate-side Main Gate, Concealed Forest Passage and Hidden Dock may be reachable, but all outward public/backcountry/water continuations remain locked.
+COMPLETE / DEPLOYED through PR #199.
+
+Current campus locations:
+- Mansion Exterior;
+- Core Estate Grounds;
+- Tactical Obstacle Course;
+- Private Lake Access;
+- Hidden Dock;
+- Rear Forested Estate;
+- Concealed Forest Passage;
+- Main Estate Approach;
+- Main Security Gate.
+
+Ordinary traversal begins:
+
+`Master Suite -> Grand Foyer -> Mansion Exterior -> Core Estate Grounds`
+
+Campus branches then reach the obstacle course, lake/dock, rear forest/concealed passage, and main approach/security gate. Garage & Workshop also connects Estate-side into the grounds.
+
+Machine-readable campus fixtures feed the existing generic action-option engine; the outdoor Tactical Obstacle Course exposes a real `train` option.
+
+Acceptance tests prove Darian can leave the mansion, reach/use the campus and return through ordinary runtime.
+
+Final evidence:
+- CI #959 SUCCESS;
+- Strength Live Cycle Validation #88 SUCCESS;
+- Inventory Foundation Acceptance #51 SUCCESS;
+- Skill Evidence Semantics Acceptance #42 SUCCESS;
+- Skill Progression Acceptance #59 SUCCESS;
+- Technology Diagnostic Acceptance #33 SUCCESS;
+- merge `f0955a582e11394ec64387f2a3fc0bfb468350b4`;
+- Deploy #245 / run `31936858504` SUCCESS, including sync, install/configure, restart and verification.
+
+No synthetic production movement was performed solely for proof.
+
+## Current world boundary
+
+The represented world now includes the mansion plus the bounded private Estate campus.
+
+Outside continuation remains unavailable:
+- Main Security Gate -> no public road edge;
+- Concealed Forest Passage -> no Tahoe backcountry edge;
+- Hidden Dock -> no water-travel edge;
+- legacy Estate Exterior -> locked/non-traversable.
 
 ## South Lake Tahoe — PAUSED
 
-Do not currently:
-- connect Main Security Gate to public roads;
-- connect Concealed Forest Passage to Tahoe backcountry nodes;
-- enable Hidden Dock water travel;
-- author arbitrary public Tahoe destinations;
-- implement public venue/economy/population loops ahead of Estate acceptance.
+Do not currently create or enable:
+- public South Lake Tahoe regional graph;
+- public-road continuation from the Main Security Gate;
+- Tahoe-backcountry continuation from Concealed Forest Passage;
+- Hidden Dock water travel;
+- public venue/economy/population loops merely because future contracts exist.
 
-Outside-world expansion resumes only after Estate Campus Runtime Acceptance and separate Creator prioritization.
+Outside-world expansion resumes only on separate Creator prioritization.
 
-## Current verified runtime
+## Current verified deployment
 
-Latest verified runtime deployment remains **Deploy #243 / run `31931381264` SUCCESS**, schema v5.
+Latest verified runtime deployment: **Deploy #245 / run `31936858504` SUCCESS**.
 
-The current ontology work is docs-only and has made no runtime/schema/production world change.
+Runtime merge: `f0955a582e11394ec64387f2a3fc0bfb468350b4`.
+Schema remains v5; no schema migration was needed for Estate campus reachability.
 
 ## Exact resume point
 
-**Complete A0 Location Spatial Container Contract v1 first. Then proceed in order: A1 Existing Estate Location Refactor -> A2 Gameplay Runtime Reconnection/Regression -> B Estate Campus Reachability -> Estate Campus Runtime Acceptance. The goal is to make the current Estate a complete, coherent spatial simulation boundary and allow Darian to use the private campus before any South Lake Tahoe expansion. Public/backcountry/water outside edges remain locked. Latest runtime remains Deploy #243 at schema v5.**
+**A0 Location Spatial Container Contract v1, A1 Existing Estate Location Refactor, A2 Gameplay Runtime Reconnection/Regression, and B Estate Campus Reachability v1 are COMPLETE. Darian can now leave the mansion, use represented private Estate campus places/actions, and return through generic runtime. Keep all South Lake Tahoe/public/backcountry/water continuations locked. Resume with Estate-campus observation/refinement or the next Creator-prioritized Estate-local feature; do not automatically expand outside Tahoe.**
