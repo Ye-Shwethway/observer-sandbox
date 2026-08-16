@@ -18,7 +18,7 @@ def test_commitment_schema_v1_migrates_idempotently(tmp_path):
     with connect(db) as conn:
         migrate_commitment_schema(conn)
         migrate_commitment_schema(conn)
-        assert int(conn.execute("SELECT value FROM schema_meta WHERE key='schema_version'").fetchone()[0]) == SCHEMA_VERSION == 12
+        assert int(conn.execute("SELECT value FROM schema_meta WHERE key='schema_version'").fetchone()[0]) == SCHEMA_VERSION
         assert int(conn.execute("SELECT value FROM schema_meta WHERE key='commitment_schema_version'").fetchone()[0]) == COMMITMENT_SCHEMA_VERSION == 1
         assert conn.execute("SELECT name FROM sqlite_master WHERE type='table' AND name='commitments'").fetchone()
 
