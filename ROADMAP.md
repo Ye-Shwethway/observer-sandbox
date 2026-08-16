@@ -14,6 +14,7 @@ Roadmap synchronized: 2026-08-16
 - Never manipulate production merely to manufacture evidence.
 - Code/runtime PRs get one final full CI checkpoint by default; docs-only changes do not need the Python suite.
 - **Character-specific behavioral hard-coding is forbidden.** Character-specific authoring may seed represented facts/state; autonomous behavior must emerge from universal systems.
+- Persistent repository branches are only `main` and `test`; normal development occurs on `test` and is promoted to `main` after validation.
 
 ## Current production checkpoint
 
@@ -71,23 +72,13 @@ Preserve:
 
 `world truth != perception != memory != mind state/thought != intention/plan != action proposal != action authority`
 
-### Mandatory future alignment rule
-
-Every future system that can materially influence character perception, interpretation, thought, affect, active concerns, goals, intentions, planning, social cognition, communication or relationship appraisal **must read and align with the Mind Engine contract before implementation**.
-
-This rule includes external-world systems when they feed cognition, especially:
-- weather/environment appraisal;
-- economy/money concerns;
-- media/information exposure;
-- communications;
-- schedules/commitments/obligations;
-- social/relationship systems.
+Every future system that can materially influence character perception, interpretation, thought, affect, active concerns, goals, intentions, planning, social cognition, communication or relationship appraisal must read and align with the Mind Engine contract before implementation.
 
 Do not create parallel hidden mind/planner/thought stores. Use the shared typed Mind sockets or explicitly document why a subsystem is outside mental cognition.
 
 ## MIND-F0 — Foundation Schema / Socket Contract — DEPLOYED
 
-Generic persistence now exists for:
+Generic persistence exists for:
 - bounded `mental_cycles`;
 - typed `mental_episodes`;
 - persistent/semi-persistent `mental_artifacts`;
@@ -110,17 +101,149 @@ Reserved artifact vocabulary:
 - appraisal;
 - working item.
 
-A thin character-generic API supports record creation/read/update/linking and bounded active mental context.
-
 **MIND-F0 is behavior-neutral.** Current autonomy does not automatically create mental cycles or thoughts. No planner or thought generator was activated by the foundation deployment.
+
+## W0 — World Stimulus / Exposure Foundation — AUTHORIZED / IN IMPLEMENTATION
+
+Canonical contract:
+`docs/WORLD_STIMULUS_EXPOSURE_FOUNDATION_V1.md`
+
+Purpose: create one shared world-input boundary before weather/media/money/communication systems begin feeding cognition.
+
+Preserve:
+
+`world/event truth != stimulus availability != character exposure != perception/interpretation != appraisal/thought != memory != action authority`
+
+W0 minimum schema/API:
+- `world_stimuli` — externally available signals with source provenance, category, channel, salience and simulation-time availability;
+- `world_stimulus_scopes` — explicit world/location/entity/character/audience availability scopes;
+- `character_exposures` — proof that a represented signal actually reached one character through an implemented channel;
+- bounded eligibility queries that do not record exposure;
+- generic exposure recording that does not create Memory, Mind state, relationship changes or world mutations.
+
+Initial stimulus categories:
+- environment;
+- information;
+- communication;
+- financial;
+- obligation;
+- social;
+- system;
+- other.
+
+Initial channel vocabulary:
+- visual;
+- auditory;
+- tactile;
+- environmental;
+- device;
+- media;
+- direct;
+- mixed;
+- other.
+
+### World element expansion policy
+
+Add phones, televisions, radios, computers, internet/network access, accounts, calendars, communication endpoints and similar world elements **when a concrete W0 producer/consumer needs them**.
+
+They must be represented through normal world/entity/resource/relationship contracts when possession, location, access, availability or capabilities matter. Do not treat devices or the internet as magical omniscient cognition channels.
+
+Example:
+`media item -> represented TV/device output -> actor/location compatibility -> exposure -> future perception/appraisal`
+
+## World-input producer sequence after W0
+
+### W1 — Environment / Weather Foundation
+
+Minimum target:
+- weather condition;
+- temperature;
+- precipitation;
+- wind;
+- light/daylight context;
+- indoor/outdoor exposure boundary;
+- deterministic environment/affordance inputs where represented;
+- no direct mood modifier.
+
+### W2 — Commitments / Obligations Foundation
+
+Minimum target:
+- appointments/deadlines/promises/scheduled obligations;
+- start/due times, status and flexibility;
+- reminders through W0;
+- no automatic intention or plan creation.
+
+### W3 — Money / Economy Minimum Foundation
+
+Minimum target:
+- character financial resources/balances;
+- transactions;
+- income/expenses/obligations;
+- deterministic affordability;
+- financial notices through W0;
+- no direct anxiety/behavior modifier.
+
+### W4 — Information / Media Foundation
+
+Minimum target:
+- information/media items;
+- source/publisher and publication/availability;
+- credibility/source metadata;
+- represented device/media exposure through W0;
+- `world knows != character knows`.
+
+### W5 — Communication Exposure Foundation
+
+Minimum target:
+- sender/recipient/channel/content/delivery boundary;
+- utterance/message stimulus creation;
+- actual exposure/read-or-heard boundary;
+- later interpretation/response through Social Cognition, not direct chatbot ping-pong.
+
+Use exemplar-first, then batch-by-pattern. These do not have to become five oversized isolated architectures if multiple producers share the proven W0 contract.
+
+## MIND-F2 — Mental Episode Runtime — AFTER MINIMUM WORLD INPUTS
+
+At meaningful cognition/action boundaries, allow one model call to emit a small structured bundle of mental episodes alongside an action proposal.
+
+No continuous per-minute LLM polling.
+
+Mind input should consume bounded actor-relative perception/exposure handoffs, not global world tables.
+
+## MIND-F3 — Attention / Appraisal / Active Concerns
+
+Add small persistent mental context above raw prompt data.
+
+External facts should flow through represented exposure/perception and character-relative appraisal rather than direct arbitrary mental modifiers.
+
+## MIND-F4 — Intention Foundation
+
+Introduce near-term future direction distinct from prospective thought and distinct from a multi-step plan.
+
+## MIND-F5 — Planning
+
+Planning consumes authoritative current state plus currently recallable memory and active mind artifacts. Plans remain interruptible and never bypass action validation.
+
+First useful consumers remain:
+- multi-day training/recovery balance;
+- purposeful destination + activity selection.
+
+## MIND-F6 — Social Cognition / Communication
+
+Target:
+`utterance -> exposure/perception -> memory/person context -> appraisal/social inference -> internal thought -> response intention -> utterance proposal`
+
+## MIND-F7 — Relationship Adaptation
+
+Relationship state should consume represented interpreted social evidence rather than arbitrary direct dialogue-to-trust increments.
 
 ## Why Cognition Context remains separate
 
-Current `Cognition Context` is the read-only inspector for actual bounded model injection. It remains useful and intentionally raw.
-
-It is not the represented mind.
+Current `Cognition Context` is the read-only inspector for actual bounded model injection. It is useful and intentionally raw; it is not represented Mind state.
 
 Future observability should distinguish:
+- World / Environment — objective facts;
+- Exposure — externally available signals that reached the actor;
 - Profile — represented character facts;
 - Memory — retained knowledge/experience;
 - Mind — structured mental episodes and active artifacts;
@@ -135,64 +258,6 @@ It may not define future behavior scripts such as named autonomy prompts/policie
 Generic cognition derives behavior from represented state:
 `profile + physiology + time + environment + affordances + goals + relationships + currently recallable memories + active mental context + deterministic constraints`.
 
-## External world input direction
-
-Mind does not exist in a vacuum, but the project does not need to finish every possible world system before continuing cognition work.
-
-Build minimum reusable world-input foundations as evidence requires them. External facts should feed cognition through represented exposure/perception and character-relative appraisal rather than direct arbitrary mental modifiers.
-
-Examples:
-- weather fact -> perception/comfort/affordance context -> appraisal;
-- financial state -> represented affordability/obligation exposure -> concern/appraisal;
-- media item -> source/publication -> character exposure -> interpretation/memory;
-- utterance -> perception -> social interpretation -> response intention.
-
-Avoid rules such as `rain -> mood -5` or `low cash -> anxiety +10`.
-
-## Next development sequence
-
-### MIND-F1 — World Input Foundations — DISCUSSION / evidence-driven
-
-Candidate minimum channels:
-- weather/environment state and perception-ready exposure;
-- money/economy minimum character state;
-- media/information items + exposure;
-- communication exposure/event boundary;
-- commitments/obligations as needed.
-
-Do not build giant complete world simulations merely to unblock Mind.
-
-### MIND-F2 — Mental Episode Runtime
-
-At meaningful cognition/action boundaries, allow one model call to emit a small structured bundle of mental episodes alongside an action proposal.
-
-No continuous per-minute LLM polling.
-
-### MIND-F3 — Attention / Appraisal / Active Concerns
-
-Add small persistent mental context above raw prompt data.
-
-### MIND-F4 — Intention Foundation
-
-Introduce near-term future direction distinct from prospective thought and distinct from a multi-step plan.
-
-### MIND-F5 — Planning
-
-Planning consumes authoritative current state plus currently recallable memory and active mind artifacts. Plans remain interruptible and never bypass action validation.
-
-First useful consumers remain:
-- multi-day training/recovery balance;
-- purposeful destination + activity selection.
-
-### MIND-F6 — Social Cognition / Communication
-
-Target:
-`utterance -> perception -> memory/person context -> appraisal/social inference -> internal thought -> response intention -> utterance proposal`
-
-### MIND-F7 — Relationship Adaptation
-
-Relationship state should consume represented interpreted social evidence rather than arbitrary direct dialogue-to-trust increments.
-
 ## Deferred depth
 
 Do not silently add:
@@ -204,7 +269,8 @@ Do not silently add:
 - vector/embedding memory;
 - continuous thought polling;
 - giant monolithic Mind module;
-- character-specific mental scripts.
+- character-specific mental scripts;
+- full unused device/media/economy ecosystems before a consumer needs them.
 
 ## World / spatial lock
 
@@ -218,4 +284,4 @@ Known geography never grants executable movement by itself.
 
 ## Current exact resume point
 
-**MIND-F0 is deployed. Before implementing the first real thinking runtime, discuss which minimum World Input Foundations should be built first and how MIND-F2 Mental Episode Runtime should consume them. All future cognition-affect-planning-social systems must align with the canonical Mind Engine contract.**
+**Implement and validate W0 — World Stimulus / Exposure Foundation v1 on `test`, promote it to `main`, deploy schema/API, then build the first minimum world-input producer (normally W1 Weather/Environment) against the canonical W0 + Mind contracts. Expand concrete world elements such as devices/network access only when the active producer/consumer requires them.**

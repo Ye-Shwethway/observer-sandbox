@@ -17,12 +17,11 @@ from observer_sandbox.mind_contract import (
 from observer_sandbox.runtime import initialize
 
 
-def test_schema_v8_installs_idempotent_character_generic_mind_foundation(tmp_path):
+def test_mind_schema_v1_installs_idempotent_character_generic_foundation(tmp_path):
     db = tmp_path / "observer.sqlite3"
     initialize(db)
     with connect(db) as conn:
-        assert SCHEMA_VERSION == 8
-        assert conn.execute("SELECT value FROM schema_meta WHERE key='schema_version'").fetchone()[0] == "8"
+        assert conn.execute("SELECT value FROM schema_meta WHERE key='schema_version'").fetchone()[0] == str(SCHEMA_VERSION)
         assert conn.execute("SELECT value FROM schema_meta WHERE key='mind_schema_version'").fetchone()[0] == "1"
         for table in ("mental_cycles", "mental_episodes", "mental_artifacts", "mental_links"):
             assert conn.execute(
