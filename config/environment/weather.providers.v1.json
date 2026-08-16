@@ -1,0 +1,37 @@
+{
+  "revision": "weather-providers-v1.0-historical-replay",
+  "providers": [
+    {
+      "id": "open_meteo_south_lake_tahoe_historical_v1",
+      "provider": "open_meteo",
+      "mode": "historical_reanalysis",
+      "endpoint": "https://archive-api.open-meteo.com/v1/archive",
+      "scope_location_id": "loc_thorne_estate",
+      "geographic_anchor": {
+        "label": "South Lake Tahoe, California",
+        "latitude": 38.9399,
+        "longitude": -119.9772,
+        "coordinate_status": "city_area_sampling_anchor_not_exact_estate_coordinate"
+      },
+      "timezone": "GMT",
+      "hourly": [
+        "temperature_2m",
+        "precipitation",
+        "rain",
+        "snowfall",
+        "weather_code",
+        "cloud_cover",
+        "visibility",
+        "wind_speed_10m",
+        "is_day"
+      ],
+      "cache_granularity": "day",
+      "error_retry_minutes": 15,
+      "fallback": {
+        "enabled": true,
+        "mode": "deterministic_seasonal_continuity",
+        "mark_synthetic": true
+      }
+    }
+  ]
+}
