@@ -1,6 +1,6 @@
 # Telegram Universe Observability v1
 
-Status: IMPLEMENTED — PENDING FINAL CI / DEPLOY
+Status: **COMPLETE / DEPLOYED**
 
 ## Purpose
 
@@ -71,7 +71,7 @@ It is presentation/context metadata, not movement authority.
 
 ## Acceptance
 
-Required proofs:
+Proven:
 - Universe exposes Weather, Regions and Locations separately;
 - Locations contains Thorne Estate;
 - Regions exposes South Lake Tahoe then Thorne Estate;
@@ -81,3 +81,14 @@ Required proofs:
 - synthetic fallback is visibly identified as non-historical truth;
 - viewing Weather does not create character exposure, Memory or Mind records;
 - existing Estate recursive browser remains intact.
+
+## Deployment evidence
+
+- PR #222 — `Add Telegram Universe Weather and Geography Observability v1`
+- final tested head: `6b97919f3697e8fddc59210740219624aa3cd3bb`
+- CI #991 / run `31955921285`: SUCCESS
+- Strength Live Cycle Validation v1 #108: SUCCESS
+- Inventory Operations v1 Acceptance #45: SUCCESS
+- merge: `d45b328767d045f5d1ed420a6b69257e96adb075`
+- Deploy #258 / run `31956018743`: SUCCESS
+- production `sync -> install/configure cognition -> restart -> verify`: SUCCESS
