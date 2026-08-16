@@ -52,9 +52,10 @@ def main() -> int:
         before_score = float(before["score"])
         before_experience = before["experience"]
 
-    # Candidate initialize is the activation boundary for the newly configured
-    # Tactical Planning progression path. Existing production history must not
-    # become retroactive proficiency or XP.
+    # Candidate initialize is idempotent. On a mature production copy the
+    # activation/bootstrap settlement may no longer be the latest settlement,
+    # so acceptance proves that the zero-gain bootstrap exists rather than
+    # incorrectly requiring it to be last forever.
     initialize(db_path)
     with connect(db_path) as conn:
         activated = _skill(conn)
@@ -64,9 +65,10 @@ def main() -> int:
         assert metadata.get("progression_active") is True
         matching = _matching_settlements(conn)
         assert matching
-        assert matching[-1]["bootstrap"] is True
-        assert matching[-1]["score_delta"] == 0.0
-        assert matching[-1]["experience_gain"] == 0.0
+        bootstrap = next((item for item in matching if item.get("bootstrap") is True), None)
+        assert bootstrap is not None
+        assert bootstrap["score_delta"] == 0.0
+        assert bootstrap["experience_gain"] == 0.0
 
         # Deterministic fixture state exists only on the disposable copy.
         set_dynamic_location(conn, ACTOR, TRAINING_HALL)
