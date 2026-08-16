@@ -36,6 +36,7 @@
     "obj_thorne_estate_training_practice_dummy": "technical_dummy_drills",
     "obj_thorne_estate_training_ai_combat_sim": "ai_combat_simulation",
     "obj_thorne_estate_training_obstacle_course": "obstacle_conditioning",
+    "obj_thorne_estate_outdoor_obstacle_course": "obstacle_conditioning",
     "obj_thorne_estate_training_combat_pit": "combat_pit_drills",
     "obj_thorne_estate_training_vr_tactical_sim": "vr_tactical_drills"
   }
