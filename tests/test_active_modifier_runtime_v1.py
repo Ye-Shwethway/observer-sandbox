@@ -149,7 +149,7 @@ def test_active_fatigue_modifier_changes_training_legality_then_expires(tmp_path
 
         assert snapshot(conn, ACTOR)["fatigue"] == 80.0
         assert not any(option["action"] == "train" for option in action_options(conn, ACTOR))
-        with pytest.raises(ValueError, match="systemic fatigue"):
+        with pytest.raises(ValueError, match="Action train conditions are not satisfied"):
             validate_action(conn, ACTOR, Action("train", 30, FREE_WEIGHTS, "training while temporarily impaired"))
         assert get_field(conn, ACTOR, "physiology.fatigue") == 20.0
 
