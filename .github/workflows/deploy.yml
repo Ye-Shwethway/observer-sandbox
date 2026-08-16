@@ -114,14 +114,14 @@ jobs:
             else
               echo "Cognition bootstrap skipped: no supported credential provisioned"
             fi
-            sudo -n /usr/bin/install -m 0644 deploy/observer-sandbox.service /etc/systemd/system/observer-sandbox.service
-            sudo -n /usr/bin/systemctl daemon-reload
             sudo -n /usr/bin/systemctl restart observer-sandbox
             sudo -n /usr/bin/systemctl is-active observer-sandbox
             .venv/bin/sandboxctl status
             .venv/bin/sandboxctl living-status
+            .venv/bin/sandboxctl autonomy-status
             .venv/bin/sandboxctl ai resolve cognition --character char_darian
             .venv/bin/python -m observer_sandbox.cognition_context_audit --db "$OBSERVER_SANDBOX_DB" --character char_darian
+            .venv/bin/python -c "import json,sqlite3; db=sqlite3.connect('file:/var/lib/observer-sandbox/observer.sqlite3?mode=ro',uri=True); db.row_factory=sqlite3.Row; err=db.execute(\"SELECT sim_time,payload_json FROM events WHERE actor_id=? AND event_type='autonomy_error' ORDER BY id DESC LIMIT 1\",('char_darian',)).fetchone(); rec=db.execute(\"SELECT sim_time,payload_json FROM events WHERE actor_id=? AND event_type='autonomy_recovery' ORDER BY id DESC LIMIT 1\",('char_darian',)).fetchone(); print('LATEST_AUTONOMY_ERROR='+json.dumps(None if err is None else {'sim_time':err['sim_time'],**json.loads(err['payload_json'] or '{}')},sort_keys=True)); print('LATEST_AUTONOMY_RECOVERY='+json.dumps(None if rec is None else {'sim_time':rec['sim_time'],**json.loads(rec['payload_json'] or '{}')},sort_keys=True))"
             if grep -Eq "^OBSERVER_TELEGRAM_BOT_TOKEN=.+" /var/lib/observer-sandbox/secrets.env 2>/dev/null; then
               echo "TELEGRAM_BOT_TOKEN_PRESENT=true"
               TOKEN=$(sed -n "s/^OBSERVER_TELEGRAM_BOT_TOKEN=//p" /var/lib/observer-sandbox/secrets.env | head -n1)

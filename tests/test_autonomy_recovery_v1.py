@@ -1,9 +1,9 @@
 import json
 
 from observer_sandbox.actor_runtime import actor_runtime, pending_action, set_actor_runtime, set_retry
+from observer_sandbox.autonomy_recovery import DECISION_RECOVERY_THRESHOLD, recover_decision_livelock
 from observer_sandbox.db import connect
 from observer_sandbox.runtime import initialize
-from observer_sandbox.service_supervisor import DECISION_RECOVERY_THRESHOLD, recover_decision_livelock
 from observer_sandbox.simulation import snapshot
 
 
@@ -63,11 +63,11 @@ def test_repeated_value_error_is_recovered_with_authoritative_pending_action(tmp
         assert result["state"] == "planned"
         pending = pending_action(conn, ACTOR)
         assert pending is not None
-        assert pending["conditions"]["autonomy_recovery"]["source"] == "service-supervisor-v1"
+        assert pending["conditions"]["autonomy_recovery"]["source"] == "autonomy-recovery-v1"
         assert pending["conditions"]["autonomy_recovery"]["basis"] == "repeated_decision_validation_failure"
         assert actor_runtime(conn, ACTOR)["retry"] is None
         event = conn.execute(
-            "SELECT payload_json FROM events WHERE actor_id=? AND event_type='autonomy_supervisor_recovery' ORDER BY id DESC LIMIT 1",
+            "SELECT payload_json FROM events WHERE actor_id=? AND event_type='autonomy_recovery' ORDER BY id DESC LIMIT 1",
             (ACTOR,),
         ).fetchone()
         assert event is not None
