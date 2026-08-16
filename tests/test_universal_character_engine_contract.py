@@ -50,7 +50,7 @@ def test_multiple_characters_without_default_require_explicit_actor(tmp_path):
         assert resolve_actor_id(conn, "char_fixture") == "char_fixture"
 
 
-def test_unregistered_character_cannot_silently_inherit_darian_policy(tmp_path):
+def test_unregistered_character_requires_character_seed_even_with_universal_policy(tmp_path):
     db = tmp_path / "observer.sqlite3"
     initialize(db)
     with connect(db) as conn:
@@ -59,11 +59,12 @@ def test_unregistered_character_cannot_silently_inherit_darian_policy(tmp_path):
             ModelDecisionProvider(conn, character_id="char_fixture")
 
 
-def test_policy_loader_is_registry_driven_not_named_character_default():
+def test_policy_loader_is_universal_and_not_bound_to_character_identity():
     direct = load_character_autonomy_policy("char_darian")
     implicit = load_autonomy_policy()
     assert implicit == direct
-    assert implicit["entity_id"] == "char_darian"
+    assert implicit["policy_revision"] == "universal-autonomy-v1-no-character-hardcoding"
+    assert "entity_id" not in implicit
 
 
 def test_universe_resume_wakes_every_enabled_idle_actor(tmp_path):
