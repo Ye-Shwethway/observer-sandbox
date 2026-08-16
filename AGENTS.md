@@ -158,6 +158,10 @@ Creator-facing Telegram output follows `docs/TELEGRAM_OBSERVER_ARCHITECTURE.md`.
 - Keep canonical ISO time internal; use the approved human-readable time format in UI.
 - Hide engine bookkeeping from normal history views.
 - Presentation stays downstream of generic query/control services.
+- **Observability parity is part of vertical completeness.** When a new subsystem introduces authoritative state that is meaningfully useful to the Creator and a relevant Telegram observer surface exists, the same bounded slice must expose that state there or explicitly document why Telegram presentation is not relevant yet. Do not leave Creator-useful state implemented but invisible by default.
+- Route presentation by represented entity semantics rather than creating one giant dashboard: character-owned state belongs on character/owner views, location/property state on location views, and object/item state on object or inventory detail views. Cross-domain summaries are additive, not substitutes for entity-local detail.
+- Telegram remains read-only for observer presentation. Displaying a value must not create exposure, cognition, memory, economic mutations, or other simulation side effects.
+- Access/sensitivity rules remain authoritative. Observability parity never means exposing private or intimate state to a role that is not permitted to see it.
 
 ## Expansion policy
 

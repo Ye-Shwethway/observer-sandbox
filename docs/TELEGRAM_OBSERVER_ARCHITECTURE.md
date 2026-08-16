@@ -19,6 +19,25 @@ Handlers must not encode world rules, own stock/macro calculations, mutate SQLit
 
 The same service layer must remain reusable by CLI/web/mobile surfaces.
 
+## Observability parity rule
+
+Creator-observable vertical completeness includes Telegram when a relevant Telegram observer surface already exists.
+
+When a new subsystem introduces authoritative state that is materially useful to the Creator, the implementation slice must do one of two things:
+1. expose it on the semantically relevant Telegram observer surface; or
+2. explicitly document why no Telegram presentation is relevant yet.
+
+Do not treat a subsystem as fully Creator-observable merely because its persistence/runtime tests pass while its useful state remains invisible on mobile.
+
+Placement follows represented entity semantics rather than a giant catch-all dashboard:
+- character-owned/account state -> Character / owner-facing detail;
+- represented property/location asset state -> Location detail;
+- concrete object economics/capabilities -> Object detail;
+- concrete stock quantity/value -> Inventory stack detail;
+- universe-wide or cross-entity summaries -> dedicated overview only when the summary adds real value.
+
+This is presentation parity, not authority parity. Telegram reads canonical state through reusable services and must not create simulation mutations, character exposure, cognition, Memory, Mind state, or economic facts simply by displaying them. Existing role/sensitivity rules still apply.
+
 ## Generic observer resources
 
 Primary resources include:
@@ -29,6 +48,7 @@ Primary resources include:
 - fixed/movable inventory containers;
 - runtime state/actions/events;
 - profile sections/fields;
+- economy entities/accounts/assets/liabilities/value policies;
 - providers/models/bindings;
 - typed Creator controls.
 
@@ -40,7 +60,7 @@ World:
 `Universe -> Location -> Sublocation -> Contents`
 
 Character:
-`Characters -> Character -> State | Profile | History | Inventory | Physiology | Skills | ...`
+`Characters -> Character -> State | Profile | Finances | History | Inventory | Physiology | Skills | ...`
 
 Inventory:
 `Inventory -> Locations | Characters | Containers | All Stocks -> Scope -> Stack`
@@ -49,6 +69,17 @@ AI:
 `Creator Settings -> AI -> Provider -> Model -> Test -> Save`
 
 Large resources use layered/paginated views rather than giant messages.
+
+## Economy observer placement
+
+W3/W3.1 economy state remains generic backend truth and is projected into Telegram by entity relationship:
+
+- **Character / owner view:** an owner-only `💰 Finances` surface shows represented net worth, accounts, assets and liabilities. Net worth is not presented as spendable cash.
+- **Location detail:** if the location itself is represented by an economic asset, show its current represented valuation, owner and asset type. The Thorne Estate is the first exemplar, not a hard-coded exception.
+- **Object detail:** when W3.1 has an economic value policy, show market/replacement value when numeric and show net-worth treatment. Installed Estate fixtures explicitly say they are included in the parent Estate asset rather than independently increasing net worth.
+- **Inventory stack detail:** show live current stock value derived from current quantity plus the canonical definition unit value.
+
+The Telegram layer does not calculate asset ownership rules, invent valuations or sum macro wealth. Generic economy/value observer services read the canonical W3/W3.1 tables and return presentation-ready facts.
 
 ## Universal inventory observer invariant
 
@@ -68,7 +99,7 @@ Current entry points:
 - `/start -> 🎒 Inventory`;
 - `/inventory`;
 - Locations / Characters / Containers / All Stocks buttons;
-- stack detail with quantity/unit, universal definition, owner, container and container mobility/kind.
+- stack detail with quantity/unit, universal definition, owner, container, container mobility/kind and represented economic value when available.
 
 Synthetic non-Estate location and non-Darian character + movable backpack tests guard against identity leakage.
 
@@ -92,12 +123,22 @@ Telegram never performs the SQL mutation itself. It calls the reusable Creator c
 ## General character/location observation
 
 The observer layer may expose:
-- location list/detail/rooms/contents/exits/recent events;
-- item/stack detail;
-- character list/selection/current state/profile/history;
+- location list/detail/rooms/contents/exits/recent events and represented property valuation;
+- item/stack detail including economic value where represented;
+- character list/selection/current state/profile/history/finances;
 - inventory scoped through the universal inventory query contract.
 
 No Telegram session should assume `char_darian` forever. Selected actor/location/session navigation remains a presentation concern; world state remains canonical in runtime storage.
+
+## Profile identity presentation
+
+Profile persistence may retain multiple factual fields for downstream systems, including biological/anatomical facts. Telegram section composition is a presentation decision and must avoid semantically redundant rows.
+
+For the owner-facing Identity section, the relationship-facing identity facts are:
+- Gender;
+- Sexual orientation.
+
+`identity.sex` remains canonical underlying data for future anatomy/compatibility consumers but is not duplicated alongside Gender in the Telegram Identity section. Sexual orientation remains private: Owner may see it; ordinary Allowed users do not gain access merely because the Identity section exists.
 
 ## AI/model control
 
@@ -151,8 +192,9 @@ Canonical simulated-time display:
 Reusable id-oriented services may include:
 - runtime overview;
 - list/get locations and contents;
-- list/get characters/profile/history;
-- inventory scopes + `inventory_for_entity(entity_id)` + stack detail;
+- list/get characters/profile/history/economy;
+- represented asset/value-policy lookup;
+- inventory scopes + `inventory_for_entity(entity_id)` + stack detail/value;
 - provider/model/binding queries;
 - typed Creator controls such as restore basic stats and replenish an existing inventory stack.
 
@@ -162,6 +204,7 @@ The exact API may evolve; Telegram/backend separation is mandatory.
 
 Telegram observer work passes only when:
 - the Creator can independently inspect live universe state on mobile;
+- newly added Creator-useful state is surfaced on a semantically relevant Telegram view when one exists;
 - read-only navigation does not mutate simulation state;
 - mutation paths are typed, authorized, confirmed where appropriate and audited;
 - presentation remains mobile-scannable;

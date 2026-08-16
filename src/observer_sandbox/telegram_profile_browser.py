@@ -45,6 +45,16 @@ def profile_callback_view(
         _, character_id, section_id = parts
         try:
             data = profile_section(conn, character_id, section_id, role=role)
+            if section_id == "identity":
+                # Biological sex remains a canonical profile fact for anatomy and
+                # compatibility logic, but it is not duplicated in the Creator's
+                # Identity presentation. Gender and sexual orientation are the
+                # relationship-facing identity facts shown here.
+                data["content"] = [
+                    item
+                    for item in data.get("content") or []
+                    if item.get("field_key") != "identity.sex"
+                ]
             data = attach_profile_display_deltas(conn, character_id, data)
         except PermissionError:
             return (
