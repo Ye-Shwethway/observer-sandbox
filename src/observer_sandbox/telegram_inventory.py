@@ -4,8 +4,10 @@ import sqlite3
 from typing import Any
 
 from .creator_control import replenish_inventory_stack
+from .economic_value import inventory_stack_value_minor, value_profile
 from .inventory import all_inventory_stacks, inventory_for_entity, list_inventory_scopes, stack_state
 from .nutrition_facts import nutrition_facts_for_definition
+from .telegram_economy import format_money_minor
 from .world import get_field
 
 PAGE_SIZE = 8
@@ -181,6 +183,21 @@ def _stack_view(
         lines.append(f"🧭 Mobility    {str(mobility).replace('_', ' ').title()}")
     if kind:
         lines.append(f"🗃 Storage     {str(kind).replace('_', ' ').title()}")
+
+    economic = value_profile(conn, "entity_definition", stack.definition_id)
+    current_value = inventory_stack_value_minor(conn, stack_id)
+    currency = economic.get("currency_code")
+    lines.extend([
+        "",
+        "💰 ECONOMIC VALUE",
+        f"💵 Current stock  {format_money_minor(current_value, currency)}",
+    ])
+    if economic.get("unit_value_minor") is not None:
+        unit_quantity = _fmt_number(float(economic.get("unit_quantity") or 1.0))
+        unit_label = str(economic.get("unit_label") or stack.unit)
+        lines.append(
+            f"🏷 Unit value     {format_money_minor(int(economic['unit_value_minor']), currency)} / {unit_quantity} {unit_label}"
+        )
 
     nutrition = nutrition_facts_for_definition(stack.definition_id)
     if nutrition is not None:
