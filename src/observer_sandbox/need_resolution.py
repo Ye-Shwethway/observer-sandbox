@@ -137,6 +137,28 @@ def _inject_sleep_pressure(conn: sqlite3.Connection, state: dict[str, Any], deci
         }
 
 
+def _movement_with_need_guidance(
+    action_options: list[dict[str, Any]],
+    *,
+    active: dict[str, Any],
+    recommended_hops: set[str],
+) -> list[dict[str, Any]]:
+    """Preserve every legal move while marking need-resolving first hops."""
+    movement: list[dict[str, Any]] = []
+    for option in action_options:
+        if option.get("action") != "move":
+            continue
+        row = dict(option)
+        target = row.get("target")
+        row["need_route"] = {
+            "need": active.get("need"),
+            "level": active.get("level"),
+            "recommended": isinstance(target, str) and target in recommended_hops,
+        }
+        movement.append(row)
+    return movement
+
+
 def shape_action_options_for_needs(conn: sqlite3.Connection, *, state: dict[str, Any], action_options: list[dict[str, Any]], decision_signals: dict[str, Any], intrinsic_effects_per_hour: dict[str, dict[str, float]] | None = None) -> list[dict[str, Any]]:
     actor_id = str(state.get("actor_id") or "")
     if actor_id:
@@ -157,8 +179,16 @@ def shape_action_options_for_needs(conn: sqlite3.Connection, *, state: dict[str,
                 if option.get("action") == "sleep":
                     option["duration"] = (360, 540)
                     option["sleep_pressure"] = decision_signals["sleep_pressure"]
-        return local
+        return local + _movement_with_need_guidance(
+            action_options,
+            active=active,
+            recommended_hops=set(),
+        )
     goals = _resolver_rooms(conn, cfg, actions, current, intrinsic)
     hops = _first_hops(conn, str(state["location"]), goals)
-    movement = [o for o in action_options if o.get("action") == "move" and o.get("target") in hops]
+    movement = _movement_with_need_guidance(
+        action_options,
+        active=active,
+        recommended_hops=hops,
+    )
     return movement or action_options
