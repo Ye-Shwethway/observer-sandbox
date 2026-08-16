@@ -25,14 +25,15 @@ Do not repeatedly run the full suite. Code/runtime PRs get one final full CI che
 All Character Profile sections are minimum-unlocked v1. Skills remains CLOSED v1.
 
 Adaptive Character Disposition Foundation is COMPLETE v1:
-`Habit Formation/Extinction -> Hobby/Interest Lifecycle -> Preference Adaptation -> Slow Personality Plasticity`
+`Habit Formation/Extinction -> Hobby/Interest Lifecycle -> Preference Adaptation -> Slow Personality Plasticity`.
 
 Do not reopen local psychology merely for depth.
 
-The active phase is the **Overall Workflow/Foundation Review**. Three selected structural gaps are now COMPLETE:
+The active phase is the **Overall Workflow/Foundation Review**. Four selected structural gaps are now COMPLETE:
 1. **Autonomy Intent Continuity v1** — PR #178 / Deploy #236.
 2. **Active Modifier Runtime Foundation v1** — PR #180 / Deploy #237.
 3. **Action Condition Runtime Foundation v1** — PR #182 / Deploy #238.
+4. **Participant-Aware Recent Event Context v1** — PR #184 / Deploy #239.
 
 Continue the read-only review before selecting another runtime slice.
 
@@ -41,6 +42,7 @@ Relevant docs:
 - `docs/AUTONOMY_INTENT_CONTINUITY_V1.md`
 - `docs/ACTIVE_MODIFIER_RUNTIME_V1.md`
 - `docs/ACTION_CONDITION_RUNTIME_V1.md`
+- `docs/PARTICIPANT_RECENT_EVENT_CONTEXT_V1.md`
 - `docs/ADAPTIVE_CHARACTER_DISPOSITION_FOUNDATION.md`
 
 ## Overall Workflow/Foundation Review status
@@ -52,6 +54,7 @@ Minimum foundations already classified present:
 - object knowledge/familiarity;
 - generic inter-character participation socket;
 - event/lifecycle evidence;
+- participant-aware bounded recent-event cognition;
 - long-horizon progression/decay exemplars;
 - profile -> cognition/runtime integration;
 - autonomy purpose continuity;
@@ -60,48 +63,25 @@ Minimum foundations already classified present:
 
 ### Autonomy Intent Continuity v1 — COMPLETE
 
-PR #178 adds a thin deterministic purpose bridge around the unchanged core autonomy scheduler:
-- at most one active actor-scoped intent;
-- purposeful represented `move` may start it from the committed action reason;
-- next cognition receives compact intent guidance, never authority;
-- legal action options, physiological needs and safety override it;
-- up to four movement steps may continue it;
-- `sleep`/`eat`/`drink`/`shower`/`rest` may interrupt without forced abandonment;
-- first ordinary local follow-up clears only after represented completion;
-- intent older than 12 simulated hours expires at the next free decision boundary;
-- transition metadata is traceable under `conditions.autonomy_intent_transition`;
-- runtime persistence uses existing `runtime_state`; schema stays v5;
-- no new action vocabulary, planner, task graph or deterministic story chooser.
-
-No live production intent is claimed unless ordinary runtime naturally plans a qualifying purposeful move.
+PR #178 provides one bounded actor-scoped purpose bridge across action boundaries without overriding legal options, physiological priorities, or safety. Persistence uses existing `runtime_state`; schema remains v5. No planner/task graph or deterministic story chooser was introduced.
 
 ### Active Modifier Runtime Foundation v1 — COMPLETE
 
-PR #180 makes the existing `active_modifiers` schema socket executable without creating a universal hidden bonus engine:
-- generic numeric effective-value resolver;
-- half-open simulated-time activation/expiry;
-- deterministic `stack`, `replace`, `max`, and `min` semantics;
-- exact caller-supplied context conditions;
-- first runtime consumer bounded to energy, hunger, thirst, sleepiness, cleanliness and fatigue;
-- effective living-state reads flow through existing cognition/need/training/action-legality consumers;
-- temporary modifiers do not overwrite raw authoritative physiology;
-- no LLM modifier-write authority, modifier producer, authoring UI or schema change.
-
-Existing Training Readiness and Cognitive Performance remain separate domain-specific modifier systems.
+PR #180 makes the existing `active_modifiers` persistence socket executable through a bounded deterministic numeric resolver. Temporary effective values remain separate from raw authoritative physiology. No modifier producer, authoring UI, universal bonus system, or schema change was introduced.
 
 ### Action Condition Runtime Foundation v1 — COMPLETE
 
-PR #182 makes `action_definitions.conditions_json` executable through one bounded fail-closed prerequisite seam:
-- v1 supports one conjunctive `all` list only;
-- primitive comparators are `lt`, `lte`, `gt`, `gte`, `eq`, and `ne`;
-- malformed shapes, unknown fields and unsupported operators fail closed;
-- first available values are current location plus the six established effective living-state fields;
-- the existing systemic-fatigue training legality boundary now lives in the canonical `train` definition as `physiology.fatigue < 70`;
-- `action_options()` and `validate_action()` consume the same prerequisite;
-- proposal `Action.conditions` remains per-instance represented metadata and cannot grant permission;
-- Active Modifier Runtime composes through effective living-state reads without overwriting raw physiology;
-- canonical definition conditions resynchronize during initialize; schema remains v5;
-- no nested expression language, scripts, cross-entity predicates, authoring UI or new action vocabulary.
+PR #182 makes `action_definitions.conditions_json` executable through one bounded fail-closed prerequisite seam. V1 supports a conjunctive `all` list with primitive comparisons only. The canonical `train` definition now owns `physiology.fatigue < 70`; option shaping and direct validation share that prerequisite. Proposal `Action.conditions` remains non-authoritative instance metadata.
+
+### Participant-Aware Recent Event Context v1 — COMPLETE
+
+PR #184 closes the read-side mismatch between authoritative `event_participants` and cognition history:
+- an event is relevant when the character is primary actor or an authoritative participant;
+- the existing bounded recent-event window and chronological ordering remain unchanged;
+- cognition receives primary `actor_id` plus its own persisted `participation_role`;
+- actor-owned events remain visible once, with legacy actor fallback;
+- unrelated characters receive nothing merely from event existence or co-location;
+- no relationship state, witness model, social interpretation, generalized group coordination, long-term episodic-memory engine, or schema change was introduced.
 
 Routine/schedule reinspection found authored time windows + current simulation time + physiological priorities already produce meaningful cognition influence. Absence of a full sequence ledger is later depth, not currently a missing minimum foundation.
 
@@ -120,23 +100,21 @@ PR #170's bounded watchdog remains installed for repeated authoritative action/t
 
 ## Current verified deployment
 
-Latest runtime deployment: **Deploy #238 / run `31922007671` SUCCESS**.
+Latest runtime deployment: **Deploy #239 / run `31924581764` SUCCESS**.
 
-Runtime PR: **#182 — Action Condition Runtime Foundation v1**
-- final tested head: `fd86ef8a7a1d40fd58e42922e6fe7678a9bee1cf`;
-- merge: `a79d5930b0fb206139d9c8359f3e35aa9499b68e`;
-- **CI #943 / run `31921888887`: SUCCESS**;
-- **596 passed in 46.28s**;
+Runtime PR: **#184 — Participant-Aware Recent Event Context v1**
+- final tested head: `09f629b197b55f0abc8271e22e86a9a11f2cab0c`;
+- merge: `13d4a9270f3c372a5180438f92f13441d98e804a`;
+- **CI #944 / run `31924499307`: SUCCESS**;
+- **600 passed in 44.52s**;
 - fresh DB init/status healthy; schema v5;
-- Research Action Semantics Acceptance #43: SUCCESS;
-- Strength Live Cycle Validation v1 #85: SUCCESS;
-- Solo Regulation Naturalism v2 Acceptance #32: SUCCESS;
-- Inventory Foundation v1 Acceptance #49: SUCCESS;
-- Minimum Training Stimulus Acceptance #29: SUCCESS.
+- Cognition Capability Awareness v1 Acceptance #24: SUCCESS;
+- Solo Regulation Naturalism v2 Acceptance #33: SUCCESS;
+- Eating Behavior v1 Acceptance #46: SUCCESS;
+- Training Movement Contract Normalization v1 Acceptance #14: SUCCESS;
+- Research Action Semantics Acceptance #45: SUCCESS.
 
-The preceding CI attempt found one stale test assertion expecting the old bespoke `"systemic fatigue"` error text. Runtime behavior was correct; the assertion was aligned to the generic action-condition semantics and the final CI passed 596/596.
-
-Production readback after Deploy #238:
+Production readback after Deploy #239:
 - service active/healthy;
 - schema v5;
 - autonomy enabled, normal mode, retry null, pending action preserved;
@@ -148,7 +126,7 @@ Production readback after Deploy #238:
 - Groq `qwen/qwen3.6-27b` fallback preserved;
 - Telegram bot/API/owner/allowed-user configuration healthy.
 
-No production state was manipulated to manufacture action-condition evidence.
+No production shared event was fabricated to manufacture participant-aware cognition evidence.
 
 ## Character Profile / Skills baseline
 
@@ -179,12 +157,12 @@ Skills CLOSED v1 learned leaves:
 
 - LLM proposes; deterministic runtime validates/mutates.
 - Do not repeatedly run the full suite.
-- Do not automatically deepen autonomy planning, modifiers, action-condition syntax, or routine scheduling after their minimum closure.
+- Do not automatically deepen autonomy planning, modifiers, action-condition syntax, routine scheduling, participant history, relationships, or memory after their minimum closure.
 - Do not infer a missing foundation merely because an existing one lacks exhaustive depth.
 - No relationship-system expansion by default.
-- No giant planner/task graph, universal episodic-memory engine, weather/economy/vehicles merely for completeness, hostile/non-consensual combat engine, weapon lethality, universal Injury/Hazard Engine, deep weapon taxonomy, modifier authoring UI/status-effect taxonomy, universal condition language, or real-world weapon instructions.
-- Do not fabricate production actions/actors/casualties/modifiers solely for proof.
+- No giant planner/task graph, universal episodic-memory engine, witness model, weather/economy/vehicles merely for completeness, hostile/non-consensual combat engine, weapon lethality, universal Injury/Hazard Engine, deep weapon taxonomy, modifier authoring UI/status-effect taxonomy, universal condition language, or real-world weapon instructions.
+- Do not fabricate production actions/actors/casualties/modifiers/shared events solely for proof.
 
 ## Exact resume point
 
-**Overall Workflow/Foundation Review v1 is active. Three selected structural gaps are COMPLETE: Autonomy Intent Continuity v1 through PR #178 / Deploy #236, Active Modifier Runtime Foundation v1 through PR #180 / Deploy #237, and Action Condition Runtime Foundation v1 through PR #182 final head `fd86ef8a7a1d40fd58e42922e6fe7678a9bee1cf`, final CI #943 with 596 passed, merge `a79d5930b0fb206139d9c8359f3e35aa9499b68e`, and Deploy #238 / run `31922007671` SUCCESS. Production is healthy at schema v5, autonomy normal, retry null, pending action preserved, speed 1x; Darian remained naturally sleeping in the Master Suite. The sim-time hour was masked in deploy output (`2025-05-07T***:27:00+00:00`). Resume by continuing the read-only Overall Workflow/Foundation Review and selecting the next actual cross-system gap from current canonical/live evidence rather than deepening planning, modifiers, condition syntax, or routine scheduling.**
+**Overall Workflow/Foundation Review v1 is active. Four selected structural gaps are COMPLETE: Autonomy Intent Continuity v1 through PR #178 / Deploy #236; Active Modifier Runtime Foundation v1 through PR #180 / Deploy #237; Action Condition Runtime Foundation v1 through PR #182 / Deploy #238; and Participant-Aware Recent Event Context v1 through PR #184 final head `09f629b197b55f0abc8271e22e86a9a11f2cab0c`, final CI #944 with 600 passed, merge `13d4a9270f3c372a5180438f92f13441d98e804a`, and Deploy #239 / run `31924581764` SUCCESS. Production is healthy at schema v5, autonomy normal, retry null, pending action preserved, speed 1x; Darian remained naturally sleeping in the Master Suite. The sim-time hour was masked in deploy output (`2025-05-07T***:27:00+00:00`). Resume by continuing the read-only Overall Workflow/Foundation Review and selecting the next actual cross-system gap from current canonical/live evidence rather than deepening planning, modifiers, condition syntax, routines, participant history, relationships, or memory.**

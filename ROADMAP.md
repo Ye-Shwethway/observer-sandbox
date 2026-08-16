@@ -12,27 +12,16 @@ Roadmap synchronized: 2026-08-16
 - Use minimum-runnable reversible slices and **exemplar-first, then batch-by-pattern**.
 - Prefer **vertical completeness before local depth**.
 - Never manipulate production merely to manufacture evidence.
-- Verification is focused-first. Code/runtime PRs get one final full CI checkpoint by default; docs-only changes do not need the Python suite; do not deliberately repeat the full suite after merge.
+- Verification is focused-first. Code/runtime PRs get one final full CI checkpoint by default; docs-only changes do not need the Python suite.
 
 ## Character Profile checkpoint
 
 All Character Profile sections are minimum-unlocked v1. Skills remains CLOSED v1.
 
-Minimum-unlocked means authoritative state plus meaningful runtime/cognition influence and appropriate persistence/rendering. It does not mean exhaustive local mechanics.
+Adaptive Character Disposition Foundation is COMPLETE v1:
+`Habit Formation/Extinction -> Hobby/Interest Lifecycle -> Preference Adaptation -> Slow Personality Plasticity`.
 
-## Adaptive Character Disposition Foundation — COMPLETE v1
-
-See `docs/ADAPTIVE_CHARACTER_DISPOSITION_FOUNDATION.md`.
-
-Completed sequence:
-`Habit Formation/Extinction -> Hobby/Interest Lifecycle -> Preference Adaptation -> Slow Personality Plasticity`
-
-- PR #167: Habit Formation/Extinction v1.
-- PR #172: Hobby/Interest Lifecycle v1.
-- PR #174: Preference Adaptation v1.
-- PR #176: Slow Personality Plasticity v1.
-
-Authored personality remains the stable baseline; preferences/hobbies/habits/personality adapt only through their deterministic bounded evidence contracts. Do not deepen psychology next without a broader foundation reason.
+Do not reopen local psychology merely for depth.
 
 ## Skills — CLOSED v1
 
@@ -45,105 +34,81 @@ Frozen learned Skill surface:
 - Technology
 - Field Medicine
 
-`Weapon Mastery` is a derived/non-executable parent over Bladed Weapons + Firearms. Hidden legacy `weapons` is compatibility only.
-
-## Autonomy continuity
-
-### Livelock Watchdog v1 — COMPLETE
-
-PR #170 provides a bounded recovery path for repeated authoritative action/target pair-validation livelock only. It is not a deterministic story chooser and does not recover provider/API/quota/rate-limit or unrelated failures.
-
-### Autonomy Intent Continuity v1 — COMPLETE
-
-See `docs/AUTONOMY_INTENT_CONTINUITY_V1.md`.
-
-PR #178 closes the first gap selected by the Overall Workflow/Foundation Review:
-- one bounded actor-scoped active intent at most;
-- purposeful `move` may establish short cross-action purpose state;
-- next cognition receives compact guidance only;
-- action legality, needs and safety always remain authoritative;
-- up to four movement steps may continue the purpose;
-- self-care may interrupt without forcing abandonment;
-- ordinary local follow-up clears only after represented completion;
-- stale intent expires after 12 simulated hours at the next free decision boundary;
-- persistence uses existing `runtime_state`; schema remains v5;
-- core `autonomy.autonomy_tick` remains unchanged behind the thin wrapper.
-
-## Conditions / Modifiers
-
-### Active Modifier Runtime Foundation v1 — COMPLETE
-
-See `docs/ACTIVE_MODIFIER_RUNTIME_V1.md`.
-
-PR #180 closes the second actual gap selected by the Overall Workflow/Foundation Review:
-- the existing `active_modifiers` persistence socket now has a deterministic numeric resolver;
-- half-open simulated-time activation and expiry;
-- `stack`, `replace`, `max`, and `min` stack semantics;
-- exact explicit context conditions only;
-- first consumer is bounded to the six established living-state fields surfaced by `snapshot()`;
-- effective values can influence existing cognition/needs/training/action-legality paths;
-- raw authoritative physiology remains separate so temporary effects do not become permanent state;
-- no modifier producer, authoring UI, universal bonus system or schema change.
-
-Existing Training Readiness and Cognitive Performance contracts remain independent domain-specific modifier systems.
-
-### Action Condition Runtime Foundation v1 — COMPLETE
-
-See `docs/ACTION_CONDITION_RUNTIME_V1.md`.
-
-PR #182 closes the third actual gap selected by the Overall Workflow/Foundation Review:
-- `action_definitions.conditions_json` is now executable through one bounded fail-closed prerequisite evaluator;
-- v1 supports exactly one conjunctive `all` list with primitive `lt`, `lte`, `gt`, `gte`, `eq`, and `ne` clauses;
-- first available values are current location plus the six established effective living-state fields;
-- malformed contracts, unknown fields and unsupported operators fail closed;
-- the existing `train` systemic-fatigue legality boundary is now canonical definition data: `physiology.fatigue < 70`;
-- `action_options()` and `validate_action()` consume the same prerequisite contract;
-- proposal `Action.conditions` remains represented per-instance metadata and cannot authorize behavior;
-- Active Modifier Runtime composes through effective snapshot state while raw physiology remains unchanged;
-- initialize resynchronizes canonical definition conditions; schema remains v5;
-- no universal expression language, scripts, nested boolean trees, cross-entity predicates, authoring UI or new action vocabulary.
+`Weapon Mastery` is derived/non-executable; hidden legacy `weapons` is compatibility only.
 
 ## Overall Workflow/Foundation Review — ACTIVE
 
 See `docs/OVERALL_WORKFLOW_FOUNDATION_REVIEW_V1.md`.
 
-Current audit classifications:
+Four evidence-selected structural gaps are now CLOSED v1 minimum:
+
+### 1. Autonomy Intent Continuity v1 — COMPLETE
+
+See `docs/AUTONOMY_INTENT_CONTINUITY_V1.md`.
+
+PR #178 provides one bounded actor-scoped purpose bridge across action boundaries without changing the core scheduler or overriding legal options, physiology, or safety. Schema remains v5.
+
+### 2. Active Modifier Runtime Foundation v1 — COMPLETE
+
+See `docs/ACTIVE_MODIFIER_RUNTIME_V1.md`.
+
+PR #180 makes the persisted `active_modifiers` socket executable through a bounded deterministic numeric resolver. Temporary effective living-state values remain separate from raw authoritative physiology. No universal bonus engine or modifier authoring surface was added.
+
+### 3. Action Condition Runtime Foundation v1 — COMPLETE
+
+See `docs/ACTION_CONDITION_RUNTIME_V1.md`.
+
+PR #182 makes `action_definitions.conditions_json` executable through one bounded fail-closed prerequisite evaluator. `train` now owns its fatigue `<70` prerequisite in canonical definition data; option shaping and direct validation share the same contract. No universal expression language was added.
+
+### 4. Participant-Aware Recent Event Context v1 — COMPLETE
+
+See `docs/PARTICIPANT_RECENT_EVENT_CONTEXT_V1.md`.
+
+PR #184 closes the read-side mismatch between authoritative `event_participants` and cognition history:
+- a recent event is cognition-relevant when the character is primary actor or an authoritative event participant;
+- the existing bounded recent-event window and chronological ordering remain unchanged;
+- cognition receives primary `actor_id` plus the character's persisted `participation_role`;
+- actor-owned events remain visible once;
+- unrelated characters receive no event merely from existence or co-location;
+- no relationship state, witness model, generalized group coordination, episodic-memory engine, new event type, or schema change.
+
+## Current audit classifications
+
 - generic action/task lifecycle: CLOSED v1;
 - resources/inventory/state consequences: CLOSED v1;
 - environment/world context: CLOSED v1 minimum;
 - knowledge/object familiarity: CLOSED v1 minimum;
 - inter-character participation: CLOSED v1 socket;
 - event/lifecycle handling: CLOSED v1;
+- participant-aware recent event cognition: CLOSED v1 minimum through PR #184;
 - longer-horizon progression/decay: CLOSED v1 exemplars;
 - profile -> cognition/runtime integration: CLOSED v1;
 - autonomy purpose continuity: CLOSED v1 minimum through PR #178;
 - persistent temporary modifier lifecycle: CLOSED v1 minimum through PR #180;
 - action-definition prerequisite runtime: CLOSED v1 minimum through PR #182.
 
-Routine/schedule reinspection also found meaningful authored time-window + simulation-time + physiological-priority influence already present. A full schedule sequence ledger is later depth unless new evidence establishes a missing invariant.
+Routine/schedule reinspection found meaningful authored time-window + simulation-time + physiological-priority influence already present. A full sequence ledger is later depth unless new evidence establishes a missing invariant.
 
 Do not infer that the review itself is finished. Return to read-only canonical/live evidence and select the next genuine cross-system gap rather than deepening a just-closed foundation.
 
 ## Current verified deployment
 
-Latest runtime deployment: **Deploy #238 / run `31922007671` SUCCESS**, Action Condition Runtime Foundation v1.
+Latest runtime deployment: **Deploy #239 / run `31924581764` SUCCESS**, Participant-Aware Recent Event Context v1.
 
-Runtime PR #182:
-- final tested head `fd86ef8a7a1d40fd58e42922e6fe7678a9bee1cf`;
-- **CI #943 / run `31921888887`: SUCCESS**;
-- **596 passed in 46.28s**;
+Runtime PR #184:
+- final tested head `09f629b197b55f0abc8271e22e86a9a11f2cab0c`;
+- **CI #944 / run `31924499307`: SUCCESS**;
+- **600 passed in 44.52s**;
 - fresh DB init/status healthy; schema v5;
-- Research Action Semantics Acceptance #43: SUCCESS;
-- Strength Live Cycle Validation v1 #85: SUCCESS;
-- Solo Regulation Naturalism v2 Acceptance #32: SUCCESS;
-- Inventory Foundation v1 Acceptance #49: SUCCESS;
-- Minimum Training Stimulus Acceptance #29: SUCCESS;
-- merge `a79d5930b0fb206139d9c8359f3e35aa9499b68e`;
-- Deploy #238 SUCCESS.
+- Cognition Capability Awareness v1 Acceptance #24: SUCCESS;
+- Solo Regulation Naturalism v2 Acceptance #33: SUCCESS;
+- Eating Behavior v1 Acceptance #46: SUCCESS;
+- Training Movement Contract Normalization v1 Acceptance #14: SUCCESS;
+- Research Action Semantics Acceptance #45: SUCCESS;
+- merge `13d4a9270f3c372a5180438f92f13441d98e804a`;
+- Deploy #239 SUCCESS.
 
-The preceding CI attempt exposed one stale assertion still expecting the old bespoke `"systemic fatigue"` message. Runtime behavior was already correct; the assertion was aligned to the generic action-condition contract and final CI passed 596/596.
-
-Verified production readback after Deploy #238:
+Verified production readback after Deploy #239:
 - service active/healthy; schema v5;
 - autonomy enabled, normal mode, retry null, pending action preserved;
 - speed **1x**;
@@ -154,12 +119,12 @@ Verified production readback after Deploy #238:
 - Groq `qwen/qwen3.6-27b` fallback preserved;
 - Telegram bot/API/owner/allowed-user configuration healthy.
 
-No production state was manipulated solely to prove action-condition behavior.
+No production shared event was fabricated solely to prove participant-aware cognition semantics.
 
 ## Deferred boundaries
 
-No giant planner/task graph, relationship-system expansion by default, universal episodic-memory engine, weather/economy/vehicle systems merely for completeness, hostile/non-consensual Combat Engine, weapon lethality, broad casualty simulator, universal Hazard/Injury Engine, deep weapon taxonomy, quests/jobs, real-world weapon instructions, arbitrary LLM profile mutation, synthetic production actors/actions solely for proof, modifier authoring UI, status-effect taxonomy, arbitrary universal bonus engine, or universal condition/expression language.
+No giant planner/task graph, relationship-system expansion by default, universal episodic-memory engine, witness model, weather/economy/vehicle systems merely for completeness, hostile/non-consensual Combat Engine, weapon lethality, broad casualty simulator, universal Hazard/Injury Engine, deep weapon taxonomy, quests/jobs, arbitrary LLM profile mutation, synthetic production actors/actions solely for proof, modifier authoring UI, status-effect taxonomy, arbitrary universal bonus engine, or universal condition/expression language.
 
 ## Exact resume point
 
-**Overall Workflow/Foundation Review v1 is active. Its first three identified structural gaps are now closed: Autonomy Intent Continuity v1 through PR #178 / Deploy #236, Active Modifier Runtime Foundation v1 through PR #180 / Deploy #237, and Action Condition Runtime Foundation v1 through PR #182 final head `fd86ef8a7a1d40fd58e42922e6fe7678a9bee1cf`, CI #943 with 596 passed, merge `a79d5930b0fb206139d9c8359f3e35aa9499b68e`, and Deploy #238 SUCCESS. Production is healthy at schema v5 with autonomy normal, retry null, pending action preserved and speed 1x; Darian remained naturally sleeping in the Master Suite. The deploy log masked the sim-time hour (`2025-05-07T***:27:00+00:00`). Resume by continuing the read-only Overall Workflow/Foundation Review and selecting the next actual cross-system gap from evidence; do not automatically deepen planning, modifiers, action-condition syntax, or routine scheduling.**
+**Overall Workflow/Foundation Review v1 is active. Its first four evidence-selected structural gaps are now closed: Autonomy Intent Continuity v1 through PR #178 / Deploy #236; Active Modifier Runtime Foundation v1 through PR #180 / Deploy #237; Action Condition Runtime Foundation v1 through PR #182 / Deploy #238; and Participant-Aware Recent Event Context v1 through PR #184 final head `09f629b197b55f0abc8271e22e86a9a11f2cab0c`, CI #944 with 600 passed, merge `13d4a9270f3c372a5180438f92f13441d98e804a`, and Deploy #239 SUCCESS. Production is healthy at schema v5 with autonomy normal, retry null, pending action preserved and speed 1x; Darian remained naturally sleeping in the Master Suite. The deploy log masked the sim-time hour (`2025-05-07T***:27:00+00:00`). Resume by continuing the read-only Overall Workflow/Foundation Review and selecting the next actual cross-system gap from evidence; do not automatically deepen planning, modifiers, action-condition syntax, routines, participant history, relationships, or memory.**
