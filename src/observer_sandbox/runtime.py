@@ -11,6 +11,7 @@ from .ai import seed_builtin_providers
 from .composition_schema import seed_action_definitions
 from .controlled_h2h_runtime import seed_controlled_h2h_runtime
 from .db import connect, get_runtime_state, migrate
+from .economy import seed_initial_economy
 from .estate_campus import seed_estate_campus
 from .field_medicine_stabilization import seed_field_medicine_stabilization_runtime
 from .inventory import seed_home_inventory
@@ -54,6 +55,9 @@ def _initialize_conn(conn) -> None:
     seed_sexual_state_fields(conn)
     seed_memory_profile_definitions(conn)
     seed_home_and_darian(conn)
+    # W3 economy facts depend on represented character/location entities. Seed
+    # after the canonical world/profile seed and never reset live account state.
+    seed_initial_economy(conn)
     seed_memory_profile_values(conn)
     # Campus seeding is additive to the stable Estate interior. It restores the
     # bounded private-campus edges after the base world seed rebuilds interior
