@@ -220,10 +220,20 @@ def _decision_prompt(state: dict[str, Any], available_actions: list[str]) -> str
     )
 
 
-def _generate_nanogpt(provider: sqlite3.Row, key: str, model_id: str, prompt: str, parameters: dict[str, Any]) -> dict[str, Any]:
+def _generate_nanogpt(
+    provider: sqlite3.Row,
+    key: str,
+    model_id: str,
+    prompt: str,
+    parameters: dict[str, Any],
+    *,
+    billing_scope: str = "subscription",
+) -> dict[str, Any]:
     base = provider["base_url"]
     if not base:
         raise AIConfigurationError("NanoGPT base_url is not configured")
+    if billing_scope not in {"subscription", "paid"}:
+        raise AIConfigurationError(f"Unsupported NanoGPT billing scope: {billing_scope}")
     payload: dict[str, Any] = {
         "model": model_id,
         "messages": [{"role": "user", "content": prompt}],
@@ -234,8 +244,9 @@ def _generate_nanogpt(provider: sqlite3.Row, key: str, model_id: str, prompt: st
         },
     }
     payload.update(parameters)
+    route = "subscription/v1" if billing_scope == "subscription" else "v1"
     response = _post_json(
-        f"{base.rstrip('/')}/subscription/v1/chat/completions",
+        f"{base.rstrip('/')}/{route}/chat/completions",
         headers={"Authorization": f"Bearer {key}", "Accept": "application/json"},
         payload=payload,
     )
@@ -289,6 +300,20 @@ def _generate_gemini(provider: sqlite3.Row, key: str, model_id: str, prompt: str
         raise AIDecisionError("Gemini returned an unusable structured decision") from exc
 
 
+def nanogpt_model_billing_scope(conn: sqlite3.Connection, model_id: str) -> str:
+    row = conn.execute(
+        "SELECT metadata_json FROM ai_models WHERE provider_id='nanogpt' AND model_id=? AND active=1",
+        (model_id,),
+    ).fetchone()
+    if row is None:
+        return "subscription"
+    try:
+        metadata = json.loads(row["metadata_json"] or "{}")
+    except Exception:
+        return "subscription"
+    return "paid" if metadata.get("observer_nanogpt_billing_scope") == "paid" else "subscription"
+
+
 def _generate_for_binding(
     conn: sqlite3.Connection,
     binding: dict[str, Any],
@@ -298,7 +323,15 @@ def _generate_for_binding(
     parameters = binding.get("parameters") or {}
     adapter = str(provider["adapter_type"])
     if adapter == "nanogpt":
-        return _generate_nanogpt(provider, key, str(binding["model_id"]), prompt, parameters)
+        model_id = str(binding["model_id"])
+        return _generate_nanogpt(
+            provider,
+            key,
+            model_id,
+            prompt,
+            parameters,
+            billing_scope=nanogpt_model_billing_scope(conn, model_id),
+        )
     if adapter == "gemini":
         return _generate_gemini(provider, key, str(binding["model_id"]), prompt, parameters)
     if adapter == "openai_compatible":
