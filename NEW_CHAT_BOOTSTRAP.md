@@ -22,7 +22,7 @@ Default workflow:
 
 Character-side minimum foundations remain closed enough for the current purpose.
 
-The Estate-first world sequence has now reached **Estate Campus Reachability v1 COMPLETE / DEPLOYED**. South Lake Tahoe remains intentionally paused.
+The Estate-first sequence is now complete/deployed through **Estate Campus Reachability v1** and **Spatial Familiarity Foundation v1**. South Lake Tahoe remains intentionally paused.
 
 ## Required world read order
 
@@ -34,25 +34,28 @@ The Estate-first world sequence has now reached **Estate Campus Reachability v1 
 6. `docs/THORNE_ESTATE_CAMPUS_CANON_MAP_V1.md`
 7. `docs/WORLD_FOUNDATION_IMPLEMENTATION_SEQUENCE_V1.md`
 8. `docs/ESTATE_CAMPUS_REACHABILITY_V1.md`
+9. `docs/WORLD_SPATIAL_FAMILIARITY_CONTRACT_V1.md`
 
 ## Location semantic rule
 
 A location is not a dimensionless point.
 
 Canonical definition:
-
 `location = identifiable nested spatial container with extent, contents, boundaries/interfaces, local state, control and explicit relationships to surrounding space`
 
 The graph node is the stable identity/hierarchy/topology representation of that container.
 
-Preserve:
-- `contains` = structural spatial membership;
-- `located_at` = dynamic presence;
-- `connected_to` = traversable topology;
-- adjacency/proximity != traversability;
-- ownership/control != containment/presence;
-- access policy != operating/open state;
-- entrances/exits/doors/gates/passages are spatial-interface semantics, not automatically independent nodes.
+## Spatial knowledge rule
+
+Keep three layers distinct:
+1. **World truth** — represented objective geography/topology.
+2. **Character-known world** — the subset of geography an actor is authored to know.
+3. **Current actionable space** — exact deterministic moves/actions executable now.
+
+Spatial familiarity vocabulary:
+`unknown -> aware -> familiar -> intimate`.
+
+Hidden/secret is orthogonal to familiarity. Known geography supports planning but never grants teleportation, permission or a non-local target. Exact movement authority remains current `action_options`.
 
 ## Completed Estate-first sequence
 
@@ -62,23 +65,15 @@ COMPLETE through PR #196 / merge `d1167771ddb9c358a464c6efb863d9edf6800e18`.
 
 ### A1 — Existing Estate Location Refactor
 
-COMPLETE / DEPLOYED through PR #197:
-- generic `world.spatial_container` metadata;
-- stable IDs/topology preserved;
-- source/layout confidence separated;
-- Estate represented as approximately 50-acre private spatial container;
-- legacy exterior boundary remains locked.
+COMPLETE / DEPLOYED through PR #197.
 
-CI #955 SUCCESS; Strength Live Cycle Validation #86 SUCCESS.
+CI #955 SUCCESS; Strength #86 SUCCESS.
 Merge `886001a1d5d1cc62e5e9aab26a64fc08dedf08f1`.
 Deploy #244 SUCCESS.
 
 ### A2 — Gameplay Runtime Reconnection / Regression
 
 COMPLETE through PR #198.
-
-Regression coverage proves current snapshot/location resolution, movement/options, move settlement, event/history linkage, object/location query behavior, training consumers and exterior lock remain coherent after the refactor.
-
 Final CI #957 SUCCESS.
 Merge `3425315d2a3f564f0f3f5beb15084fda214c3036`.
 
@@ -86,42 +81,51 @@ Merge `3425315d2a3f564f0f3f5beb15084fda214c3036`.
 
 COMPLETE / DEPLOYED through PR #199.
 
-Current campus locations:
-- Mansion Exterior;
-- Core Estate Grounds;
-- Tactical Obstacle Course;
-- Private Lake Access;
-- Hidden Dock;
-- Rear Forested Estate;
-- Concealed Forest Passage;
-- Main Estate Approach;
-- Main Security Gate.
+Current private campus includes Mansion Exterior, Core Estate Grounds, Tactical Obstacle Course, Private Lake Access, Hidden Dock, Rear Forested Estate, Concealed Forest Passage, Main Estate Approach and Main Security Gate.
 
 Ordinary traversal begins:
+`Master Suite -> Grand Foyer -> Mansion Exterior -> Core Estate Grounds`.
 
-`Master Suite -> Grand Foyer -> Mansion Exterior -> Core Estate Grounds`
+Campus locations/fixtures feed the existing generic movement/action runtime. Darian can leave the mansion, use campus places/actions and return normally.
 
-Campus branches then reach the obstacle course, lake/dock, rear forest/concealed passage, and main approach/security gate. Garage & Workshop also connects Estate-side into the grounds.
+Final CI #959 SUCCESS.
+Merge `f0955a582e11394ec64387f2a3fc0bfb468350b4`.
+Deploy #245 / run `31936858504` SUCCESS.
 
-Machine-readable campus fixtures feed the existing generic action-option engine; the outdoor Tactical Obstacle Course exposes a real `train` option.
+### C — Spatial Familiarity Foundation v1
 
-Acceptance tests prove Darian can leave the mansion, reach/use the campus and return through ordinary runtime.
+COMPLETE / DEPLOYED through PR #201.
 
-Final evidence:
-- CI #959 SUCCESS;
-- Strength Live Cycle Validation #88 SUCCESS;
-- Inventory Foundation Acceptance #51 SUCCESS;
-- Skill Evidence Semantics Acceptance #42 SUCCESS;
-- Skill Progression Acceptance #59 SUCCESS;
-- Technology Diagnostic Acceptance #33 SUCCESS;
-- merge `f0955a582e11394ec64387f2a3fc0bfb468350b4`;
-- Deploy #245 / run `31936858504` SUCCESS, including sync, install/configure, restart and verification.
+The foundation adds explicit character-owned geographic knowledge without creating a general memory system.
 
-No synthetic production movement was performed solely for proof.
+Darian currently knows:
+- normal represented home/interior and ordinary campus areas at `intimate` familiarity;
+- Rear Forested Estate at `familiar`;
+- Hidden Dock and Concealed Forest Passage as explicitly known concealed Estate facilities at `familiar`.
+
+Cognition receives a compact broader known Estate map regardless of current one-hop position. Darian therefore need not physically reach the Foyer before reasoning that familiar campus destinations exist.
+
+Important boundaries:
+- exact move targets remain local deterministic `action_options`;
+- unknown authored destinations are filtered from autonomous cognition move choices;
+- generic one-hop previews omit globally concealed destinations;
+- an actor who explicitly knows a concealed adjacent destination may still receive the legal exact move;
+- familiarity does not alter objective topology;
+- no automatic discovery, memory inference or forgetting exists yet.
+
+Evidence:
+- PR head `a77f9ec109ad7a161e8b5ca77688e84be79d2327`;
+- CI #960 / run `31937649311` SUCCESS;
+- Strength Live Cycle Validation #89 SUCCESS;
+- merge `4778eb3e5fc0877ad49e7c96570f00ee5de4e121`;
+- Deploy #246 / run `31937763776` SUCCESS, including sync, cognition configuration, restart and verification;
+- schema remains v5.
+
+No synthetic production Darian action was created solely for proof.
 
 ## Current world boundary
 
-The represented world now includes the mansion plus the bounded private Estate campus.
+The represented world is the mansion plus bounded private Estate campus.
 
 Outside continuation remains unavailable:
 - Main Security Gate -> no public road edge;
@@ -129,24 +133,30 @@ Outside continuation remains unavailable:
 - Hidden Dock -> no water-travel edge;
 - legacy Estate Exterior -> locked/non-traversable.
 
+## Memory/discovery boundary
+
+Spatial Familiarity v1 is not episodic character memory.
+
+Future work may add validated discovery/revelation, lived familiarity changes, forgetting, map/teaching mechanics or general memory. That future layer must preserve the distinction between world truth, character knowledge and current action authority.
+
 ## South Lake Tahoe — PAUSED
 
 Do not currently create or enable:
 - public South Lake Tahoe regional graph;
-- public-road continuation from the Main Security Gate;
+- public-road continuation from Main Security Gate;
 - Tahoe-backcountry continuation from Concealed Forest Passage;
 - Hidden Dock water travel;
 - public venue/economy/population loops merely because future contracts exist.
 
 Outside-world expansion resumes only on separate Creator prioritization.
 
-## Current verified deployment
+## Current verified runtime
 
-Latest verified runtime deployment: **Deploy #245 / run `31936858504` SUCCESS**.
+Latest verified runtime deployment: **Deploy #246 / run `31937763776` SUCCESS**.
 
-Runtime merge: `f0955a582e11394ec64387f2a3fc0bfb468350b4`.
-Schema remains v5; no schema migration was needed for Estate campus reachability.
+Runtime merge: `4778eb3e5fc0877ad49e7c96570f00ee5de4e121`.
+Schema remains v5.
 
 ## Exact resume point
 
-**A0 Location Spatial Container Contract v1, A1 Existing Estate Location Refactor, A2 Gameplay Runtime Reconnection/Regression, and B Estate Campus Reachability v1 are COMPLETE. Darian can now leave the mansion, use represented private Estate campus places/actions, and return through generic runtime. Keep all South Lake Tahoe/public/backcountry/water continuations locked. Resume with Estate-campus observation/refinement or the next Creator-prioritized Estate-local feature; do not automatically expand outside Tahoe.**
+**Estate Campus Reachability v1 and Spatial Familiarity Foundation v1 are COMPLETE / DEPLOYED. Darian now has compact cognition access to his broader familiar Estate map from any represented Estate location while exact moves remain local/deterministic and unknown hidden spaces do not automatically leak into cognition. Keep all Tahoe/public/backcountry/water continuations locked. Resume by naturally observing Darian at the Creator-set 30x speed and checking real cognition/destination/multi-step movement/campus-use quality; fix only evidence-backed Estate-local gaps before considering any outside-world expansion.**
