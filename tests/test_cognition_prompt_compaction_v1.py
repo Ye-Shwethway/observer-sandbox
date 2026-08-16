@@ -5,13 +5,16 @@ import json
 from observer_sandbox.ai_runtime import _compact_prompt_state, _decision_prompt
 
 
+POWER_RACK = "obj_thorne_estate_gym_power_rack"
+
+
 def _state() -> dict:
     return {
         "location": "room_gym",
         "action_options": [
             {
                 "action": "train",
-                "target": "obj_rack",
+                "target": POWER_RACK,
                 "target_name": "Power Rack",
                 "duration": [20, 80],
                 "training_load_guard": {"allowed": True, "verbose": "derived duplicate"},
@@ -27,7 +30,7 @@ def _state() -> dict:
                         {"movement_id": "hinge", "name": "Hip Hinge", "tags": ["posterior_chain"]},
                     ],
                     "planning": {"preferred_duration": [45, 90], "purpose": "barbell strength session"},
-                    "target": "obj_rack",
+                    "target": POWER_RACK,
                     "source": "training-method-semantics-v1",
                     "catalog_revision": "training-method-semantics-v2",
                 },
@@ -101,7 +104,7 @@ def test_compaction_preserves_executable_training_and_capability_semantics() -> 
 
     option = compact["action_options"][0]
     assert option["action"] == "train"
-    assert option["target"] == "obj_rack"
+    assert option["target"] == POWER_RACK
     assert option["duration"] == [20, 80]
     assert option["preferred_duration"] == (45, 80)
     assert option["duration_purpose"] == "barbell strength session"
