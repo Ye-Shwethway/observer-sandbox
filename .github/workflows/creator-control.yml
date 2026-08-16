@@ -84,3 +84,146 @@ jobs:
           .venv/bin/sandboxctl status
           .venv/bin/sandboxctl living-status
           REMOTE
+
+  force-move-campus-diagnostic:
+    if: ${{ github.event_name == 'push' && vars.VPS_DEPLOY_ENABLED == 'true' }}
+    runs-on: ubuntu-latest
+    steps:
+      - name: Configure SSH
+        env:
+          VPS_SSH_KEY: ${{ secrets.VPS_SSH_KEY }}
+          VPS_HOST: ${{ secrets.VPS_HOST }}
+          VPS_PORT: ${{ secrets.VPS_PORT || '22' }}
+        run: |
+          test -n "$VPS_HOST"
+          test -n "$VPS_SSH_KEY"
+          install -m 700 -d ~/.ssh
+          printf '%s\n' "$VPS_SSH_KEY" > ~/.ssh/id_ed25519
+          chmod 600 ~/.ssh/id_ed25519
+          ssh-keyscan -p "$VPS_PORT" -H "$VPS_HOST" >> ~/.ssh/known_hosts
+
+      - name: Force-move Darian to Core Estate Grounds once for diagnostic observation
+        env:
+          VPS_HOST: ${{ secrets.VPS_HOST }}
+          VPS_USER: ${{ secrets.VPS_USER }}
+          VPS_PORT: ${{ secrets.VPS_PORT || '22' }}
+        run: |
+          ssh -p "$VPS_PORT" "$VPS_USER@$VPS_HOST" bash -s <<'REMOTE'
+          set -euo pipefail
+          cd /opt/observer-sandbox
+          export OBSERVER_SANDBOX_DB=/var/lib/observer-sandbox/observer.sqlite3
+
+          .venv/bin/python - <<'PY'
+          import json
+          import os
+
+          from observer_sandbox.actor_runtime import actor_runtime, set_actor_runtime, set_lease, set_retry
+          from observer_sandbox.db import connect, migrate
+          from observer_sandbox.event_log import record_event
+          from observer_sandbox.location_runtime import set_dynamic_location
+          from observer_sandbox.simulation import snapshot
+          from observer_sandbox.world import set_field
+
+          db = os.environ['OBSERVER_SANDBOX_DB']
+          actor_id = 'char_darian'
+          target_id = 'loc_thorne_estate_core_grounds'
+          marker_key = 'creator_control_force_move_core_grounds_diagnostic_20260817'
+
+          with connect(db) as conn:
+              migrate(conn)
+              marker = conn.execute(
+                  'SELECT value FROM schema_meta WHERE key=?',
+                  (marker_key,),
+              ).fetchone()
+              if marker is not None:
+                  print(json.dumps({'ok': True, 'already_applied': True, 'marker': marker_key}, indent=2))
+              else:
+                  actor = conn.execute(
+                      "SELECT id,name FROM entities WHERE id=? AND entity_type='character'",
+                      (actor_id,),
+                  ).fetchone()
+                  target = conn.execute(
+                      "SELECT id,name FROM entities WHERE id=? AND entity_type='location'",
+                      (target_id,),
+                  ).fetchone()
+                  if actor is None:
+                      raise RuntimeError(f'Unknown character: {actor_id}')
+                  if target is None:
+                      raise RuntimeError(f'Unknown location: {target_id}')
+
+                  conn.execute('BEGIN IMMEDIATE')
+                  before = snapshot(conn, actor_id)
+                  runtime = actor_runtime(conn, actor_id)
+                  cancelled_action_id = runtime.get('pending_action_id')
+                  if cancelled_action_id:
+                      conn.execute(
+                          "UPDATE action_instances SET status='cancelled',updated_at=CURRENT_TIMESTAMP "
+                          "WHERE id=? AND status IN ('planned','in_progress')",
+                          (cancelled_action_id,),
+                      )
+
+                  set_dynamic_location(conn, actor_id, target_id)
+                  set_field(
+                      conn,
+                      actor_id,
+                      'runtime.current_action',
+                      'idle',
+                      mode='simulated',
+                      authority='living_runtime',
+                      source='creator-force-move-diagnostic',
+                  )
+                  set_actor_runtime(
+                      conn,
+                      actor_id,
+                      pending_action_id=None,
+                      wake_reason='creator_force_move_diagnostic',
+                  )
+                  set_lease(conn, actor_id, None)
+                  set_retry(conn, actor_id, None)
+                  after = snapshot(conn, actor_id)
+
+                  record_event(
+                      conn,
+                      sim_time=after['sim_time'],
+                      actor_id=actor_id,
+                      event_type='creator_force_move_diagnostic',
+                      location_id=target_id,
+                      state_changes={
+                          'location': {'before': before.get('location'), 'after': after.get('location')},
+                          'current_action': {'before': before.get('current_action'), 'after': after.get('current_action')},
+                      },
+                      payload={
+                          'authority': 'creator',
+                          'requested_by': 'github-actions:force-move-campus-diagnostic',
+                          'diagnostic_only': True,
+                          'target_location_id': target_id,
+                          'target_location_name': target['name'],
+                          'cancelled_action_id': cancelled_action_id,
+                          'before': before,
+                          'after': after,
+                      },
+                  )
+                  conn.execute(
+                      'INSERT INTO schema_meta(key,value) VALUES(?,?)',
+                      (marker_key, after['sim_time']),
+                  )
+                  conn.commit()
+                  print(json.dumps({
+                      'ok': True,
+                      'already_applied': False,
+                      'actor_id': actor_id,
+                      'character_name': actor['name'],
+                      'target_location_id': target_id,
+                      'target_location_name': target['name'],
+                      'cancelled_action_id': cancelled_action_id,
+                      'before_location': before.get('location'),
+                      'after_location': after.get('location'),
+                      'sim_time': after.get('sim_time'),
+                      'marker': marker_key,
+                  }, indent=2))
+          PY
+
+          echo '--- POST-FORCE-MOVE PRODUCTION READBACK ---'
+          .venv/bin/sandboxctl living-status
+          .venv/bin/sandboxctl autonomy-status
+          REMOTE
