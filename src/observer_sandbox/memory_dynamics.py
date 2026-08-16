@@ -4,7 +4,6 @@ import json
 import math
 import sqlite3
 from datetime import datetime
-from typing import Any
 
 
 DEFAULT_MEMORY_TRAIT = 50.0
@@ -40,12 +39,19 @@ def initialize_trace_strengths(conn: sqlite3.Connection, character_id: str, curr
     encoding = memory_trait(conn, character_id, "memory.encoding") / 100.0
     rows = conn.execute(
         """SELECT memory_id,salience,emotional_arousal,personal_relevance,memory_type,
-                  lifecycle_stage,memory_strength,detail_strength,last_dynamics_sim_time
+                  lifecycle_stage,memory_strength,detail_strength,last_dynamics_sim_time,encoded_sim_time
            FROM character_memories WHERE character_id=? AND status='active'""",
         (character_id,),
     ).fetchall()
     for row in rows:
-        if row["last_dynamics_sim_time"]:
+        fresh_event_trace = (
+            row["memory_type"] == "episodic"
+            and str(row["lifecycle_stage"] or "recent") == "recent"
+            and float(row["memory_strength"]) == 1.0
+            and float(row["detail_strength"]) == 1.0
+            and (row["last_dynamics_sim_time"] is None or row["last_dynamics_sim_time"] == row["encoded_sim_time"])
+        )
+        if row["last_dynamics_sim_time"] and not fresh_event_trace:
             continue
         if row["memory_type"] == "semantic":
             strength = max(float(row["memory_strength"]), 0.9)
