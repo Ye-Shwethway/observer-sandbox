@@ -11,6 +11,7 @@ from .ai import seed_builtin_providers
 from .composition_schema import seed_action_definitions
 from .controlled_h2h_runtime import seed_controlled_h2h_runtime
 from .db import connect, get_runtime_state, migrate
+from .estate_campus import seed_estate_campus
 from .field_medicine_stabilization import seed_field_medicine_stabilization_runtime
 from .inventory import seed_home_inventory
 from .profile_schema import seed_profile_field_definitions
@@ -49,6 +50,10 @@ def _initialize_conn(conn) -> None:
     seed_source_union_extensions(conn)
     seed_sexual_state_fields(conn)
     seed_home_and_darian(conn)
+    # Campus seeding is additive to the stable Estate interior. It restores the
+    # bounded private-campus edges after the base world seed rebuilds interior
+    # topology, while deliberately creating no public/backcountry/water edge.
+    seed_estate_campus(conn)
     # Canonical character seeds may still contain legacy umbrella Skill keys.
     # Reconcile them immediately into learned component Skills plus derived parent
     # summaries before any progression or cognition surface consumes Skill state.
