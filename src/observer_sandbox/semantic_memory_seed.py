@@ -10,15 +10,10 @@ REPO_ROOT = Path(__file__).resolve().parents[2]
 DEFAULT_SEMANTIC_MEMORY_PATH = REPO_ROOT / "config" / "memory" / "initial.semantic.v1.json"
 SPATIAL_FAMILIARITY_LEVELS = ("unknown", "aware", "familiar", "intimate")
 LEGACY_SPATIAL_FIELD = "world.spatial_familiarity"
-# Initial authored knowledge predates autonomous observation. Keep occurrence /
-# known-since time at the canonical world bootstrap while encoded_sim_time records
-# when the generic Memory System materialized it.
 INITIAL_KNOWN_SIM_TIME = "2025-05-01T07:00:00+00:00"
 
 
-def load_initial_semantic_memory_seed(
-    path: str | Path = DEFAULT_SEMANTIC_MEMORY_PATH,
-) -> dict[str, Any]:
+def load_initial_semantic_memory_seed(path: str | Path = DEFAULT_SEMANTIC_MEMORY_PATH) -> dict[str, Any]:
     return json.loads(Path(path).read_text(encoding="utf-8"))
 
 
@@ -27,10 +22,7 @@ def _memory_id(character_id: str, knowledge_kind: str, entity_id: str) -> str:
 
 
 def _validate_character(conn: sqlite3.Connection, character_id: str) -> None:
-    row = conn.execute(
-        "SELECT 1 FROM entities WHERE id=? AND entity_type='character'",
-        (character_id,),
-    ).fetchone()
+    row = conn.execute("SELECT 1 FROM entities WHERE id=? AND entity_type='character'", (character_id,)).fetchone()
     if row is None:
         raise ValueError(f"Unknown semantic-memory character: {character_id}")
 
@@ -40,10 +32,7 @@ def _validate_spatial_memory(conn: sqlite3.Connection, raw: dict[str, Any]) -> d
     familiarity = str(raw.get("familiarity") or "unknown").strip()
     if not location_id or familiarity not in SPATIAL_FAMILIARITY_LEVELS:
         raise ValueError(f"Invalid spatial semantic-memory row: {raw!r}")
-    exists = conn.execute(
-        "SELECT name FROM entities WHERE id=? AND entity_type='location'",
-        (location_id,),
-    ).fetchone()
+    exists = conn.execute("SELECT name FROM entities WHERE id=? AND entity_type='location'", (location_id,)).fetchone()
     if exists is None:
         raise ValueError(f"Unknown spatial semantic-memory location: {location_id}")
     return {
@@ -62,11 +51,7 @@ def seed_initial_semantic_memories(
     sim_time: str,
     path: str | Path = DEFAULT_SEMANTIC_MEMORY_PATH,
 ) -> None:
-    """Seed factual actor-owned knowledge through one character-generic contract.
-
-    Seed rows are insert-only. Reinitialization must not overwrite a memory that a
-    future learning/consolidation lifecycle has already evolved or retired.
-    """
+    """Seed established actor-owned knowledge through one character-generic contract."""
     seed = load_initial_semantic_memory_seed(path)
     revision = str(seed.get("revision") or "").strip()
     if not revision:
@@ -79,7 +64,6 @@ def seed_initial_semantic_memories(
         if not character_id:
             raise ValueError("Semantic-memory character block requires character_id")
         _validate_character(conn, character_id)
-
         for raw in character_block.get("memories", []):
             if not isinstance(raw, dict):
                 continue
@@ -93,40 +77,23 @@ def seed_initial_semantic_memories(
             conn.execute(
                 """INSERT OR IGNORE INTO character_memories(
                     memory_id,character_id,memory_type,summary,content_json,source_type,
-                    source_event_id,event_sim_time,encoded_sim_time,salience,confidence,status,metadata_json
-                ) VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?)""",
+                    source_event_id,event_sim_time,encoded_sim_time,salience,confidence,status,
+                    lifecycle_stage,memory_strength,detail_strength,emotional_arousal,personal_relevance,
+                    consolidated_sim_time,last_dynamics_sim_time,metadata_json
+                ) VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)""",
                 (
-                    memory_id,
-                    character_id,
-                    "semantic",
-                    summary,
-                    json.dumps(content, ensure_ascii=False, sort_keys=True),
-                    "seed",
-                    None,
-                    INITIAL_KNOWN_SIM_TIME,
-                    sim_time,
-                    0.7,
-                    1.0,
-                    "active",
-                    json.dumps(
-                        {
-                            "seed_revision": revision,
-                            "semantic_key": f"spatial_familiarity:{location_id}",
-                        },
-                        ensure_ascii=False,
-                        sort_keys=True,
-                    ),
+                    memory_id, character_id, "semantic", summary,
+                    json.dumps(content, ensure_ascii=False, sort_keys=True), "seed", None,
+                    INITIAL_KNOWN_SIM_TIME, sim_time, 0.7, 1.0, "active", "consolidated",
+                    1.0, 1.0, 0.05, 0.8, sim_time, sim_time,
+                    json.dumps({"seed_revision": revision, "semantic_key": f"spatial_familiarity:{location_id}"}, ensure_ascii=False, sort_keys=True),
                 ),
             )
             conn.execute(
-                """INSERT OR IGNORE INTO character_memory_entities(
-                    memory_id,entity_id,relation_role
-                ) VALUES(?,?,?)""",
+                "INSERT OR IGNORE INTO character_memory_entities(memory_id,entity_id,relation_role) VALUES(?,?,?)",
                 (memory_id, location_id, "known_location"),
             )
 
-    # Retire the former compatibility storage after equivalent semantic rows are
-    # established. The Memory System is now the actor-known-world authority.
     conn.execute("DELETE FROM fields WHERE field_key=?", (LEGACY_SPATIAL_FIELD,))
     conn.execute("DELETE FROM runtime_state WHERE key='spatial_familiarity_revision'")
     conn.execute(
