@@ -4,7 +4,7 @@ import json
 
 import pytest
 
-from observer_sandbox.db import connect
+from observer_sandbox.db import SCHEMA_VERSION, connect
 from observer_sandbox.inventory import (
     container_inventory,
     consume_stack,
@@ -17,12 +17,12 @@ from observer_sandbox.runtime import initialize, status
 WEALTHY_APPLE_RESERVE = 120.0
 
 
-def test_schema_v5_seeds_universal_food_definitions_and_estate_stacks(tmp_path):
+def test_schema_seeds_universal_food_definitions_and_estate_stacks(tmp_path):
     db_path = tmp_path / "observer.sqlite3"
     initialize(db_path)
 
     runtime = status(db_path)
-    assert runtime.schema_version == 5
+    assert runtime.schema_version == SCHEMA_VERSION
     assert runtime.runtime_state["inventory_seed_revision"] == "thorne-estate-inventory-v1"
 
     with connect(db_path) as conn:

@@ -5,8 +5,9 @@ import sqlite3
 from pathlib import Path
 
 from .composition_schema import migrate_composition_schema
+from .memory_schema import migrate_memory_schema
 
-SCHEMA_VERSION = 5
+SCHEMA_VERSION = 6
 
 SCHEMA_SQL = """
 PRAGMA foreign_keys = ON;
@@ -242,6 +243,7 @@ def connect(path: str | Path) -> sqlite3.Connection:
 def migrate(conn: sqlite3.Connection) -> None:
     conn.executescript(SCHEMA_SQL)
     migrate_composition_schema(conn)
+    migrate_memory_schema(conn)
     conn.execute(
         "INSERT INTO schema_meta(key, value) VALUES('schema_version', ?) "
         "ON CONFLICT(key) DO UPDATE SET value=excluded.value",

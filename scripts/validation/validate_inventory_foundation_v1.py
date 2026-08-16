@@ -4,7 +4,7 @@ import json
 import os
 from pathlib import Path
 
-from observer_sandbox.db import connect
+from observer_sandbox.db import SCHEMA_VERSION, connect
 from observer_sandbox.inventory import consume_stack, stack_state
 from observer_sandbox.runtime import initialize, status
 
@@ -50,15 +50,14 @@ def main() -> int:
         actor_runtime_before = tuple(actor_runtime_before)
 
     # Inventory Foundation originally proved the production v4 -> v5 transition.
-    # Production is now already v5, so the durable acceptance invariant is that
-    # ordinary candidate initialization preserves the live runtime/profile state,
-    # retains definition/instance/containment semantics, and does not refill a
-    # stack after an allowed one-time explicit stock migration has settled.
-    assert before_schema == 5, f"expected current production-copy schema v5, got {before_schema}"
+    # The durable invariant is now that ordinary candidate initialization may
+    # advance the shared schema while preserving live runtime/profile state,
+    # definition/instance/containment semantics, and settled inventory quantity.
+    assert before_schema >= 5, f"expected production-copy schema >=5, got {before_schema}"
 
     initialize(db_path)
     migrated = status(db_path)
-    assert migrated.schema_version == 5
+    assert migrated.schema_version == SCHEMA_VERSION
     assert migrated.runtime_state["inventory_seed_revision"] == "thorne-estate-inventory-v1"
 
     with connect(db_path) as conn:
@@ -89,13 +88,13 @@ def main() -> int:
 
     with connect(db_path) as conn:
         assert stack_state(conn, APPLE_STACK).quantity == expected_remaining
-        assert int(conn.execute("SELECT value FROM schema_meta WHERE key='schema_version'").fetchone()[0]) == 5
+        assert int(conn.execute("SELECT value FROM schema_meta WHERE key='schema_version'").fetchone()[0]) == SCHEMA_VERSION
 
     print(json.dumps({
         "ok": True,
         "disposable_production_copy": True,
         "schema_before": before_schema,
-        "schema_after": 5,
+        "schema_after": SCHEMA_VERSION,
         "world_revision_preserved": before_world,
         "sim_time_preserved": before_sim_time,
         "actor_id": actor_id,

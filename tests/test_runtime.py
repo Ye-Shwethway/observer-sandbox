@@ -1,6 +1,6 @@
 import json
 
-from observer_sandbox.db import connect
+from observer_sandbox.db import SCHEMA_VERSION, connect
 from observer_sandbox.runtime import initialize, status
 from observer_sandbox.world import set_field
 
@@ -11,7 +11,7 @@ def test_initialize_and_status(tmp_path):
 
     result = status(db)
     assert result.healthy is True
-    assert result.schema_version == 5
+    assert result.schema_version == SCHEMA_VERSION
     assert result.runtime_state["paused"] is False
     assert result.runtime_state["speed"] == 1.0
     assert result.runtime_state["world_id"] == "world_observer_universe"
@@ -33,6 +33,7 @@ def test_initialize_and_status(tmp_path):
         "profile_field_definitions", "character_profiles", "character_profile_values", "character_profile_history",
         "character_preferences", "character_hobbies", "character_habits", "character_routines", "character_skills",
         "character_relationship_state", "ai_providers", "ai_models", "ai_bindings", "ai_catalog_sync",
+        "character_memories", "character_memory_entities",
     } <= tables
 
 
