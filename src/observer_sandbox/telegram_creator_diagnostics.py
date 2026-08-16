@@ -49,6 +49,23 @@ def _current_time(conn) -> datetime:
     return parsed
 
 
+def _externalize(view):
+    text, keyboard = view
+    if not keyboard:
+        return text, keyboard
+    normalized: list[list[dict[str, str]]] = []
+    for row in keyboard:
+        normalized_row: list[dict[str, str]] = []
+        for button in row:
+            copied = dict(button)
+            callback = str(copied.get("callback_data") or "")
+            if callback.startswith("diag:"):
+                copied["callback_data"] = "ai:" + callback
+            normalized_row.append(copied)
+        normalized.append(normalized_row)
+    return text, normalized
+
+
 def _home():
     return (
         "🧪 CREATOR DIAGNOSTICS\n"
@@ -203,7 +220,7 @@ def _adjust_time(conn, user_id: int, action: str):
     return _time_view(conn, user_id)
 
 
-def callback_view(conn, user_id: int, callback_data: str, *, requested_by: str):
+def _callback_view(conn, user_id: int, callback_data: str, *, requested_by: str):
     if callback_data == "diag:home":
         return _home()
     if callback_data == "diag:move":
@@ -281,7 +298,8 @@ def callback_view(conn, user_id: int, callback_data: str, *, requested_by: str):
                 requested_by=requested_by,
             )
         except (KeyError, ValueError, RuntimeError) as exc:
-            return _review(conn, user_id)[0] + f"\n\n❌ Relocation rejected safely: {exc}", _review(conn, user_id)[1]
+            review_text, review_keyboard = _review(conn, user_id)
+            return review_text + f"\n\n❌ Relocation rejected safely: {exc}", review_keyboard
         _save(conn, user_id, None)
         before = result["before"]
         after = result["after"]
@@ -292,7 +310,7 @@ def callback_view(conn, user_id: int, callback_data: str, *, requested_by: str):
             f"Location: {before['location_name']} → {after['location_name']}",
             f"Time: {before['sim_time']} → {after['sim_time']}",
             f"Pending action cancelled: {result['cancelled_action_id'] or 'None'}",
-            f"Wake reason: creator_diagnostic_relocation",
+            "Wake reason: creator_diagnostic_relocation",
             "",
             "Audit event recorded. Normal autonomy remains authoritative from the new state.",
         ]
@@ -304,3 +322,7 @@ def callback_view(conn, user_id: int, callback_data: str, *, requested_by: str):
             [{"text": "⌂ Observer Home", "callback_data": "nav:home"}],
         ]
     return "Unknown Creator diagnostic control.", [[{"text": "🧪 Diagnostics", "callback_data": "diag:home"}]]
+
+
+def callback_view(conn, user_id: int, callback_data: str, *, requested_by: str):
+    return _externalize(_callback_view(conn, user_id, callback_data, requested_by=requested_by))
