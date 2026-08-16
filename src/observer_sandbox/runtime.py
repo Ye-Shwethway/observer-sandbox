@@ -11,6 +11,7 @@ from .ai import seed_builtin_providers
 from .composition_schema import seed_action_definitions
 from .controlled_h2h_runtime import seed_controlled_h2h_runtime
 from .db import connect, get_runtime_state, migrate
+from .economic_value import seed_economic_value_profiles, validate_current_value_coverage
 from .economy import seed_initial_economy
 from .estate_campus import seed_estate_campus
 from .field_medicine_stabilization import seed_field_medicine_stabilization_runtime
@@ -75,6 +76,12 @@ def _initialize_conn(conn) -> None:
     # database and every test/runtime initialization share the same ordering.
     sim_clock = ensure_sim_clock(conn)
     seed_home_inventory(conn)
+    # W3.1 value profiles cover all represented world objects and item definitions.
+    # Fail closed if a new seed object is introduced without an explicit value
+    # policy, while keeping Estate components included in the parent asset rather
+    # than double-counting them in Darian's net worth.
+    seed_economic_value_profiles(conn)
+    validate_current_value_coverage(conn)
     seed_action_definitions(conn)
     seed_skill_practice_foundation(conn)
     seed_technology_diagnostic_runtime(conn)
