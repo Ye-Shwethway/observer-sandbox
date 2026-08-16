@@ -1,5 +1,5 @@
 {
-  "revision": "universe-economic-value-profiles-v1",
+  "revision": "universe-economic-value-profiles-v1.1",
   "currency_code": "USD",
   "parent_asset_id": "asset_thorne_estate",
   "policy": {
@@ -55,7 +55,20 @@
     {"subject_id":"obj_thorne_estate_lake_water_purification","classification":"component","replacement_value_minor":12000000,"net_worth_treatment":"included_in_parent","valuation_method":"canonical_replacement_estimate"},
     {"subject_id":"obj_thorne_estate_hidden_dock_fixture","classification":"component","replacement_value_minor":35000000,"net_worth_treatment":"included_in_parent","valuation_method":"canonical_replacement_estimate"},
     {"subject_id":"obj_thorne_estate_rear_forest_trail","classification":"component","replacement_value_minor":7500000,"net_worth_treatment":"included_in_parent","valuation_method":"canonical_replacement_estimate"},
-    {"subject_id":"obj_thorne_estate_main_gate_control","classification":"component","replacement_value_minor":20000000,"net_worth_treatment":"included_in_parent","valuation_method":"canonical_replacement_estimate"}
+    {"subject_id":"obj_thorne_estate_main_gate_control","classification":"component","replacement_value_minor":20000000,"net_worth_treatment":"included_in_parent","valuation_method":"canonical_replacement_estimate"},
+    {"subject_id":"obj_thorne_estate_comms_diagnostic_practice_console","classification":"component","replacement_value_minor":10000000,"net_worth_treatment":"included_in_parent","valuation_method":"canonical_replacement_estimate"},
+    {"subject_id":"obj_thorne_estate_intel_known_fault_diagnostic_simulator","classification":"component","replacement_value_minor":20000000,"net_worth_treatment":"included_in_parent","valuation_method":"canonical_replacement_estimate"},
+    {"subject_id":"obj_thorne_estate_intel_tactical_maneuver_planning_simulator","classification":"component","replacement_value_minor":15000000,"net_worth_treatment":"included_in_parent","valuation_method":"canonical_replacement_estimate"},
+    {"subject_id":"obj_thorne_estate_intel_tactical_situation_assessment_simulator","classification":"component","replacement_value_minor":15000000,"net_worth_treatment":"included_in_parent","valuation_method":"canonical_replacement_estimate"},
+    {"subject_id":"obj_thorne_estate_training_bladed_weapons_practice_simulator","classification":"component","replacement_value_minor":7500000,"net_worth_treatment":"included_in_parent","valuation_method":"canonical_replacement_estimate"},
+    {"subject_id":"obj_thorne_estate_training_bladed_weapons_safe_handling_simulator","classification":"component","replacement_value_minor":6000000,"net_worth_treatment":"included_in_parent","valuation_method":"canonical_replacement_estimate"},
+    {"subject_id":"obj_thorne_estate_training_field_medicine_practice_simulator","classification":"component","replacement_value_minor":10000000,"net_worth_treatment":"included_in_parent","valuation_method":"canonical_replacement_estimate"},
+    {"subject_id":"obj_thorne_estate_training_field_navigation_practice_simulator","classification":"component","replacement_value_minor":7500000,"net_worth_treatment":"included_in_parent","valuation_method":"canonical_replacement_estimate"},
+    {"subject_id":"obj_thorne_estate_training_field_navigation_simulator","classification":"component","replacement_value_minor":15000000,"net_worth_treatment":"included_in_parent","valuation_method":"canonical_replacement_estimate"},
+    {"subject_id":"obj_thorne_estate_training_field_sustainment_practice_station","classification":"component","replacement_value_minor":7500000,"net_worth_treatment":"included_in_parent","valuation_method":"canonical_replacement_estimate"},
+    {"subject_id":"obj_thorne_estate_training_field_sustainment_simulator","classification":"component","replacement_value_minor":15000000,"net_worth_treatment":"included_in_parent","valuation_method":"canonical_replacement_estimate"},
+    {"subject_id":"obj_thorne_estate_training_firearms_practice_simulator","classification":"component","replacement_value_minor":10000000,"net_worth_treatment":"included_in_parent","valuation_method":"canonical_replacement_estimate"},
+    {"subject_id":"obj_thorne_estate_training_firearms_safe_handling_simulator","classification":"component","replacement_value_minor":8000000,"net_worth_treatment":"included_in_parent","valuation_method":"canonical_replacement_estimate"}
   ],
   "definition_profiles": [
     {"subject_id":"item.food.apple","classification":"consumable_stock","unit_value_minor":125,"unit_quantity":1.0,"unit_label":"piece","net_worth_treatment":"derived_stock","valuation_method":"canonical_unit_price"},
