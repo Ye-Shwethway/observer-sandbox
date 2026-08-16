@@ -119,6 +119,7 @@ jobs:
             .venv/bin/sandboxctl status
             .venv/bin/sandboxctl living-status
             .venv/bin/sandboxctl ai resolve cognition --character char_darian
+            .venv/bin/python -m observer_sandbox.cognition_context_audit --db "$OBSERVER_SANDBOX_DB" --character char_darian
             if grep -Eq "^OBSERVER_TELEGRAM_BOT_TOKEN=.+" /var/lib/observer-sandbox/secrets.env 2>/dev/null; then
               echo "TELEGRAM_BOT_TOKEN_PRESENT=true"
               TOKEN=$(sed -n "s/^OBSERVER_TELEGRAM_BOT_TOKEN=//p" /var/lib/observer-sandbox/secrets.env | head -n1)
