@@ -21,10 +21,20 @@ from .telegram_bot import (
 LAST_ACTION_NOTIFY_PREFIX = "telegram_last_action_notification:"
 
 
-def _fmt_delta(label: str, icon: str, before: float, after: float, *, high_is_good: bool) -> str | None:
+def _fmt_delta(
+    label: str,
+    icon: str,
+    before: float,
+    after: float,
+    *,
+    high_is_good: bool,
+    always_show: bool = False,
+) -> str | None:
     delta = float(after) - float(before)
     if abs(delta) < 0.05:
-        return None
+        if not always_show:
+            return None
+        return f"{icon} {label:<11} {before:.1f} → {after:.1f}  =0.0 •"
     direction = "▲" if delta > 0 else "▼"
     beneficial = delta > 0 if high_is_good else delta < 0
     marker = "✓" if beneficial else "•"
@@ -201,17 +211,25 @@ def format_action_completion(
 
     lines.extend(_meal_lines(action))
 
-    fatigue_change = None
-    if "fatigue" in before and "fatigue" in after:
-        fatigue_change = _fmt_delta("Fatigue", "💢", before["fatigue"], after["fatigue"], high_is_good=False)
-
+    tracked_stats = [
+        ("Energy", "⚡", "energy", True),
+        ("Fatigue", "💢", "fatigue", False),
+        ("Hunger", "🍽", "hunger", False),
+        ("Thirst", "💧", "thirst", False),
+        ("Sleepiness", "🌙", "sleepiness", False),
+        ("Cleanliness", "🫧", "cleanliness", True),
+    ]
     changes = [
-        _fmt_delta("Energy", "⚡", before["energy"], after["energy"], high_is_good=True),
-        fatigue_change,
-        _fmt_delta("Hunger", "🍽", before["hunger"], after["hunger"], high_is_good=False),
-        _fmt_delta("Thirst", "💧", before["thirst"], after["thirst"], high_is_good=False),
-        _fmt_delta("Sleepiness", "🌙", before["sleepiness"], after["sleepiness"], high_is_good=False),
-        _fmt_delta("Cleanliness", "🫧", before["cleanliness"], after["cleanliness"], high_is_good=True),
+        _fmt_delta(
+            label,
+            icon,
+            before[field],
+            after[field],
+            high_is_good=high_is_good,
+            always_show=True,
+        )
+        for label, icon, field, high_is_good in tracked_stats
+        if field in before and field in after
     ]
     visible_changes = [row for row in changes if row]
     if visible_changes:
