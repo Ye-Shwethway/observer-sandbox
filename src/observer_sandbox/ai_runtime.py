@@ -89,6 +89,76 @@ def _provider_and_key(conn: sqlite3.Connection, provider_id: str) -> tuple[sqlit
     return provider, key
 
 
+def _compact_training_method(method: Any) -> Any:
+    if not isinstance(method, dict):
+        return method
+    compact = {
+        key: method[key]
+        for key in ("method_id", "method_name", "family", "workload_channels", "tags")
+        if key in method
+    }
+    movement_options = method.get("movement_options")
+    if isinstance(movement_options, list):
+        compact["movement_options"] = [
+            {
+                key: movement[key]
+                for key in ("movement_id", "name")
+                if key in movement
+            }
+            for movement in movement_options
+            if isinstance(movement, dict)
+        ]
+    return compact
+
+
+def _compact_capability_awareness(awareness: Any) -> Any:
+    if not isinstance(awareness, dict):
+        return awareness
+    compact = {
+        key: awareness[key]
+        for key in ("revision", "actor_id", "unresolved_skills", "reasoning_profile")
+        if key in awareness
+    }
+    skills = awareness.get("skills")
+    if not isinstance(skills, list):
+        return compact
+
+    compact_skills: list[dict[str, Any]] = []
+    for raw_skill in skills:
+        if not isinstance(raw_skill, dict):
+            continue
+        skill = {
+            key: raw_skill[key]
+            for key in ("skill_id", "name", "category", "proficiency", "supporting_attributes", "knowledge_context")
+            if key in raw_skill
+        }
+        applications = raw_skill.get("applications")
+        if isinstance(applications, list):
+            skill["applications"] = [
+                {
+                    key: application[key]
+                    for key in (
+                        "application_id",
+                        "name",
+                        "outcome_intent",
+                        "challenge_classes",
+                        "required_context_tags",
+                        "required_resource_mode",
+                        "required_resource_capabilities_any",
+                        "supporting_resource_capabilities",
+                        "supporting_knowledge_keys",
+                        "risk_class",
+                    )
+                    if key in application
+                }
+                for application in applications
+                if isinstance(application, dict)
+            ]
+        compact_skills.append(skill)
+    compact["skills"] = compact_skills
+    return compact
+
+
 def _compact_prompt_state(state: dict[str, Any]) -> dict[str, Any]:
     """Remove duplicated derived metadata while preserving decision semantics."""
     prompt_state = dict(state)
@@ -109,12 +179,18 @@ def _compact_prompt_state(state: dict[str, Any]) -> dict[str, Any]:
             if key in familiarity
         }
 
+    capability_awareness = prompt_state.get("capability_awareness")
+    if capability_awareness is not None:
+        prompt_state["capability_awareness"] = _compact_capability_awareness(capability_awareness)
+
     options = prompt_state.get("action_options")
     if isinstance(options, list):
         compact_options: list[dict[str, Any]] = []
         for raw in enrich_action_options(options):
             option = dict(raw)
             option.pop("training_load_guard", None)
+            if "training_method" in option:
+                option["training_method"] = _compact_training_method(option["training_method"])
             compact_options.append(option)
         prompt_state["action_options"] = compact_options
 
