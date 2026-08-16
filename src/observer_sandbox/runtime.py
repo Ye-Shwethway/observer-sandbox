@@ -76,12 +76,6 @@ def _initialize_conn(conn) -> None:
     # database and every test/runtime initialization share the same ordering.
     sim_clock = ensure_sim_clock(conn)
     seed_home_inventory(conn)
-    # W3.1 value profiles cover all represented world objects and item definitions.
-    # Fail closed if a new seed object is introduced without an explicit value
-    # policy, while keeping Estate components included in the parent asset rather
-    # than double-counting them in Darian's net worth.
-    seed_economic_value_profiles(conn)
-    validate_current_value_coverage(conn)
     seed_action_definitions(conn)
     seed_skill_practice_foundation(conn)
     seed_technology_diagnostic_runtime(conn)
@@ -89,6 +83,11 @@ def _initialize_conn(conn) -> None:
     seed_represented_skill_runtime_batch(conn)
     seed_controlled_h2h_runtime(conn)
     seed_field_medicine_stabilization_runtime(conn)
+    # W3.1 runs after every current canonical object seeder, including the
+    # represented skill/task fixtures that are not declared in the base world
+    # JSON. This makes production-copy and fresh-database coverage equivalent.
+    seed_economic_value_profiles(conn)
+    validate_current_value_coverage(conn)
     defaults = {
         "paused": False,
         "speed": 1.0,
