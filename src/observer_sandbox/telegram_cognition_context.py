@@ -11,7 +11,8 @@ PAGE_CONTENT_LIMIT = 3000
 _VALUE_WRAP = 420
 
 _LABELS = {
-    "action_options": "Available Actions",
+    "action_options": "Available Action Options",
+    "available_actions": "Available Action Vocabulary",
     "autonomy_policy": "Autonomy Policy",
     "capability_awareness": "Capability Awareness",
     "character": "Character Context",
@@ -150,6 +151,8 @@ def cognition_context_view(
 
     context = selected.get("context") if isinstance(selected.get("context"), dict) else {}
     body_lines: list[str] = []
+    body_lines.extend(_human_lines(selected.get("available_actions") or [], key="available_actions"))
+    body_lines.append("")
     for key, value in context.items():
         body_lines.extend(_human_lines(value, key=str(key)))
         body_lines.append("")
@@ -167,7 +170,7 @@ def cognition_context_view(
         "━━━━━━━━━━━━━━━━━━\n"
         f"Snapshot {slot}{latest} · {injection}\n"
         f"🕒 Sim Time  {_fmt_time(selected.get('sim_time'))}\n"
-        f"🤖 Model     {provider} / {model}\n"
+        f"🤖 Configured Model  {provider} / {model}\n"
         f"📄 Page      {page + 1}/{len(pages)}\n\n"
     )
     text = header + pages[page]
