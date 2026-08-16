@@ -24,7 +24,9 @@ Character-side minimum foundations remain closed enough for the current purpose.
 
 The Estate-first sequence is complete/deployed through **Estate Campus Reachability v1**, **Spatial Familiarity Foundation v1**, and **Outdoor Spatial Affordance Cognition v1**. South Lake Tahoe remains intentionally paused.
 
-## Required world read order
+A later architecture correction is also COMPLETE / DEPLOYED: **Universal Character Autonomy v1** removes the named Darian autonomy-policy layer. Character-specific behavioral hard-coding is now forbidden.
+
+## Required world / cognition read order
 
 1. `docs/WORLD_FOUNDATION_EXPANSION_PLAN_V1.md`
 2. `docs/WORLD_LOCATION_NODE_MODEL.md`
@@ -36,6 +38,22 @@ The Estate-first sequence is complete/deployed through **Estate Campus Reachabil
 8. `docs/ESTATE_CAMPUS_REACHABILITY_V1.md`
 9. `docs/WORLD_SPATIAL_FAMILIARITY_CONTRACT_V1.md`
 10. `docs/WORLD_OUTDOOR_SPATIAL_AFFORDANCE_CONTRACT_V1.md`
+11. `docs/UNIVERSAL_CHARACTER_AUTONOMY_CONTRACT_V1.md`
+
+## Universal autonomy invariant
+
+Character-specific authoring may seed represented facts/state, but must not command future behavior.
+
+Forbidden:
+- named-character autonomy prompts;
+- bespoke daily routines or time-window activity preferences;
+- named-character destination/activity preferences encoded as policy;
+- anti-repetition or behavior-correction counter-prompts written for one character;
+- character-specific behavior branches merely to make observation look better.
+
+Autonomous behavior must emerge from universal systems consuming represented character profile/state, needs/physiology, time, environment, affordances, recent history, goals, relationships, memory/learning when available, and deterministic constraints.
+
+`config/autonomy/universal.autonomy-policy.v1.json` is the shared cognition policy. `config/characters/darian.autonomy-policy.json` no longer exists and character registry entries no longer select an autonomy policy.
 
 ## Location semantic rule
 
@@ -50,13 +68,26 @@ The graph node is the stable identity/hierarchy/topology representation of that 
 
 Keep three layers distinct:
 1. **World truth** — represented objective geography/topology.
-2. **Character-known world** — the subset of geography an actor is authored to know.
+2. **Character-known world** — the subset of geography an actor knows.
 3. **Current actionable space** — exact deterministic moves/actions executable now.
 
 Spatial familiarity vocabulary:
 `unknown -> aware -> familiar -> intimate`.
 
 Hidden/secret is orthogonal to familiarity. Known geography supports planning but never grants teleportation, permission or a non-local target. Exact movement authority remains current `action_options`.
+
+### Temporary spatial-familiarity debt
+
+`config/characters/darian.spatial_familiarity.v1.json` is retained only as a temporary factual bootstrap because the general Memory System / discovery-learning layer does not yet own initial and evolving spatial knowledge.
+
+When the general Memory System is implemented:
+1. migrate valid initial spatial knowledge into the generic memory/knowledge initialization model;
+2. preserve world truth vs actor knowledge vs current action authority;
+3. let discovery/familiarity reinforcement/forgetting evolve through universal systems where supported;
+4. remove `darian.spatial_familiarity.v1.json` and any Darian-specific loader/path dependency;
+5. do not replace it with another named-character cognition-policy file.
+
+Until then this seed may contain factual initial knowledge only, never behavioral instructions.
 
 ## Outdoor-lived-space rule
 
@@ -67,84 +98,41 @@ Reachability alone does not make an outdoor location behaviorally meaningful.
 - `relax` — quiet/decompression activity, weaker recovery than dedicated `rest`;
 - `observe` — spend time taking in represented surroundings without inventing facts.
 
-Known outdoor lifestyle destinations may be visible to planning cognition even when distant, but exact executable movement/actions remain local `action_options`.
+Current Estate lifestyle destinations are Mansion Exterior, Core Estate Grounds, Private Lake Access and Rear Forested Estate. These are generic world affordances; they must not be converted into Darian-specific outing instructions.
 
-Outdoor attraction is soft and never a quota. Do not turn gates, concealed passages, docks, or other security/egress/utility nodes into recreation defaults merely because they are outdoors. Do not invent weather/daylight conditions before environment runtime exists.
+Outdoor attraction is soft and never a quota. Tactical Obstacle Course remains training-oriented; Main Estate Approach remains transit-oriented; Hidden Dock, Concealed Forest Passage and Main Security Gate are not lifestyle-attraction destinations.
 
 ## Completed Estate-first sequence
 
-### A0 — Location Spatial Container Contract v1
+- **A0 Location Spatial Container Contract v1** — PR #196 / merge `d1167771ddb9c358a464c6efb863d9edf6800e18`.
+- **A1 Existing Estate Location Refactor** — PR #197 / merge `886001a1d5d1cc62e5e9aab26a64fc08dedf08f1` / Deploy #244 SUCCESS.
+- **A2 Gameplay Runtime Reconnection / Regression** — PR #198 / merge `3425315d2a3f564f0f3f5beb15084fda214c3036` / final CI #957 SUCCESS.
+- **B Estate Campus Reachability v1** — PR #199 / merge `f0955a582e11394ec64387f2a3fc0bfb468350b4` / Deploy #245 run `31936858504` SUCCESS.
+- **C Spatial Familiarity Foundation v1** — PR #201 / merge `4778eb3e5fc0877ad49e7c96570f00ee5de4e121` / Deploy #246 run `31937763776` SUCCESS.
+- **D Outdoor Spatial Affordance Cognition v1** — PR #204 / merge `14c48908bfefaf7509249cddafe3eb30c5ef0623` / CI #963 SUCCESS / Strength #91 SUCCESS / Deploy #248 run `31940047281` SUCCESS.
 
-COMPLETE through PR #196 / merge `d1167771ddb9c358a464c6efb863d9edf6800e18`.
+## Universal Character Autonomy v1
 
-### A1 — Existing Estate Location Refactor
+COMPLETE / DEPLOYED through PR #206.
 
-COMPLETE / DEPLOYED through PR #197.
-CI #955 SUCCESS; Strength #86 SUCCESS.
-Merge `886001a1d5d1cc62e5e9aab26a64fc08dedf08f1`.
-Deploy #244 SUCCESS.
+Key results:
+- removed `config/characters/darian.autonomy-policy.json`;
+- removed character-registry autonomy-policy binding;
+- added one character-agnostic `config/autonomy/universal.autonomy-policy.v1.json`;
+- existing policy-loading compatibility path now returns the universal policy and rejects character binding;
+- removed Darian-specific morning-training acceptance behavior;
+- removed Darian-specific lean/muscular nutrition-policy expectation;
+- added `docs/UNIVERSAL_CHARACTER_AUTONOMY_CONTRACT_V1.md` and locked the invariant in `AGENTS.md`;
+- explicitly recorded the Darian spatial-familiarity seed as temporary Memory System migration debt.
 
-### A2 — Gameplay Runtime Reconnection / Regression
-
-COMPLETE through PR #198.
-Final CI #957 SUCCESS.
-Merge `3425315d2a3f564f0f3f5beb15084fda214c3036`.
-
-### B — Estate Campus Reachability v1
-
-COMPLETE / DEPLOYED through PR #199.
-
-Current private campus includes Mansion Exterior, Core Estate Grounds, Tactical Obstacle Course, Private Lake Access, Hidden Dock, Rear Forested Estate, Concealed Forest Passage, Main Estate Approach and Main Security Gate.
-
-Ordinary traversal begins:
-`Master Suite -> Grand Foyer -> Mansion Exterior -> Core Estate Grounds`.
-
-Final CI #959 SUCCESS.
-Merge `f0955a582e11394ec64387f2a3fc0bfb468350b4`.
-Deploy #245 / run `31936858504` SUCCESS.
-
-### C — Spatial Familiarity Foundation v1
-
-COMPLETE / DEPLOYED through PR #201.
-
-Darian has explicit character-owned geographic knowledge of the represented Estate. Cognition receives a compact broader known map independent of current one-hop position, while exact move targets remain local/deterministic. Unknown authored destinations are not automatically leaked; globally concealed destinations are omitted from generic previews; no general episodic memory/discovery/forgetting system exists yet.
-
-Evidence:
-- CI #960 / run `31937649311` SUCCESS;
-- merge `4778eb3e5fc0877ad49e7c96570f00ee5de4e121`;
-- Deploy #246 / run `31937763776` SUCCESS.
-
-### D — Outdoor Spatial Affordance Cognition v1
-
-COMPLETE / DEPLOYED through PR #204.
-
-The Estate's ordinary outdoors now offer explicit lived activities rather than being traversal-only:
-- Mansion Exterior: `observe`, `relax`;
-- Core Estate Grounds: `walk`, `relax`, `observe`;
-- Private Lake Access: `relax`, `observe`;
-- Rear Forested Estate: `walk`, `relax`, `observe`.
-
-Tactical Obstacle Course remains training-oriented. Main Estate Approach remains transit-oriented. Hidden Dock, Concealed Forest Passage and Main Security Gate are deliberately excluded from positive lifestyle attraction.
-
-Cognition now receives compact familiar outdoor lifestyle destinations with activities/atmosphere context, and one-hop previews explain what a destination supports after arrival. Darian's policy treats outdoor walking, lakeside quiet time, forest walking, observation and decompression as legitimate ordinary-life alternatives to repeatedly defaulting indoors, but never as a quota or forced outing.
-
-Runtime boundaries:
-- `walk` stays within the current spatial container;
-- inter-location travel remains `move`;
-- indoor rest/sleep remain valid;
-- no weather/daylight claims are invented;
-- no Tahoe/public/backcountry/water continuation was added;
-- training hard limits are unchanged.
-
-Evidence:
-- final head `71f0ad934c34bcc31ad16928a2cad9ce459234fc`;
-- CI #963 / run `31939974004` SUCCESS;
-- Strength Live Cycle Validation #91 SUCCESS;
-- merge `14c48908bfefaf7509249cddafe3eb30c5ef0623`;
-- Deploy #248 / run `31940047281` SUCCESS including sync, cognition configuration, restart and verification;
+Validation history:
+- initial full-CI failures were stale tests still expecting the removed Darian policy identity/nutrition goal, not runtime regressions;
+- final PR head `ddc94714b6e78f1b6a3b640aa04f86116893920a`;
+- CI #966 / run `31941715382` SUCCESS;
+- Strength Live Cycle Validation #94 / run `31941715379` SUCCESS;
+- merge `133b2cf987768ffbf2263abb2ac1c7b086ea7aed`;
+- Deploy #249 / run `31941781006` SUCCESS;
 - schema remains v5.
-
-No synthetic production Darian action was created solely for proof.
 
 ## Current world boundary
 
@@ -156,28 +144,17 @@ Outside continuation remains unavailable:
 - Hidden Dock -> no water-travel edge;
 - legacy Estate Exterior -> locked/non-traversable.
 
-## Memory/discovery boundary
-
-Spatial Familiarity v1 is not episodic character memory. Future work may add validated discovery/revelation, lived familiarity changes, forgetting, map/teaching mechanics or general memory while preserving world truth vs actor knowledge vs immediate action authority.
-
 ## South Lake Tahoe — PAUSED
 
-Do not currently create or enable:
-- public South Lake Tahoe regional graph;
-- public-road continuation from Main Security Gate;
-- Tahoe-backcountry continuation from Concealed Forest Passage;
-- Hidden Dock water travel;
-- public venue/economy/population loops merely because future contracts exist.
-
-Outside-world expansion resumes only on separate Creator prioritization.
+Do not currently create or enable public South Lake Tahoe topology, road continuation, Tahoe-backcountry continuation, Hidden Dock water travel, or public venue/economy/population loops without separate Creator prioritization.
 
 ## Current verified runtime
 
-Latest verified runtime deployment: **Deploy #248 / run `31940047281` SUCCESS**.
+Latest verified runtime deployment: **Deploy #249 / run `31941781006` SUCCESS**.
 
-Runtime merge: `14c48908bfefaf7509249cddafe3eb30c5ef0623`.
+Runtime merge: `133b2cf987768ffbf2263abb2ac1c7b086ea7aed`.
 Schema remains v5.
 
 ## Exact resume point
 
-**Estate Campus Reachability, Spatial Familiarity Foundation v1 and Outdoor Spatial Affordance Cognition v1 are COMPLETE / DEPLOYED. Keep all Tahoe/public/backcountry/water continuations locked. Resume by naturally observing Darian at the Creator-set 30x speed and specifically check whether Mansion Exterior/Core Grounds/Lake Access/Rear Forest now attract plausible walking, quiet relaxation and observation; whether indoor rest remains natural rather than disappearing; whether multi-step movement toward distant known outdoor destinations is coherent; and whether security/egress nodes remain non-attractive. Fix only evidence-backed Estate-local gaps before considering outside-world expansion.**
+**Observe Darian naturally at the Creator-set 30x speed under Universal Character Autonomy v1. Do not tune him through named-character policy or counter-prompts. If Gym/Training Hall fixation or another behavioral imbalance persists, inspect universal inputs/signals/competition and fix only evidence-backed generic causes. Preserve the Estate world boundary and keep South Lake Tahoe/public/backcountry/water continuations paused. The Darian-specific spatial-familiarity seed remains temporary factual bootstrap debt and must be migrated/removed when the general Memory System lands.**
