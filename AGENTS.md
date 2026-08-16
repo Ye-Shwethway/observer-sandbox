@@ -64,12 +64,12 @@ Preserve the LEGO rule:
 
 ## Universal character autonomy
 
-Follow `docs/UNIVERSAL_CHARACTER_AUTONOMY_CONTRACT_V1.md` and `docs/CHARACTER_MEMORY_FOUNDATION_V1.md`.
+Follow `docs/UNIVERSAL_CHARACTER_AUTONOMY_CONTRACT_V1.md`, `docs/CHARACTER_MEMORY_FOUNDATION_V1.md`, `docs/HUMAN_MEMORY_DYNAMICS_V1.md`, and `docs/INTELLIGENT_MIND_ENGINE_FOUNDATION_V1.md`.
 
 - Character-specific behavioral hard-coding is forbidden.
 - Character-specific files/data may seed represented facts/state, not command future behavior.
 - Do not add named-character autonomy prompts, bespoke daily-routine rules, destination preferences, anti-repetition counter-prompts, or behavior patches.
-- Autonomous behavior must emerge from universal systems consuming profile/state, needs/physiology, time, environment, affordances, history, goals, relationships, memory/learning, and deterministic constraints.
+- Autonomous behavior must emerge from universal systems consuming profile/state, needs/physiology, time, environment, affordances, history, goals, relationships, memory/learning, mental state and deterministic constraints.
 - A new character must not require a new autonomy policy or character-specific behavior branch.
 - Actor-known spatial facts belong to generic semantic Character Memory. Do not reintroduce named-character spatial-familiarity files or loader paths.
 
@@ -79,7 +79,27 @@ Follow `docs/UNIVERSAL_CHARACTER_AUTONOMY_CONTRACT_V1.md` and `docs/CHARACTER_ME
 - Initial character-specific factual knowledge may be represented through the shared semantic-memory seed contract, not bespoke loaders.
 - Memory must not grant topology, access, possession, capability, resources or actions absent from deterministic state.
 - Keep memory dynamic and inspectable; do not dump the entire store into model context.
-- Do not fake future consolidation, forgetting or planning with arbitrary character-specific timers/rules.
+- Preserve `stored memory != currently recallable memory`.
+
+## Intelligent Mind Engine — mandatory alignment
+
+`docs/INTELLIGENT_MIND_ENGINE_FOUNDATION_V1.md` is the canonical integration contract for character mental cognition.
+
+**Before implementing any future subsystem that can materially affect character perception, interpretation, thought, affect, active concerns, goals, intentions, planning, social cognition, communication or relationship appraisal, read and align with the Mind Engine contract first.**
+
+This includes future weather/environment appraisal, economy/money concerns, media/information exposure, communication, scheduling/obligations and social systems when they feed character cognition.
+
+Preserve:
+
+`world truth != perception != memory != mind state/thought != intention/plan != action proposal != action authority`
+
+- Do not create competing hidden mind/planner/thought stores when the state belongs to the Mind Engine.
+- Integrate through bounded typed input/output sockets; do not dump all world/memory/history into every model call.
+- Mental artifacts may influence cognition but never bypass deterministic action validation.
+- Thought is not automatically memory; prospective thought is not automatically intention or plan.
+- External facts should flow through represented exposure/perception and character-relative appraisal rather than direct arbitrary behavior modifiers.
+- Future social dialogue should use perception/interpretation/social-cognition stages rather than direct chatbot ping-pong or arbitrary utterance-to-relationship mutations.
+- Avoid a giant monolithic mind module. Add bounded modules against the shared schema/contracts.
 
 ## Creator controls
 
