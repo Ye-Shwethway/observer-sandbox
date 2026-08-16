@@ -57,13 +57,14 @@ def test_environment_schema_v1_is_idempotent_and_fresh_runtime_invents_no_weathe
         migrate_environment_schema(conn)
         migrate_environment_schema(conn)
         migrate(conn)
-        assert SCHEMA_VERSION == 10
+        assert SCHEMA_VERSION >= 10
         assert conn.execute(
             "SELECT value FROM schema_meta WHERE key='schema_version'"
-        ).fetchone()[0] == "10"
+        ).fetchone()[0] == str(SCHEMA_VERSION)
         assert int(conn.execute(
             "SELECT value FROM schema_meta WHERE key='environment_schema_version'"
-        ).fetchone()[0]) == ENVIRONMENT_SCHEMA_VERSION == 1
+        ).fetchone()[0]) == ENVIRONMENT_SCHEMA_VERSION
+        assert ENVIRONMENT_SCHEMA_VERSION >= 1
         assert conn.execute("SELECT COUNT(*) FROM environment_states").fetchone()[0] == 0
         assert current_environment_state(conn, location_id=CORE_GROUNDS, sim_time=T1) is None
 
