@@ -15,21 +15,28 @@ Roadmap synchronized: 2026-08-16
 
 ## Current production checkpoint
 
-**W1.1 — Historical Weather Provider v1 is COMPLETE / DEPLOYED.**
+**Creator Universe Weather & Geography Observability v1 is COMPLETE / DEPLOYED on top of W1.1.**
 
-Evidence:
-- PR #220 — `Add Historical Weather Replay Provider v1`
-- final tested head `3f7dedef03832876c263a97708103053c13e9b0d`
-- CI #987 / run `31954748630`: SUCCESS
-- merge `f719274598d0c5f21c492a2d20d2eb204e6cfe00`
-- Deploy #257 / run `31954905811`: SUCCESS
+Latest evidence:
+- PR #222 — `Add Telegram Universe Weather and Geography Observability v1`
+- final tested head `6b97919f3697e8fddc59210740219624aa3cd3bb`
+- CI #991 / run `31955921285`: SUCCESS
+- Strength Live Cycle Validation v1 #108: SUCCESS
+- Inventory Operations v1 Acceptance #45: SUCCESS
+- merge `d45b328767d045f5d1ed420a6b69257e96adb075`
+- Deploy #258 / run `31956018743`: SUCCESS
 - install/configure/restart/verify: SUCCESS
 - schema v11
 - environment schema v2
 - world-input schema v1
 - mind schema v1
 
-Two production-copy acceptance jobs on the PR failed at SSH configuration before their validators ran; final full CI and standard production deploy were successful.
+Underlying W1.1 evidence:
+- PR #220 — `Add Historical Weather Replay Provider v1`
+- final tested head `3f7dedef03832876c263a97708103053c13e9b0d`
+- CI #987 / run `31954748630`: SUCCESS
+- merge `f719274598d0c5f21c492a2d20d2eb204e6cfe00`
+- Deploy #257 / run `31954905811`: SUCCESS
 
 ## Completed foundation stack
 
@@ -41,7 +48,8 @@ The deployed minimum foundation includes:
 - Intelligent Mind Engine Foundation v1;
 - World Stimulus / Exposure Foundation v1;
 - Environment / Weather Foundation v1;
-- **Historical Weather Provider v1**.
+- Historical Weather Provider v1;
+- **Creator Universe Weather & Geography Observability v1**.
 
 South Lake Tahoe traversal remains intentionally paused.
 
@@ -52,6 +60,7 @@ Required docs:
 - `docs/WORLD_STIMULUS_EXPOSURE_FOUNDATION_V1.md`
 - `docs/ENVIRONMENT_WEATHER_FOUNDATION_V1.md`
 - `docs/HISTORICAL_WEATHER_PROVIDER_V1.md`
+- `docs/TELEGRAM_UNIVERSE_OBSERVABILITY_V1.md`
 - `docs/CHARACTER_MEMORY_FOUNDATION_V1.md`
 - `docs/HUMAN_MEMORY_DYNAMICS_V1.md`
 
@@ -94,12 +103,35 @@ Key guarantees:
 - universe simulation time, not real wall-clock time, chooses the weather hour;
 - South Lake Tahoe coordinate is an external weather sampling anchor, not an invented exact Estate location;
 - daily cache prevents per-tick API calls;
-- exact state IDs are stable by provider + sim hour;
 - provider failure does not stop autonomy;
 - deterministic seasonal fallback is explicitly synthetic;
-- recovered historical data can supersede fallback after retry cooldown;
+- recovered historical data can supersede fallback;
 - raw provider/cache data never becomes character knowledge;
 - future forecast/app/TV weather is separate Information/Media content requiring represented device/media exposure.
+
+## Creator Universe observability — DEPLOYED
+
+Canonical contract: `docs/TELEGRAM_UNIVERSE_OBSERVABILITY_V1.md`.
+
+Telegram `/start -> Universe` now exposes:
+- `Weather`
+- `Regions`
+- `Locations`
+
+Weather reads the already represented W1 state for the current simulation time. It is read-only Creator observability and does not fetch the provider, create character exposure, Memory or Mind records.
+
+Observer geography currently displays:
+
+`South Lake Tahoe -> Thorne Estate`
+
+Region and location semantics remain separate:
+- Region = geographic context/grouping for Creator observability;
+- Location = represented simulation place;
+- Travel topology = separate authored movement authority.
+
+The South Lake Tahoe observer hierarchy does **not** insert `loc_south_lake_tahoe` into runtime topology and does not open Estate outward routes. Locations contains Thorne Estate and continues through the existing recursive Estate browser.
+
+Do not add a separate Geography hub until multiple regions/categories make the extra layer useful.
 
 ## World element expansion policy
 
@@ -162,4 +194,4 @@ Current Estate boundary remains closed: no public-road edge from Main Security G
 
 ## Current exact resume point
 
-**W1.1 Historical Weather Provider v1 is deployed. Implement W2 Commitments / Obligations Foundation next on `test`, aligned with W0 and the Mind Engine contract. Expand calendars/devices/communication endpoints only when a concrete W2 consumer requires them. Do not activate Mental Episode/Planning yet.**
+**Creator Universe observability is deployed over W1.1. Implement W2 Commitments / Obligations Foundation next on `test`, aligned with W0 and the Mind Engine contract. Expand calendars/devices/communication endpoints only when a concrete W2 consumer requires them. Do not activate Mental Episode/Planning yet.**
