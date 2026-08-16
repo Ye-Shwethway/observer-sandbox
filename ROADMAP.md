@@ -87,6 +87,22 @@ PR #180 closes the second actual gap selected by the Overall Workflow/Foundation
 
 Existing Training Readiness and Cognitive Performance contracts remain independent domain-specific modifier systems.
 
+### Action Condition Runtime Foundation v1 — COMPLETE
+
+See `docs/ACTION_CONDITION_RUNTIME_V1.md`.
+
+PR #182 closes the third actual gap selected by the Overall Workflow/Foundation Review:
+- `action_definitions.conditions_json` is now executable through one bounded fail-closed prerequisite evaluator;
+- v1 supports exactly one conjunctive `all` list with primitive `lt`, `lte`, `gt`, `gte`, `eq`, and `ne` clauses;
+- first available values are current location plus the six established effective living-state fields;
+- malformed contracts, unknown fields and unsupported operators fail closed;
+- the existing `train` systemic-fatigue legality boundary is now canonical definition data: `physiology.fatigue < 70`;
+- `action_options()` and `validate_action()` consume the same prerequisite contract;
+- proposal `Action.conditions` remains represented per-instance metadata and cannot authorize behavior;
+- Active Modifier Runtime composes through effective snapshot state while raw physiology remains unchanged;
+- initialize resynchronizes canonical definition conditions; schema remains v5;
+- no universal expression language, scripts, nested boolean trees, cross-entity predicates, authoring UI or new action vocabulary.
+
 ## Overall Workflow/Foundation Review — ACTIVE
 
 See `docs/OVERALL_WORKFLOW_FOUNDATION_REVIEW_V1.md`.
@@ -101,7 +117,8 @@ Current audit classifications:
 - longer-horizon progression/decay: CLOSED v1 exemplars;
 - profile -> cognition/runtime integration: CLOSED v1;
 - autonomy purpose continuity: CLOSED v1 minimum through PR #178;
-- persistent temporary modifier lifecycle: CLOSED v1 minimum through PR #180.
+- persistent temporary modifier lifecycle: CLOSED v1 minimum through PR #180;
+- action-definition prerequisite runtime: CLOSED v1 minimum through PR #182.
 
 Routine/schedule reinspection also found meaningful authored time-window + simulation-time + physiological-priority influence already present. A full schedule sequence ledger is later depth unless new evidence establishes a missing invariant.
 
@@ -109,20 +126,24 @@ Do not infer that the review itself is finished. Return to read-only canonical/l
 
 ## Current verified deployment
 
-Latest runtime deployment: **Deploy #237 / run `31921444434` SUCCESS**, Active Modifier Runtime Foundation v1.
+Latest runtime deployment: **Deploy #238 / run `31922007671` SUCCESS**, Action Condition Runtime Foundation v1.
 
-Runtime PR #180:
-- final tested head `49000d37542ec80cf489f8bd5c78876aaba16201`;
-- **CI #941 / run `31921368331`: SUCCESS**;
-- **590 passed in 58.12s**;
+Runtime PR #182:
+- final tested head `fd86ef8a7a1d40fd58e42922e6fe7678a9bee1cf`;
+- **CI #943 / run `31921888887`: SUCCESS**;
+- **596 passed in 46.28s**;
 - fresh DB init/status healthy; schema v5;
-- Minimum Training Stimulus Acceptance #27: SUCCESS;
-- Strength Live Cycle Validation v1 #83: SUCCESS;
-- Solo Regulation Naturalism v2 Acceptance #30: SUCCESS;
-- merge `74a0d9db25b3249192c24954feed11a45a7c961d`;
-- Deploy #237 SUCCESS.
+- Research Action Semantics Acceptance #43: SUCCESS;
+- Strength Live Cycle Validation v1 #85: SUCCESS;
+- Solo Regulation Naturalism v2 Acceptance #32: SUCCESS;
+- Inventory Foundation v1 Acceptance #49: SUCCESS;
+- Minimum Training Stimulus Acceptance #29: SUCCESS;
+- merge `a79d5930b0fb206139d9c8359f3e35aa9499b68e`;
+- Deploy #238 SUCCESS.
 
-Verified production readback after Deploy #237:
+The preceding CI attempt exposed one stale assertion still expecting the old bespoke `"systemic fatigue"` message. Runtime behavior was already correct; the assertion was aligned to the generic action-condition contract and final CI passed 596/596.
+
+Verified production readback after Deploy #238:
 - service active/healthy; schema v5;
 - autonomy enabled, normal mode, retry null, pending action preserved;
 - speed **1x**;
@@ -133,12 +154,12 @@ Verified production readback after Deploy #237:
 - Groq `qwen/qwen3.6-27b` fallback preserved;
 - Telegram bot/API/owner/allowed-user configuration healthy.
 
-The deploy workflow did not query `active_modifiers` row count. Do not claim a verified production row count or naturally active modifier without a separate readback.
+No production state was manipulated solely to prove action-condition behavior.
 
 ## Deferred boundaries
 
-No giant planner/task graph, relationship-system expansion by default, universal episodic-memory engine, weather/economy/vehicle systems merely for completeness, hostile/non-consensual Combat Engine, weapon lethality, broad casualty simulator, universal Hazard/Injury Engine, deep weapon taxonomy, quests/jobs, real-world weapon instructions, arbitrary LLM profile mutation, synthetic production actors/actions solely for proof, modifier authoring UI, status-effect taxonomy, or arbitrary universal bonus engine.
+No giant planner/task graph, relationship-system expansion by default, universal episodic-memory engine, weather/economy/vehicle systems merely for completeness, hostile/non-consensual Combat Engine, weapon lethality, broad casualty simulator, universal Hazard/Injury Engine, deep weapon taxonomy, quests/jobs, real-world weapon instructions, arbitrary LLM profile mutation, synthetic production actors/actions solely for proof, modifier authoring UI, status-effect taxonomy, arbitrary universal bonus engine, or universal condition/expression language.
 
 ## Exact resume point
 
-**Overall Workflow/Foundation Review v1 is active. Its first two identified structural gaps are now closed: Autonomy Intent Continuity v1 through PR #178 / Deploy #236, and Active Modifier Runtime Foundation v1 through PR #180 final head `49000d37542ec80cf489f8bd5c78876aaba16201`, CI #941 with 590 passed, merge `74a0d9db25b3249192c24954feed11a45a7c961d`, and Deploy #237 SUCCESS. Production is healthy at schema v5 with autonomy normal, retry null, pending action preserved and speed 1x; Darian remained naturally sleeping in the Master Suite. The deploy log masked the sim-time hour (`2025-05-07T***:27:00+00:00`). No live active-modifier row count is claimed. Resume by continuing the read-only Overall Workflow/Foundation Review and select the next actual cross-system gap from evidence; do not automatically deepen planning, modifiers, or routine scheduling.**
+**Overall Workflow/Foundation Review v1 is active. Its first three identified structural gaps are now closed: Autonomy Intent Continuity v1 through PR #178 / Deploy #236, Active Modifier Runtime Foundation v1 through PR #180 / Deploy #237, and Action Condition Runtime Foundation v1 through PR #182 final head `fd86ef8a7a1d40fd58e42922e6fe7678a9bee1cf`, CI #943 with 596 passed, merge `a79d5930b0fb206139d9c8359f3e35aa9499b68e`, and Deploy #238 SUCCESS. Production is healthy at schema v5 with autonomy normal, retry null, pending action preserved and speed 1x; Darian remained naturally sleeping in the Master Suite. The deploy log masked the sim-time hour (`2025-05-07T***:27:00+00:00`). Resume by continuing the read-only Overall Workflow/Foundation Review and selecting the next actual cross-system gap from evidence; do not automatically deepen planning, modifiers, action-condition syntax, or routine scheduling.**
