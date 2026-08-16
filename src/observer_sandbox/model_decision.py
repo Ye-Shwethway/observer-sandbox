@@ -96,7 +96,7 @@ class ModelDecisionProvider:
         self.conn = conn
         self.character_id = resolve_actor_id(conn, character_id)
         self.role = role
-        self.policy = policy if policy is not None else load_autonomy_policy(self.character_id)
+        self.policy = policy if policy is not None else load_character_autonomy_policy(self.character_id)
 
     def _profile_value(self, field_key: str, default: Any = None) -> Any:
         row = self.conn.execute(
@@ -116,8 +116,40 @@ class ModelDecisionProvider:
         if limit is None:
             limit = int(self.policy.get("repetition_policy", {}).get("recent_event_window", 8))
         rows = self.conn.execute(
-            "SELECT sim_time, event_type, location_id, payload_json FROM events WHERE actor_id=? ORDER BY id DESC LIMIT ?",
-            (self.character_id, limit),
+            """
+            SELECT
+                e.sim_time,
+                e.event_type,
+                e.location_id,
+                e.payload_json,
+                e.actor_id,
+                COALESCE(
+                    (
+                        SELECT ep.role
+                        FROM event_participants ep
+                        WHERE ep.event_id=e.id AND ep.entity_id=?
+                        ORDER BY CASE WHEN ep.role='actor' THEN 0 ELSE 1 END, ep.role
+                        LIMIT 1
+                    ),
+                    CASE WHEN e.actor_id=? THEN 'actor' END
+                ) AS participation_role
+            FROM events e
+            WHERE e.actor_id=?
+               OR EXISTS (
+                    SELECT 1
+                    FROM event_participants ep
+                    WHERE ep.event_id=e.id AND ep.entity_id=?
+               )
+            ORDER BY e.id DESC
+            LIMIT ?
+            """,
+            (
+                self.character_id,
+                self.character_id,
+                self.character_id,
+                self.character_id,
+                limit,
+            ),
         ).fetchall()
         result: list[dict[str, Any]] = []
         for row in reversed(rows):
@@ -127,6 +159,8 @@ class ModelDecisionProvider:
                     "sim_time": row["sim_time"],
                     "event_type": row["event_type"],
                     "location_id": row["location_id"],
+                    "actor_id": row["actor_id"],
+                    "participation_role": row["participation_role"],
                     "action": payload.get("action"),
                     "target": payload.get("target"),
                     "reason": payload.get("reason"),
