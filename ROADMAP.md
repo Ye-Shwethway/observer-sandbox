@@ -1,7 +1,7 @@
 # Observer Sandbox Roadmap
 
 Status: ACTIVE
-Roadmap synchronized: 2026-08-16
+Roadmap synchronized: 2026-08-17
 
 ## Operating principles
 
@@ -15,7 +15,7 @@ Roadmap synchronized: 2026-08-16
 
 ## Current production checkpoint
 
-**W3 Money / Economy Foundation v1 and W3.1 Universe Object Valuation & Creation Rules v1 are COMPLETE / DEPLOYED.**
+**W3 Money / Economy Foundation v1, W3.1 Universe Object Valuation & Creation Rules v1, Telegram Economy/Identity Observability Parity, and the Transit Route / Telegram Access Semantics correction are COMPLETE / DEPLOYED.**
 
 Latest evidence:
 - W3:
@@ -29,7 +29,19 @@ Latest evidence:
   - final tested head `68fdb631e828bc4707bce631a19decb3e970ab03`
   - CI #1004 / run `31962052231`: SUCCESS — 710 passed
   - merge `ac07817979a55ca3846e5efee570c56493bd23c3`
-  - **Deploy #266 / run `31962148301`: SUCCESS**
+  - Deploy #266 / run `31962148301`: SUCCESS
+- Telegram Economy/Identity Observability Parity:
+  - PR #235 — `Add Telegram observability parity for economy and identity`
+  - CI #1006 / run `31963175830`: SUCCESS — 717 passed
+  - merge `cd291e993318cf54243a2383fcbc42ede58727a1`
+  - Deploy #267 / run `31963307250`: SUCCESS
+- Transit Route / Telegram Access Semantics correction:
+  - PR #237 — `Preserve transit routes and Telegram access semantics`
+  - final tested head `9bef51b30ce27df27b4576c80f8441a45fae78ae`
+  - CI #1011 / run `31965205934`: SUCCESS
+  - Solo Regulation Naturalism v2 Acceptance #59: SUCCESS
+  - merge `e08fd3743ed2202030aab9d818826fadeee3162b`
+  - **Deploy #268 / run `31965320235`: SUCCESS**
 - main schema **v14**; economy schema **v2**; commitment schema v1; environment schema v2; world-input schema v1; mind schema v1.
 
 ## Completed foundation stack
@@ -48,6 +60,8 @@ Deployed:
 - W2 Commitments / Obligations Foundation v1
 - **W3 Money / Economy Foundation v1**
 - **W3.1 Universe Object Valuation & Creation Rules v1**
+- **Telegram Economy/Identity Observability Parity**
+- **Transit Route / Telegram Access Semantics correction**
 
 South Lake Tahoe traversal remains intentionally paused.
 
@@ -59,6 +73,7 @@ Required docs:
 - `docs/COMMITMENTS_OBLIGATIONS_FOUNDATION_V1.md`
 - `docs/MONEY_ECONOMY_FOUNDATION_V1.md`
 - `docs/UNIVERSE_OBJECT_VALUATION_RULES_V1.md`
+- `docs/TELEGRAM_OBSERVER_ARCHITECTURE.md`
 - `docs/ENVIRONMENT_WEATHER_FOUNDATION_V1.md`
 - `docs/HISTORICAL_WEATHER_PROVIDER_V1.md`
 - `docs/WEATHER_REGION_REGISTRY_V1.md`
@@ -129,6 +144,25 @@ Legacy food/water interaction proxies are excluded from independent value becaus
 
 Canonical initialization fails closed if a represented `object` or `item` definition is added without an explicit economic-value policy. Future runtime object-creation APIs must use the same policy boundary or atomically create the object and approved policy together.
 
+## Mobility / observer semantics correction — DEPLOYED
+
+Canonical mobility boundary after PR #237:
+
+`legal route existence != ordinary choice preference`.
+
+- Deterministically legal one-hop movement remains visible through ordinary recent-use/repetition shaping even when the same destination has been used repeatedly.
+- Repetition remains cognition context through `recent_usage`; it does not delete a legal transit edge.
+- Preferences, habits and discretionary behavior may influence what the character chooses, not rewrite topology.
+- Existing strong/critical biological need-resolution remains an explicit causal guard and may temporarily narrow the proposal surface to resolver actions or resolver-route first hops. This is distinct from ordinary choice shaping.
+- No Darian-specific outdoor quota, destination steering or campus script exists.
+
+Telegram location access presentation is also corrected:
+- presentation mirrors authored policy such as Open, Resident, Private, Restricted, Closed or Locked;
+- a non-`open` policy is not automatically rendered as `Access unavailable`;
+- formatting never invents actor-relative denial.
+
+This correction is an outside-world readiness prerequisite: future transit hubs may gain more legal edges without ordinary anti-repetition logic silently sealing them.
+
 ## World element expansion policy
 
 Phones, televisions, radios, computers, internet/network access, accounts, calendars, communication endpoints and similar elements become represented world entities/resources when a concrete feature needs possession/location/access/capability semantics. Devices/internet are never omniscient cognition channels.
@@ -171,4 +205,4 @@ Current Estate boundary remains closed: no public-road edge from Main Security G
 
 ## Current exact resume point
 
-**W3 + W3.1 are production-green through Deploy #266. The canonical next minimum World Input slice is W4 Information / Media Foundation on `test`. Do not activate Mental Episode/Planning yet. Broader economy expansion remains socketed for future concrete consumers such as Jobs/Careers rather than being activated preemptively.**
+**Transit Route / Telegram Access Semantics correction is production-green through Deploy #268 on top of W3 + W3.1 + Telegram observability parity. Ordinary repetition can no longer hide legal transit edges. Strong/critical biological need-resolution remains a deliberate causal override. The canonical next minimum World Input slice is W4 Information / Media Foundation on `test`. Do not activate Mental Episode/Planning yet. Broader economy expansion remains socketed for future concrete consumers such as Jobs/Careers rather than being activated preemptively.**
