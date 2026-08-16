@@ -53,6 +53,29 @@ def load_observer_geography(path: str | Path = GEOGRAPHY_CONFIG_PATH) -> dict[st
     return json.loads(Path(path).read_text(encoding="utf-8"))
 
 
+def _weather_registry() -> list[tuple[dict[str, Any], dict[str, Any]]]:
+    """Return represented regions paired with their configured weather provider."""
+    geography = load_observer_geography()
+    provider_root = load_weather_provider_config()
+    providers = {
+        str(provider.get("id")): provider
+        for provider in provider_root.get("providers") or []
+        if provider.get("enabled", True)
+    }
+    registered: list[tuple[dict[str, Any], dict[str, Any]]] = []
+    for region in geography.get("regions") or []:
+        provider_id = str(region.get("weather_provider_id") or "")
+        provider = providers.get(provider_id)
+        if provider is None:
+            continue
+        # Bidirectional ids prevent accidental cross-region wiring as the world grows.
+        configured_region = str(provider.get("region_id") or region.get("id") or "")
+        if configured_region != str(region.get("id") or ""):
+            continue
+        registered.append((region, provider))
+    return registered
+
+
 def universe_view(conn) -> tuple[str, list[list[dict[str, str]]]]:
     worlds = list_worlds(conn)
     world_names = ", ".join(world["name"] for world in worlds) or "No represented worlds"
@@ -75,26 +98,38 @@ def universe_view(conn) -> tuple[str, list[list[dict[str, str]]]]:
 
 
 def weather_view(conn) -> tuple[str, list[list[dict[str, str]]]]:
+    """Render represented regional weather from DB only; never fetch on button press."""
     sim_time = runtime_value(conn, "sim_time", None)
-    config = load_weather_provider_config()
-    providers = config.get("providers") or []
-    provider = providers[0] if providers else None
-    location_id = str(provider.get("scope_location_id")) if provider else ""
-    anchor = (provider or {}).get("geographic_anchor") or {}
-    anchor_name = str(anchor.get("label") or "South Lake Tahoe city-area")
+    registry = _weather_registry()
+    lines = [
+        "🌤 UNIVERSE WEATHER",
+        "━━━━━━━━━━━━━━━━━━",
+        f"🕒 {_fmt_time(sim_time)}",
+        "",
+        "Represented regional weather:",
+    ]
 
-    state = None
-    if sim_time and location_id:
-        state = current_environment_state(conn, location_id=location_id, sim_time=str(sim_time))
-
-    lines = ["🌤 UNIVERSE WEATHER", "━━━━━━━━━━━━━━━━━━", f"📍 {anchor_name}", f"🕒 {_fmt_time(sim_time)}"]
-    if state is None:
+    if not registry:
         lines.extend([
+            "• No represented regions have a weather provider registered.",
             "",
-            "No represented weather state is active for this universe time.",
-            "The weather producer owns synchronization; this screen is read-only.",
+            "Weather registration is geography-driven; this screen is read-only.",
         ])
-    else:
+
+    for region, provider in registry:
+        region_name = str(region.get("name") or region.get("id") or "Region")
+        location_id = str(provider.get("scope_location_id") or "")
+        anchor = provider.get("geographic_anchor") or {}
+        anchor_name = str(anchor.get("label") or region_name)
+        state = None
+        if sim_time and location_id:
+            state = current_environment_state(conn, location_id=location_id, sim_time=str(sim_time))
+
+        lines.extend(["", f"🌎 {region_name}", f"📍 Sampling · {anchor_name}"])
+        if state is None:
+            lines.append("⚪ No represented weather state is active for this universe time.")
+            continue
+
         metadata = state.get("metadata") or {}
         synthetic = bool(metadata.get("synthetic"))
         source_label = "Synthetic continuity fallback" if synthetic else "Historical weather replay"
@@ -103,26 +138,28 @@ def weather_view(conn) -> tuple[str, list[list[dict[str, str]]]]:
         cloud_cover = max(0.0, min(1.0, float(state.get("cloud_cover") or 0.0)))
         light_level = max(0.0, min(1.0, float(state.get("light_level") or 0.0)))
         lines.extend([
-            "",
-            f"{_condition_icon(state.get('condition'))} Condition     {_condition_label(state.get('condition'))}",
-            f"🌡 Temperature   {_fmt_number(state.get('temperature_c'))} °C",
-            f"🌧 Precipitation {precip_kind} · {precip_intensity * 100:.0f}% intensity",
-            f"💨 Wind          {_fmt_number(state.get('wind_speed_mps'))} m/s",
-            f"👁 Visibility    {_fmt_number(state.get('visibility_km'))} km",
-            f"☁️ Cloud cover   {cloud_cover * 100:.0f}%",
-            f"☀️ Daylight      {_condition_label(state.get('daylight_state'))} · light {light_level * 100:.0f}%",
-            "",
-            f"🛰 Source        {source_label}",
-            f"⏱ Valid from    {_fmt_time(state.get('valid_from_sim_time'))}",
-            f"⏱ Valid until   {_fmt_time(state.get('valid_until_sim_time'))}",
+            f"{_condition_icon(state.get('condition'))} Condition · {_condition_label(state.get('condition'))}",
+            f"🌡 Temperature · {_fmt_number(state.get('temperature_c'))} °C",
+            f"🌧 Precipitation · {precip_kind} · {precip_intensity * 100:.0f}% intensity",
+            f"💨 Wind · {_fmt_number(state.get('wind_speed_mps'))} m/s",
+            f"👁 Visibility · {_fmt_number(state.get('visibility_km'))} km",
+            f"☁️ Cloud · {cloud_cover * 100:.0f}%",
+            f"☀️ Daylight · {_condition_label(state.get('daylight_state'))} · light {light_level * 100:.0f}%",
+            f"🛰 Source · {source_label}",
+            f"⏱ Valid · {_fmt_time(state.get('valid_from_sim_time'))} → {_fmt_time(state.get('valid_until_sim_time'))}",
         ])
         if synthetic:
-            lines.extend(["", "⚠️ This state preserves simulation continuity; it is not claimed as historical truth."])
+            lines.append("⚠️ Continuity fallback; not claimed as historical truth.")
         else:
-            lines.extend(["", "✅ Historical provider state. Sampling represents the South Lake Tahoe area, not an exact fictional Estate coordinate."])
+            lines.append("✅ Historical provider state; sampling anchor is regional, not an exact fictional address.")
 
+    lines.extend([
+        "",
+        "ℹ️ Provider capability is global and coordinate-based. Only represented/registered regions become universe weather state; arbitrary Earth lookup remains a future Creator reference utility and must not mutate the world.",
+    ])
     keyboard = [
         [{"text": "↻ Refresh", "callback_data": "uni:weather"}],
+        [{"text": "🌎 Regions", "callback_data": "uni:regions"}],
         [{"text": "← Universe", "callback_data": "nav:universe"}],
         [{"text": "⌂ Observer Home", "callback_data": "nav:home"}],
     ]
@@ -135,7 +172,8 @@ def regions_view(conn) -> tuple[str, list[list[dict[str, str]]]]:
     lines = ["🌎 REGIONS", "━━━━━━━━━━━━━━━━━━", "Geographic context represented to the Creator:"]
     keyboard: list[list[dict[str, str]]] = []
     for region in regions:
-        lines.append(f"• {region['name']}")
+        weather_mark = " · 🌤" if region.get("weather_provider_id") else ""
+        lines.append(f"• {region['name']}{weather_mark}")
         keyboard.append([{"text": f"🌎 {region['name']}", "callback_data": f"region:{region['id']}"}])
     if not regions:
         lines.append("• None")
@@ -160,10 +198,12 @@ def region_view(conn, region_id: str) -> tuple[str, list[list[dict[str, str]]]]:
                 locations.append(location)
 
     traversal = str(region.get("traversal_status") or "unknown").replace("_", " ").title()
+    weather_status = "Registered" if region.get("weather_provider_id") else "Not registered"
     lines = [
         f"🌎 {region['name'].upper()}",
         "━━━━━━━━━━━━━━━━━━",
         "Regional geographic context",
+        f"🌤 Weather           {weather_status}",
         f"🚧 Outward traversal   {traversal}",
         "",
         "📍 Represented locations",
@@ -178,6 +218,7 @@ def region_view(conn, region_id: str) -> tuple[str, list[list[dict[str, str]]]]:
     if note:
         lines.extend(["", note])
     keyboard.extend([
+        [{"text": "🌤 Weather", "callback_data": "uni:weather"}],
         [{"text": "← Regions", "callback_data": "uni:regions"}],
         [{"text": "⌂ Observer Home", "callback_data": "nav:home"}],
     ])
