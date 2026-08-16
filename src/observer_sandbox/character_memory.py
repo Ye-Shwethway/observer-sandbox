@@ -171,6 +171,13 @@ def retrieve_relevant_memories(
         related = [{"entity_id": a["entity_id"], "role": a["relation_role"]} for a in associations]
         location_match = bool(current_location_id and any(a["entity_id"] == current_location_id for a in associations))
         action_match = bool(action_set and content.get("action") in action_set)
+        is_spatial_knowledge = row["memory_type"] == "semantic" and content.get("knowledge_kind") == "spatial_familiarity"
+        # Known-world projection already exposes the full spatial map separately.
+        # Only surface one of these records through generic memory recall when the
+        # current represented place directly cues it; this prevents stable map
+        # knowledge from crowding unrelated episodic memories.
+        if is_spatial_knowledge and not location_match:
+            continue
         episodic_recency = _recency_score(str(row["event_sim_time"]), current_sim_time) if row["memory_type"] == "episodic" else 0.0
         relevance = (
             0.45 * float(row["salience"])
