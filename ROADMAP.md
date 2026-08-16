@@ -15,21 +15,23 @@ Roadmap synchronized: 2026-08-16
 
 ## Current production checkpoint
 
-**Weather Region Registry v1 is COMPLETE / DEPLOYED.**
+**W2 Commitments / Obligations Foundation v1 is COMPLETE / DEPLOYED.**
 
-Evidence:
-- PR #225 — region-registry weather implementation
-- final tested head `107f280eb209c0f63250cb53fcd1b655f3ec01fb`
-- CI #994 / run `31957231935`: SUCCESS
-- Strength Live Cycle #109: SUCCESS
-- merge `6635e5809b80dd853035821976aebc311ccd92f2`
-- Deploy #260 surfaced invalid live missing-location state during final verification after service/status succeeded
-- PR #226 — generic missing actor location recovery
-- final tested head `97c7820a0d28a390e94db72801679d0ca24d4158`
-- CI #995 / run `31957745143`: SUCCESS
-- merge `e1fdf4932bafe63e93408aec0dcb850898461bbf`
-- **Deploy #261 / run `31957822826`: SUCCESS**
-- schema v11; environment schema v2; world-input schema v1; mind schema v1
+Latest evidence:
+- Telegram physiology presentation repair:
+  - PR #228
+  - CI #996 / run `31958374868`: SUCCESS
+  - merge `088728fcabd6fa624a97ec81c2f128df6afa1e34`
+  - Deploy #262 / run `31958476747`: SUCCESS
+- W2 implementation:
+  - PR #229 — `Add W2 Commitments and Obligations Foundation v1`
+  - final tested head `a985c5b63ce8371544306ffc321f2cb34030dd03`
+  - final CI #999 / run `31958910987`: SUCCESS
+  - merge `0a24e7e700abf2c1e0fffcb8047a05f3f04c1891`
+  - **Deploy #263 / run `31959001632`: SUCCESS**
+- schema v12; commitment schema v1; environment schema v2; world-input schema v1; mind schema v1.
+
+The first W2 CI run (#997) had 696 passing tests and one stale historical-weather expectation pinned to main schema v11. The compatibility assertion was corrected to follow `SCHEMA_VERSION`; W2 behavior was not the failure.
 
 ## Completed foundation stack
 
@@ -43,7 +45,8 @@ Deployed:
 - W1 Environment / Weather Foundation
 - W1.1 Historical Weather Provider
 - Creator Universe Weather & Geography Observability
-- **Weather Region Registry v1**
+- Weather Region Registry v1
+- **W2 Commitments / Obligations Foundation v1**
 
 South Lake Tahoe traversal remains intentionally paused.
 
@@ -52,6 +55,7 @@ South Lake Tahoe traversal remains intentionally paused.
 Required docs:
 - `docs/INTELLIGENT_MIND_ENGINE_FOUNDATION_V1.md`
 - `docs/WORLD_STIMULUS_EXPOSURE_FOUNDATION_V1.md`
+- `docs/COMMITMENTS_OBLIGATIONS_FOUNDATION_V1.md`
 - `docs/ENVIRONMENT_WEATHER_FOUNDATION_V1.md`
 - `docs/HISTORICAL_WEATHER_PROVIDER_V1.md`
 - `docs/WEATHER_REGION_REGISTRY_V1.md`
@@ -88,17 +92,30 @@ Current registered region:
 
 The provider capability is global, but Earth-wide weather is not preloaded. Adding a future represented region requires a geography record and matching provider record; service synchronization and Creator Weather rendering are not region-name hard-coded.
 
-A future arbitrary Earth search is permitted only as a Creator reference utility. Search results must not automatically create represented geography, W1 state, W0 stimulus, knowledge or travel topology.
-
-The existing Tahoe-calibrated synthetic fallback must not be silently reused for a different climate; a future region needs a suitable fallback profile or fallback disabled.
-
 ## Creator Universe observability — DEPLOYED
 
 Telegram `/start -> Universe` exposes Weather, Regions and Locations. Weather is registry-driven and DB-only. Regions currently show South Lake Tahoe -> Thorne Estate while travel topology stays Estate-only. Character Update notifications show current local represented weather from DB without provider fetch or cognition mutation.
 
-## Runtime location invariant
+Core Character Update physiology rows are now stable Creator-facing presentation: Energy, Fatigue, Hunger, Thirst, Sleepiness and Cleanliness remain visible even when a value has zero or sub-display-threshold change.
 
-Characters participating in runtime simulation require a current physical location. Startup recovery preserves valid state; otherwise it prefers latest represented action place and uses canonical world start only as the selected default actor's final seed fallback. This closes the live invalid-state failure surfaced by Deploy #260 and verified green in Deploy #261.
+## W2 — Commitments / Obligations Foundation — DEPLOYED
+
+Canonical contract: `docs/COMMITMENTS_OBLIGATIONS_FOUNDATION_V1.md`.
+
+W2 represents factual future expectations before planning. Initial generic types:
+- appointment;
+- promise;
+- deadline;
+- scheduled responsibility.
+
+Commitment truth supports start/due simulation times, optional represented entity/location targets, lifecycle status, flexibility/reschedulability, provenance and metadata.
+
+Canonical W2 separation:
+`commitment truth != reminder/notice stimulus != exposure != perception/interpretation != concern/intention/plan != action proposal != action authority`.
+
+An explicit W2 notice can publish a character-scoped W0 `obligation` stimulus. Foundation notices remain availability-only and do not automatically create exposure, Character Memory, Mind artifacts, intentions, plans or action authority. Terminal commitments retire linked active notices.
+
+No calendar, phone, alarm or communication endpoint is prebuilt. Add those only when a concrete delivery path needs represented possession/location/access/capability semantics.
 
 ## World element expansion policy
 
@@ -106,31 +123,23 @@ Phones, televisions, radios, computers, internet/network access, accounts, calen
 
 ## Active phase — remaining minimum World Input producers
 
-### W2 — Commitments / Obligations Foundation — NEXT
+### W3 — Money / Economy Minimum Foundation — NEXT
 
-Goal: represent factual future obligations before planning so later Mind can distinguish desired actions from expected/promised/scheduled duties.
+Goal: represent minimum authoritative financial truth and deterministic affordability without allowing economy state to directly script emotion, cognition or behavior.
 
-Minimum target:
-- obligation/commitment records
-- appointment, promise, deadline and scheduled-responsibility types
-- start/due simulation times
-- optional represented person/entity/location target
-- status/lifecycle
-- flexibility/reschedulability metadata
-- provenance/source
-- W0 reminder/notice production where represented
-- no automatic Mind concern, intention or plan creation
+Minimum direction:
+- represented balance/resource/account facts where needed;
+- transactions with source/provenance;
+- income/expense/payable facts where required;
+- deterministic affordability/resource checks owned by the relevant domain/runtime;
+- explicit financial notices through W0 when represented;
+- no direct mood/anxiety/action-selection modifier;
+- no automatic Memory/Mind concern/intention/plan creation.
 
 Potential expansion only when required:
-- calendar/reminder representation
-- communication endpoint/source for externally delivered commitments
-- device representation for a concrete delivery path.
-
-Keep commitment truth separate from reminder exposure and separate again from mental prioritization.
-
-### W3 — Money / Economy Minimum Foundation
-
-Balances/resources, transactions, income/expenses/obligations, deterministic affordability and financial notices through W0; no direct anxiety/behavior modifier.
+- represented accounts or payment instruments;
+- economic counterparties;
+- devices/interfaces needed for a concrete financial-information exposure path.
 
 ### W4 — Information / Media Foundation
 
@@ -161,4 +170,4 @@ Current Estate boundary remains closed: no public-road edge from Main Security G
 
 ## Current exact resume point
 
-**Weather Region Registry v1 is production-green through Deploy #261. Implement W2 Commitments / Obligations Foundation next on `test`, aligned with W0 and the Mind Engine contract. Expand calendars/devices/communication endpoints only when a concrete W2 consumer requires them. Do not activate Mental Episode/Planning yet.**
+**W2 Commitments / Obligations Foundation v1 is production-green through Deploy #263. Implement W3 Money / Economy Minimum Foundation next on `test`, aligned with W0 and the Mind Engine contract. Expand accounts/devices/economic actors only when a concrete W3 consumer requires them. Do not activate Mental Episode/Planning yet.**
