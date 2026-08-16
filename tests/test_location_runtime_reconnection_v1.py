@@ -79,7 +79,7 @@ def test_move_reconnects_location_state_event_history_and_followup_options(tmp_p
             ORDER BY id DESC LIMIT 1
             """
         ).fetchone()
-        assert event["location_id"] == "loc_thorne_estate_master_suite"
+        assert event["location_id"] == "loc_thorne_estate_master_bathroom"
         assert event["action_id"]
 
         followup = action_options(conn, "char_darian")
