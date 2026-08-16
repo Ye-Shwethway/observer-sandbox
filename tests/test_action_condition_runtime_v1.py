@@ -6,7 +6,7 @@ import pytest
 
 from observer_sandbox.action_conditions import ActionConditionError, evaluate_action_conditions
 from observer_sandbox.composition_schema import TRAINING_FATIGUE_LIMIT
-from observer_sandbox.db import connect
+from observer_sandbox.db import SCHEMA_VERSION, connect
 from observer_sandbox.location_runtime import set_dynamic_location
 from observer_sandbox.runtime import initialize
 from observer_sandbox.simulation import Action, action_definition, action_options, set_runtime_value, validate_action
@@ -133,4 +133,4 @@ def test_reinitialize_restores_canonical_train_condition_without_schema_change(t
             conn.execute("SELECT conditions_json FROM action_definitions WHERE action_type='train'").fetchone()[0]
         )
         assert condition["all"][0]["field_key"] == "physiology.fatigue"
-        assert conn.execute("SELECT value FROM schema_meta WHERE key='schema_version'").fetchone()[0] == "5"
+        assert conn.execute("SELECT value FROM schema_meta WHERE key='schema_version'").fetchone()[0] == str(SCHEMA_VERSION)
