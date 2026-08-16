@@ -56,7 +56,7 @@ def test_provider_schema_and_config_are_versioned_without_exact_estate_geocode(t
         migrate_environment_schema(conn)
         schema = int(conn.execute("SELECT value FROM schema_meta WHERE key='schema_version'").fetchone()[0])
         env_schema = int(conn.execute("SELECT value FROM schema_meta WHERE key='environment_schema_version'").fetchone()[0])
-        assert schema == SCHEMA_VERSION == 11
+        assert schema == SCHEMA_VERSION
         assert env_schema == ENVIRONMENT_SCHEMA_VERSION == 2
         assert conn.execute("SELECT name FROM sqlite_master WHERE type='table' AND name='weather_provider_cache'").fetchone()
 

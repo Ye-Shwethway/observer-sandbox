@@ -4,13 +4,14 @@ import json
 import sqlite3
 from pathlib import Path
 
+from .commitment_schema import migrate_commitment_schema
 from .composition_schema import migrate_composition_schema
 from .environment_schema import migrate_environment_schema
 from .memory_schema import migrate_memory_schema
 from .mind_schema import migrate_mind_schema
 from .world_input_schema import migrate_world_input_schema
 
-SCHEMA_VERSION = 11
+SCHEMA_VERSION = 12
 
 SCHEMA_SQL = """
 PRAGMA foreign_keys = ON;
@@ -249,6 +250,7 @@ def migrate(conn: sqlite3.Connection) -> None:
     migrate_memory_schema(conn)
     migrate_mind_schema(conn)
     migrate_world_input_schema(conn)
+    migrate_commitment_schema(conn)
     migrate_environment_schema(conn)
     conn.execute(
         "INSERT INTO schema_meta(key, value) VALUES('schema_version', ?) "
