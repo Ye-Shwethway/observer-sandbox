@@ -1,0 +1,49 @@
+{
+  "spatial_revision": "thorne-estate-spatial-v1",
+  "locations": {
+    "loc_thorne_estate": {
+      "container": true,
+      "source_status": "source_confirmed",
+      "layout_status": "canonical_structure",
+      "exposure": "mixed",
+      "extent": {"area_acres": 50.0, "precision": "approximate"},
+      "boundary_type": "private_property",
+      "interface_model": "topology_derived",
+      "completeness": "L1"
+    },
+    "loc_thorne_estate_ground_floor": {"container":true,"source_status":"source_confirmed","layout_status":"provisional_layout","exposure":"indoor","interface_model":"topology_derived","completeness":"L1"},
+    "loc_thorne_estate_second_floor": {"container":true,"source_status":"source_confirmed","layout_status":"provisional_layout","exposure":"indoor","interface_model":"topology_derived","completeness":"L1"},
+    "loc_thorne_estate_third_floor": {"container":true,"source_status":"source_confirmed","layout_status":"provisional_layout","exposure":"indoor","interface_model":"topology_derived","completeness":"L1"},
+    "loc_thorne_estate_underground": {"container":true,"source_status":"source_confirmed","layout_status":"canonical_structure","exposure":"indoor","interface_model":"topology_derived","completeness":"L1"},
+
+    "loc_thorne_estate_foyer": {"container":true,"source_status":"project_established","layout_status":"provisional_layout","exposure":"indoor","interface_model":"topology_derived","completeness":"L2"},
+    "loc_thorne_estate_living_room": {"container":true,"source_status":"source_confirmed","layout_status":"provisional_layout","exposure":"indoor","interface_model":"topology_derived","completeness":"L3"},
+    "loc_thorne_estate_kitchen": {"container":true,"source_status":"project_established","layout_status":"provisional_layout","exposure":"indoor","interface_model":"topology_derived","completeness":"L3"},
+    "loc_thorne_estate_dining_area": {"container":true,"source_status":"project_established","layout_status":"provisional_layout","exposure":"indoor","interface_model":"topology_derived","completeness":"L3"},
+    "loc_thorne_estate_library": {"container":true,"source_status":"source_confirmed","layout_status":"provisional_layout","exposure":"indoor","interface_model":"topology_derived","completeness":"L3"},
+    "loc_thorne_estate_garage": {"container":true,"source_status":"source_confirmed","layout_status":"provisional_layout","exposure":"indoor","interface_model":"topology_derived","completeness":"L3"},
+    "loc_thorne_estate_master_suite": {"container":true,"source_status":"source_confirmed","layout_status":"provisional_layout","exposure":"indoor","interface_model":"topology_derived","completeness":"L3"},
+    "loc_thorne_estate_master_bathroom": {"container":true,"source_status":"project_established","layout_status":"provisional_layout","exposure":"indoor","interface_model":"topology_derived","completeness":"L3"},
+    "loc_thorne_estate_quasi_room": {"container":true,"source_status":"source_confirmed","layout_status":"provisional_layout","exposure":"indoor","interface_model":"topology_derived","completeness":"L2"},
+    "loc_thorne_estate_guest_rooms": {"container":true,"source_status":"source_confirmed","layout_status":"provisional_layout","exposure":"indoor","interface_model":"topology_derived","completeness":"L2"},
+    "loc_thorne_estate_intelligence_hub": {"container":true,"source_status":"source_confirmed","layout_status":"provisional_layout","exposure":"indoor","interface_model":"topology_derived","completeness":"L3"},
+    "loc_thorne_estate_comms": {"container":true,"source_status":"source_confirmed","layout_status":"provisional_layout","exposure":"indoor","interface_model":"topology_derived","completeness":"L3"},
+    "loc_thorne_estate_training_hall": {"container":true,"source_status":"source_confirmed","layout_status":"provisional_layout","exposure":"indoor","interface_model":"topology_derived","completeness":"L3"},
+    "loc_thorne_estate_home_gym": {"container":true,"source_status":"source_confirmed","layout_status":"provisional_layout","exposure":"indoor","interface_model":"topology_derived","completeness":"L3"},
+    "loc_thorne_estate_medical_bay": {"container":true,"source_status":"source_confirmed","layout_status":"provisional_layout","exposure":"indoor","interface_model":"topology_derived","completeness":"L3"},
+    "loc_thorne_estate_armory": {"container":true,"source_status":"source_confirmed","layout_status":"provisional_layout","exposure":"indoor","interface_model":"topology_derived","completeness":"L3"},
+    "loc_thorne_estate_food_storage": {"container":true,"source_status":"source_confirmed","layout_status":"provisional_layout","exposure":"indoor","interface_model":"topology_derived","completeness":"L3"},
+    "loc_thorne_estate_bunker": {"container":true,"source_status":"source_confirmed","layout_status":"provisional_layout","exposure":"indoor","interface_model":"topology_derived","completeness":"L3"},
+
+    "loc_thorne_estate_exterior_boundary": {
+      "container": true,
+      "source_status": "structurally_inferred",
+      "layout_status": "boundary_only",
+      "exposure": "outdoor",
+      "boundary_type": "property_perimeter",
+      "interface_model": "locked_boundary",
+      "completeness": "L1",
+      "traversable": false
+    }
+  }
+}
