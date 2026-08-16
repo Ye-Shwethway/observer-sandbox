@@ -1,6 +1,6 @@
 # Telegram Cognition Context Inspector v1
 
-Status: CANDIDATE v1
+Status: COMPLETE v1 / DEPLOYED
 
 ## Purpose
 
@@ -32,6 +32,29 @@ Each entry records capture wall time, simulation time, cognition role, injection
 ## Privacy
 
 Cognition context can contain private profile or runtime material. The inspector is therefore owner-only even when ordinary Observer Telegram access is granted to additional users. Direct callback access fails closed for non-owners.
+
+## Validation and deployment checkpoint
+
+Runtime PR: **#187 — Telegram Cognition Context Inspector v1**
+
+- final tested head: `b4e0248b5fbf1d4fbc65c62181b8d1bfb74dc8ff`;
+- CI #950 / run `31929295850`: **SUCCESS**;
+- full suite: **605 passed in 45.27s**;
+- fresh DB init/status: healthy, schema v5;
+- final-head automatic acceptance workflows for cognition capability awareness, eating behavior, inventory operations, research action semantics, solo regulation naturalism, and training movement contract normalization: **SUCCESS**;
+- merge: `c1ee61ad335ea3fd37509e868c8b406e20d714b7`;
+- Deploy #240 / run `31929343421`: **SUCCESS**.
+
+Production readback after Deploy #240 confirmed:
+- service active/healthy; schema v5;
+- autonomy enabled in normal mode, retry null, pending action preserved;
+- speed 1x;
+- Darian remained naturally sleeping in Darian's Master Suite;
+- Gemini `gemini-3.1-flash-lite` primary cognition binding preserved;
+- Groq `qwen/qwen3.6-27b` fallback preserved;
+- Telegram bot token, API connection, owner identity and allowed-user configuration healthy.
+
+No synthetic production cognition call was made solely to populate the new viewer. Snapshot history therefore begins to populate on the next real production cognition injection, preserving the existing simulation state.
 
 ## Explicit non-goals
 
