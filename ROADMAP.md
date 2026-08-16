@@ -18,81 +18,21 @@ Roadmap synchronized: 2026-08-16
 
 All Character Profile sections are minimum-unlocked v1. Skills remains CLOSED v1.
 
-Minimum-unlocked means a section has authoritative state plus a meaningful runtime/cognition influence and appropriate persistence/rendering. It does **not** mean exhaustive local mechanics.
+Minimum-unlocked means authoritative state plus meaningful runtime/cognition influence and appropriate persistence/rendering. It does not mean exhaustive local mechanics.
 
 ## Adaptive Character Disposition Foundation — COMPLETE v1
 
 See `docs/ADAPTIVE_CHARACTER_DISPOSITION_FOUNDATION.md`.
 
-Canonical sequence is complete:
-
+Completed sequence:
 `Habit Formation/Extinction -> Hobby/Interest Lifecycle -> Preference Adaptation -> Slow Personality Plasticity`
 
-### Habit Formation/Extinction v1 — COMPLETE
+- PR #167: Habit Formation/Extinction v1.
+- PR #172: Hobby/Interest Lifecycle v1.
+- PR #174: Preference Adaptation v1.
+- PR #176: Slow Personality Plasticity v1.
 
-PR #167 established deterministic habit adaptation from completed represented behavior plus stable context. Formation is gradual, same-day repetition is diminished, long inactivity may move learned habits through established/dormant/lapsed states without deleting history, and compact dynamic state reaches cognition.
-
-### Hobby / Interest Lifecycle v1 — COMPLETE
-
-PR #172 established gradual interest formation and established-hobby projection from bounded voluntary `read` / `use` evidence while preserving canonical hobbies and deterministic mutation authority.
-
-### Preference Adaptation v1 — COMPLETE
-
-PR #174 established medium-plastic signed preference evidence, gradual dynamic `like` / `dislike` projection, neutral-band reversal, no negative inference from non-selection, canonical baseline preservation, and cognition visibility.
-
-### Slow Personality Plasticity v1 — COMPLETE
-
-PR #176 establishes the slowest disposition layer. See `docs/SLOW_PERSONALITY_PLASTICITY_V1.md`.
-
-Current contract:
-- canonical `personality.primary_traits` remains the authored baseline and is never rewritten;
-- v1 proves one reusable registered channel for the authored `disciplined` trait;
-- completed represented `train` actions may contribute `completed_deliberate_training` evidence;
-- arbitrary traits/evidence kinds are rejected and a mapped trait must exist in the actor's authored baseline;
-- same-day repetition has personality evidence weight 0;
-- cognition-visible drift requires score/effective evidence >=14, at least 14 distinct evidence days, and at least 21 simulated days of horizon;
-- first eligible overlay is only 0.02 and all overlay is capped at 0.15;
-- negative/softening evidence requires an explicit registered represented outcome and is never inferred from omission/inactivity;
-- opposing evidence must cross neutral and accumulate under the same long-horizon contract before softening;
-- compact established overlay reaches cognition under `character.personality.slow_adaptation`;
-- evidence ledger persists under `runtime_state` namespace `personality_plasticity_v1:`;
-- LLM cognition has no mutation authority;
-- schema remains v5.
-
-Do not deepen psychology next. This foundation is closed at minimum depth.
-
-## Autonomy continuity — Livelock Watchdog v1 COMPLETE
-
-PRs #168/#169 narrowed model correction/planning context; PR #170 added a bounded continuity breaker for repeated authoritative action/target pair-validation livelock. It remains intentionally narrow and does not recover provider/API/quota/rate-limit or unrelated failures.
-
-## Current verified deployment
-
-Latest runtime deployment: **Deploy #235 / run `31901325402` SUCCESS**, Slow Personality Plasticity v1, PR #176 merge `c5a4f7cfa84965fe656070e54663c27f3ab8796f`.
-
-Final tested PR head: `0874bb301b432201895b82465b0fd275b0bb0945`.
-
-Validation:
-- **CI #939 / run `31901212644` SUCCESS**;
-- **574 passed in 80.08s**;
-- fresh DB init/status succeeded; schema remains v5;
-- all final automatic gates were green;
-- Height Lifecycle, Eating Behavior, and Sexual Anatomy/Physiology production-copy gates initially hit infrastructure-only SSH/staging connection resets before validator execution;
-- only those three failed jobs were retried, and all three actual disposable production-copy validators then succeeded;
-- no code change was made for the transient infrastructure failures and no duplicate full Python suite was deliberately run.
-
-Verified production readback after Deploy #235:
-- service active and healthy; schema v5;
-- autonomy enabled, normal mode, retry null, pending action present;
-- speed **1x**;
-- sim time `2025-05-07T19:44:00+00:00`;
-- Darian was naturally in `self_satisfaction` in Darian's Master Suite;
-- Gemini `gemini-3.1-flash-lite` primary cognition binding preserved;
-- Groq `qwen/qwen3.6-27b` fallback preserved;
-- Telegram bot/API/owner/allowed-user configuration healthy.
-
-Production also contained ordinary one-day Preference Adaptation evidence rows from completed `read` / `use` behavior. These are evidence only, not established preferences.
-
-No `personality_plasticity_v1:` row appeared in the deploy readback. Deploy/init therefore did not fabricate personality evidence. A live personality overlay remains intentionally unproven until ordinary runtime naturally accumulates the required long-horizon evidence.
+Authored personality remains the stable baseline; preferences/hobbies/habits/personality adapt only through their deterministic bounded evidence contracts. Do not deepen psychology next without a broader foundation reason.
 
 ## Skills — CLOSED v1
 
@@ -105,29 +45,78 @@ Frozen learned Skill surface:
 - Technology
 - Field Medicine
 
-`Weapon Mastery` remains a derived/non-executable parent over Bladed Weapons + Firearms. Hidden legacy `weapons` remains compatibility only.
+`Weapon Mastery` is a derived/non-executable parent over Bladed Weapons + Firearms. Hidden legacy `weapons` is compatibility only.
 
-## Next phase — Overall Workflow/Foundation Review
+## Autonomy continuity
 
-Perform a **read-only canonical + production audit first** before selecting another runtime slice. Do not reopen local profile/psychology depth just because the adaptive foundation now exists.
+### Livelock Watchdog v1 — COMPLETE
 
-Audit candidates:
-- generic action/task lifecycle;
-- resources/inventory/state consequences;
-- environment/world context;
-- knowledge/familiarity;
-- inter-character participation;
-- event/lifecycle handling;
-- longer-horizon progression/decay;
-- autonomy planning / goal continuity;
-- remaining profile-to-cognition/runtime integration gaps, if any.
+PR #170 provides a bounded recovery path for repeated authoritative action/target pair-validation livelock only. It is not a deterministic story chooser and does not recover provider/API/quota/rate-limit or unrelated failures.
 
-These are candidates, not assumed deficiencies. Let current source/contracts/live evidence determine the actual gaps and batch structurally equivalent work where possible.
+### Autonomy Intent Continuity v1 — COMPLETE
+
+See `docs/AUTONOMY_INTENT_CONTINUITY_V1.md`.
+
+PR #178 closes the first gap selected by the Overall Workflow/Foundation Review:
+- one bounded actor-scoped active intent at most;
+- purposeful `move` may establish short cross-action purpose state;
+- next cognition receives compact guidance only;
+- action legality, needs and safety always remain authoritative;
+- up to four movement steps may continue the purpose;
+- self-care may interrupt without forcing abandonment;
+- ordinary local follow-up clears only after represented completion;
+- stale intent expires after 12 simulated hours at the next free decision boundary;
+- persistence uses existing `runtime_state`; schema remains v5;
+- core `autonomy.autonomy_tick` remains unchanged behind the thin wrapper.
+
+## Overall Workflow/Foundation Review — ACTIVE
+
+See `docs/OVERALL_WORKFLOW_FOUNDATION_REVIEW_V1.md`.
+
+Initial audit classifications:
+- generic action/task lifecycle: CLOSED v1;
+- resources/inventory/state consequences: CLOSED v1;
+- environment/world context: CLOSED v1 minimum;
+- knowledge/object familiarity: CLOSED v1 minimum;
+- inter-character participation: CLOSED v1 socket;
+- event/lifecycle handling: CLOSED v1;
+- longer-horizon progression/decay: CLOSED v1 exemplars;
+- profile -> cognition/runtime integration: CLOSED v1;
+- autonomy purpose continuity: was the highest-leverage gap and is now CLOSED v1 through PR #178.
+
+Do not infer that the review itself is finished. Return to read-only canonical/live evidence and select the next genuine cross-system gap rather than automatically deepening planning.
+
+## Current verified deployment
+
+Latest runtime deployment: **Deploy #236 / run `31920905305` SUCCESS**, Autonomy Intent Continuity v1.
+
+Runtime PR #178:
+- final tested head `563e102c6a9d73ea2f39e828da6329840632ef79`;
+- **CI #940 / run `31920821319`: SUCCESS**;
+- **583 passed in 58.57s**;
+- fresh DB init/status healthy; schema v5;
+- all automatic production-copy acceptance gates green without retry;
+- merge `0cf9a38e7fadafa178f1f69f9f5b7013cbd1961f`;
+- Deploy #236 SUCCESS.
+
+Verified production readback after Deploy #236:
+- service active/healthy; schema v5;
+- autonomy enabled, normal mode, retry null, pending action present;
+- speed **1x**;
+- Darian was naturally **sleeping in Darian's Master Suite**;
+- deploy log exposed sim time only as `2025-05-07T***:27:00+00:00`; the masked hour is not inferred;
+- Gemini `gemini-3.1-flash-lite` primary cognition binding preserved;
+- Groq `qwen/qwen3.6-27b` fallback preserved;
+- Telegram bot/API/owner/allowed-user configuration healthy.
+
+No `autonomy_intent_v1:` row appeared in the deploy readback. Deploy/init therefore did not fabricate an active purpose; natural production intent remains unclaimed until a qualifying purposeful `move` occurs.
+
+Existing ordinary Preference Adaptation evidence remained present, including one-day evidence for the Media Console/Sofa and repeated same-day Personal Desk use. These are not overinterpreted as established preferences.
 
 ## Deferred boundaries
 
-No giant psychology engine, relationship-system expansion by default, hostile/non-consensual Combat Engine, weapon lethality, broad casualty simulator, universal Hazard/Injury Engine, bleeding/wound taxonomy, definitive-treatment engine, random-accident scheduler, deep weapon taxonomy, economy/jobs/quests, real-world weapon instructions, arbitrary LLM profile mutation, or synthetic production actors/actions solely for proof.
+No giant planner/task graph, relationship-system expansion by default, universal episodic-memory engine, weather/economy/vehicle systems merely for completeness, hostile/non-consensual Combat Engine, weapon lethality, broad casualty simulator, universal Hazard/Injury Engine, deep weapon taxonomy, quests/jobs, real-world weapon instructions, arbitrary LLM profile mutation, or synthetic production actors/actions solely for proof.
 
 ## Exact resume point
 
-**Adaptive Character Disposition Foundation is COMPLETE v1 at minimum-foundation depth: Habit Formation/Extinction v1, Hobby/Interest Lifecycle v1, Preference Adaptation v1, and Slow Personality Plasticity v1 are all implemented. Slow Personality Plasticity is deployed through PR #176 final head `0874bb301b432201895b82465b0fd275b0bb0945`, CI #939 with 574 passed, merge `c5a4f7cfa84965fe656070e54663c27f3ab8796f`, and Deploy #235 SUCCESS. Production is healthy at schema v5 with autonomy normal, retry null, pending action present, speed 1x, sim time `2025-05-07T19:44:00+00:00`; Darian was naturally in `self_satisfaction` in the Master Suite. No synthetic personality evidence was created and no live personality overlay is claimed. Resume with a read-only Overall Workflow/Foundation Review and prioritize actual cross-system gaps before local depth.**
+**Overall Workflow/Foundation Review v1 is active. Its first identified structural gap, Autonomy Intent Continuity v1, is COMPLETE through PR #178 final head `563e102c6a9d73ea2f39e828da6329840632ef79`, CI #940 with 583 passed, merge `0cf9a38e7fadafa178f1f69f9f5b7013cbd1961f`, and Deploy #236 SUCCESS. Production is healthy at schema v5 with autonomy normal, retry null, pending action present and speed 1x; Darian was naturally sleeping in the Master Suite. The deploy log masked the sim-time hour (`2025-05-07T***:27:00+00:00`). No synthetic intent state was created. Resume by continuing the read-only Overall Workflow/Foundation Review and select the next actual cross-system gap from evidence; do not automatically deepen autonomy planning.**
