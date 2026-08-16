@@ -36,60 +36,46 @@ Frozen learned Skill surface:
 
 `Weapon Mastery` is derived/non-executable; hidden legacy `weapons` is compatibility only.
 
-## Overall Workflow/Foundation Review — ACTIVE
+## Overall Workflow/Foundation Review — COMPLETE / CLOSED v1
 
 See `docs/OVERALL_WORKFLOW_FOUNDATION_REVIEW_V1.md`.
 
-Four evidence-selected structural gaps are now CLOSED v1 minimum:
+The bounded final closure pass found **no additional blocking foundation gap**. Do not continue open-ended gap hunting by default.
 
-### 1. Autonomy Intent Continuity v1 — COMPLETE
+Four evidence-selected structural gaps were closed during the review:
+1. **Autonomy Intent Continuity v1** — PR #178 / Deploy #236.
+2. **Active Modifier Runtime Foundation v1** — PR #180 / Deploy #237.
+3. **Action Condition Runtime Foundation v1** — PR #182 / Deploy #238.
+4. **Participant-Aware Recent Event Context v1** — PR #184 / Deploy #239.
 
-See `docs/AUTONOMY_INTENT_CONTINUITY_V1.md`.
-
-PR #178 provides one bounded actor-scoped purpose bridge across action boundaries without changing the core scheduler or overriding legal options, physiology, or safety. Schema remains v5.
-
-### 2. Active Modifier Runtime Foundation v1 — COMPLETE
-
-See `docs/ACTIVE_MODIFIER_RUNTIME_V1.md`.
-
-PR #180 makes the persisted `active_modifiers` socket executable through a bounded deterministic numeric resolver. Temporary effective living-state values remain separate from raw authoritative physiology. No universal bonus engine or modifier authoring surface was added.
-
-### 3. Action Condition Runtime Foundation v1 — COMPLETE
-
-See `docs/ACTION_CONDITION_RUNTIME_V1.md`.
-
-PR #182 makes `action_definitions.conditions_json` executable through one bounded fail-closed prerequisite evaluator. `train` now owns its fatigue `<70` prerequisite in canonical definition data; option shaping and direct validation share the same contract. No universal expression language was added.
-
-### 4. Participant-Aware Recent Event Context v1 — COMPLETE
-
-See `docs/PARTICIPANT_RECENT_EVENT_CONTEXT_V1.md`.
-
-PR #184 closes the read-side mismatch between authoritative `event_participants` and cognition history:
-- a recent event is cognition-relevant when the character is primary actor or an authoritative event participant;
-- the existing bounded recent-event window and chronological ordering remain unchanged;
-- cognition receives primary `actor_id` plus the character's persisted `participation_role`;
-- actor-owned events remain visible once;
-- unrelated characters receive no event merely from existence or co-location;
-- no relationship state, witness model, generalized group coordination, episodic-memory engine, new event type, or schema change.
-
-## Current audit classifications
-
+Current minimum foundation classifications:
 - generic action/task lifecycle: CLOSED v1;
 - resources/inventory/state consequences: CLOSED v1;
 - environment/world context: CLOSED v1 minimum;
 - knowledge/object familiarity: CLOSED v1 minimum;
 - inter-character participation: CLOSED v1 socket;
 - event/lifecycle handling: CLOSED v1;
-- participant-aware recent event cognition: CLOSED v1 minimum through PR #184;
+- participant-aware recent event cognition: CLOSED v1 minimum;
 - longer-horizon progression/decay: CLOSED v1 exemplars;
 - profile -> cognition/runtime integration: CLOSED v1;
-- autonomy purpose continuity: CLOSED v1 minimum through PR #178;
-- persistent temporary modifier lifecycle: CLOSED v1 minimum through PR #180;
-- action-definition prerequisite runtime: CLOSED v1 minimum through PR #182.
+- autonomy purpose continuity: CLOSED v1 minimum;
+- persistent temporary modifier lifecycle: CLOSED v1 minimum;
+- action-definition prerequisite runtime: CLOSED v1 minimum.
 
-Routine/schedule reinspection found meaningful authored time-window + simulation-time + physiological-priority influence already present. A full sequence ledger is later depth unless new evidence establishes a missing invariant.
+Routine/schedule reinspection found meaningful authored time-window + simulation-time + physiological-priority influence already present. A full sequence ledger remains later depth.
 
-Do not infer that the review itself is finished. Return to read-only canonical/live evidence and select the next genuine cross-system gap rather than deepening a just-closed foundation.
+## Active phase — Creator Feature Planning
+
+The project now moves from foundation-gap review to explicit product feature planning.
+
+For each desired feature:
+1. define the user-visible capability and why it matters;
+2. identify dependencies on current runtime contracts;
+3. separate minimum-runnable behavior from later depth;
+4. rank against other requested features by value, dependency, implementation cost and runtime risk;
+5. use one bounded exemplar only for a genuinely new invariant, then batch equivalent follow-ons.
+
+A deferred capability is not a foundation defect. Reopen the foundation review only if a concrete feature exposes a cross-system invariant that cannot currently be represented or executed safely.
 
 ## Current verified deployment
 
@@ -125,6 +111,8 @@ No production shared event was fabricated solely to prove participant-aware cogn
 
 No giant planner/task graph, relationship-system expansion by default, universal episodic-memory engine, witness model, weather/economy/vehicle systems merely for completeness, hostile/non-consensual Combat Engine, weapon lethality, broad casualty simulator, universal Hazard/Injury Engine, deep weapon taxonomy, quests/jobs, arbitrary LLM profile mutation, synthetic production actors/actions solely for proof, modifier authoring UI, status-effect taxonomy, arbitrary universal bonus engine, or universal condition/expression language.
 
+These may become explicit feature candidates where appropriate; they are not automatically authorized by foundation closure.
+
 ## Exact resume point
 
-**Overall Workflow/Foundation Review v1 is active. Its first four evidence-selected structural gaps are now closed: Autonomy Intent Continuity v1 through PR #178 / Deploy #236; Active Modifier Runtime Foundation v1 through PR #180 / Deploy #237; Action Condition Runtime Foundation v1 through PR #182 / Deploy #238; and Participant-Aware Recent Event Context v1 through PR #184 final head `09f629b197b55f0abc8271e22e86a9a11f2cab0c`, CI #944 with 600 passed, merge `13d4a9270f3c372a5180438f92f13441d98e804a`, and Deploy #239 SUCCESS. Production is healthy at schema v5 with autonomy normal, retry null, pending action preserved and speed 1x; Darian remained naturally sleeping in the Master Suite. The deploy log masked the sim-time hour (`2025-05-07T***:27:00+00:00`). Resume by continuing the read-only Overall Workflow/Foundation Review and selecting the next actual cross-system gap from evidence; do not automatically deepen planning, modifiers, action-condition syntax, routines, participant history, relationships, or memory.**
+**Overall Workflow/Foundation Review v1 is COMPLETE / CLOSED. No fifth blocking foundation slice was selected because the bounded final audit found no missing minimum cross-system invariant. The four evidence-selected closures remain Autonomy Intent Continuity v1 (#178/#236), Active Modifier Runtime Foundation v1 (#180/#237), Action Condition Runtime Foundation v1 (#182/#238), and Participant-Aware Recent Event Context v1 (#184/#239). Latest verified runtime remains Deploy #239, healthy at schema v5 with autonomy normal, retry null, pending action preserved and speed 1x. Next phase: Creator Feature Planning — collect and rank desired product features, then implement minimum-runnable slices without reopening gap hunting unless concrete feature evidence proves a missing invariant.**
