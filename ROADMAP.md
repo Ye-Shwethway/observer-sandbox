@@ -18,18 +18,19 @@ Roadmap synchronized: 2026-08-16
 
 ## Current production checkpoint
 
-**Intelligent Mind Engine Foundation v1 is COMPLETE / DEPLOYED.**
+**W0 — World Stimulus / Exposure Foundation v1 is COMPLETE / DEPLOYED.**
 
 Evidence:
-- PR #214 — `Add Intelligent Mind Engine Foundation v1`
-- final tested head `a08faaeaf5852ec44ea4aab92f78c746db5d18e8`
-- CI #982 / run `31951775815`: SUCCESS
-- Public Readiness Security Audit #139: SUCCESS
-- Inventory Foundation v1 Acceptance #67: SUCCESS
-- merge `71b280191e91c7314180e992bb0beaf0c734d97a`
-- Deploy #254 / run `31951861684`: SUCCESS
+- PR #216 — `Add World Stimulus / Exposure Foundation v1`
+- final tested head `c73343188c5a1891c445dae565c48220c1a12736`
+- CI #984 / run `31953100474`: SUCCESS
+- Public Readiness Security Audit #142: SUCCESS
+- Inventory Foundation v1 Acceptance #69: SUCCESS
+- merge `76a2929358ac0ac765e80703efd4fa4e5b2bfe48`
+- Deploy #255 / run `31953211583`: SUCCESS
 - final sync/install/configure cognition/restart/verify: SUCCESS
-- schema v8
+- schema v9
+- world-input schema v1
 - mind schema v1
 
 ## Completed foundation stack
@@ -44,45 +45,40 @@ The current deployed minimum foundation includes:
 - Character Memory Foundation v1;
 - Semantic Spatial Memory Migration;
 - Human Memory Dynamics v1;
-- **Intelligent Mind Engine Foundation v1**.
+- Intelligent Mind Engine Foundation v1;
+- **World Stimulus / Exposure Foundation v1**.
 
 South Lake Tahoe remains intentionally paused.
 
-## Memory architecture lock
+## Canonical cognition chain
 
 Canonical docs:
+- `docs/INTELLIGENT_MIND_ENGINE_FOUNDATION_V1.md`
+- `docs/WORLD_STIMULUS_EXPOSURE_FOUNDATION_V1.md`
 - `docs/CHARACTER_MEMORY_FOUNDATION_V1.md`
 - `docs/HUMAN_MEMORY_DYNAMICS_V1.md`
 
-Preserve:
-`event/world truth != actor memory trace != currently recalled cognition context != current action authority`
+Preserve the full separation:
+
+`world/event truth != stimulus availability != exposure != perception/interpretation != memory != mind state/thought != intention/plan != action proposal != action authority`
+
+No later subsystem may collapse these layers merely to simplify prompting.
+
+## Memory architecture lock
 
 Memory provides actor-owned episodic/semantic records, dynamic strength/detail/lifecycle, simulation-time forgetting, sleep-bounded consolidation, cue-driven recall, bounded reinforcement, generic spatial semantic knowledge and Telegram observability.
 
 Character Profile has separate Working Memory / Encoding / Retention / Recall traits. Memory behavior may not branch on character identity.
 
-## Canonical Mind Engine architecture
+Exposure is not memory. Thought is not automatically memory.
 
-Canonical contract:
-`docs/INTELLIGENT_MIND_ENGINE_FOUNDATION_V1.md`
-
-The Mind Engine is the shared internal cognition substrate above raw injected context and below future intention/planning/social behavior.
-
-Preserve:
-
-`world truth != perception != memory != mind state/thought != intention/plan != action proposal != action authority`
-
-Every future system that can materially influence character perception, interpretation, thought, affect, active concerns, goals, intentions, planning, social cognition, communication or relationship appraisal must read and align with the Mind Engine contract before implementation.
-
-Do not create parallel hidden mind/planner/thought stores. Use the shared typed Mind sockets or explicitly document why a subsystem is outside mental cognition.
-
-## MIND-F0 — Foundation Schema / Socket Contract — DEPLOYED
+## MIND-F0 — Intelligent Mind Engine Foundation — DEPLOYED
 
 Generic persistence exists for:
 - bounded `mental_cycles`;
 - typed `mental_episodes`;
 - persistent/semi-persistent `mental_artifacts`;
-- typed `mental_links` to represented memories/events/entities/actions/other mental artifacts.
+- typed `mental_links`.
 
 Initial episode vocabulary:
 - task-focused;
@@ -101,82 +97,84 @@ Reserved artifact vocabulary:
 - appraisal;
 - working item.
 
-**MIND-F0 is behavior-neutral.** Current autonomy does not automatically create mental cycles or thoughts. No planner or thought generator was activated by the foundation deployment.
+MIND-F0 remains behavior-neutral. Current autonomy does not automatically create mental cycles or thoughts.
 
-## W0 — World Stimulus / Exposure Foundation — AUTHORIZED / IN IMPLEMENTATION
+## W0 — World Stimulus / Exposure Foundation — DEPLOYED
 
 Canonical contract:
 `docs/WORLD_STIMULUS_EXPOSURE_FOUNDATION_V1.md`
 
-Purpose: create one shared world-input boundary before weather/media/money/communication systems begin feeding cognition.
+W0 is the shared world-input boundary for future weather, media, money, obligations, communications and other external cognition inputs.
 
-Preserve:
-
-`world/event truth != stimulus availability != character exposure != perception/interpretation != appraisal/thought != memory != action authority`
-
-W0 minimum schema/API:
-- `world_stimuli` — externally available signals with source provenance, category, channel, salience and simulation-time availability;
+Deployed schema/API:
+- `world_stimuli` — externally available signals with category, channel, source provenance, salience and simulation-time availability;
 - `world_stimulus_scopes` — explicit world/location/entity/character/audience availability scopes;
-- `character_exposures` — proof that a represented signal actually reached one character through an implemented channel;
-- bounded eligibility queries that do not record exposure;
-- generic exposure recording that does not create Memory, Mind state, relationship changes or world mutations.
+- `character_exposures` — actor-specific proof that a signal reached the actor boundary;
+- bounded eligibility query that does not itself record exposure;
+- explicit exposure recording/readback;
+- bounded validation for categories/channels/scopes;
+- generic second-character support.
 
-Initial stimulus categories:
-- environment;
-- information;
-- communication;
-- financial;
-- obligation;
-- social;
-- system;
-- other.
+Authority guarantees:
+- eligibility != exposure;
+- exposure != perception;
+- exposure != belief;
+- exposure != memory;
+- exposure != thought/appraisal;
+- exposure != behavior/action authority;
+- W0 APIs do not auto-create events, Character Memory or Mind cycles.
 
-Initial channel vocabulary:
-- visual;
-- auditory;
-- tactile;
-- environmental;
-- device;
-- media;
-- direct;
-- mixed;
-- other.
+## World element expansion policy
 
-### World element expansion policy
+Phones, televisions, radios, computers, internet/network access, accounts, calendars, communication endpoints and similar elements are represented world entities/resources when possession, location, access, availability or capability matters.
 
-Add phones, televisions, radios, computers, internet/network access, accounts, calendars, communication endpoints and similar world elements **when a concrete W0 producer/consumer needs them**.
+Add them in the bounded slice where a concrete producer/consumer requires them. Do not prebuild decorative complexity and do not treat devices/internet as omniscient cognition channels.
 
-They must be represented through normal world/entity/resource/relationship contracts when possession, location, access, availability or capabilities matter. Do not treat devices or the internet as magical omniscient cognition channels.
+Examples:
+- `message -> represented phone/device -> actual exposure -> future perception/appraisal`
+- `media item -> represented TV/device output -> location/action compatibility -> exposure`
+- `internet item -> represented publication + network/service + accessible device -> interaction/exposure`
 
-Example:
-`media item -> represented TV/device output -> actor/location compatibility -> exposure -> future perception/appraisal`
+## Active phase — first concrete World Input producers
 
-## World-input producer sequence after W0
+### W1 — Environment / Weather Foundation — NEXT
 
-### W1 — Environment / Weather Foundation
+Build the first concrete W0 producer.
 
 Minimum target:
-- weather condition;
+- represented weather state;
+- condition;
 - temperature;
 - precipitation;
 - wind;
 - light/daylight context;
-- indoor/outdoor exposure boundary;
+- simulation-time validity;
+- location/area applicability;
+- outdoor vs indoor exposure boundary;
+- W0 environment stimulus generation;
 - deterministic environment/affordance inputs where represented;
 - no direct mood modifier.
+
+Weather should not write `sadness`, `motivation`, `training desire` or similar Mind state directly.
+
+Preferred flow:
+`weather truth -> environment stimulus -> exposure eligibility/actual exposure -> future perception/appraisal -> Mind`
+
+Estate-first scope is sufficient; W1 does not require opening South Lake Tahoe traversal.
 
 ### W2 — Commitments / Obligations Foundation
 
 Minimum target:
 - appointments/deadlines/promises/scheduled obligations;
-- start/due times, status and flexibility;
+- start/due times;
+- status/flexibility;
 - reminders through W0;
-- no automatic intention or plan creation.
+- no automatic intention/plan creation.
 
 ### W3 — Money / Economy Minimum Foundation
 
 Minimum target:
-- character financial resources/balances;
+- balances/financial resources;
 - transactions;
 - income/expenses/obligations;
 - deterministic affordability;
@@ -187,7 +185,8 @@ Minimum target:
 
 Minimum target:
 - information/media items;
-- source/publisher and publication/availability;
+- sources/publishers;
+- publication/availability;
 - credibility/source metadata;
 - represented device/media exposure through W0;
 - `world knows != character knows`.
@@ -197,24 +196,24 @@ Minimum target:
 Minimum target:
 - sender/recipient/channel/content/delivery boundary;
 - utterance/message stimulus creation;
-- actual exposure/read-or-heard boundary;
+- actual read/heard/exposure boundary;
 - later interpretation/response through Social Cognition, not direct chatbot ping-pong.
 
-Use exemplar-first, then batch-by-pattern. These do not have to become five oversized isolated architectures if multiple producers share the proven W0 contract.
+Use exemplar-first, then batch-by-pattern. W1-W5 do not need five giant parallel architectures if multiple producers share the proven W0 pattern.
 
 ## MIND-F2 — Mental Episode Runtime — AFTER MINIMUM WORLD INPUTS
 
-At meaningful cognition/action boundaries, allow one model call to emit a small structured bundle of mental episodes alongside an action proposal.
+At meaningful cognition/action boundaries, one cognition call may emit a small structured mental-episode bundle alongside an action proposal.
 
 No continuous per-minute LLM polling.
 
-Mind input should consume bounded actor-relative perception/exposure handoffs, not global world tables.
+Mind input should consume bounded actor-relative exposure/perception handoffs, not global world tables.
 
 ## MIND-F3 — Attention / Appraisal / Active Concerns
 
 Add small persistent mental context above raw prompt data.
 
-External facts should flow through represented exposure/perception and character-relative appraisal rather than direct arbitrary mental modifiers.
+External facts should flow through exposure/perception and character-relative appraisal rather than arbitrary direct mental modifiers.
 
 ## MIND-F4 — Intention Foundation
 
@@ -222,7 +221,7 @@ Introduce near-term future direction distinct from prospective thought and disti
 
 ## MIND-F5 — Planning
 
-Planning consumes authoritative current state plus currently recallable memory and active mind artifacts. Plans remain interruptible and never bypass action validation.
+Planning consumes authoritative current state plus currently recallable memory and active Mind artifacts. Plans remain interruptible and never bypass action validation.
 
 First useful consumers remain:
 - multi-day training/recovery balance;
@@ -237,26 +236,21 @@ Target:
 
 Relationship state should consume represented interpreted social evidence rather than arbitrary direct dialogue-to-trust increments.
 
-## Why Cognition Context remains separate
+## Observability separation
 
-Current `Cognition Context` is the read-only inspector for actual bounded model injection. It is useful and intentionally raw; it is not represented Mind state.
-
-Future observability should distinguish:
+Future observer surfaces should distinguish:
 - World / Environment — objective facts;
-- Exposure — externally available signals that reached the actor;
+- Exposure — external signals that reached the actor;
 - Profile — represented character facts;
 - Memory — retained knowledge/experience;
-- Mind — structured mental episodes and active artifacts;
+- Mind — structured mental episodes/artifacts;
 - Cognition Context — exact model-injection snapshots.
 
 ## Universal autonomy semantic lock
 
-A character-specific source may define factual identity/profile, biography, initial skills, possessions, relationships, preferences/hobbies, factual goals, memory ability or factual initial knowledge.
+Character-specific factual seeds are allowed. Character-specific behavioral scripts are not.
 
-It may not define future behavior scripts such as named autonomy prompts/policies, fixed daily routines/training schedules, bespoke destination steering or identity-keyed code branches.
-
-Generic cognition derives behavior from represented state:
-`profile + physiology + time + environment + affordances + goals + relationships + currently recallable memories + active mental context + deterministic constraints`.
+No named-character autonomy prompt, routine, destination steering, anti-repetition counter-prompt, memory formula, world-input interpretation or mental script may be introduced.
 
 ## Deferred depth
 
@@ -269,7 +263,6 @@ Do not silently add:
 - vector/embedding memory;
 - continuous thought polling;
 - giant monolithic Mind module;
-- character-specific mental scripts;
 - full unused device/media/economy ecosystems before a consumer needs them.
 
 ## World / spatial lock
@@ -284,4 +277,4 @@ Known geography never grants executable movement by itself.
 
 ## Current exact resume point
 
-**Implement and validate W0 — World Stimulus / Exposure Foundation v1 on `test`, promote it to `main`, deploy schema/API, then build the first minimum world-input producer (normally W1 Weather/Environment) against the canonical W0 + Mind contracts. Expand concrete world elements such as devices/network access only when the active producer/consumer requires them.**
+**W0 World Stimulus / Exposure Foundation v1 is deployed. Implement W1 Environment / Weather Foundation next on `test`, aligned with both W0 and the Mind Engine contract. Expand concrete world entities such as devices/network access only when an active producer/consumer requires them. Do not activate a giant Mind/Planning system yet.**
