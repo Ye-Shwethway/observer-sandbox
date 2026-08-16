@@ -8,6 +8,7 @@ from typing import Any
 from .simulation import action_definition, local_objects, reachable_rooms
 from .spatial_familiarity import location_is_globally_hidden
 from .training_methods import training_profile_for_target
+from .world import get_field
 
 
 MEANINGFUL_RESOURCE_CAPABILITIES = {
@@ -20,6 +21,13 @@ def _action_definitions(conn: sqlite3.Connection) -> list[dict[str, Any]]:
         action_definition(conn, row["action_type"])
         for row in conn.execute("SELECT action_type FROM action_definitions ORDER BY action_type")
     ]
+
+
+def _location_affordances(conn: sqlite3.Connection, location_id: str) -> list[str]:
+    spatial = get_field(conn, location_id, "world.spatial_container", {}) or {}
+    if not isinstance(spatial, dict):
+        return []
+    return sorted({str(value) for value in spatial.get("affordances", []) if isinstance(value, str)})
 
 
 def reachable_location_awareness(conn: sqlite3.Connection, room_id: str) -> list[dict[str, Any]]:
@@ -40,6 +48,15 @@ def reachable_location_awareness(conn: sqlite3.Connection, room_id: str) -> list
         action_names: set[str] = set()
         training_families: set[str] = set()
         training_methods: list[dict[str, str]] = []
+        location_affordances = _location_affordances(conn, str(room["id"]))
+        for definition in definitions:
+            capability = definition["required_capability"]
+            if (
+                definition.get("target_mode") == "none"
+                and isinstance(capability, str)
+                and capability in location_affordances
+            ):
+                action_names.add(str(definition["action_type"]))
         for obj in local_objects(conn, room["id"]):
             supported: list[str] = []
             for definition in definitions:
@@ -71,13 +88,14 @@ def reachable_location_awareness(conn: sqlite3.Connection, room_id: str) -> list
         result.append({
             "location_name": room["name"],
             "available_actions_after_move": sorted(action_names),
+            "location_affordances": location_affordances,
             "training_families": sorted(training_families),
             "training_methods": training_methods,
             "resources": resources,
             "planning_only": True,
             "instruction": (
-                "Planning preview only. Do not copy a target from this preview into a decision. "
-                "A move or resource action is legal only when its exact target ID appears in current action_options."
+                "Planning preview only. Location affordances describe ordinary activities supported by that place after arrival. "
+                "Do not copy a target from this preview into a decision. A move or resource action is legal only when its exact target ID appears in current action_options."
             ),
         })
     return result
