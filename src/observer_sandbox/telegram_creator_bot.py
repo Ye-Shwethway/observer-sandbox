@@ -17,6 +17,7 @@ from .telegram_ai_control import callback_view as ai_callback_view
 from .telegram_ai_control import home_view as ai_home_view
 from .telegram_inventory import inventory_callback_view, inventory_command_view
 from .telegram_profile_browser import profile_callback_view
+from .telegram_universe import locations_view, region_view, regions_view, universe_view, weather_view
 
 _ORIGINAL_API = base._api
 _ORIGINAL_SEND = base._send
@@ -189,6 +190,16 @@ def _statnotify_status(conn, user_id: int) -> str:
 def _callback_view(conn, user_id: int, callback_data: str):
     if callback_data == "nav:close":
         return _DELETE_SENTINEL, None
+    if callback_data == "nav:universe":
+        return universe_view(conn)
+    if callback_data == "uni:weather":
+        return weather_view(conn)
+    if callback_data == "uni:regions":
+        return regions_view(conn)
+    if callback_data == "uni:locations":
+        return locations_view(conn)
+    if callback_data.startswith("region:"):
+        return region_view(conn, callback_data.split(":", 1)[1])
     if callback_data.startswith("pref:statnotify:"):
         role = base._user_role(user_id)
         if role == "unauthorized":

@@ -1,0 +1,15 @@
+{
+  "revision": "observer-geography-v1",
+  "regions": [
+    {
+      "id": "south_lake_tahoe",
+      "name": "South Lake Tahoe",
+      "planned_location_id": "loc_south_lake_tahoe",
+      "world_id": "world_primary",
+      "representation": "regional_context",
+      "traversal_status": "locked_unimplemented",
+      "locations": ["loc_thorne_estate"],
+      "note": "Regional context is represented for Creator observability. Public Tahoe traversal remains unavailable until the bounded regional graph is explicitly implemented."
+    }
+  ]
+}

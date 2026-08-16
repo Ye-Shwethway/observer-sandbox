@@ -41,7 +41,9 @@ def main() -> int:
         schema_before = int(conn.execute(
             "SELECT value FROM schema_meta WHERE key='schema_version'"
         ).fetchone()[0])
-        assert schema_before == 5
+        # Inventory Operations v1 was introduced at schema v5. Later unrelated
+        # migrations must not make this acceptance validator stale.
+        assert schema_before >= 5
         sim_time_before = _runtime_json(conn, "sim_time")
         world_revision_before = _runtime_json(conn, "world_identity_revision")
         actor_runtime_before = dict(conn.execute(
@@ -60,7 +62,7 @@ def main() -> int:
         schema_after = int(conn.execute(
             "SELECT value FROM schema_meta WHERE key='schema_version'"
         ).fetchone()[0])
-        assert schema_after == 5
+        assert schema_after >= schema_before
         assert _runtime_json(conn, "sim_time") == sim_time_before
         assert _runtime_json(conn, "world_identity_revision") == world_revision_before
         assert dict(conn.execute(
