@@ -46,7 +46,7 @@ def test_memory_profile_is_independent_first_class_profile_domain(tmp_path):
     initialize(db)
     with connect(db) as conn:
         version = int(conn.execute("SELECT value FROM schema_meta WHERE key='schema_version'").fetchone()[0])
-        assert version == SCHEMA_VERSION == 7
+        assert version == SCHEMA_VERSION
         values = {
             row["field_key"]: json.loads(row["value_json"])
             for row in conn.execute(
