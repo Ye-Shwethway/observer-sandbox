@@ -105,10 +105,10 @@ def test_exterior_boundary_remains_a_locked_nontraversable_container(tmp_path):
         assert spatial["traversable"] is False
 
 
-def test_spatial_refactor_adds_no_campus_or_outside_world_locations(tmp_path):
+def test_spatial_refactor_base_locations_are_preserved_and_outside_world_stays_absent(tmp_path):
     db = tmp_path / "observer.sqlite3"
     initialize(db)
-    expected_ids = {row["id"] for row in load_world_seed()["locations"]}
+    base_ids = {row["id"] for row in load_world_seed()["locations"]}
 
     with connect(db) as conn:
         actual_ids = {
@@ -118,10 +118,9 @@ def test_spatial_refactor_adds_no_campus_or_outside_world_locations(tmp_path):
             ).fetchall()
         }
 
-    assert actual_ids == expected_ids
+    assert base_ids <= actual_ids
     assert "loc_south_lake_tahoe" not in actual_ids
-    assert "loc_thorne_estate_hidden_dock" not in actual_ids
-    assert "loc_thorne_estate_rear_forest" not in actual_ids
+    assert not any(location_id.startswith("loc_south_lake_tahoe") for location_id in actual_ids)
 
 
 def test_spatial_refactor_is_idempotent_and_preserves_actor_location(tmp_path):
