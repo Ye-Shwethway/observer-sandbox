@@ -1,15 +1,20 @@
 from __future__ import annotations
 
+import argparse
+import json
 import os
 import sqlite3
+from pathlib import Path
 from typing import Any
 
 from .actor_runtime import actor_runtime, set_actor_runtime, set_retry
 from .ai import AIConfigurationError, resolve_binding
 from .ai_bootstrap import bootstrap_gemini_cognition
 from .ai_runtime import AIDecisionError
+from .db import connect
 from .event_log import record_event
 from .model_decision import dry_run_model_decision
+from .runtime import initialize
 from .simulation import snapshot
 
 
@@ -134,3 +139,25 @@ def ensure_cognition_live(
         "probe": probe,
         "retry_cleared": retry_cleared,
     }
+
+
+def main() -> int:
+    parser = argparse.ArgumentParser(prog="python -m observer_sandbox.ai_recovery")
+    parser.add_argument("--db", type=Path, default=Path(os.environ.get("OBSERVER_SANDBOX_DB", "runtime-data/observer.sqlite3")))
+    parser.add_argument("--character", required=True)
+    parser.add_argument("--role", default="cognition")
+    args = parser.parse_args()
+
+    initialize(args.db)
+    with connect(args.db) as conn:
+        result = ensure_cognition_live(
+            conn,
+            character_id=args.character,
+            role=args.role,
+        )
+    print(json.dumps(result, indent=2, sort_keys=True))
+    return 0
+
+
+if __name__ == "__main__":
+    raise SystemExit(main())
