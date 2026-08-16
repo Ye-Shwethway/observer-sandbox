@@ -5,6 +5,8 @@ import sqlite3
 from typing import Any
 
 
+TRAINING_FATIGUE_LIMIT = 70.0
+
 COMPOSITION_SCHEMA_SQL = """
 CREATE TABLE IF NOT EXISTS entity_definitions (
     id TEXT PRIMARY KEY,
@@ -123,21 +125,61 @@ CREATE INDEX IF NOT EXISTS idx_inventory_stacks_quantity ON inventory_stacks(qua
 """
 
 
+def _definition(
+    action_type: str,
+    label: str,
+    minimum: int,
+    maximum: int,
+    target_mode: str,
+    capability: str | None,
+    colocation: int,
+    *,
+    conditions: dict[str, Any] | None = None,
+) -> dict[str, Any]:
+    return {
+        "action_type": action_type,
+        "label": label,
+        "min": minimum,
+        "max": maximum,
+        "target_mode": target_mode,
+        "capability": capability,
+        "colocation": colocation,
+        "conditions": conditions or {},
+    }
+
+
 ACTION_DEFINITIONS: tuple[dict[str, Any], ...] = (
-    {"action_type": "move", "label": "Move", "min": 1, "max": 30, "target_mode": "location", "capability": None, "colocation": 0},
-    {"action_type": "sleep", "label": "Sleep", "min": 30, "max": 720, "target_mode": "object", "capability": "sleep", "colocation": 1},
-    {"action_type": "eat", "label": "Eat", "min": 5, "max": 90, "target_mode": "object", "capability": "eat", "colocation": 1},
-    {"action_type": "drink", "label": "Drink", "min": 1, "max": 30, "target_mode": "object", "capability": "drink", "colocation": 1},
-    {"action_type": "shower", "label": "Shower", "min": 5, "max": 60, "target_mode": "object", "capability": "shower", "colocation": 1},
-    {"action_type": "rest", "label": "Rest", "min": 5, "max": 240, "target_mode": "optional", "capability": "rest", "colocation": 1},
-    {"action_type": "inspect", "label": "Inspect", "min": 1, "max": 60, "target_mode": "object", "capability": "inspect", "colocation": 1},
-    {"action_type": "use", "label": "Use", "min": 1, "max": 120, "target_mode": "object", "capability": "use", "colocation": 1},
-    {"action_type": "train", "label": "Train", "min": 10, "max": 240, "target_mode": "object", "capability": "train", "colocation": 1},
-    {"action_type": "read", "label": "Read", "min": 5, "max": 240, "target_mode": "object", "capability": "read", "colocation": 1},
-    {"action_type": "research", "label": "Research", "min": 10, "max": 180, "target_mode": "object", "capability": "research", "colocation": 1},
-    {"action_type": "monitor", "label": "Monitor", "min": 5, "max": 120, "target_mode": "object", "capability": "monitor", "colocation": 1},
-    {"action_type": "self_satisfaction", "label": "Private self-satisfaction", "min": 5, "max": 45, "target_mode": "none", "capability": None, "colocation": 0},
-    {"action_type": "idle", "label": "Idle", "min": 1, "max": 120, "target_mode": "none", "capability": None, "colocation": 0},
+    _definition("move", "Move", 1, 30, "location", None, 0),
+    _definition("sleep", "Sleep", 30, 720, "object", "sleep", 1),
+    _definition("eat", "Eat", 5, 90, "object", "eat", 1),
+    _definition("drink", "Drink", 1, 30, "object", "drink", 1),
+    _definition("shower", "Shower", 5, 60, "object", "shower", 1),
+    _definition("rest", "Rest", 5, 240, "optional", "rest", 1),
+    _definition("inspect", "Inspect", 1, 60, "object", "inspect", 1),
+    _definition("use", "Use", 1, 120, "object", "use", 1),
+    _definition(
+        "train",
+        "Train",
+        10,
+        240,
+        "object",
+        "train",
+        1,
+        conditions={
+            "all": [
+                {
+                    "field_key": "physiology.fatigue",
+                    "operator": "lt",
+                    "value": TRAINING_FATIGUE_LIMIT,
+                }
+            ]
+        },
+    ),
+    _definition("read", "Read", 5, 240, "object", "read", 1),
+    _definition("research", "Research", 10, 180, "object", "research", 1),
+    _definition("monitor", "Monitor", 5, 120, "object", "monitor", 1),
+    _definition("self_satisfaction", "Private self-satisfaction", 5, 45, "none", None, 0),
+    _definition("idle", "Idle", 1, 120, "none", None, 0),
 )
 
 
@@ -180,10 +222,11 @@ def seed_action_definitions(conn: sqlite3.Connection) -> None:
                 target_mode=excluded.target_mode,
                 required_capability=excluded.required_capability,
                 requires_colocation=excluded.requires_colocation,
+                conditions_json=excluded.conditions_json,
                 updated_at=CURRENT_TIMESTAMP""",
             (
                 row["action_type"], row["label"], row["min"], row["max"], row["target_mode"],
-                row["capability"], row["colocation"], json.dumps({}), json.dumps({}), json.dumps({}), json.dumps({}),
+                row["capability"], row["colocation"], json.dumps({}), json.dumps(row["conditions"]), json.dumps({}), json.dumps({}),
             ),
         )
     conn.commit()
