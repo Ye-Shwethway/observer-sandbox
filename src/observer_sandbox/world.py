@@ -10,6 +10,7 @@ from .profile_seed import import_seed, load_seed
 
 REPO_ROOT = Path(__file__).resolve().parents[2]
 HOME_SEED_PATH = REPO_ROOT / "config" / "worlds" / "home.v1.json"
+HOME_SPATIAL_SEED_PATH = REPO_ROOT / "config" / "worlds" / "home.spatial.v1.json"
 DARIAN_SEED_PATH = REPO_ROOT / "config" / "characters" / "darian.canonical.json"
 DARIAN_RUNTIME_DEFAULTS_PATH = REPO_ROOT / "config" / "characters" / "darian.runtime-defaults.json"
 
@@ -63,6 +64,13 @@ LEGACY_SPATIAL_IDS = set(LEGACY_LOCATION_ID_MAP) | LEGACY_OBJECT_IDS | {"observe
 
 def load_world_seed(path: str | Path = HOME_SEED_PATH) -> dict[str, Any]:
     return json.loads(Path(path).read_text(encoding="utf-8"))
+
+
+def load_spatial_seed(path: str | Path = HOME_SPATIAL_SEED_PATH) -> dict[str, Any]:
+    seed_path = Path(path)
+    if not seed_path.exists():
+        return {"spatial_revision": "none", "locations": {}}
+    return json.loads(seed_path.read_text(encoding="utf-8"))
 
 
 def _upsert_entity(
@@ -195,8 +203,6 @@ def _prepare_scoped_identity_migration(conn: sqlite3.Connection, world: dict[str
     set_field(conn, "char_darian", "runtime.location", mapped_location)
     set_field(conn, "char_darian", "runtime.current_action", "idle")
 
-    # Commit the pause before destructive graph work so the still-running old
-    # service cannot complete a stale legacy-id action during deployment.
     conn.commit()
 
     placeholders = ",".join("?" for _ in LEGACY_SPATIAL_IDS)
@@ -242,6 +248,9 @@ def _rebuild_seed_topology(conn: sqlite3.Connection, world: dict[str, Any], loca
 
 def seed_home_and_darian(conn: sqlite3.Connection) -> None:
     world = load_world_seed()
+    spatial_seed = load_spatial_seed()
+    spatial_locations = spatial_seed.get("locations", {})
+    spatial_revision = spatial_seed.get("spatial_revision", "home-spatial")
     locations = _normalized_locations(world)
     revision = world.get("revision", "home-v1")
     migrated_now = _prepare_scoped_identity_migration(conn, world)
@@ -259,6 +268,15 @@ def seed_home_and_darian(conn: sqlite3.Connection) -> None:
         set_field(conn, loc["id"], "world.access", loc.get("access", "open"), mode="static", authority="world_definition", source=revision)
         set_field(conn, loc["id"], "world.canon", bool(loc.get("canon", False)), mode="static", authority="world_definition", source=revision)
         set_field(conn, loc["id"], "world.metadata", loc.get("metadata", {}), mode="static", authority="world_definition", source=revision)
+        set_field(
+            conn,
+            loc["id"],
+            "world.spatial_container",
+            spatial_locations.get(loc["id"], {}),
+            mode="static",
+            authority="world_definition",
+            source=spatial_revision,
+        )
 
     for obj in world["objects"]:
         _upsert_entity(conn, obj["id"], "object", obj["name"], obj.get("capabilities", []))
@@ -314,5 +332,6 @@ def seed_home_and_darian(conn: sqlite3.Connection) -> None:
     _upsert_relation(conn, "loc_thorne_estate", "resident", "char_darian")
     _set_runtime_value(conn, "world_id", world["world_id"])
     _set_runtime_value(conn, "world_identity_revision", revision)
+    _set_runtime_value(conn, "world_spatial_revision", spatial_revision)
     _restore_pause_after_migration(conn, revision, migrated_now)
     conn.commit()
