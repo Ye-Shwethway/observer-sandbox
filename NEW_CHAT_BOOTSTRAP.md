@@ -18,13 +18,11 @@ Authority:
 Default workflow:
 `branch -> focused tests + final PR CI -> merge main -> automatic deploy when runtime-affecting -> read-only production check`
 
-Docs-only planning work does not require the Python suite or runtime deploy. Use exemplar-first only for genuinely new invariants, then batch structurally equivalent follow-ons.
+Docs-only planning work does not require the Python suite or runtime deploy.
 
 ## Strategic checkpoint
 
-All Character Profile sections are minimum-unlocked v1. Skills remains CLOSED v1. Adaptive Character Disposition Foundation and Overall Workflow/Foundation Review v1 remain COMPLETE / CLOSED.
-
-Character-side foundation depth is no longer the immediate priority. The current bottleneck is world substrate: the represented world remains largely limited to the Thorne Estate interior, while the canonical Estate exterior boundary is intentionally locked because no sufficiently represented outside world exists yet.
+Character-side foundations are closed enough for the current purpose. The immediate bottleneck is represented world substrate beyond the Thorne Estate interior.
 
 ## Active phase — World Foundation Expansion
 
@@ -36,26 +34,13 @@ Status: **DOCUMENTATION FIRST / IMPLEMENTATION NOT YET STARTED**.
 2. `docs/WORLD_LOCATION_NODE_MODEL.md`
 3. `docs/WORLD_SPATIAL_ACCESS_TRAVEL_CONTRACT_V1.md`
 4. `docs/WORLD_GEOGRAPHY_EXPANSION_CONTRACT_V1.md`
-5. `docs/WORLD_ENVIRONMENT_RUNTIME_CONTRACT_V1.md`
-6. `docs/WORLD_VENUE_RESOURCE_CONTRACT_V1.md`
-7. `docs/WORLD_POPULATION_ECONOMY_CONTRACT_V1.md`
-8. `docs/WORLD_FOUNDATION_IMPLEMENTATION_SEQUENCE_V1.md`
+5. `docs/THORNE_ESTATE_CAMPUS_CANON_MAP_V1.md`
+6. `docs/WORLD_ENVIRONMENT_RUNTIME_CONTRACT_V1.md`
+7. `docs/WORLD_VENUE_RESOURCE_CONTRACT_V1.md`
+8. `docs/WORLD_POPULATION_ECONOMY_CONTRACT_V1.md`
+9. `docs/WORLD_FOUNDATION_IMPLEMENTATION_SEQUENCE_V1.md`
 
-Task-relevant runtime/source should be read only when implementation is later authorized.
-
-### Phase intent
-
-Build the world foundations required to expand autonomous life from the mansion into the Estate campus and eventually a bounded South Lake Tahoe region, without prompt-only geography or world-state invention.
-
-Preserve:
-- recursively nestable location graph;
-- stable globally scoped entity IDs;
-- `contains` != `connected_to` != `located_at` != ownership/possession;
-- deterministic route/access/world-state authority;
-- LLM proposes actions but cannot invent legal topology, access, weather, prices, resources or authoritative world facts;
-- cognition receives only a decision-relevant local world projection, never the entire regional graph/catalog.
-
-### Planned WF sequence
+### WF sequence
 
 1. WF-1 — World Spatial Hierarchy & Topology v1
 2. WF-2 — Property, Place Classification & Access v1
@@ -68,72 +53,78 @@ Preserve:
 9. WF-9 — Ambient Population / Presence v1
 10. WF-10 — Basic World Economy v1
 
-Detailed implementation order is already planned as Phase A representation foundation, Phase B Estate Campus Unlock, Phase C Outside World Unlock, Phase D environment/useful places, and Phase E resource/population/economy loop.
+## Thorne Estate Campus Canon Map checkpoint
 
-### Key planning locks
+The Estate campus content map is now documented before implementation.
 
-- Containment does not imply traversal.
-- Topology and access must both allow movement.
-- First travel mode is walking.
-- Estate campus unlock comes before Tahoe public-world unlock.
-- South Lake Tahoe v1 is intentionally bounded, not a full map replica.
-- Public destinations are admitted only for concrete simulation use.
-- Environment is authoritative state, not decorative prompt prose.
-- Venue/service/resource/population/economy systems reuse generic world contracts rather than parallel bespoke engines.
-- Named agents and ambient population remain separate tiers.
-- World growth must not make model context grow with total world size.
+### `source_confirmed`
+From the original mansion source:
+- South Lake Tahoe forested-outskirts setting;
+- approximately 50 acres private land;
+- Main Mansion / Garage & Workshop;
+- Tactical Obstacle Course;
+- Private Lake Access;
+- Hidden Dock;
+- Underground Bunker;
+- tactical escape tunnels / safe exit capability;
+- strong security/access infrastructure.
 
-### Planning-only boundary
+### `story_established`
+Creator-reaffirmed storyline continuity:
+- rear/western Estate side adjoins a forest/backcountry corridor;
+- private Estate forest leads to a concealed forest passage;
+- the passage supports Elias's hidden-stronghold design.
 
-Current documentation does not authorize runtime implementation or production mutation.
+Do not claim a named National Forest parcel or named public trail directly borders the fictional Estate without separate sourcing/authoring.
 
-Until explicit implementation authorization:
-- keep `loc_thorne_estate_exterior_boundary` locked;
-- create no traversable Estate-exterior/public edge;
-- do not fabricate production travel for proof;
-- do not implement weather/economy/vehicles/population out of sequence;
-- continue refining concrete authored world content.
+### `structurally_inferred` / provisional
+Needed for runnable campus topology:
+- Mansion Exterior / Primary Entrance;
+- Core Estate Grounds;
+- Main Approach;
+- Main Security Gate;
+- minimal internal connector paths/edges.
+
+### `planned_unapproved`
+Not supported by the supplied mansion source and not automatically canonical:
+- garden;
+- swimming pool;
+- tennis court.
+
+### Three future mobility directions
+
+1. road / ordinary main-gate access;
+2. forest / concealed backcountry access;
+3. water / Hidden Dock access.
+
+Main Gate, Concealed Forest Passage and tactical escape tunnels are separate semantics.
+
+WF-4 should make only the private Estate campus runnable while all public/backcountry/water outward edges remain locked. WF-5 may open road and forest boundaries independently after their outside nodes are represented. Water travel remains later explicit work.
+
+## Planning-only boundary
+
+No implementation or production mutation is authorized yet:
+- keep current Estate exterior boundary locked;
+- create no public-road/backcountry/water traversal edge;
+- do not fabricate production travel;
+- do not implement vehicles/boats/weather/economy/population out of sequence.
 
 ## Next discussion targets
 
-Engine-level contracts for WF-1 through WF-10 are now sufficiently explicit for planning. Remaining high-value documentation questions are content decisions rather than generic engine architecture:
-1. exact Thorne Estate campus nodes, adjacency and canon/provisional geography;
-2. first bounded South Lake Tahoe public connector and destination set;
-3. first environment-state representation and deterministic consumer hook;
-4. first venue/service/resource loop, with grocery/resource acquisition as the leading candidate;
-5. any real-world Tahoe source policy/detail required for those chosen destinations.
+The highest-value remaining content decisions are:
+1. first bounded South Lake Tahoe road connector outside the main gate;
+2. first bounded backcountry connector outside the concealed forest passage;
+3. first useful public destination and resource/service loop;
+4. first environment-state representation on those reachable outdoor nodes.
 
-After these are settled, the Creator may decide whether documentation is complete enough to authorize the consecutive coding sequence.
-
-## World baseline already present
-
-`docs/WORLD_LOCATION_NODE_MODEL.md` remains an ACTIVE CONTRACT. It already supports recursive world expansion, scoped IDs, generic `location_runtime`, relation-derived routing and future insertion of `loc_south_lake_tahoe` above the Estate without renaming current identities.
-
-The current Estate exterior remains a locked boundary with no legal movement edge.
-
-## Recently completed Creator features
-
-Telegram Cognition Context Inspector v1: COMPLETE / DEPLOYED through PR #187 / Deploy #240.
-
-Cognition Context Efficiency v1: COMPLETE / DEPLOYED / CLOSED through PR #191, CI #954 with 613 passing tests, merge `25d709ddc0cc36d7d7ba30a3e0f7357ce1348dd6`, Deploy #243 SUCCESS.
-
-Do not continue speculative cognition-context trimming without new measured evidence.
+After those are documented, the Creator can decide whether planning is complete enough to authorize consecutive coding.
 
 ## Current verified deployment
 
 Latest runtime deployment remains **Deploy #243 / run `31931381264` SUCCESS**, schema v5.
 
-World Foundation Expansion planning has made no runtime/schema/production change.
-
-## Development boundaries
-
-- LLM proposes; deterministic runtime validates/mutates.
-- Do not reopen closed character/profile/psychology foundations merely for depth.
-- Prefer representation before simulation depth.
-- Reuse existing generic entity/relation/location/action/resource contracts before adding schema.
-- Do not create mansion-only runtime shortcuts that block regional expansion.
-- No full GIS, city-scale LLM NPC population, detailed traffic/transit, climate simulation, macroeconomy, law/crime, universal permission language, universal injury/hazard engine, or synthetic production world events merely for completeness.
+World Foundation planning has made no runtime/schema/production change.
 
 ## Exact resume point
 
-**The active phase is World Foundation Expansion, documentation-first. The canonical contract set now covers WF-1 through WF-10 plus a low-drift future implementation sequence. No implementation or production world unlock has started. Continue by settling concrete Estate-campus geography, the first bounded Tahoe connector/destination set, and the first environment/venue/resource loop. Only after those content decisions are sufficiently documented should sustained coding be authorized. Latest verified runtime remains Deploy #243 at schema v5.**
+**The active phase is World Foundation Expansion, documentation-first. `THORNE_ESTATE_CAMPUS_CANON_MAP_V1.md` is now the canonical content map for WF-4 planning: source-confirmed obstacle course/private lake access/hidden dock, story-established rear forest and concealed forest passage, provisional ordinary grounds/approach/gate connectors, and separate future road/forest/water mobility directions. All outside edges remain locked and no implementation has started. Continue with the first bounded South Lake Tahoe road/backcountry connector and public destination/resource-loop design. Latest verified runtime remains Deploy #243 at schema v5.**
