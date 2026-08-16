@@ -79,7 +79,10 @@ def test_observer_home_uses_stable_inline_navigation(tmp_path, monkeypatch):
     with connect(db) as conn:
         text, universe_keyboard = _callback_view(conn, 111, "nav:universe")
         assert "UNIVERSE" in text
-        assert any(button[0]["callback_data"] == "loc:loc_thorne_estate" for button in universe_keyboard[:-1])
+        callbacks = [button["callback_data"] for row in universe_keyboard for button in row]
+        assert "uni:weather" in callbacks
+        assert "uni:regions" in callbacks
+        assert "uni:locations" in callbacks
         chars_text, chars_keyboard = _callback_view(conn, 111, "nav:characters")
         assert "Darian Thorne" in chars_text
         assert chars_keyboard[0][0]["callback_data"] == "char:char_darian"
