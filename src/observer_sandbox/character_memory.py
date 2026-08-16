@@ -171,9 +171,10 @@ def retrieve_relevant_memories(
         related = [{"entity_id": a["entity_id"], "role": a["relation_role"]} for a in associations]
         location_match = bool(current_location_id and any(a["entity_id"] == current_location_id for a in associations))
         action_match = bool(action_set and content.get("action") in action_set)
+        episodic_recency = _recency_score(str(row["event_sim_time"]), current_sim_time) if row["memory_type"] == "episodic" else 0.0
         relevance = (
             0.45 * float(row["salience"])
-            + 0.35 * _recency_score(str(row["event_sim_time"]), current_sim_time)
+            + 0.35 * episodic_recency
             + (0.15 if location_match else 0.0)
             + (0.05 if action_match else 0.0)
         )
