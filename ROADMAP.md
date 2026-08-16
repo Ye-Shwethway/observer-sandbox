@@ -17,17 +17,19 @@ Roadmap synchronized: 2026-08-16
 
 ## Current production checkpoint
 
-**Human Memory Dynamics v1 is COMPLETE / DEPLOYED.**
+**Intelligent Mind Engine Foundation v1 is COMPLETE / DEPLOYED.**
 
 Evidence:
-- PR #212
-- final tested head `1cad8d9188e49f42f9c00b8026eccd917a9fc073`
-- CI #980 / run `31950039890`: SUCCESS
-- all triggered acceptance gates on the final head: SUCCESS
-- merge `b8343d12b5204a0f3a049cbfb7632b617df77495`
-- Deploy #253 / run `31950111179`: SUCCESS
-- final install/configure cognition/restart/verify: SUCCESS
-- schema v7
+- PR #214 — `Add Intelligent Mind Engine Foundation v1`
+- final tested head `a08faaeaf5852ec44ea4aab92f78c746db5d18e8`
+- CI #982 / run `31951775815`: SUCCESS
+- Public Readiness Security Audit #139: SUCCESS
+- Inventory Foundation v1 Acceptance #67: SUCCESS
+- merge `71b280191e91c7314180e992bb0beaf0c734d97a`
+- Deploy #254 / run `31951861684`: SUCCESS
+- final sync/install/configure cognition/restart/verify: SUCCESS
+- schema v8
+- mind schema v1
 
 ## Completed foundation stack
 
@@ -40,7 +42,8 @@ The current deployed minimum foundation includes:
 - Universal action satiation / movement-cycle shaping;
 - Character Memory Foundation v1;
 - Semantic Spatial Memory Migration;
-- Human Memory Dynamics v1.
+- Human Memory Dynamics v1;
+- **Intelligent Mind Engine Foundation v1**.
 
 South Lake Tahoe remains intentionally paused.
 
@@ -53,7 +56,7 @@ Canonical docs:
 Preserve:
 `event/world truth != actor memory trace != currently recalled cognition context != current action authority`
 
-Memory now provides actor-owned episodic/semantic records, dynamic strength/detail/lifecycle, simulation-time forgetting, sleep-bounded consolidation, cue-driven recall, bounded reinforcement, generic spatial semantic knowledge and Telegram observability.
+Memory provides actor-owned episodic/semantic records, dynamic strength/detail/lifecycle, simulation-time forgetting, sleep-bounded consolidation, cue-driven recall, bounded reinforcement, generic spatial semantic knowledge and Telegram observability.
 
 Character Profile has separate Working Memory / Encoding / Retention / Recall traits. Memory behavior may not branch on character identity.
 
@@ -82,9 +85,9 @@ This rule includes external-world systems when they feed cognition, especially:
 
 Do not create parallel hidden mind/planner/thought stores. Use the shared typed Mind sockets or explicitly document why a subsystem is outside mental cognition.
 
-### Foundation schema target
+## MIND-F0 — Foundation Schema / Socket Contract — DEPLOYED
 
-Mind Foundation v1 establishes generic persistence for:
+Generic persistence now exists for:
 - bounded `mental_cycles`;
 - typed `mental_episodes`;
 - persistent/semi-persistent `mental_artifacts`;
@@ -107,11 +110,13 @@ Reserved artifact vocabulary:
 - appraisal;
 - working item.
 
-Foundation schema is not permission to activate every reserved subsystem immediately.
+A thin character-generic API supports record creation/read/update/linking and bounded active mental context.
+
+**MIND-F0 is behavior-neutral.** Current autonomy does not automatically create mental cycles or thoughts. No planner or thought generator was activated by the foundation deployment.
 
 ## Why Cognition Context remains separate
 
-Current `Cognition Context` is the read-only inspector for the actual bounded model injection. It remains useful and intentionally raw.
+Current `Cognition Context` is the read-only inspector for actual bounded model injection. It remains useful and intentionally raw.
 
 It is not the represented mind.
 
@@ -144,22 +149,9 @@ Examples:
 
 Avoid rules such as `rain -> mood -5` or `low cash -> anxiety +10`.
 
-## Active phase — Intelligent Mind Engine Foundation
+## Next development sequence
 
-### MIND-F0 — Foundation Schema / Socket Contract — AUTHORIZED
-
-Goal: create the stable generic persistence and integration envelope without changing current autonomous behavior.
-
-Required:
-1. canonical architecture contract;
-2. mandatory future-system alignment rule in repository instructions;
-3. schema for mental cycles, episodes, artifacts and typed links;
-4. versioned generic runtime API to create/read those records;
-5. idempotent migration and character-generic tests;
-6. preserve current action/memory/world authority;
-7. do not auto-generate thoughts yet.
-
-### MIND-F1 — World Input Foundations — AFTER F0 / evidence-driven
+### MIND-F1 — World Input Foundations — DISCUSSION / evidence-driven
 
 Candidate minimum channels:
 - weather/environment state and perception-ready exposure;
@@ -226,4 +218,4 @@ Known geography never grants executable movement by itself.
 
 ## Current exact resume point
 
-**Implement MIND-F0 — Intelligent Mind Engine Foundation Schema / Socket Contract. Keep behavior unchanged. After deployment, inspect and discuss which minimum world-input foundations should precede the first Mental Episode Runtime. All future cognition-affect-planning-social systems must align with the canonical Mind Engine contract.**
+**MIND-F0 is deployed. Before implementing the first real thinking runtime, discuss which minimum World Input Foundations should be built first and how MIND-F2 Mental Episode Runtime should consume them. All future cognition-affect-planning-social systems must align with the canonical Mind Engine contract.**

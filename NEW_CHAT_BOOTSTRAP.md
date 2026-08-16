@@ -20,146 +20,142 @@ Default workflow:
 
 ## Current canonical checkpoint
 
-**Human Memory Dynamics v1 is COMPLETE / DEPLOYED.**
+**Intelligent Mind Engine Foundation v1 is COMPLETE / DEPLOYED.**
 
 Latest runtime evidence:
-- PR #212 — `Add Human Memory Dynamics v1`
-- final tested head: `1cad8d9188e49f42f9c00b8026eccd917a9fc073`
-- CI #980 / run `31950039890`: SUCCESS
-- Strength Live Cycle Validation #102: SUCCESS
-- Inventory Foundation Acceptance #65: SUCCESS
-- Skill Evidence Semantics Acceptance #51: SUCCESS
-- Skill Progression Foundation Acceptance #68: SUCCESS
-- Technology Diagnostic Task Runtime Acceptance #42: SUCCESS
-- Attribute Grading Batch 1 Acceptance #50: SUCCESS
-- Read-Only Grading Proof Acceptance #51: SUCCESS
-- Solo Regulation Naturalism v2 Acceptance #49: SUCCESS
-- merge: `b8343d12b5204a0f3a049cbfb7632b617df77495`
-- Deploy #253 / run `31950111179`: SUCCESS
+- PR #214 — `Add Intelligent Mind Engine Foundation v1`
+- final tested PR head: `a08faaeaf5852ec44ea4aab92f78c746db5d18e8`
+- CI #982 / run `31951775815`: SUCCESS
+- Public Readiness Security Audit #139: SUCCESS
+- Inventory Foundation v1 Acceptance #67: SUCCESS
+- merge: `71b280191e91c7314180e992bb0beaf0c734d97a`
+- Deploy #254 / run `31951861684`: SUCCESS
 - deployment verification (`sync -> install/configure cognition -> restart -> verify`): SUCCESS
-- schema: **v7**
+- schema: **v8**
+- mind schema: **v1**
 
-`main` and `test` are synchronized at the runtime merge before this docs-only continuity checkpoint.
+`main` and `test` were synchronized at the runtime merge before this docs-only continuity checkpoint.
 
-## Required cognition / memory / world read order
+## Required cognition / mind / memory read order
 
-1. `docs/HUMAN_MEMORY_DYNAMICS_V1.md`
-2. `docs/CHARACTER_MEMORY_FOUNDATION_V1.md`
-3. `docs/UNIVERSAL_CHARACTER_AUTONOMY_CONTRACT_V1.md`
-4. `docs/WORLD_SPATIAL_FAMILIARITY_CONTRACT_V1.md`
-5. `docs/WORLD_OUTDOOR_SPATIAL_AFFORDANCE_CONTRACT_V1.md`
-6. task-relevant canonical docs/source only.
+1. `docs/INTELLIGENT_MIND_ENGINE_FOUNDATION_V1.md`
+2. `docs/HUMAN_MEMORY_DYNAMICS_V1.md`
+3. `docs/CHARACTER_MEMORY_FOUNDATION_V1.md`
+4. `docs/UNIVERSAL_CHARACTER_AUTONOMY_CONTRACT_V1.md`
+5. task-relevant world/profile/runtime docs only.
+
+## Canonical Mind Engine rule
+
+The Mind Engine is now the shared character-owned substrate for future internal cognition.
+
+Preserve:
+
+`world truth != perception != memory != mind state/thought != intention/plan != action proposal != action authority`
+
+**Every future subsystem that can materially influence character perception, interpretation, thought, affect, active concerns, goals, intentions, planning, social cognition, communication or relationship appraisal must read and align with `docs/INTELLIGENT_MIND_ENGINE_FOUNDATION_V1.md` before implementation.**
+
+This also applies to external-world systems when they feed cognition, especially weather/environment, economy/money, media/information, communication, obligations/schedules and social systems.
+
+Do not create parallel hidden mind/planner/thought stores when the state belongs to this architecture.
+
+## Mind Engine Foundation v1 — deployed scope
+
+Foundation v1 is intentionally behavior-neutral.
+
+Generic schema now provides:
+- `mental_cycles` — bounded character mental-processing boundaries;
+- `mental_episodes` — structured thought/processing units;
+- `mental_artifacts` — shared persistent/semi-persistent concerns/goals/intentions/plans/social inferences/appraisals/working items;
+- `mental_links` — typed provenance/association links to represented memories/events/entities/actions/mental records.
+
+Initial episode vocabulary:
+- `task_focused`
+- `spontaneous`
+- `reflective`
+- `prospective`
+- `social`
+- `evaluative`
+
+Reserved artifact vocabulary:
+- `concern`
+- `goal`
+- `intention`
+- `plan`
+- `social_inference`
+- `appraisal`
+- `working_item`
+
+Thin generic runtime API can create/read/update/link foundation records and returns bounded active mental context.
+
+Important: **current autonomy does not automatically create mental cycles or thoughts yet.** No planner or thought generator was activated by MIND-F0, and current action selection behavior remains unchanged.
+
+## Cognition Context vs Mind
+
+Keep them separate:
+- **Cognition Context** — raw compact context actually injected into a model decision; currently retains the latest three snapshots.
+- **Mind** — structured actor-owned internal mental state/episodes/artifacts through the new foundation schema.
+
+Raw prompt injection is not represented thought merely because the model saw it.
+
+Future Telegram observability direction:
+- `📖 Profile`
+- `🗃️ Memory`
+- future `Mind` surface
+- owner-only `🧠 Cognition Context`
+
+No Telegram Mind browser is implemented yet.
+
+## Memory architecture remains authoritative
+
+Preserve:
+`event/world truth != actor memory trace != currently recalled cognition context != action authority`.
+
+Human Memory Dynamics v1 remains deployed with recent/consolidated/remote/faded lifecycle, strength/detail decay, sleep-bounded consolidation, cue-driven recall and individual Memory Ability traits.
+
+Thought is not automatically memory. Prospective thought is not automatically intention or plan.
+
+## External world / mental appraisal rule
+
+Do not implement direct arbitrary mental modifiers such as:
+- `rain -> mood -5`
+- `low cash -> anxiety +10`
+- `negative news -> sadness +20`
+
+Preferred flow:
+
+`represented external fact -> exposure/perception -> character-relative appraisal -> mental episode/artifact/affect -> possible intention/action`
+
+World systems own their facts; Mind owns internal interpretation.
 
 ## Universal autonomy invariant
 
-Character-specific authoring may seed represented facts/state, but must not command future behavior.
+Character-specific authoring may seed represented facts/state but must not command future behavior.
 
-Forbidden:
-- named-character autonomy prompts/policies;
-- bespoke daily routines or time-window activity preferences;
-- named-character destination/activity steering;
-- anti-repetition or behavior-correction counter-prompts written for one character;
-- identity-keyed behavior branches.
+No named-character autonomy policy, bespoke routine, destination steering, anti-repetition counter-prompt, memory formula or mental script may be introduced.
 
-Autonomous behavior must emerge from universal systems consuming represented profile/state, needs/physiology, time, environment, affordances, goals, relationships, currently recallable memories/learning, recent history and deterministic constraints.
+Mental artifacts may influence cognition but never bypass deterministic action validation.
 
-## Character Memory architecture
+## Estate boundary
 
-Preserve four distinct layers:
-1. **World/event truth** — objective represented facts and completed events.
-2. **Character memory trace** — what an actor encoded or is initialized to know, plus its current strength/detail/lifecycle.
-3. **Retrieved cognition context** — bounded memories that are currently recallable/relevant.
-4. **Current action authority** — exact deterministic actions/targets executable now.
+Estate-first scope remains active. South Lake Tahoe/public/backcountry/water expansion remains paused.
 
-Canonical rule:
-`stored memory != currently recallable memory != world truth != action authority`.
+No traversable continuation exists from:
+- Main Security Gate to public road;
+- Concealed Forest Passage to Tahoe backcountry;
+- Hidden Dock to water travel.
 
-### Foundation / spatial migration status
+## Next architecture phase
 
-Character Memory Foundation v1 and Semantic Spatial Memory Migration are both deployed.
+Do **not** jump directly to a large planner.
 
-Spatial knowledge now lives in generic semantic Character Memory. `config/characters/darian.spatial_familiarity.v1.json` has been removed. Familiarity remains `unknown -> aware -> familiar -> intimate`; hidden/secret status remains orthogonal.
-
-Known-world cognition is separately projected from semantic spatial memory. Generic relevant-memory retrieval surfaces spatial familiarity rows only when the current represented location directly cues them, preventing map knowledge from crowding episodic recall.
-
-## Human Memory Dynamics v1
-
-Canonical contract:
-`docs/HUMAN_MEMORY_DYNAMICS_V1.md`
-
-Lifecycle:
-`experience -> recent -> consolidation -> consolidated/remote -> possible fading -> cue-driven recall/reinforcement`
-
-Dynamic state:
-- `memory_strength` — gist/accessibility strength;
-- `detail_strength` — contextual-detail strength;
-- `emotional_arousal`;
-- `personal_relevance`;
-- `consolidated_sim_time`;
-- `last_dynamics_sim_time`.
-
-Important rules:
-- forgetting weakens accessibility/precision; it does not delete event truth;
-- represented sleep acts as a chronological consolidation boundary;
-- emotional significance may preserve gist better than exact details;
-- faded traces remain stored and can be reactivated by strong represented cues;
-- successful recall provides bounded reinforcement;
-- retrieval is deterministic in v1;
-- false memories, clinical psychiatric simulation, dreams, detailed sleep-stage modeling and vector memory are not implemented.
-
-## Memory Ability profile
-
-Character Profile now contains `🧩 Memory Ability` with four independent 0..100 traits:
-- Working Memory
-- Encoding
-- Retention
-- Recall
-
-These are character facts, not Skills or behavioral scripts, and are not directly derived from IQ.
-
-Current Darian factual seed:
-- Working Memory 86
-- Encoding 89
-- Retention 84
-- Recall 91
-
-Runtime uses one character-generic profile contract. Do not create identity-keyed memory formulas.
-
-## Telegram observability
-
-Current Character surfaces include:
-- `📖 Profile`
-- `🗃️ Memory`
-- owner-only `🧠 Cognition Context`
-
-Memory view is live/read-only and shows Active/Episodic/Knowledge plus Recent/Long-term/Faded counts, lifecycle stage, Strength, Detail, salience, confidence, recall count and represented entity associations.
-
-Observability distinction:
-- **Memory** — stored actor-owned traces and knowledge with current dynamic state.
-- **Cognition Context** — what was actually injected for a particular model decision.
-
-Telegram never mutates, restores, deletes or force-recalls memories.
-
-## Estate / simulation boundary
-
-Estate-first foundation remains the active world scope. South Lake Tahoe/public/backcountry/water expansion is still intentionally paused.
-
-Outside continuation remains unavailable:
-- Main Security Gate -> no public road edge;
-- Concealed Forest Passage -> no Tahoe backcountry edge;
-- Hidden Dock -> no water-travel edge;
-- legacy Estate Exterior -> locked/non-traversable.
-
-## Behavioral observation context
-
-The unresolved higher-level observations remain:
-- local indoor actions can win repeatedly over purposeful use of known outdoor Estate destinations;
-- training can recur daily because no true multi-day intention/planning layer exists yet.
-
-Do **not** fix these with Darian-specific rules, fixed rest days, outdoor quotas or scripted schedules.
-
-Human Memory Dynamics now provides a more realistic substrate for future planning, but it is not itself a planner.
+Recommended next discussion/implementation sequence from the canonical Mind contract:
+1. decide which minimum **World Input Foundations** are needed first (weather/environment, money/economy, media/information, communication exposure, obligations as evidence requires);
+2. implement the first **Mental Episode Runtime** that can emit a small structured thought bundle at meaningful cognition/action boundaries without continuous LLM polling;
+3. add attention/appraisal/active concerns;
+4. then intention;
+5. then bounded planning;
+6. later social cognition/communication and relationship adaptation.
 
 ## Exact resume point
 
-**STOP before implementing Minimal Mind / Planning. The Creator explicitly wants further architecture discussion after Human Memory Dynamics deployment. Reconcile the live deployed M3 state first, discuss remaining memory/mind/planning questions, and only implement P0 after explicit direction. Preserve universal behavior and the current Estate boundary.**
+**MIND-F0 is deployed. Reconcile the live Mind Foundation v1 schema/contract first. Before implementing the first real thinking runtime, discuss which minimum world-input foundations should be built next and how the first Mental Episode Runtime should consume them. All future cognition-affect-planning-social work must align with the canonical Mind Engine contract.**
