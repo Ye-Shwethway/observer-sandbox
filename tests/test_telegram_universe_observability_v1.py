@@ -2,7 +2,7 @@ from observer_sandbox.db import connect
 from observer_sandbox.environment_weather import record_environment_state
 from observer_sandbox.runtime import initialize
 from observer_sandbox.simulation import set_runtime_value
-from observer_sandbox.telegram_creator_bot import _callback_view
+from observer_sandbox.telegram_universe import locations_view, region_view, regions_view, universe_view, weather_view
 
 
 T0 = "2025-05-03T09:00:00+00:00"
@@ -13,12 +13,11 @@ def _callbacks(keyboard):
     return [button["callback_data"] for row in keyboard or [] for button in row]
 
 
-def test_universe_home_splits_weather_regions_and_locations(tmp_path, monkeypatch):
+def test_universe_home_splits_weather_regions_and_locations(tmp_path):
     db = tmp_path / "observer.sqlite3"
     initialize(db)
-    monkeypatch.setenv("OBSERVER_TELEGRAM_OWNER_ID", "111")
     with connect(db) as conn:
-        text, keyboard = _callback_view(conn, 111, "nav:universe")
+        text, keyboard = universe_view(conn)
         callbacks = _callbacks(keyboard)
         assert "🌍 UNIVERSE" in text
         assert "uni:weather" in callbacks
@@ -27,28 +26,26 @@ def test_universe_home_splits_weather_regions_and_locations(tmp_path, monkeypatc
         assert "loc:loc_thorne_estate" not in callbacks
 
 
-def test_locations_section_contains_estate_without_opening_tahoe_traversal(tmp_path, monkeypatch):
+def test_locations_section_contains_estate_without_opening_tahoe_traversal(tmp_path):
     db = tmp_path / "observer.sqlite3"
     initialize(db)
-    monkeypatch.setenv("OBSERVER_TELEGRAM_OWNER_ID", "111")
     with connect(db) as conn:
-        text, keyboard = _callback_view(conn, 111, "uni:locations")
+        text, keyboard = locations_view(conn)
         assert "📍 LOCATIONS" in text
         assert "Thorne Estate" in text
         assert "loc:loc_thorne_estate" in _callbacks(keyboard)
         assert conn.execute("SELECT COUNT(*) FROM entities WHERE id='loc_south_lake_tahoe'").fetchone()[0] == 0
 
 
-def test_region_context_shows_south_lake_tahoe_then_estate_but_keeps_outward_route_locked(tmp_path, monkeypatch):
+def test_region_context_shows_south_lake_tahoe_then_estate_but_keeps_outward_route_locked(tmp_path):
     db = tmp_path / "observer.sqlite3"
     initialize(db)
-    monkeypatch.setenv("OBSERVER_TELEGRAM_OWNER_ID", "111")
     with connect(db) as conn:
-        regions_text, regions_keyboard = _callback_view(conn, 111, "uni:regions")
+        regions_text, regions_keyboard = regions_view(conn)
         assert "South Lake Tahoe" in regions_text
         assert "region:south_lake_tahoe" in _callbacks(regions_keyboard)
 
-        region_text, region_keyboard = _callback_view(conn, 111, "region:south_lake_tahoe")
+        region_text, region_keyboard = region_view(conn, "south_lake_tahoe")
         assert "SOUTH LAKE TAHOE" in region_text
         assert "Thorne Estate" in region_text
         assert "Locked Unimplemented" in region_text
@@ -56,10 +53,9 @@ def test_region_context_shows_south_lake_tahoe_then_estate_but_keeps_outward_rou
         assert conn.execute("SELECT COUNT(*) FROM relations WHERE source_id='loc_thorne_estate' AND target_id='loc_south_lake_tahoe'").fetchone()[0] == 0
 
 
-def test_weather_view_reads_represented_universe_state_without_creating_mind_or_memory(tmp_path, monkeypatch):
+def test_weather_view_reads_represented_universe_state_without_creating_mind_or_memory(tmp_path):
     db = tmp_path / "observer.sqlite3"
     initialize(db)
-    monkeypatch.setenv("OBSERVER_TELEGRAM_OWNER_ID", "111")
     with connect(db) as conn:
         set_runtime_value(conn, "sim_time", T1)
         conn.commit()
@@ -86,7 +82,7 @@ def test_weather_view_reads_represented_universe_state_without_creating_mind_or_
         mind_before = conn.execute("SELECT COUNT(*) FROM mental_cycles").fetchone()[0]
         exposure_before = conn.execute("SELECT COUNT(*) FROM character_exposures").fetchone()[0]
 
-        text, keyboard = _callback_view(conn, 111, "uni:weather")
+        text, keyboard = weather_view(conn)
 
         assert "🌤 UNIVERSE WEATHER" in text
         assert "South Lake Tahoe, California" in text
@@ -101,10 +97,9 @@ def test_weather_view_reads_represented_universe_state_without_creating_mind_or_
         assert conn.execute("SELECT COUNT(*) FROM character_exposures").fetchone()[0] == exposure_before
 
 
-def test_weather_view_marks_synthetic_fallback_truthfully(tmp_path, monkeypatch):
+def test_weather_view_marks_synthetic_fallback_truthfully(tmp_path):
     db = tmp_path / "observer.sqlite3"
     initialize(db)
-    monkeypatch.setenv("OBSERVER_TELEGRAM_OWNER_ID", "111")
     with connect(db) as conn:
         set_runtime_value(conn, "sim_time", T1)
         conn.commit()
@@ -127,6 +122,6 @@ def test_weather_view_marks_synthetic_fallback_truthfully(tmp_path, monkeypatch)
             source_id="fixture:fallback",
             metadata={"provider_id": "fixture", "synthetic": True},
         )
-        text, _ = _callback_view(conn, 111, "uni:weather")
+        text, _ = weather_view(conn)
         assert "Synthetic continuity fallback" in text
         assert "not claimed as historical truth" in text
