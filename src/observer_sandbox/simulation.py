@@ -41,15 +41,20 @@ class DecisionProvider(Protocol):
     def choose(self, snapshot: dict[str, Any], available_actions: list[str]) -> Action: ...
 
 
-ACTION_NAMES = ["move", "sleep", "eat", "drink", "shower", "rest", "inspect", "use", "train", "read", "self_satisfaction", "idle"]
+ACTION_NAMES = [
+    "move", "sleep", "eat", "drink", "shower", "rest", "walk", "relax", "observe",
+    "inspect", "use", "train", "read", "self_satisfaction", "idle",
+]
 ACTION_DURATION_BOUNDS: dict[str, tuple[int, int]] = {
     "move": (1, 30), "sleep": (30, 720), "eat": (5, 90), "drink": (1, 30),
-    "shower": (5, 60), "rest": (5, 240), "inspect": (1, 60), "use": (1, 120),
-    "train": (10, 240), "read": (5, 240), "self_satisfaction": (5, 45), "idle": (1, 120),
+    "shower": (5, 60), "rest": (5, 240), "walk": (5, 120), "relax": (5, 180),
+    "observe": (2, 60), "inspect": (1, 60), "use": (1, 120), "train": (10, 240),
+    "read": (5, 240), "self_satisfaction": (5, 45), "idle": (1, 120),
 }
 ACTION_CAPABILITY: dict[str, str] = {
     "sleep": "sleep", "eat": "eat", "drink": "drink", "shower": "shower", "rest": "rest",
-    "inspect": "inspect", "use": "use", "train": "train", "read": "read",
+    "walk": "walk", "relax": "relax", "observe": "observe", "inspect": "inspect", "use": "use",
+    "train": "train", "read": "read",
 }
 PHYSIOLOGY_FIELDS = {
     "needs.energy": "energy", "needs.hunger": "hunger", "needs.thirst": "thirst",
@@ -63,6 +68,9 @@ PASSIVE_DRIFT_PER_HOUR = {
 ACTION_EFFECTS_PER_HOUR: dict[str, dict[str, float]] = {
     "sleep": {"energy": 11.0, "sleepiness": -15.0, "hunger": 0.5, "thirst": 0.75, "fatigue": -10.0},
     "rest": {"energy": 10.0, "fatigue": -7.0},
+    "walk": {"energy": -3.0, "thirst": 1.0, "fatigue": 2.0},
+    "relax": {"energy": 5.0, "fatigue": -4.0},
+    "observe": {"fatigue": -1.0},
     "train": {"energy": -10.0, "hunger": 4.0, "thirst": 6.0, "cleanliness": -6.0, "fatigue": 20.0},
     "read": {"energy": -0.5, "fatigue": -1.0},
     "idle": {"energy": 3.0, "fatigue": -2.0},
@@ -206,6 +214,13 @@ def _object_effects(conn: sqlite3.Connection, object_id: str) -> dict[str, Any]:
     return value if isinstance(value, dict) else {}
 
 
+def _location_affordances(conn: sqlite3.Connection, location_id: str) -> set[str]:
+    spatial = get_field(conn, location_id, "world.spatial_container", {}) or {}
+    if not isinstance(spatial, dict):
+        return set()
+    return {str(value) for value in spatial.get("affordances", []) if isinstance(value, str)}
+
+
 def local_objects(conn: sqlite3.Connection, room_id: str) -> list[dict[str, Any]]:
     rows = conn.execute(
         """SELECT e.id,e.name,e.capabilities_json,e.definition_id
@@ -252,6 +267,26 @@ def action_options(conn: sqlite3.Connection, actor_id: str | None = None) -> lis
         row["action_type"]: action_definition(conn, row["action_type"])
         for row in conn.execute("SELECT action_type FROM action_definitions")
     }
+    location_affordances = _location_affordances(conn, room_id)
+    for name, definition in definitions.items():
+        capability = definition["required_capability"]
+        if (
+            definition["target_mode"] == "none"
+            and isinstance(capability, str)
+            and capability in location_affordances
+            and _action_conditions_result(definition, state)["satisfied"]
+        ):
+            option = {
+                "action": name,
+                "target": None,
+                "target_name": state["location_name"],
+                "duration": (definition["min_duration_minutes"], definition["max_duration_minutes"]),
+                "location_affordance": capability,
+            }
+            if name in ACTION_EFFECTS_PER_HOUR:
+                option["effects_per_hour"] = ACTION_EFFECTS_PER_HOUR[name]
+            options.append(option)
+
     for obj in local_objects(conn, room_id):
         for name, definition in definitions.items():
             if not _action_conditions_result(definition, state)["satisfied"]:
@@ -319,6 +354,9 @@ def validate_action(conn: sqlite3.Connection, actor_id: str, action: Action) -> 
     if target_mode == "none":
         if action.target:
             raise ValueError(f"{action.name} must not specify a target")
+        capability = definition["required_capability"]
+        if isinstance(capability, str) and capability not in _location_affordances(conn, location):
+            raise ValueError(f"Location {location} does not support {action.name}")
         return
     if action.name == "rest" and action.target is None:
         return

@@ -5,11 +5,13 @@ from observer_sandbox.model_decision import load_autonomy_policy
 def test_darian_autonomy_policy_is_authored_and_bounded():
     policy = load_autonomy_policy()
     assert policy["entity_id"] == "char_darian"
-    assert policy["policy_revision"] == "darian-autonomy-p1-v1.11-circadian-sleep-rhythm-v1"
+    assert policy["policy_revision"] == "darian-autonomy-p1-v1.12-outdoor-spatial-affordance-v1"
     assert policy["decision_principles"]
     assert any("resource_awareness" in principle for principle in policy["decision_principles"])
     assert any("recent_usage" in principle for principle in policy["decision_principles"])
     assert any("familiar" in principle for principle in policy["decision_principles"])
+    assert any("outdoor lifestyle destinations" in principle for principle in policy["decision_principles"])
+    assert any("never a quota" in principle for principle in policy["decision_principles"])
     assert any("22:00" in principle for principle in policy["decision_principles"])
     assert policy["nutrition_policy"]["goal"]
     assert policy["nutrition_policy"]["energy_intent"]
@@ -22,6 +24,8 @@ def test_darian_autonomy_policy_is_authored_and_bounded():
     assert policy["need_priorities"]["critical"]["fatigue_gte"] == 70
     assert policy["need_priorities"]["strong"]["cleanliness_lte"] == 50
     assert len(policy["routine_windows"]) == 4
+    assert "Core Estate Grounds" in policy["routine_windows"][1]["guidance"]
+    assert "Rear Forested Estate" in policy["routine_windows"][1]["guidance"]
     assert policy["duration_guidance"]["quick_discretionary"]["inspect_minutes"] == [2, 6]
     assert policy["duration_guidance"]["critical_night_sleep"]["min_minutes"] >= 360
     assert policy["repetition_policy"]["recent_event_window"] >= 4

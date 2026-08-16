@@ -141,6 +141,37 @@ def location_is_globally_hidden(conn: sqlite3.Connection, location_id: str) -> b
     return isinstance(metadata, dict) and metadata.get("discovery_visibility") == "hidden"
 
 
+def _outdoor_lifestyle_destination(
+    conn: sqlite3.Connection,
+    location_id: str,
+    *,
+    familiarity: str,
+) -> dict[str, Any] | None:
+    spatial = get_field(conn, location_id, "world.spatial_container", {}) or {}
+    if not isinstance(spatial, dict):
+        return None
+    if spatial.get("exposure") != "outdoor" or not bool(spatial.get("lifestyle_destination")):
+        return None
+    affordances = [str(value) for value in spatial.get("affordances", []) if isinstance(value, str)]
+    if not affordances:
+        return None
+    row = conn.execute(
+        "SELECT name FROM entities WHERE id=? AND entity_type='location'",
+        (location_id,),
+    ).fetchone()
+    if row is None:
+        return None
+    return {
+        "location_name": str(row["name"]),
+        "familiarity": familiarity,
+        "activities": affordances,
+        "atmosphere_tags": [
+            str(value) for value in spatial.get("atmosphere_tags", []) if isinstance(value, str)
+        ],
+        "planning_only": True,
+    }
+
+
 def spatial_familiarity_context(conn: sqlite3.Connection, actor_id: str) -> dict[str, Any]:
     state = spatial_familiarity_state(conn, actor_id)
     if state is None:
@@ -157,6 +188,7 @@ def spatial_familiarity_context(conn: sqlite3.Connection, actor_id: str) -> dict
     }
     grouped: dict[str, list[str]] = {"aware": [], "familiar": [], "intimate": []}
     id_to_name: dict[str, str] = {}
+    outdoor_lifestyle_destinations: list[dict[str, Any]] = []
     for location_id in sorted(known_ids):
         row = conn.execute(
             "SELECT name FROM entities WHERE id=? AND entity_type='location'",
@@ -168,6 +200,9 @@ def spatial_familiarity_context(conn: sqlite3.Connection, actor_id: str) -> dict
         id_to_name[location_id] = name
         level = str(raw_locations[location_id]["familiarity"])
         grouped[level].append(name)
+        lifestyle = _outdoor_lifestyle_destination(conn, location_id, familiarity=level)
+        if lifestyle is not None and not bool(raw_locations[location_id].get("secret")):
+            outdoor_lifestyle_destinations.append(lifestyle)
 
     connections: list[list[str]] = []
     seen_pairs: set[tuple[str, str]] = set()
@@ -206,6 +241,11 @@ def spatial_familiarity_context(conn: sqlite3.Connection, actor_id: str) -> dict
         "known_locations_by_familiarity": grouped,
         "known_connections": connections,
         "known_secret_or_concealed_locations": known_secrets,
+        "outdoor_lifestyle_destinations": outdoor_lifestyle_destinations,
+        "outdoor_guidance": (
+            "Familiar outdoor lifestyle destinations are ordinary lived spaces, not merely transit nodes. Walking, quiet relaxation, and observing the surroundings may be worthwhile discretionary activities when no stronger physiological or safety need dominates. "
+            "Treat them as positive alternatives to repeatedly defaulting to indoor rest or productivity, but never as a quota or forced outing."
+        ),
         "guidance": (
             "This is character knowledge for planning, not immediate reachability. The character may know a distant familiar place while still needing ordinary multi-step movement to reach it. "
             "Locations absent from this projection must not be assumed known. Exact executable movement remains limited to current action_options."
