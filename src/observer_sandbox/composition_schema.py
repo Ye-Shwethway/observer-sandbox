@@ -155,6 +155,9 @@ ACTION_DEFINITIONS: tuple[dict[str, Any], ...] = (
     _definition("drink", "Drink", 1, 30, "object", "drink", 1),
     _definition("shower", "Shower", 5, 60, "object", "shower", 1),
     _definition("rest", "Rest", 5, 240, "optional", "rest", 1),
+    _definition("walk", "Walk", 5, 120, "none", "walk", 0),
+    _definition("relax", "Relax", 5, 180, "none", "relax", 0),
+    _definition("observe", "Observe surroundings", 2, 60, "none", "observe", 0),
     _definition("inspect", "Inspect", 1, 60, "object", "inspect", 1),
     _definition("use", "Use", 1, 120, "object", "use", 1),
     _definition(
