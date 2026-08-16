@@ -2,7 +2,8 @@ from __future__ import annotations
 
 import json
 
-from observer_sandbox.cognition_context_audit import audit_cognition_context, audit_snapshot
+from observer_sandbox.ai_runtime import _compact_prompt_state
+from observer_sandbox.cognition_context_audit import audit_cognition_context, audit_snapshot, compact_summary
 from observer_sandbox.cognition_context_snapshots import record_cognition_context_snapshot
 from observer_sandbox.db import connect
 from observer_sandbox.runtime import initialize
@@ -24,8 +25,8 @@ def test_audit_ranks_sections_and_reports_prompt_size_without_raw_values():
             "small": {"value": 1},
             "large": {"description": "x" * 4000, "other": "y" * 1000},
             "action_options": [
-                {"action": "idle", "target": None, "guidance": "z" * 500},
-                {"action": "move", "target": "loc_test", "guidance": "z" * 500},
+                {"action": "idle", "target": None, "duration": [1, 30], "guidance": "z" * 500},
+                {"action": "move", "target": "loc_test", "duration": [1, 30], "guidance": "z" * 500},
             ],
         },
     }
@@ -42,6 +43,62 @@ def test_audit_ranks_sections_and_reports_prompt_size_without_raw_values():
     serialized = json.dumps(result)
     assert "xxxx" not in serialized
     assert "zzzz" not in serialized
+
+
+def test_persisted_compact_state_is_json_idempotent_through_prompt_compaction():
+    original = {
+        "autonomy_policy": {
+            "policy_revision": "v1",
+            "decision_principles": ["stay grounded"],
+            "reason_style": "short",
+            "unused": "remove me",
+        },
+        "object_familiarity": {
+            "source": "runtime",
+            "suppressed_inspect_count": 2,
+            "guidance": "use familiarity",
+            "unused": "remove me",
+        },
+        "action_options": [
+            {"action": "idle", "target": None, "duration": [1, 30]},
+            {"action": "move", "target": "loc_test", "duration": [1, 30]},
+        ],
+    }
+    compact = json.loads(json.dumps(_compact_prompt_state(original)))
+    compact_again = json.loads(json.dumps(_compact_prompt_state(compact)))
+
+    assert compact_again == compact
+
+
+def test_compact_summary_keeps_measurements_and_drops_verbose_breakdown_and_raw_values():
+    result = audit_snapshot(
+        {
+            "character_id": ACTOR,
+            "captured_at": "2026-08-16T00:00:00+00:00",
+            "sim_time": "2025-05-07T12:00:00+00:00",
+            "injection_type": "primary",
+            "provider_id": "gemini",
+            "model_id": "test-model",
+            "available_actions": ["idle"],
+            "context": {
+                "large": {"private_detail": "SECRET-SENTINEL-" + "x" * 3000},
+                "action_options": [
+                    {"action": "idle", "target": None, "duration": [1, 30], "guidance": "g" * 1000}
+                ],
+            },
+        }
+    )
+    result["slot"] = 1
+    summary = compact_summary(result)
+    serialized = json.dumps(summary)
+
+    assert summary["full_prompt"]["characters"] > 0
+    assert summary["runtime_context"]["rough_estimated_tokens"] > 0
+    assert summary["top_sections"]
+    assert summary["action_options_top_fields"]
+    assert "sections" not in summary
+    assert "SECRET-SENTINEL" not in serialized
+    assert "gggg" not in serialized
 
 
 def test_persisted_snapshot_audit_is_read_only_and_uses_selected_slot(tmp_path):
