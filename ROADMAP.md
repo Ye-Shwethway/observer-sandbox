@@ -66,7 +66,7 @@ Routine/schedule reinspection found meaningful authored time-window + simulation
 
 ## Active phase — Creator Feature Planning
 
-The project now moves from foundation-gap review to explicit product feature planning.
+The project has moved from foundation-gap review to explicit product feature planning and minimum-runnable feature slices.
 
 For each desired feature:
 1. define the user-visible capability and why it matters;
@@ -77,26 +77,32 @@ For each desired feature:
 
 A deferred capability is not a foundation defect. Reopen the foundation review only if a concrete feature exposes a cross-system invariant that cannot currently be represented or executed safely.
 
+### Completed Creator feature slice — Telegram Cognition Context Inspector v1
+
+Status: **COMPLETE / DEPLOYED**.
+
+See `docs/TELEGRAM_COGNITION_CONTEXT_INSPECTOR_V1.md`.
+
+The owner-only Telegram viewer now exposes the actual compact cognition context captured immediately before production model injection, keeps the latest three actor-scoped snapshots, distinguishes primary and corrective-retry injections, recursively renders future context keys, and uses a single-message Prev/Next pager for long snapshots instead of Telegram message splitting.
+
+Runtime PR #187:
+- final tested head `b4e0248b5fbf1d4fbc65c62181b8d1bfb74dc8ff`;
+- CI #950 / run `31929295850`: SUCCESS;
+- **605 passed in 45.27s**;
+- fresh DB init/status healthy; schema v5;
+- final-head task-relevant acceptance workflows green;
+- merge `c1ee61ad335ea3fd37509e868c8b406e20d714b7`;
+- Deploy #240 / run `31929343421`: SUCCESS.
+
+No production cognition call was fabricated solely to populate the viewer. Its bounded snapshot history begins naturally on the next real cognition injection.
+
 ## Current verified deployment
 
-Latest runtime deployment: **Deploy #239 / run `31924581764` SUCCESS**, Participant-Aware Recent Event Context v1.
+Latest runtime deployment: **Deploy #240 / run `31929343421` SUCCESS**, Telegram Cognition Context Inspector v1.
 
-Runtime PR #184:
-- final tested head `09f629b197b55f0abc8271e22e86a9a11f2cab0c`;
-- **CI #944 / run `31924499307`: SUCCESS**;
-- **600 passed in 44.52s**;
-- fresh DB init/status healthy; schema v5;
-- Cognition Capability Awareness v1 Acceptance #24: SUCCESS;
-- Solo Regulation Naturalism v2 Acceptance #33: SUCCESS;
-- Eating Behavior v1 Acceptance #46: SUCCESS;
-- Training Movement Contract Normalization v1 Acceptance #14: SUCCESS;
-- Research Action Semantics Acceptance #45: SUCCESS;
-- merge `13d4a9270f3c372a5180438f92f13441d98e804a`;
-- Deploy #239 SUCCESS.
-
-Verified production readback after Deploy #239:
+Verified production readback after Deploy #240:
 - service active/healthy; schema v5;
-- autonomy enabled, normal mode, retry null, pending action preserved;
+- autonomy enabled, normal mode, retry null, pending action `09c5b034-d175-48db-87c5-32557993561e` preserved;
 - speed **1x**;
 - Darian remained naturally **sleeping in Darian's Master Suite**;
 - living state: cleanliness 98.491, energy 88.791, fatigue 6.305, hunger 7.578, sleepiness 58.55, thirst 23.15;
@@ -104,8 +110,6 @@ Verified production readback after Deploy #239:
 - Gemini `gemini-3.1-flash-lite` primary cognition binding preserved;
 - Groq `qwen/qwen3.6-27b` fallback preserved;
 - Telegram bot/API/owner/allowed-user configuration healthy.
-
-No production shared event was fabricated solely to prove participant-aware cognition semantics.
 
 ## Deferred boundaries
 
@@ -115,4 +119,4 @@ These may become explicit feature candidates where appropriate; they are not aut
 
 ## Exact resume point
 
-**Overall Workflow/Foundation Review v1 is COMPLETE / CLOSED. No fifth blocking foundation slice was selected because the bounded final audit found no missing minimum cross-system invariant. The four evidence-selected closures remain Autonomy Intent Continuity v1 (#178/#236), Active Modifier Runtime Foundation v1 (#180/#237), Action Condition Runtime Foundation v1 (#182/#238), and Participant-Aware Recent Event Context v1 (#184/#239). Latest verified runtime remains Deploy #239, healthy at schema v5 with autonomy normal, retry null, pending action preserved and speed 1x. Next phase: Creator Feature Planning — collect and rank desired product features, then implement minimum-runnable slices without reopening gap hunting unless concrete feature evidence proves a missing invariant.**
+**Overall Workflow/Foundation Review v1 remains COMPLETE / CLOSED. Telegram Cognition Context Inspector v1 is the first completed Creator feature slice after foundation closure: PR #187, final head `b4e0248b5fbf1d4fbc65c62181b8d1bfb74dc8ff`, CI #950 with 605 passing tests, merge `c1ee61ad335ea3fd37509e868c8b406e20d714b7`, and Deploy #240 SUCCESS. Production is healthy at schema v5 with autonomy normal, retry null, pending action preserved and speed 1x. No synthetic cognition call was made to populate the viewer; snapshots begin on the next real production cognition injection. Next work is the next Creator-prioritized feature, not generic gap hunting.**
