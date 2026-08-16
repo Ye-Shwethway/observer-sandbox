@@ -3,7 +3,7 @@ from __future__ import annotations
 import sqlite3
 
 
-ENVIRONMENT_SCHEMA_VERSION = 1
+ENVIRONMENT_SCHEMA_VERSION = 2
 
 ENVIRONMENT_SCHEMA_SQL = """
 CREATE TABLE IF NOT EXISTS environment_states (
@@ -40,11 +40,28 @@ CREATE INDEX IF NOT EXISTS idx_environment_states_scope_time
     ON environment_states(scope_location_id, status, valid_from_sim_time DESC);
 CREATE INDEX IF NOT EXISTS idx_environment_states_active_window
     ON environment_states(status, valid_from_sim_time, valid_until_sim_time);
+
+CREATE TABLE IF NOT EXISTS weather_provider_cache (
+    provider_id TEXT NOT NULL,
+    cache_date TEXT NOT NULL,
+    status TEXT NOT NULL CHECK(status IN ('ok','error')),
+    response_json TEXT,
+    error_text TEXT,
+    fetched_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    PRIMARY KEY(provider_id, cache_date),
+    CHECK(
+        (status='ok' AND response_json IS NOT NULL AND error_text IS NULL)
+        OR (status='error' AND response_json IS NULL AND error_text IS NOT NULL)
+    )
+);
+
+CREATE INDEX IF NOT EXISTS idx_weather_provider_cache_status
+    ON weather_provider_cache(provider_id, status, cache_date DESC);
 """
 
 
 def migrate_environment_schema(conn: sqlite3.Connection) -> None:
-    """Install the authoritative environment-state schema without inventing weather."""
+    """Install environment state and provider-cache schema without inventing weather."""
     conn.executescript(ENVIRONMENT_SCHEMA_SQL)
     conn.execute(
         "INSERT INTO schema_meta(key,value) VALUES('environment_schema_version',?) "
