@@ -8,8 +8,10 @@ from dataclasses import dataclass, field
 from datetime import datetime, timedelta, timezone
 from typing import Any, Protocol
 
+from .action_conditions import evaluate_action_conditions
 from .active_modifiers import resolve_active_modifier_value
 from .actor_selection import list_actor_ids, resolve_actor_id
+from .composition_schema import TRAINING_FATIGUE_LIMIT
 from .event_log import record_event
 from .location_runtime import current_location, set_dynamic_location
 from .solo_sexual_regulation import (
@@ -66,7 +68,6 @@ ACTION_EFFECTS_PER_HOUR: dict[str, dict[str, float]] = {
     "idle": {"energy": 3.0, "fatigue": -2.0},
 }
 
-TRAINING_FATIGUE_LIMIT = 70.0
 BASELINE_TRAINING_FATIGUE_LIMIT = 55.0
 
 # Thorne Estate ids belong to the legacy deterministic exemplar policy below.
@@ -177,6 +178,22 @@ def action_definition(conn: sqlite3.Connection, action_type: str) -> dict[str, A
     }
 
 
+def _condition_values(state: dict[str, Any]) -> dict[str, Any]:
+    return {
+        "runtime.location": state["location"],
+        "needs.energy": state["energy"],
+        "needs.hunger": state["hunger"],
+        "needs.thirst": state["thirst"],
+        "needs.sleepiness": state["sleepiness"],
+        "physiology.cleanliness": state["cleanliness"],
+        "physiology.fatigue": state["fatigue"],
+    }
+
+
+def _action_conditions_result(definition: dict[str, Any], state: dict[str, Any]) -> dict[str, Any]:
+    return evaluate_action_conditions(definition.get("conditions"), _condition_values(state))
+
+
 def _connected(conn: sqlite3.Connection, left: str, right: str) -> bool:
     return conn.execute(
         "SELECT 1 FROM relations WHERE source_id=? AND relation_type='connected_to' AND target_id=?",
@@ -226,9 +243,10 @@ def action_options(conn: sqlite3.Connection, actor_id: str | None = None) -> lis
     room_id = state["location"]
     options: list[dict[str, Any]] = []
     move_def = action_definition(conn, "move")
-    move_duration = (move_def["min_duration_minutes"], move_def["max_duration_minutes"])
-    for room in reachable_rooms(conn, room_id):
-        options.append({"action": "move", "target": room["id"], "target_name": room["name"], "duration": move_duration})
+    if _action_conditions_result(move_def, state)["satisfied"]:
+        move_duration = (move_def["min_duration_minutes"], move_def["max_duration_minutes"])
+        for room in reachable_rooms(conn, room_id):
+            options.append({"action": "move", "target": room["id"], "target_name": room["name"], "duration": move_duration})
 
     definitions = {
         row["action_type"]: action_definition(conn, row["action_type"])
@@ -236,7 +254,7 @@ def action_options(conn: sqlite3.Connection, actor_id: str | None = None) -> lis
     }
     for obj in local_objects(conn, room_id):
         for name, definition in definitions.items():
-            if name == "train" and state["fatigue"] >= TRAINING_FATIGUE_LIMIT:
+            if not _action_conditions_result(definition, state)["satisfied"]:
                 continue
             capability = definition["required_capability"]
             if capability and capability in obj["capabilities"]:
@@ -261,6 +279,8 @@ def action_options(conn: sqlite3.Connection, actor_id: str | None = None) -> lis
 
     for name in ("rest", "idle"):
         definition = definitions[name]
+        if not _action_conditions_result(definition, state)["satisfied"]:
+            continue
         option = {
             "action": name,
             "target": None,
@@ -280,8 +300,13 @@ def validate_action(conn: sqlite3.Connection, actor_id: str, action: Action) -> 
     if not low <= action.duration_minutes <= high:
         raise ValueError(f"Action {action.name} duration must be between {low} and {high} minutes")
     state = snapshot(conn, actor_id)
-    if action.name == "train" and state["fatigue"] >= TRAINING_FATIGUE_LIMIT:
-        raise ValueError("Training is unavailable while systemic fatigue is too high")
+    condition_result = _action_conditions_result(definition, state)
+    if not condition_result["satisfied"]:
+        failures = ", ".join(
+            f"{item['field_key']} {item['operator']} {item['expected']} (actual {item['actual']})"
+            for item in condition_result["failures"]
+        )
+        raise ValueError(f"Action {action.name} conditions are not satisfied: {failures}")
     if action.name == "self_satisfaction":
         validate_self_satisfaction_action(conn, actor_id, state=state)
 
