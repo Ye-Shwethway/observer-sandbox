@@ -1,6 +1,6 @@
 # Overall Workflow / Foundation Review v1
 
-Status: ACTIVE REVIEW — TWO GAPS CLOSED
+Status: ACTIVE REVIEW — THREE GAPS CLOSED
 
 ## Purpose
 
@@ -22,6 +22,7 @@ The review applies the vertical-completeness rule: do not rebuild a foundation m
 | Profile -> cognition/runtime integration | CLOSED v1 | minimum profile unlock checkpoint, capability awareness, personality/preferences/habits/skills cognition context | Current profile foundation is runnable; exhaustive field mechanics are later depth. |
 | Autonomy planning / purpose continuity | **CLOSED v1 minimum** | Autonomy Intent Continuity v1, PR #178 | A bounded actor-scoped purpose can survive a purposeful movement boundary and reach the next cognition call without overriding ordinary validation. |
 | Persistent temporary modifier lifecycle | **CLOSED v1 minimum** | `active_modifiers`, Active Modifier Runtime Foundation v1, PR #180 | Time-bounded numeric modifiers now resolve deterministically into effective living-state reads without overwriting authoritative base state. |
+| Action-definition prerequisite runtime | **CLOSED v1 minimum** | `action_definitions.conditions_json`, Action Condition Runtime Foundation v1, PR #182 | Authored bounded prerequisites shape legal options and direct deterministic validation through one fail-closed generic seam. |
 
 ## First gap closure — Autonomy Intent Continuity v1
 
@@ -75,9 +76,38 @@ The deploy workflow did not query `active_modifiers` row count, so this review d
 
 See `docs/ACTIVE_MODIFIER_RUNTIME_V1.md`.
 
+## Third gap closure — Action Condition Runtime Foundation v1
+
+The following read-only pass found a narrower composability seam: `action_definitions.conditions_json` existed in persistence and reads, but generic option shaping and direct deterministic validation did not execute it. The existing training-fatigue rule therefore remained a hard-coded `train` branch rather than authored definition authority.
+
+PR #182 closes that minimum gap:
+- one bounded fail-closed prerequisite evaluator over action-definition conditions;
+- v1 accepts one conjunctive `all` list with `lt`, `lte`, `gt`, `gte`, `eq`, and `ne` primitive clauses;
+- first available values are current location plus the six established effective living-state fields;
+- canonical `train` now owns `physiology.fatigue < 70` in its action definition;
+- `action_options()` and `validate_action()` consume the same prerequisite contract;
+- malformed shapes, unknown fields, unsupported operators and unavailable values fail closed;
+- existing `Action.conditions` remains represented per-instance metadata and cannot authorize a proposal;
+- Active Modifier Runtime composes through the effective living-state snapshot without rewriting raw physiology;
+- canonical definition conditions resynchronize on initialize; schema remains v5;
+- no expression language, scripts, nested boolean trees, cross-entity predicates, authoring UI, new action vocabulary or character-specific branch was added.
+
+Checkpoint:
+- PR #182 final head `fd86ef8a7a1d40fd58e42922e6fe7678a9bee1cf`;
+- final CI #943 / run `31921888887`: **596 passed in 46.28s**;
+- Research Action Semantics #43, Strength Live Cycle Validation v1 #85, Solo Regulation Naturalism v2 #32, Inventory Foundation v1 #49 and Minimum Training Stimulus #29 all green;
+- merge `a79d5930b0fb206139d9c8359f3e35aa9499b68e`;
+- Deploy #238 / run `31922007671`: SUCCESS;
+- production healthy at schema v5 with autonomy normal, retry null, pending action preserved and speed 1x;
+- Darian remained naturally sleeping in Darian's Master Suite at readback.
+
+The first final-CI attempt found only a stale assertion expecting the superseded bespoke `"systemic fatigue"` text. The runtime contract was already behaving correctly; the assertion was aligned to the generic condition semantics and CI #943 then passed 596/596.
+
+See `docs/ACTION_CONDITION_RUNTIME_V1.md`.
+
 ## Review continuation
 
-Do **not** automatically deepen either planning or modifiers now. The first two selected gaps are closed; return to read-only review and identify the next actual cross-system deficiency from canonical/live evidence.
+Do **not** automatically deepen planning, modifiers or action-condition syntax now. The first three selected gaps are closed; return to read-only review and identify the next actual cross-system deficiency from canonical/live evidence.
 
 Remaining review should distinguish between:
 - a genuinely missing foundation;
@@ -90,4 +120,4 @@ Potential reinspection areas include environment/world dynamics, episodic knowle
 
 ## Explicit non-goals
 
-This review does not authorize a giant planner, task graph, quest engine, relationship expansion, universal episodic-memory engine, weather system, economy, vehicles, broad Tahoe expansion, deterministic story chooser, modifier authoring UI, status-effect taxonomy, or arbitrary universal bonus engine.
+This review does not authorize a giant planner, task graph, quest engine, relationship expansion, universal episodic-memory engine, weather system, economy, vehicles, broad Tahoe expansion, deterministic story chooser, modifier authoring UI, status-effect taxonomy, arbitrary universal bonus engine, or universal condition/expression language.
