@@ -29,16 +29,21 @@ Adaptive Character Disposition Foundation is COMPLETE v1:
 
 Do not reopen local psychology merely for depth.
 
-The active phase is the **Overall Workflow/Foundation Review**. Its first selected structural gap — **Autonomy Intent Continuity v1** — is now COMPLETE. Continue the read-only review before selecting another runtime slice.
+The active phase is the **Overall Workflow/Foundation Review**. Two selected structural gaps are now COMPLETE:
+1. **Autonomy Intent Continuity v1** — PR #178 / Deploy #236.
+2. **Active Modifier Runtime Foundation v1** — PR #180 / Deploy #237.
+
+Continue the read-only review before selecting another runtime slice.
 
 Relevant docs:
 - `docs/OVERALL_WORKFLOW_FOUNDATION_REVIEW_V1.md`
 - `docs/AUTONOMY_INTENT_CONTINUITY_V1.md`
+- `docs/ACTIVE_MODIFIER_RUNTIME_V1.md`
 - `docs/ADAPTIVE_CHARACTER_DISPOSITION_FOUNDATION.md`
 
 ## Overall Workflow/Foundation Review status
 
-Initial source-level audit found the following minimum foundations already present:
+Minimum foundations already classified present:
 - generic action/task lifecycle;
 - resources/inventory/state consequences;
 - environment/world topology/context;
@@ -47,8 +52,6 @@ Initial source-level audit found the following minimum foundations already prese
 - event/lifecycle evidence;
 - long-horizon progression/decay exemplars;
 - profile -> cognition/runtime integration.
-
-The first actual gap was persistent purpose continuity across action boundaries.
 
 ### Autonomy Intent Continuity v1 — COMPLETE
 
@@ -67,6 +70,22 @@ PR #178 adds a thin deterministic purpose bridge around the unchanged core auton
 
 No live production intent is claimed unless ordinary runtime naturally plans a qualifying purposeful move.
 
+### Active Modifier Runtime Foundation v1 — COMPLETE
+
+PR #180 makes the existing `active_modifiers` schema socket executable without creating a universal hidden bonus engine:
+- generic numeric effective-value resolver;
+- half-open simulated-time activation/expiry;
+- deterministic `stack`, `replace`, `max`, and `min` semantics;
+- exact caller-supplied context conditions;
+- first runtime consumer bounded to energy, hunger, thirst, sleepiness, cleanliness and fatigue;
+- effective living-state reads flow through existing cognition/need/training/action-legality consumers;
+- temporary modifiers do not overwrite raw authoritative physiology;
+- no LLM modifier-write authority, modifier producer, authoring UI or schema change.
+
+Existing Training Readiness and Cognitive Performance remain separate domain-specific modifier systems.
+
+Routine/schedule reinspection found authored time windows + current simulation time + physiological priorities already produce meaningful cognition influence. Absence of a full sequence ledger is later depth, not currently a missing minimum foundation.
+
 ## Adaptive disposition checkpoint
 
 - PR #167 — Habit Formation/Extinction v1 COMPLETE.
@@ -82,30 +101,31 @@ PR #170's bounded watchdog remains installed for repeated authoritative action/t
 
 ## Current verified deployment
 
-Latest runtime deployment: **Deploy #236 / run `31920905305` SUCCESS**.
+Latest runtime deployment: **Deploy #237 / run `31921444434` SUCCESS**.
 
-Runtime PR: **#178 — Autonomy Intent Continuity v1**
-- final tested head: `563e102c6a9d73ea2f39e828da6329840632ef79`;
-- merge: `0cf9a38e7fadafa178f1f69f9f5b7013cbd1961f`;
-- **CI #940 / run `31920821319`: SUCCESS**;
-- **583 passed in 58.57s**;
+Runtime PR: **#180 — Active Modifier Runtime Foundation v1**
+- final tested head: `49000d37542ec80cf489f8bd5c78876aaba16201`;
+- merge: `74a0d9db25b3249192c24954feed11a45a7c961d`;
+- **CI #941 / run `31921368331`: SUCCESS**;
+- **590 passed in 58.12s**;
 - fresh DB init/status healthy; schema v5;
-- all automatic production-copy acceptance gates succeeded without retry.
+- Minimum Training Stimulus Acceptance #27: SUCCESS;
+- Strength Live Cycle Validation v1 #83: SUCCESS;
+- Solo Regulation Naturalism v2 Acceptance #30: SUCCESS.
 
-Production readback after Deploy #236:
+Production readback after Deploy #237:
 - service active/healthy;
 - schema v5;
-- autonomy enabled, normal mode, retry null, pending action present;
+- autonomy enabled, normal mode, retry null, pending action preserved;
 - speed **1x**;
-- Darian was naturally **sleeping in Darian's Master Suite**;
+- Darian remained naturally **sleeping in Darian's Master Suite**;
+- living state: cleanliness 98.491, energy 88.791, fatigue 6.305, hunger 7.578, sleepiness 58.55, thirst 23.15;
 - deploy output exposed sim time only as `2025-05-07T***:27:00+00:00`; do not guess the masked hour;
 - Gemini `gemini-3.1-flash-lite` primary cognition binding preserved;
 - Groq `qwen/qwen3.6-27b` fallback preserved;
 - Telegram bot/API/owner/allowed-user configuration healthy.
 
-No `autonomy_intent_v1:` row was present in deploy readback. Deploy/init did not fabricate purpose state; no live intent is claimed.
-
-Natural Preference Adaptation evidence remained present but is not overinterpreted as established preference state.
+The deploy workflow did not query `active_modifiers` row count. Do not claim a verified live row count or naturally active modifier without a separate readback.
 
 ## Character Profile / Skills baseline
 
@@ -136,12 +156,12 @@ Skills CLOSED v1 learned leaves:
 
 - LLM proposes; deterministic runtime validates/mutates.
 - Do not repeatedly run the full suite.
-- Do not automatically deepen autonomy planning after the intent exemplar.
+- Do not automatically deepen autonomy planning, modifiers, or routine scheduling after their minimum closure.
 - Do not infer a missing foundation merely because an existing one lacks exhaustive depth.
 - No relationship-system expansion by default.
-- No giant planner/task graph, universal episodic-memory engine, weather/economy/vehicles merely for completeness, hostile/non-consensual combat engine, weapon lethality, universal Injury/Hazard Engine, deep weapon taxonomy, or real-world weapon instructions.
-- Do not fabricate production actions/actors/casualties solely for proof.
+- No giant planner/task graph, universal episodic-memory engine, weather/economy/vehicles merely for completeness, hostile/non-consensual combat engine, weapon lethality, universal Injury/Hazard Engine, deep weapon taxonomy, modifier authoring UI/status-effect taxonomy, or real-world weapon instructions.
+- Do not fabricate production actions/actors/casualties/modifiers solely for proof.
 
 ## Exact resume point
 
-**Overall Workflow/Foundation Review v1 is active. Autonomy Intent Continuity v1, the first structural gap selected by that review, is COMPLETE through PR #178 final head `563e102c6a9d73ea2f39e828da6329840632ef79`, merge `0cf9a38e7fadafa178f1f69f9f5b7013cbd1961f`, CI #940 with 583 passed, and Deploy #236 SUCCESS. Production is healthy at schema v5, autonomy normal, retry null, pending action present, speed 1x; Darian was naturally sleeping in the Master Suite. The sim-time hour was masked in deploy output (`2025-05-07T***:27:00+00:00`). No synthetic intent state was created. Continue the read-only Overall Workflow/Foundation Review and select the next actual cross-system gap from current canonical/live evidence rather than automatically deepening planning.**
+**Overall Workflow/Foundation Review v1 is active. Two structural gaps are COMPLETE: Autonomy Intent Continuity v1 through PR #178 / Deploy #236, and Active Modifier Runtime Foundation v1 through PR #180 final head `49000d37542ec80cf489f8bd5c78876aaba16201`, merge `74a0d9db25b3249192c24954feed11a45a7c961d`, CI #941 with 590 passed, and Deploy #237 SUCCESS. Production is healthy at schema v5, autonomy normal, retry null, pending action preserved, speed 1x; Darian remained naturally sleeping in the Master Suite. The sim-time hour was masked in deploy output (`2025-05-07T***:27:00+00:00`). No verified live active-modifier row count is claimed. Continue the read-only Overall Workflow/Foundation Review and select the next actual cross-system gap from current canonical/live evidence rather than deepening planning, modifiers, or routine scheduling.**
