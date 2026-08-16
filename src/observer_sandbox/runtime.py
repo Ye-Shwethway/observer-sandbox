@@ -14,6 +14,7 @@ from .db import connect, get_runtime_state, migrate
 from .estate_campus import seed_estate_campus
 from .field_medicine_stabilization import seed_field_medicine_stabilization_runtime
 from .inventory import seed_home_inventory
+from .location_recovery import recover_missing_actor_location
 from .memory_profile import seed_memory_profile_definitions, seed_memory_profile_values
 from .profile_schema import seed_profile_field_definitions
 from .profile_schema_source_union import seed_source_union_extensions
@@ -26,7 +27,7 @@ from .skill_progression import maybe_settle_skill_progression
 from .spatial_familiarity import seed_spatial_familiarity
 from .tactical_assessment_runtime import seed_tactical_assessment_runtime
 from .technology_diagnostic_runtime import seed_technology_diagnostic_runtime
-from .world import seed_home_and_darian
+from .world import load_world_seed, seed_home_and_darian
 
 
 @dataclass(slots=True)
@@ -89,6 +90,24 @@ def _initialize_conn(conn) -> None:
         )
     conn.commit()
 
+    # A represented actor with no current location is invalid runtime state rather
+    # than a movement phase: movement writes location atomically and snapshots
+    # require one. Recover from the actor's latest represented action place first.
+    # The canonical world start is only a last-resort fallback for the selected
+    # default actor when no runtime location evidence exists at all.
+    default_actor_id = ensure_default_actor_id(conn)
+    world_start = str(load_world_seed()["start_location"])
+    for row in conn.execute(
+        "SELECT entity_id FROM character_profiles WHERE status='active' ORDER BY entity_id"
+    ).fetchall():
+        actor_id = str(row["entity_id"])
+        recover_missing_actor_location(
+            conn,
+            actor_id,
+            fallback_location_id=world_start if actor_id == default_actor_id else None,
+        )
+    conn.commit()
+
     for row in conn.execute(
         "SELECT entity_id FROM character_profiles WHERE status='active' ORDER BY entity_id"
     ).fetchall():
@@ -98,7 +117,6 @@ def _initialize_conn(conn) -> None:
             as_of_sim_time=sim_clock.isoformat(),
         )
 
-    default_actor_id = ensure_default_actor_id(conn)
     if default_actor_id is not None:
         migrate_legacy_actor_runtime(conn, default_actor_id)
 
