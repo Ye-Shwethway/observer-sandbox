@@ -9,7 +9,7 @@ from typing import Any
 from .actor_runtime import pending_action
 from .actor_selection import resolve_actor_id
 from .autonomy import autonomy_tick as _core_autonomy_tick
-from .model_decision import ModelDecisionProvider
+from .memory_aware_decision import MemoryAwareDecisionProvider
 from .simulation import Action, snapshot
 
 
@@ -239,7 +239,7 @@ def autonomy_tick(
     if pending_before is None:
         state = snapshot(conn, actor_id)
         expire_stale_intent(conn, actor_id, as_of_sim_time=str(state["sim_time"]))
-        inner = provider or ModelDecisionProvider(conn, character_id=actor_id)
+        inner = provider or MemoryAwareDecisionProvider(conn, character_id=actor_id)
         provider = _IntentAwareProvider(conn, actor_id, inner)
 
     result = _core_autonomy_tick(
