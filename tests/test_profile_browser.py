@@ -15,15 +15,8 @@ def test_profile_query_exposes_seeded_public_sections_and_filters_sensitive_fiel
         menu = profile_menu(conn, "char_darian")
         labels = [section["label"] for section in menu["sections"]]
         assert labels == [
-            "Identity",
-            "Appearance",
-            "Body",
-            "Attributes",
-            "Recovery",
-            "Personality",
-            "Skills",
-            "Preferences & Habits",
-            "Background",
+            "Identity", "Appearance", "Body", "Attributes", "Memory Ability", "Recovery",
+            "Personality", "Skills", "Preferences & Habits", "Background",
         ]
 
         identity = profile_section(conn, "char_darian", "identity")
@@ -38,20 +31,19 @@ def test_profile_query_exposes_seeded_public_sections_and_filters_sensitive_fiel
         assert "raps_ia.iq" in attribute_keys
         assert all(not key.startswith("raps_sa.") for key in attribute_keys)
 
+        memory = profile_section(conn, "char_darian", "memory_ability")
+        memory_keys = {item["field_key"] for item in memory["content"]}
+        assert memory_keys == {"memory.working_memory", "memory.encoding", "memory.retention", "memory.recall"}
+
         recovery = profile_section(conn, "char_darian", "recovery")
         assert recovery["content"][0]["field_key"] == "physiology.fatigue"
         assert recovery["content"][0]["value"] == 0.0
         recovery_keys = {item["field_key"] for item in recovery["content"]}
         assert {
-            "training.readiness",
-            "strength.progression.raw",
-            "strength.progression.stimulus",
-            "strength.progression.level_factor",
-            "strength.progression.saturation",
-            "strength.progression.recovery",
-            "strength.progression.status",
-            "strength.progression.settlement",
-            "strength.progression.detraining",
+            "training.readiness", "strength.progression.raw", "strength.progression.stimulus",
+            "strength.progression.level_factor", "strength.progression.saturation",
+            "strength.progression.recovery", "strength.progression.status",
+            "strength.progression.settlement", "strength.progression.detraining",
             "strength.progression.next",
         } <= recovery_keys
 
@@ -67,18 +59,10 @@ def test_strength_progression_observability_is_read_only_and_reflects_event_evid
             ("char_darian", "raps_pa.strength"),
         ).fetchone()
         event_count_before = int(conn.execute("SELECT COUNT(*) FROM events").fetchone()[0])
-
         sim_time = snapshot(conn, "char_darian")["sim_time"]
-        record_event(
-            conn,
-            sim_time=sim_time,
-            actor_id="char_darian",
-            event_type="action_completed",
-            payload={"training_stimulus": {"domain": "strength", "stimulus_units": 1.0}},
-        )
+        record_event(conn,sim_time=sim_time,actor_id="char_darian",event_type="action_completed",payload={"training_stimulus": {"domain": "strength", "stimulus_units": 1.0}})
         conn.commit()
         seeded_event_count = int(conn.execute("SELECT COUNT(*) FROM events").fetchone()[0])
-
         recovery = profile_section(conn, "char_darian", "recovery")
         by_key = {item["field_key"]: item for item in recovery["content"]}
         assert by_key["strength.progression.raw"]["value"] == "90.000000"
@@ -86,7 +70,6 @@ def test_strength_progression_observability_is_read_only_and_reflects_event_evid
         assert by_key["strength.progression.level_factor"]["value"] == "1.000%"
         assert by_key["strength.progression.status"]["value"].startswith("Recovering")
         assert "14.0 d remaining" in by_key["strength.progression.detraining"]["value"]
-
         raw_after = conn.execute(
             "SELECT value_json,mode,authority FROM character_profile_values WHERE entity_id=? AND field_key=?",
             ("char_darian", "raps_pa.strength"),
@@ -105,22 +88,15 @@ def test_telegram_profile_browser_is_readable_and_navigable(tmp_path, monkeypatc
         character_text, character_keyboard = _callback_view(conn, 111, "char:char_darian")
         assert "Darian Thorne" in character_text
         assert character_keyboard[0][0]["callback_data"] == "prof:char_darian"
-
         profile_text, profile_keyboard = _callback_view(conn, 111, "prof:char_darian")
         assert "Darian Thorne · PROFILE" in profile_text
         assert "Identity" in profile_text
         assert "Body" in profile_text
+        assert "Memory Ability" in profile_text
         assert "Recovery" in profile_text
-        assert any(
-            button["callback_data"] == "psec:char_darian:body"
-            for row in profile_keyboard
-            for button in row
-        )
-        assert any(
-            button["callback_data"] == "psec:char_darian:recovery"
-            for row in profile_keyboard
-            for button in row
-        )
+        assert any(button["callback_data"] == "psec:char_darian:body" for row in profile_keyboard for button in row)
+        assert any(button["callback_data"] == "psec:char_darian:memory_ability" for row in profile_keyboard for button in row)
+        assert any(button["callback_data"] == "psec:char_darian:recovery" for row in profile_keyboard for button in row)
 
         body_text, body_keyboard = _callback_view(conn, 111, "psec:char_darian:body")
         assert "DARIAN THORNE · BODY" in body_text.upper()
@@ -133,6 +109,11 @@ def test_telegram_profile_browser_is_readable_and_navigable(tmp_path, monkeypatc
         assert "Strength   90" in attributes_text
         assert "Intellectual" in attributes_text
         assert "IQ   140" in attributes_text
+
+        memory_text, _ = _callback_view(conn, 111, "psec:char_darian:memory_ability")
+        assert "MEMORY ABILITY" in memory_text.upper()
+        assert "Memory recall: 91" in memory_text
+        assert "Memory retention: 84" in memory_text
 
         recovery_text, _ = _callback_view(conn, 111, "psec:char_darian:recovery")
         assert "RECOVERY" in recovery_text.upper()

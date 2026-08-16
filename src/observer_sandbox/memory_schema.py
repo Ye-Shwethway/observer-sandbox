@@ -19,6 +19,13 @@ CREATE TABLE IF NOT EXISTS character_memories (
     status TEXT NOT NULL DEFAULT 'active' CHECK(status IN ('active','retired')),
     last_recalled_sim_time TEXT,
     recall_count INTEGER NOT NULL DEFAULT 0 CHECK(recall_count >= 0),
+    lifecycle_stage TEXT NOT NULL DEFAULT 'recent',
+    memory_strength REAL NOT NULL DEFAULT 1.0,
+    detail_strength REAL NOT NULL DEFAULT 1.0,
+    emotional_arousal REAL NOT NULL DEFAULT 0.1,
+    personal_relevance REAL NOT NULL DEFAULT 0.5,
+    consolidated_sim_time TEXT,
+    last_dynamics_sim_time TEXT,
     metadata_json TEXT NOT NULL DEFAULT '{}',
     created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
     updated_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
@@ -40,8 +47,10 @@ CREATE INDEX IF NOT EXISTS idx_character_memories_type
     ON character_memories(character_id, memory_type, status, event_sim_time DESC);
 CREATE INDEX IF NOT EXISTS idx_character_memory_entities_entity
     ON character_memory_entities(entity_id, memory_id);
+"""
 
-CREATE TRIGGER IF NOT EXISTS trg_character_memory_action_completed
+TRIGGER_SQL = """
+CREATE TRIGGER trg_character_memory_action_completed
 AFTER INSERT ON events
 WHEN NEW.event_type='action_completed'
  AND NEW.actor_id IS NOT NULL
@@ -49,7 +58,9 @@ WHEN NEW.event_type='action_completed'
 BEGIN
     INSERT OR IGNORE INTO character_memories(
         memory_id,character_id,memory_type,summary,content_json,source_type,source_event_id,
-        event_sim_time,encoded_sim_time,salience,confidence,status,metadata_json
+        event_sim_time,encoded_sim_time,salience,confidence,status,
+        lifecycle_stage,memory_strength,detail_strength,emotional_arousal,personal_relevance,
+        last_dynamics_sim_time,metadata_json
     ) VALUES(
         'mem_event_' || NEW.id,
         NEW.actor_id,
@@ -79,6 +90,12 @@ BEGIN
         ),
         1.0,
         'active',
+        'recent',
+        1.0,
+        1.0,
+        min(1.0,max(0.0,coalesce(json_extract(NEW.payload_json, '$.memory_signals.emotional_arousal'),0.10))),
+        min(1.0,max(0.0,coalesce(json_extract(NEW.payload_json, '$.memory_signals.personal_relevance'),0.50))),
+        NEW.sim_time,
         '{}'
     );
 
@@ -91,14 +108,35 @@ BEGIN
     SELECT 'mem_event_' || NEW.id, json_extract(NEW.payload_json, '$.target'), 'target'
     WHERE json_extract(NEW.payload_json, '$.target') IS NOT NULL
       AND json_extract(NEW.payload_json, '$.target') != NEW.location_id
-      AND EXISTS(
-          SELECT 1 FROM entities
-          WHERE id=json_extract(NEW.payload_json, '$.target')
-      );
+      AND EXISTS(SELECT 1 FROM entities WHERE id=json_extract(NEW.payload_json, '$.target'));
 END;
 """
+
+DYNAMIC_COLUMNS = {
+    "lifecycle_stage": "TEXT NOT NULL DEFAULT 'recent'",
+    "memory_strength": "REAL NOT NULL DEFAULT 1.0",
+    "detail_strength": "REAL NOT NULL DEFAULT 1.0",
+    "emotional_arousal": "REAL NOT NULL DEFAULT 0.1",
+    "personal_relevance": "REAL NOT NULL DEFAULT 0.5",
+    "consolidated_sim_time": "TEXT",
+    "last_dynamics_sim_time": "TEXT",
+}
 
 
 def migrate_memory_schema(conn: sqlite3.Connection) -> None:
     conn.executescript(MEMORY_SCHEMA_SQL)
+    existing = {row["name"] for row in conn.execute("PRAGMA table_info(character_memories)").fetchall()}
+    for name, declaration in DYNAMIC_COLUMNS.items():
+        if name not in existing:
+            conn.execute(f"ALTER TABLE character_memories ADD COLUMN {name} {declaration}")
+    conn.execute("DROP TRIGGER IF EXISTS trg_character_memory_action_completed")
+    conn.executescript(TRIGGER_SQL)
+    conn.execute(
+        """UPDATE character_memories
+           SET lifecycle_stage=CASE WHEN memory_type='semantic' THEN 'consolidated' ELSE lifecycle_stage END,
+               consolidated_sim_time=CASE
+                   WHEN memory_type='semantic' THEN COALESCE(consolidated_sim_time, encoded_sim_time)
+                   ELSE consolidated_sim_time END,
+               last_dynamics_sim_time=COALESCE(last_dynamics_sim_time, encoded_sim_time)"""
+    )
     conn.commit()

@@ -14,6 +14,7 @@ from .db import connect, get_runtime_state, migrate
 from .estate_campus import seed_estate_campus
 from .field_medicine_stabilization import seed_field_medicine_stabilization_runtime
 from .inventory import seed_home_inventory
+from .memory_profile import seed_memory_profile_definitions, seed_memory_profile_values
 from .profile_schema import seed_profile_field_definitions
 from .profile_schema_source_union import seed_source_union_extensions
 from .represented_skill_runtime_batch import seed_represented_skill_runtime_batch
@@ -50,14 +51,15 @@ def _initialize_conn(conn) -> None:
     seed_profile_field_definitions(conn)
     seed_source_union_extensions(conn)
     seed_sexual_state_fields(conn)
+    seed_memory_profile_definitions(conn)
     seed_home_and_darian(conn)
+    seed_memory_profile_values(conn)
     # Campus seeding is additive to the stable Estate interior. It restores the
     # bounded private-campus edges after the base world seed rebuilds interior
     # topology, while deliberately creating no public/backcountry/water edge.
     seed_estate_campus(conn)
-    # Spatial familiarity is character-owned knowledge layered over world truth.
-    # Seed it after world/campus entities exist so authored location references
-    # can be validated without inventing a general memory subsystem.
+    # Spatial familiarity is now projected from generic semantic Character Memory.
+    # Seed after world/campus entities exist so location references can be validated.
     seed_spatial_familiarity(conn)
     # Canonical character seeds may still contain legacy umbrella Skill keys.
     # Reconcile them immediately into learned component Skills plus derived parent
@@ -69,28 +71,11 @@ def _initialize_conn(conn) -> None:
     sim_clock = ensure_sim_clock(conn)
     seed_home_inventory(conn)
     seed_action_definitions(conn)
-    # Skill-practice semantics own their bounded action definition and
-    # purpose-built practice targets. Ordinary use/inspect/research targets are
-    # intentionally not reinterpreted as learning evidence.
     seed_skill_practice_foundation(conn)
-    # Represented Technology gameplay uses a separate purpose-built target and
-    # action. Practice targets are never promoted into application authority.
     seed_technology_diagnostic_runtime(conn)
-    # The second represented gameplay exemplar is a distinct Tactical assessment
-    # target/action. Existing Tactical training targets remain learning evidence
-    # only and are never promoted into application authority.
     seed_tactical_assessment_runtime(conn)
-    # Equivalent low-risk applications now enter through one declarative batch
-    # runtime. The seeded simulators produce application evidence only; they do
-    # not execute movement, consume represented resources, or award Skill XP.
     seed_represented_skill_runtime_batch(conn)
-    # Controlled H2H registers reusable action vocabulary only. It deliberately
-    # does not fabricate a production sparring partner or session; those must be
-    # explicitly represented and authorized in live world state before use.
     seed_controlled_h2h_runtime(conn)
-    # Field Medicine stabilization likewise registers only action vocabulary.
-    # No casualty, session, casualty state, or medical supplies are fabricated in
-    # production merely to exercise the represented consequence foundation.
     seed_field_medicine_stabilization_runtime(conn)
     defaults = {
         "paused": False,
@@ -104,10 +89,6 @@ def _initialize_conn(conn) -> None:
         )
     conn.commit()
 
-    # Activation is cursor-only: existing represented skills bootstrap at the
-    # initialization/deploy boundary so historical action evidence cannot become
-    # retroactive XP and the first genuinely future practice session is eligible.
-    # Repeated initialize/status calls are idempotent after the bootstrap event.
     for row in conn.execute(
         "SELECT entity_id FROM character_profiles WHERE status='active' ORDER BY entity_id"
     ).fetchall():
@@ -136,10 +117,6 @@ def status(db_path: str | Path) -> RuntimeStatus:
         runtime = get_runtime_state(conn)
         default_actor_id = resolve_actor_id(conn)
         default_actor = actor_runtime(conn, default_actor_id)
-        # Compatibility projection for operational/readback surfaces. Actor-owned
-        # state is authoritative in actor_runtime; these fields are not persisted
-        # back into global runtime_state. The projection follows the configured
-        # default actor rather than a named-character engine assumption.
         runtime.update({
             "default_actor_id": default_actor_id,
             "autonomy_enabled": default_actor["autonomy_enabled"],

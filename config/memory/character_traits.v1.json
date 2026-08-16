@@ -1,0 +1,14 @@
+{
+  "revision": "memory-character-traits-v1",
+  "characters": [
+    {
+      "character_id": "char_darian",
+      "values": {
+        "memory.working_memory": 86,
+        "memory.encoding": 89,
+        "memory.retention": 84,
+        "memory.recall": 91
+      }
+    }
+  ]
+}

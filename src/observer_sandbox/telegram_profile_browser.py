@@ -19,7 +19,7 @@ _DOMAIN_LABELS = {
 def character_keyboard(character_id: str) -> list[list[dict[str, str]]]:
     return [
         [{"text": "📖 Profile", "callback_data": f"prof:{character_id}"}],
-        [{"text": "🧠 Memory", "callback_data": f"mem:{character_id}:all:0"}],
+        [{"text": "🗃️ Memory", "callback_data": f"mem:{character_id}:all:0"}],
         [{"text": "← Characters", "callback_data": "nav:characters"}],
         [{"text": "⌂ Observer Home", "callback_data": "nav:home"}],
     ]
