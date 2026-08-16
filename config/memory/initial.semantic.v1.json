@@ -1,0 +1,42 @@
+{
+  "revision": "initial-semantic-memory-v1",
+  "characters": [
+    {
+      "character_id": "char_darian",
+      "memories": [
+        {"knowledge_kind":"spatial_familiarity","location_id":"loc_thorne_estate","familiarity":"intimate","basis":"home_property"},
+        {"knowledge_kind":"spatial_familiarity","location_id":"loc_thorne_estate_ground_floor","familiarity":"intimate"},
+        {"knowledge_kind":"spatial_familiarity","location_id":"loc_thorne_estate_second_floor","familiarity":"intimate"},
+        {"knowledge_kind":"spatial_familiarity","location_id":"loc_thorne_estate_third_floor","familiarity":"intimate"},
+        {"knowledge_kind":"spatial_familiarity","location_id":"loc_thorne_estate_underground","familiarity":"intimate"},
+        {"knowledge_kind":"spatial_familiarity","location_id":"loc_thorne_estate_foyer","familiarity":"intimate"},
+        {"knowledge_kind":"spatial_familiarity","location_id":"loc_thorne_estate_living_room","familiarity":"intimate"},
+        {"knowledge_kind":"spatial_familiarity","location_id":"loc_thorne_estate_kitchen","familiarity":"intimate"},
+        {"knowledge_kind":"spatial_familiarity","location_id":"loc_thorne_estate_dining_area","familiarity":"intimate"},
+        {"knowledge_kind":"spatial_familiarity","location_id":"loc_thorne_estate_library","familiarity":"intimate"},
+        {"knowledge_kind":"spatial_familiarity","location_id":"loc_thorne_estate_garage","familiarity":"intimate"},
+        {"knowledge_kind":"spatial_familiarity","location_id":"loc_thorne_estate_master_suite","familiarity":"intimate"},
+        {"knowledge_kind":"spatial_familiarity","location_id":"loc_thorne_estate_master_bathroom","familiarity":"intimate"},
+        {"knowledge_kind":"spatial_familiarity","location_id":"loc_thorne_estate_quasi_room","familiarity":"intimate","basis":"known_home_room_not_access_implication"},
+        {"knowledge_kind":"spatial_familiarity","location_id":"loc_thorne_estate_guest_rooms","familiarity":"intimate"},
+        {"knowledge_kind":"spatial_familiarity","location_id":"loc_thorne_estate_intelligence_hub","familiarity":"intimate"},
+        {"knowledge_kind":"spatial_familiarity","location_id":"loc_thorne_estate_comms","familiarity":"intimate"},
+        {"knowledge_kind":"spatial_familiarity","location_id":"loc_thorne_estate_training_hall","familiarity":"intimate"},
+        {"knowledge_kind":"spatial_familiarity","location_id":"loc_thorne_estate_home_gym","familiarity":"intimate"},
+        {"knowledge_kind":"spatial_familiarity","location_id":"loc_thorne_estate_medical_bay","familiarity":"intimate"},
+        {"knowledge_kind":"spatial_familiarity","location_id":"loc_thorne_estate_armory","familiarity":"intimate"},
+        {"knowledge_kind":"spatial_familiarity","location_id":"loc_thorne_estate_food_storage","familiarity":"intimate"},
+        {"knowledge_kind":"spatial_familiarity","location_id":"loc_thorne_estate_bunker","familiarity":"intimate"},
+        {"knowledge_kind":"spatial_familiarity","location_id":"loc_thorne_estate_mansion_exterior","familiarity":"intimate"},
+        {"knowledge_kind":"spatial_familiarity","location_id":"loc_thorne_estate_core_grounds","familiarity":"intimate"},
+        {"knowledge_kind":"spatial_familiarity","location_id":"loc_thorne_estate_tactical_obstacle_course","familiarity":"intimate"},
+        {"knowledge_kind":"spatial_familiarity","location_id":"loc_thorne_estate_private_lake_access","familiarity":"intimate"},
+        {"knowledge_kind":"spatial_familiarity","location_id":"loc_thorne_estate_hidden_dock","familiarity":"familiar","secret":true,"basis":"known_concealed_estate_facility"},
+        {"knowledge_kind":"spatial_familiarity","location_id":"loc_thorne_estate_rear_forest","familiarity":"familiar","basis":"known_private_forest"},
+        {"knowledge_kind":"spatial_familiarity","location_id":"loc_thorne_estate_concealed_forest_passage","familiarity":"familiar","secret":true,"basis":"story_established_known_passage"},
+        {"knowledge_kind":"spatial_familiarity","location_id":"loc_thorne_estate_main_approach","familiarity":"intimate"},
+        {"knowledge_kind":"spatial_familiarity","location_id":"loc_thorne_estate_main_security_gate","familiarity":"intimate"}
+      ]
+    }
+  ]
+}

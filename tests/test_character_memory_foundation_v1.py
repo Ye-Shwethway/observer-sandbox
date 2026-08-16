@@ -158,11 +158,17 @@ def test_telegram_character_menu_exposes_live_memory_view(tmp_path):
         keyboard = character_keyboard("char_darian")
         assert any(button["text"] == "🧠 Memory" for row in keyboard for button in row)
 
-        view = profile_callback_view(conn, "mem:char_darian:all:0", role="owner")
-        assert view is not None
-        text, memory_keyboard = view
-        assert "Darian Thorne · MEMORY" in text
-        assert "Episodic 1" in text
-        assert "Observe" in text
+        all_view = profile_callback_view(conn, "mem:char_darian:all:0", role="owner")
+        assert all_view is not None
+        all_text, memory_keyboard = all_view
+        assert "Darian Thorne · MEMORY" in all_text
+        assert "Episodic 1" in all_text
+        assert "Knowledge 32" in all_text
         assert memory_keyboard is not None
         assert any("Episodes" in button["text"] for row in memory_keyboard for button in row)
+
+        episode_view = profile_callback_view(conn, "mem:char_darian:episodic:0", role="owner")
+        assert episode_view is not None
+        episode_text, _ = episode_view
+        assert "View  Episodic" in episode_text
+        assert "Observe" in episode_text
