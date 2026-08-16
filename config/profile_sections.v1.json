@@ -1,7 +1,7 @@
 {
-  "revision": "profile-sections-v1.2-memory-dynamics",
+  "revision": "profile-sections-v1.3-identity-semantics",
   "sections": [
-    {"id":"identity","label":"Identity","icon":"👤","order":10,"renderer":"fields","domains":["identity"],"visibility":"authorized","sensitivities":["normal"]},
+    {"id":"identity","label":"Identity","icon":"👤","order":10,"renderer":"fields","domains":["identity"],"visibility":"authorized","sensitivities":["normal","private"]},
     {"id":"appearance","label":"Appearance","icon":"🧬","order":20,"renderer":"fields","domains":["appearance"],"visibility":"authorized","sensitivities":["normal"]},
     {"id":"body","label":"Body","icon":"💪","order":30,"renderer":"fields","domains":["body"],"visibility":"authorized","sensitivities":["normal"]},
     {"id":"attributes","label":"Attributes","icon":"⚡","order":40,"renderer":"grouped_attributes","domains":["raps_pa","raps_ma","raps_ia","social","raps_vc"],"visibility":"authorized","sensitivities":["normal"]},
