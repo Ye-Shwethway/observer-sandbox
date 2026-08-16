@@ -18,125 +18,129 @@ Authority:
 Default workflow:
 `branch -> focused tests + final PR CI -> merge main -> automatic deploy when runtime-affecting -> read-only production check`
 
-## Strategic checkpoint
+## Current canonical checkpoint
 
-Character-side minimum foundations remain closed enough for the current purpose.
+**Character Memory Foundation v1 is COMPLETE / DEPLOYED.**
 
-The Estate-first sequence is complete/deployed through **Estate Campus Reachability v1**, **Spatial Familiarity Foundation v1**, and **Outdoor Spatial Affordance Cognition v1**. South Lake Tahoe remains intentionally paused.
+Runtime evidence:
+- PR #209 — `Add Character Memory Foundation v1`
+- final tested PR head: `0a59bb2e24a30eca81144935e5631019e947c5bc`
+- CI #972 / run `31948233699`: SUCCESS
+- Inventory Foundation Acceptance #59: SUCCESS
+- Attribute Grading Batch 1 Acceptance #44: SUCCESS
+- Read-Only Grading Proof Acceptance #45: SUCCESS
+- merge: `516414a1a6b1d5471206145e11c30407515398cc`
+- Deploy #251 / run `31948315106`: SUCCESS
+- deployment verification (`sync -> install/configure cognition -> restart -> verify`): SUCCESS
+- schema: **v6**
 
-A later architecture correction is also COMPLETE / DEPLOYED: **Universal Character Autonomy v1** removes the named Darian autonomy-policy layer. Character-specific behavioral hard-coding is now forbidden.
+`main` and `test` are synchronized at the runtime merge before this docs-only continuity checkpoint.
 
-## Required world / cognition read order
+## Required cognition / world read order
 
-1. `docs/WORLD_FOUNDATION_EXPANSION_PLAN_V1.md`
-2. `docs/WORLD_LOCATION_NODE_MODEL.md`
-3. `docs/WORLD_LOCATION_SPATIAL_CONTAINER_CONTRACT_V1.md`
-4. `docs/WORLD_SPATIAL_ACCESS_TRAVEL_CONTRACT_V1.md`
-5. `docs/WORLD_GEOGRAPHY_EXPANSION_CONTRACT_V1.md`
+1. `docs/CHARACTER_MEMORY_FOUNDATION_V1.md`
+2. `docs/UNIVERSAL_CHARACTER_AUTONOMY_CONTRACT_V1.md`
+3. `docs/WORLD_SPATIAL_FAMILIARITY_CONTRACT_V1.md`
+4. `docs/WORLD_OUTDOOR_SPATIAL_AFFORDANCE_CONTRACT_V1.md`
+5. `docs/ESTATE_CAMPUS_REACHABILITY_V1.md`
 6. `docs/THORNE_ESTATE_CAMPUS_CANON_MAP_V1.md`
-7. `docs/WORLD_FOUNDATION_IMPLEMENTATION_SEQUENCE_V1.md`
-8. `docs/ESTATE_CAMPUS_REACHABILITY_V1.md`
-9. `docs/WORLD_SPATIAL_FAMILIARITY_CONTRACT_V1.md`
-10. `docs/WORLD_OUTDOOR_SPATIAL_AFFORDANCE_CONTRACT_V1.md`
-11. `docs/UNIVERSAL_CHARACTER_AUTONOMY_CONTRACT_V1.md`
+7. other task-relevant canonical docs/source only.
 
 ## Universal autonomy invariant
 
 Character-specific authoring may seed represented facts/state, but must not command future behavior.
 
 Forbidden:
-- named-character autonomy prompts;
+- named-character autonomy prompts/policies;
 - bespoke daily routines or time-window activity preferences;
-- named-character destination/activity preferences encoded as policy;
+- named-character destination/activity steering;
 - anti-repetition or behavior-correction counter-prompts written for one character;
-- character-specific behavior branches merely to make observation look better.
+- identity-keyed behavior branches.
 
-Autonomous behavior must emerge from universal systems consuming represented character profile/state, needs/physiology, time, environment, affordances, recent history, goals, relationships, memory/learning when available, and deterministic constraints.
+Autonomous behavior must emerge from universal systems consuming represented profile/state, needs/physiology, time, environment, affordances, goals, relationships, memories/learning, recent history and deterministic constraints.
 
-`config/autonomy/universal.autonomy-policy.v1.json` is the shared cognition policy. `config/characters/darian.autonomy-policy.json` no longer exists and character registry entries no longer select an autonomy policy.
+`config/autonomy/universal.autonomy-policy.v1.json` remains the shared policy. No character selects a bespoke autonomy policy.
 
-## Location semantic rule
+## Character Memory Foundation v1
 
-A location is not a dimensionless point.
+Canonical contract:
+`docs/CHARACTER_MEMORY_FOUNDATION_V1.md`
 
-Canonical definition:
-`location = identifiable nested spatial container with extent, contents, boundaries/interfaces, local state, control and explicit relationships to surrounding space`
+Preserve four distinct layers:
+1. **World / event truth** — objective represented facts and completed events.
+2. **Character memory / knowledge** — what an actor has encoded or is initialized to know.
+3. **Retrieved cognition context** — bounded memories relevant to a present decision.
+4. **Current action authority** — exact deterministic actions/targets executable now.
 
-The graph node is the stable identity/hierarchy/topology representation of that container.
+Canonical rule:
+`Events say what happened. Memory says what this actor retained or knows. Cognition retrieves only what is relevant. Action options remain execution authority.`
 
-## Spatial knowledge rule
+V1 runtime:
+- actor-owned `episodic` and `semantic` memory schema;
+- new completed actions automatically encode compact episodic memories exactly once;
+- provenance links memory to its source event;
+- memory/entity associations support location/target relevance;
+- retrieval is character-scoped and bounded (default top 8 for cognition);
+- initial ranking combines recency, salience, current-location association and available-action relevance;
+- cognition receives `relevant_memories` but memories never grant action/topology/resource authority;
+- only memories actually retrieved into normal captured cognition increment `recall_count` / `last_recalled_sim_time`;
+- vector DB, consolidation, forgetting and full planning are intentionally deferred until evidence justifies them.
 
-Keep three layers distinct:
-1. **World truth** — represented objective geography/topology.
-2. **Character-known world** — the subset of geography an actor knows.
-3. **Current actionable space** — exact deterministic moves/actions executable now.
+Dynamic lifecycle currently implemented:
+`experience -> encode -> retrieve -> recall metadata`
 
-Spatial familiarity vocabulary:
+Future lifecycle extension points:
+`reinforcement -> consolidation -> reconsolidation -> fading/retirement`
+
+Do not fake those future stages with arbitrary timers.
+
+## Telegram Character Memory UX
+
+Character view now includes a live read-only `🧠 Memory` surface alongside Profile; Creator-only Cognition Context remains separate.
+
+Memory view provides:
+- live active / episodic / semantic counts;
+- latest encoded simulation time;
+- All / Episodes / Knowledge filters;
+- pagination;
+- memory time, summary, salience, confidence, recall count and related represented entities.
+
+Observability distinction:
+- **Memory**: what this character currently remembers/knows.
+- **Cognition Context**: what was actually injected for a specific model decision.
+
+Use both when diagnosing behavior: first verify a memory exists, then verify retrieval selected it, then inspect the resulting decision.
+
+## Spatial knowledge rule and remaining migration debt
+
+Keep distinct:
+1. world truth;
+2. character-known world;
+3. current actionable space.
+
+Spatial familiarity vocabulary remains:
 `unknown -> aware -> familiar -> intimate`.
 
-Hidden/secret is orthogonal to familiarity. Known geography supports planning but never grants teleportation, permission or a non-local target. Exact movement authority remains current `action_options`.
+`config/characters/darian.spatial_familiarity.v1.json` **still exists temporarily**. Character Memory Foundation v1 did not remove it yet.
 
-### Temporary spatial-familiarity debt
+Next bounded memory migration must:
+1. migrate valid initial spatial knowledge into generic semantic-memory initialization;
+2. preserve concealed/secret knowledge independently from familiarity;
+3. preserve world truth vs actor knowledge vs action authority;
+4. verify equivalent cognition/reachability behavior;
+5. remove `darian.spatial_familiarity.v1.json` and any Darian-specific loader/path dependency;
+6. never replace it with another named-character cognition/behavior file.
 
-`config/characters/darian.spatial_familiarity.v1.json` is retained only as a temporary factual bootstrap because the general Memory System / discovery-learning layer does not yet own initial and evolving spatial knowledge.
+## Estate / simulation boundary
 
-When the general Memory System is implemented:
-1. migrate valid initial spatial knowledge into the generic memory/knowledge initialization model;
-2. preserve world truth vs actor knowledge vs current action authority;
-3. let discovery/familiarity reinforcement/forgetting evolve through universal systems where supported;
-4. remove `darian.spatial_familiarity.v1.json` and any Darian-specific loader/path dependency;
-5. do not replace it with another named-character cognition-policy file.
+Estate-first foundation remains deployed through:
+- Estate Campus Reachability v1;
+- Spatial Familiarity Foundation v1;
+- Outdoor Spatial Affordance Cognition v1;
+- Universal Character Autonomy v1;
+- Character Memory Foundation v1.
 
-Until then this seed may contain factual initial knowledge only, never behavioral instructions.
-
-## Outdoor-lived-space rule
-
-Reachability alone does not make an outdoor location behaviorally meaningful.
-
-`world.spatial_container.affordances` is the deterministic source for ordinary location-level activity. V1 supports:
-- `walk` — within the current container; does not change `located_at`;
-- `relax` — quiet/decompression activity, weaker recovery than dedicated `rest`;
-- `observe` — spend time taking in represented surroundings without inventing facts.
-
-Current Estate lifestyle destinations are Mansion Exterior, Core Estate Grounds, Private Lake Access and Rear Forested Estate. These are generic world affordances; they must not be converted into Darian-specific outing instructions.
-
-Outdoor attraction is soft and never a quota. Tactical Obstacle Course remains training-oriented; Main Estate Approach remains transit-oriented; Hidden Dock, Concealed Forest Passage and Main Security Gate are not lifestyle-attraction destinations.
-
-## Completed Estate-first sequence
-
-- **A0 Location Spatial Container Contract v1** — PR #196 / merge `d1167771ddb9c358a464c6efb863d9edf6800e18`.
-- **A1 Existing Estate Location Refactor** — PR #197 / merge `886001a1d5d1cc62e5e9aab26a64fc08dedf08f1` / Deploy #244 SUCCESS.
-- **A2 Gameplay Runtime Reconnection / Regression** — PR #198 / merge `3425315d2a3f564f0f3f5beb15084fda214c3036` / final CI #957 SUCCESS.
-- **B Estate Campus Reachability v1** — PR #199 / merge `f0955a582e11394ec64387f2a3fc0bfb468350b4` / Deploy #245 run `31936858504` SUCCESS.
-- **C Spatial Familiarity Foundation v1** — PR #201 / merge `4778eb3e5fc0877ad49e7c96570f00ee5de4e121` / Deploy #246 run `31937763776` SUCCESS.
-- **D Outdoor Spatial Affordance Cognition v1** — PR #204 / merge `14c48908bfefaf7509249cddafe3eb30c5ef0623` / CI #963 SUCCESS / Strength #91 SUCCESS / Deploy #248 run `31940047281` SUCCESS.
-
-## Universal Character Autonomy v1
-
-COMPLETE / DEPLOYED through PR #206.
-
-Key results:
-- removed `config/characters/darian.autonomy-policy.json`;
-- removed character-registry autonomy-policy binding;
-- added one character-agnostic `config/autonomy/universal.autonomy-policy.v1.json`;
-- existing policy-loading compatibility path now returns the universal policy and rejects character binding;
-- removed Darian-specific morning-training acceptance behavior;
-- removed Darian-specific lean/muscular nutrition-policy expectation;
-- added `docs/UNIVERSAL_CHARACTER_AUTONOMY_CONTRACT_V1.md` and locked the invariant in `AGENTS.md`;
-- explicitly recorded the Darian spatial-familiarity seed as temporary Memory System migration debt.
-
-Validation history:
-- initial full-CI failures were stale tests still expecting the removed Darian policy identity/nutrition goal, not runtime regressions;
-- final PR head `ddc94714b6e78f1b6a3b640aa04f86116893920a`;
-- CI #966 / run `31941715382` SUCCESS;
-- Strength Live Cycle Validation #94 / run `31941715379` SUCCESS;
-- merge `133b2cf987768ffbf2263abb2ac1c7b086ea7aed`;
-- Deploy #249 / run `31941781006` SUCCESS;
-- schema remains v5.
-
-## Current world boundary
-
-The represented world is the mansion plus bounded private Estate campus.
+Current Estate lifestyle destinations include Mansion Exterior, Core Estate Grounds, Private Lake Access and Rear Forested Estate. `walk`, `relax` and `observe` are generic represented outdoor affordances; they are not quotas or Darian-specific outing instructions.
 
 Outside continuation remains unavailable:
 - Main Security Gate -> no public road edge;
@@ -144,17 +148,18 @@ Outside continuation remains unavailable:
 - Hidden Dock -> no water-travel edge;
 - legacy Estate Exterior -> locked/non-traversable.
 
-## South Lake Tahoe — PAUSED
+South Lake Tahoe/public/backcountry/water expansion remains intentionally paused.
 
-Do not currently create or enable public South Lake Tahoe topology, road continuation, Tahoe-backcountry continuation, Hidden Dock water travel, or public venue/economy/population loops without separate Creator prioritization.
+## Behavioral observation context
 
-## Current verified runtime
+Recent production observation exposed two longer-horizon gaps:
+- local indoor actions often win over purposeful use of known Estate outdoor destinations;
+- training can recur daily even though current load/readiness systems lack a true multi-day planning layer.
 
-Latest verified runtime deployment: **Deploy #249 / run `31941781006` SUCCESS**.
+Do **not** fix either symptom with Darian-specific rules, fixed rest days, outdoor quotas or character schedules.
 
-Runtime merge: `133b2cf987768ffbf2263abb2ac1c7b086ea7aed`.
-Schema remains v5.
+Memory Foundation is the substrate for later planning, not the planner itself.
 
 ## Exact resume point
 
-**Observe Darian naturally at the Creator-set 30x speed under Universal Character Autonomy v1. Do not tune him through named-character policy or counter-prompts. If Gym/Training Hall fixation or another behavioral imbalance persists, inspect universal inputs/signals/competition and fix only evidence-backed generic causes. Preserve the Estate world boundary and keep South Lake Tahoe/public/backcountry/water continuations paused. The Darian-specific spatial-familiarity seed remains temporary factual bootstrap debt and must be migrated/removed when the general Memory System lands.**
+**Next minimum bounded implementation: migrate the temporary spatial-familiarity bootstrap into generic semantic Character Memory and remove the named Darian familiarity file/path after equivalence is proven. Then design a Minimal Mind / Planning Foundation that consumes profile/state + physiology + environment/affordances + goals + relevant memories to form short/medium-term intentions. First planning consumers should be multi-day training/recovery balance and purposeful destination+activity selection. Keep all behavior character-agnostic and preserve the Estate boundary.**
