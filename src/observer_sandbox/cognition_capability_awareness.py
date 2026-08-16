@@ -12,6 +12,7 @@ from .skill_hierarchy import (
     hierarchy_profile_metadata,
     hierarchy_skill_descriptor,
 )
+from .spatial_familiarity import spatial_familiarity_context
 
 
 COGNITIVE_FACTOR_FIELDS: tuple[tuple[str, str], ...] = (
@@ -207,11 +208,11 @@ def cognition_capability_awareness(
     *,
     config: dict[str, Any] | None = None,
 ) -> dict[str, Any]:
-    """Build read-only semantic capability context for model cognition.
+    """Build read-only semantic capability and authored knowledge context.
 
-    The returned values help cognition reason about what the actor can plausibly
-    attempt. They do not authorize actions, mutate state, invent Knowledge state,
-    or modify deterministic Skill/capability resolution.
+    These values help cognition reason about what the actor can plausibly attempt
+    and what represented geography the actor is explicitly authored to know. They
+    do not authorize actions, mutate world state, or invent episodic memory.
     """
 
     source = config if config is not None else load_skill_definition_config()
@@ -263,10 +264,13 @@ def cognition_capability_awareness(
         "unresolved_skills": unresolved_skills,
         "reasoning_profile": {
             "factors": reasoning_factors,
+            "spatial_knowledge": spatial_familiarity_context(conn, actor_id),
             "principles": [
                 "General reasoning capacity can affect planning and problem solving but does not create missing knowledge or learned Skill proficiency.",
                 "Supporting attributes inform judgment only where the relevant Skill/task contract declares them; they do not replace the authoritative Skill score.",
                 "Knowledge keys describe semantic support requirements only; no hidden actor Knowledge score is inferred when no Knowledge subsystem exists.",
+                "Known geography is planning knowledge, not immediate movement authority; exact executable moves must still appear in current action_options.",
+                "Locations absent from authored spatial knowledge must not be assumed known merely because they exist in world truth.",
                 "Use numeric scores and grade labels only to calibrate internal decision quality; do not mention game-stat numbers or grade letters in in-world reasons.",
                 "Action legality, target/resource validity, task outcomes, and state mutation remain deterministic engine authority.",
             ],

@@ -6,6 +6,7 @@ from collections import Counter
 from typing import Any
 
 from .simulation import action_definition, local_objects, reachable_rooms
+from .spatial_familiarity import location_is_globally_hidden
 from .training_methods import training_profile_for_target
 
 
@@ -22,18 +23,19 @@ def _action_definitions(conn: sqlite3.Connection) -> list[dict[str, Any]]:
 
 
 def reachable_location_awareness(conn: sqlite3.Connection, room_id: str) -> list[dict[str, Any]]:
-    """Describe one-hop destinations as planning-only previews.
+    """Describe non-concealed one-hop destinations as planning-only previews.
 
     The preview deliberately omits location/object IDs. Those IDs are actionable
-    authority and belong only to the current ``action_options`` surface, which may
-    be narrowed by physiological-need or other deterministic choice shaping after
-    raw room reachability is computed. Keeping advisory IDs here can otherwise
-    contradict that final authoritative surface and tempt cognition to emit a
-    currently disallowed action/target pair.
+    authority and belong only to the current ``action_options`` surface. Globally
+    concealed destinations are also omitted here because this generic preview has
+    no actor-specific knowledge authority; an explicitly knowledgeable actor may
+    still receive an exact move option through their character cognition surface.
     """
     definitions = _action_definitions(conn)
     result: list[dict[str, Any]] = []
     for room in reachable_rooms(conn, room_id):
+        if location_is_globally_hidden(conn, str(room["id"])):
+            continue
         resources: list[dict[str, Any]] = []
         action_names: set[str] = set()
         training_families: set[str] = set()

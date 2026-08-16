@@ -7,6 +7,7 @@ from typing import Any
 
 from .simulation import ACTION_EFFECTS_PER_HOUR
 from .sleep_pressure import sleep_pressure_signal
+from .spatial_familiarity import filter_cognition_action_options
 
 
 NEEDS: dict[str, dict[str, Any]] = {
@@ -137,6 +138,9 @@ def _inject_sleep_pressure(conn: sqlite3.Connection, state: dict[str, Any], deci
 
 
 def shape_action_options_for_needs(conn: sqlite3.Connection, *, state: dict[str, Any], action_options: list[dict[str, Any]], decision_signals: dict[str, Any], intrinsic_effects_per_hour: dict[str, dict[str, float]] | None = None) -> list[dict[str, Any]]:
+    actor_id = str(state.get("actor_id") or "")
+    if actor_id:
+        action_options = filter_cognition_action_options(conn, actor_id, action_options)
     _inject_sleep_pressure(conn, state, decision_signals)
     attention = decision_signals.get("needs_attention") or []
     active = next((x for x in attention if isinstance(x, dict)), None)

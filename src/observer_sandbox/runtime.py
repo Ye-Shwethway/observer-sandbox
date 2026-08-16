@@ -22,6 +22,7 @@ from .simulation import ensure_sim_clock
 from .skill_hierarchy import reconcile_skill_hierarchies
 from .skill_practice import seed_skill_practice_foundation
 from .skill_progression import maybe_settle_skill_progression
+from .spatial_familiarity import seed_spatial_familiarity
 from .tactical_assessment_runtime import seed_tactical_assessment_runtime
 from .technology_diagnostic_runtime import seed_technology_diagnostic_runtime
 from .world import seed_home_and_darian
@@ -54,6 +55,10 @@ def _initialize_conn(conn) -> None:
     # bounded private-campus edges after the base world seed rebuilds interior
     # topology, while deliberately creating no public/backcountry/water edge.
     seed_estate_campus(conn)
+    # Spatial familiarity is character-owned knowledge layered over world truth.
+    # Seed it after world/campus entities exist so authored location references
+    # can be validated without inventing a general memory subsystem.
+    seed_spatial_familiarity(conn)
     # Canonical character seeds may still contain legacy umbrella Skill keys.
     # Reconcile them immediately into learned component Skills plus derived parent
     # summaries before any progression or cognition surface consumes Skill state.
