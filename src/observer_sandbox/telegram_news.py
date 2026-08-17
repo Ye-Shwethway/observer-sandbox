@@ -5,6 +5,7 @@ from typing import Any, Callable
 from .information_media import latest_media_publications, refresh_historical_tv_news
 from .news_ai import news_generation_binding
 from .simulation import runtime_value
+from .telegram_universe import _fmt_time
 
 
 def _short(value: Any, limit: int = 360) -> str:
@@ -16,7 +17,7 @@ def _short(value: Any, limit: int = 360) -> str:
 
 def _news_keyboard() -> list[list[dict[str, str]]]:
     return [
-        [{"text": "⚡ Generate News Now", "callback_data": "uni:news:generate"}],
+        [{"text": "🧪 Test News Generation", "callback_data": "uni:news:generate"}],
         [{"text": "↻ Refresh View", "callback_data": "uni:news"}],
         [{"text": "← Universe", "callback_data": "nav:universe"}],
         [{"text": "⌂ Observer Home", "callback_data": "nav:home"}],
@@ -27,6 +28,15 @@ def _binding_label(binding: dict[str, Any] | None) -> str:
     if binding is None:
         return "No AI binding · deterministic editorial fallback available"
     return f"{binding['provider_id']} · {binding['model_id']}"
+
+
+def _display_time(value: Any, fallback: str = "Unknown") -> str:
+    if value in {None, ""}:
+        return fallback
+    try:
+        return _fmt_time(str(value))
+    except Exception:
+        return str(value)
 
 
 def news_view(
@@ -41,7 +51,7 @@ def news_view(
     lines = [
         "📰 UNIVERSE NEWS",
         "━━━━━━━━━━━━━━━━━━",
-        f"🕒 Universe time · {sim_time or 'Unknown'}",
+        f"🕒 Universe time · {_display_time(sim_time)}",
         f"🤖 News model · {_binding_label(binding)}",
     ]
     if notice:
@@ -50,9 +60,9 @@ def news_view(
     if not publications:
         lines.extend([
             "",
-            "⚪ No represented news bulletin has been generated yet.",
+            "⚪ No represented news bulletin is available yet.",
             "",
-            "Use Generate News Now to run the historical news provider → configured editorial model → canonical media publication workflow for the current universe time.",
+            "Normal world progression publishes scheduled TV bulletins from universe time. The test button below is only a Creator diagnostic for exercising the provider → editorial model → canonical publication workflow on demand.",
         ])
         return "\n".join(lines), _news_keyboard()
 
@@ -69,7 +79,7 @@ def news_view(
         f"📺 {_short(latest.get('title'), 180)}",
         f"📝 {_short(latest.get('summary'), 420) or 'No bulletin summary.'}",
         f"✍️ Editorial · {editorial}",
-        f"⏱ Available · {latest.get('available_from') or 'Unknown'} → {latest.get('available_until') or 'Open-ended'}",
+        f"⏱ Available · {_display_time(latest.get('available_from'))} → {_display_time(latest.get('available_until'), 'Open-ended')}",
         "",
         "Stories",
     ])
@@ -77,10 +87,12 @@ def news_view(
     if not items:
         lines.append("• No source stories are attached.")
     for index, item in enumerate(items[:6], start=1):
+        if index > 1:
+            lines.append("")
         source = item.get("source_name") or item.get("source_id") or "Unknown source"
         lines.extend([
             f"{index}. {_short(item.get('title'), 220)}",
-            f"   🛰 {source} · {item.get('published_at') or 'Unknown publication time'}",
+            f"   🛰 {source} · {_display_time(item.get('published_at'), 'Unknown publication time')}",
         ])
         summary = _short(item.get("summary"), 260)
         if summary:
@@ -89,7 +101,7 @@ def news_view(
     if len(publications) > 1:
         lines.extend(["", "Recent bulletins"])
         for previous in publications[1:3]:
-            lines.append(f"• {_short(previous.get('title'), 180)} · {previous.get('available_from') or 'Unknown time'}")
+            lines.append(f"• {_short(previous.get('title'), 180)} · {_display_time(previous.get('available_from'), 'Unknown time')}")
 
     lines.extend([
         "",
@@ -103,7 +115,7 @@ def generate_news_view(
     *,
     refresh_news: Callable[..., dict[str, Any] | None] = refresh_historical_tv_news,
 ) -> tuple[str, list[list[dict[str, str]]]]:
-    """Run one explicit Creator-requested historical news refresh, then render its persisted result."""
+    """Run one explicit Creator diagnostic refresh, then render its persisted result."""
     sim_time = runtime_value(conn, "sim_time", None)
     if not sim_time:
         return news_view(conn, notice="❌ News generation rejected: universe simulation time is unavailable.")
