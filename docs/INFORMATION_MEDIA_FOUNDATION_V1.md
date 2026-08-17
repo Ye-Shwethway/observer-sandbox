@@ -35,6 +35,22 @@ A TV publication creates a W0 information stimulus scoped to that represented de
 
 Exposure does not create Memory or Mind state.
 
+## Autonomous bulletin schedule
+
+Normal TV-news publication is driven by shared simulation time, not by a Creator button and not by character cognition.
+
+The v1 South Lake Tahoe television exemplar has two bounded local publication slots using `America/Los_Angeles` civil time:
+- Morning News — 7:00 AM;
+- Evening News — 6:00 PM.
+
+The service loop performs only a cheap due-slot check on ordinary world progression. External provider retrieval and optional AI editorial generation occur only when the latest due slot has no represented television publication. The scheduler therefore does **not** invoke AI every service tick.
+
+If simulation time jumps across multiple bulletin boundaries, W4 materializes only the latest due slot rather than synthesizing a backlog of unseen historical bulletins. An existing manual/diagnostic television publication inside the current slot window satisfies that slot and prevents duplication.
+
+Provider no-data/error attempts for the same slot are wall-clock throttled for a bounded retry interval. Failure never blocks character autonomy.
+
+The Telegram `Test News Generation` action is Creator-only diagnostics. It may explicitly exercise the provider -> configured editorial model -> canonical publication workflow, but it is not the normal world-progression mechanism.
+
 ## Credibility and provenance
 
 Source credibility is source metadata, not a character belief score and not a truth probability. Initial values remain deliberately shallow, with `unknown` acceptable when no stronger represented evidence exists.
@@ -94,4 +110,7 @@ W4 is accepted when:
 - exposure creates no Memory/Mind state;
 - news AI has an independent provider/model binding with real non-mutating probe and explicit activation;
 - provider failure has a deterministic source-backed fallback;
+- scheduled publication follows shared simulation time without per-tick AI polling or backlog synthesis;
+- same-slot publication is idempotent and provider retry is bounded;
+- Telegram timestamps are human-readable and the manual generation action is visibly diagnostic-only;
 - existing character cognition bindings are unchanged by news configuration.
