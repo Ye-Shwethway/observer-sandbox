@@ -22,42 +22,90 @@ Default workflow:
 
 ## Current canonical checkpoint
 
-The latest runtime-affecting production checkpoint is **Production Diagnostics v2 + deploy-safe hardening**, on top of the previously deployed world-input/economy/mobility stack.
+**A3.3 Bounded Multi-Step Destination Intent v1 is COMPLETE / DEPLOYED on top of Diagnostics v2 and the existing W0-W3.1 world-input/economy stack.**
 
-Latest verified repository/runtime evidence before this documentation sync:
-- `main = test = 034d0c22a4d8edf35f439774a99059aa340cb559`
-- PR #258 — production health-probe shell/SQLite quoting correction; Deploy #283: SUCCESS
-- PR #259 — VPS-native runtime diagnostics v1; merge `bf02f15e2024ddd0e0583ce091af9a243982f996`; Deploy #284: SUCCESS
-- PR #260 — `Make CI and acceptance checks path-aware`; merge `dd7f8cadbe7b1a5abd8efdb5ff9feb85889e1470`
-- PR #261 — `Make production diagnostics error-first and system-aware`; merge `13881cb2e097b3f97e70e315cb81a265c0ee518b`; Deploy #285: SUCCESS
-- PR #262 — `Make diagnostics v2 deploy-safe and production-truthful`; merge `034d0c22a4d8edf35f439774a99059aa340cb559`
-- **Deploy #286 / run `32040416867`: SUCCESS**
-- production schema: **v15**
-- economy schema v2; commitment schema v1; environment schema v2; world-input schema v1; mind schema v1.
+Latest runtime evidence:
+- A3.3 PR #264 — `Add A3.3 bounded multi-step destination intent`
+  - final tested head `bd813f90e6610888d0d684e8afdc022484edd280`
+  - CI #1052 / run `32042015607`: SUCCESS
+  - Cognition Capability Awareness v1 Acceptance #41: SUCCESS
+  - Technology Diagnostic Task Runtime v1 Acceptance #59: SUCCESS
+  - merge `ab196cb345ba48b6272ff286e47330005ddbf5b3`
+  - **Deploy #287 / run `32042149972`: SUCCESS**
+- production health after Deploy #287:
+  - canonical `observer_sandbox.service` entrypoint active;
+  - runtime log ready;
+  - SQLite readable and `PRAGMA quick_check=ok`;
+  - schema **v15**;
+  - Gemini cognition binding preserved at `gemini-3.1-flash-lite`;
+  - cognition recovery probe `ok=true`, `mutated=false`, `validated=true`;
+  - Telegram API/owner/allowed-user configuration healthy.
 
-### Production diagnostics v2 contract
+Diagnostics continuity immediately below A3.3:
+- PR #258 — production health-probe quoting fix; Deploy #283 SUCCESS.
+- PR #259 — Diagnostics v1; Deploy #284 SUCCESS.
+- PR #260 — path-aware CI/acceptance triggers.
+- PR #261 — Diagnostics v2 error-first/system-aware; Deploy #285 SUCCESS.
+- PR #262 — diagnostics deploy-safety/production-truth correction; merge `034d0c22a4d8edf35f439774a99059aa340cb559`; Deploy #286 / run `32040416867` SUCCESS.
+- production `observer` service user is permanently in `systemd-journal`; direct observer-user journal read was verified, so `/logs system` and `/logs file` have persistent non-sudo unit-journal access.
 
-Creator-only Telegram diagnostics are operational and intentionally error-first:
-- `/logs` — concise health/error summary
-- `/logs errors [lines]` — application WARNING/ERROR/CRITICAL records with traceback continuation
-- `/logs system [lines]` — systemd state + unit journal
-- `/logs runtime` — concise runtime/DB context, excluding giant cognition-state dumps
-- `/logs file [lines]` — consolidated diagnostics v2 text report
+## A3.3 — Bounded Multi-Step Destination Intent v1 — DEPLOYED
 
-Guaranteed app-side evidence includes the rotating `/var/lib/observer-sandbox/runtime.log`, traceback-capable logging at recoverable/fatal exception boundaries, SQLite integrity/schema context and systemd service state.
+Observed root cause before A3.3:
+- exact `action_options` correctly exposed only current one-hop legal moves;
+- semantic Character Memory already knew distant Estate destinations and topology;
+- existing short autonomy intent started only **after** a move had already been chosen and treated that one-hop target as the destination;
+- therefore cognition had no explicit pre-choice bridge from a meaningful known distant destination to the currently legal first hop.
 
-The deployed systemd unit is not rewritten by the normal deploy workflow. PR #262 therefore removed the false `service-stderr.log` dependency instead of pretending repo-only unit directives were active in production.
+A3.3 adds a generic bounded planning-awareness projection without changing action authority:
+- maximum route depth: 4 hops;
+- routes traverse only locations present in represented actor semantic spatial memory;
+- the first hop must already be an exact current legal `move` option;
+- cognition receives destination name, first-hop name, route length, arrival affordances and `planning_only=true`;
+- technical destination/first-hop IDs are intentionally omitted from route hints;
+- hints are recomputed at every decision boundary;
+- no persistent Mind intention/plan artifact is created;
+- no destination preference, outdoor quota, Darian-specific steering, or prompt-only topology authority is introduced;
+- exact executable action/target pairs and committed validation remain deterministic `action_options` authority.
 
-Production infrastructure follow-up on 2026-08-17 permanently added service user `observer` to group `systemd-journal` and restarted `observer-sandbox.service`. A direct `sudo -u observer journalctl -u observer-sandbox.service ...` test returned live service journal lines. Therefore normal diagnostics now have persistent non-sudo unit-journal read access. Pre-Python startup/deploy failures remain covered by the GitHub deploy failure diagnostic artifact because the Telegram bot cannot report before the process exists.
+Canonical boundary:
 
-## Previously completed product stack
+`actor-known distant destination + current legal first hop + bounded known topology -> planning hint != intention/plan != action authority`.
 
-Production already includes:
-- Character Profile / Skills and adaptive-profile foundations
-- Estate spatial/reachability and outdoor-affordance foundation
-- Universal Character Autonomy
-- Character Memory + Semantic Spatial Memory + Human Memory Dynamics
-- Intelligent Mind Engine Foundation v1
+The first CI attempt exposed a test-fixture assumption, not a runtime defect: removing one Foyer-to-Exterior edge did not make Core Estate Grounds unreachable because the canonical Estate graph contains a legitimate alternate known route. The test was corrected to remove all authored inbound topology to the destination; the final suite and both relevant acceptance gates passed.
+
+### What A3.3 has and has not proven
+
+Proven:
+- bounded route-purpose context is generated correctly in tests;
+- unknown locations are not leaked from objective topology;
+- route depth is bounded;
+- topology changes are reflected;
+- no represented spatial memory means no multi-hop world-truth projection;
+- cognition capability context receives the A3.3 projection;
+- production deployment and health are green.
+
+Not yet proven:
+- natural production behavior has not yet demonstrated that Darian will actually initiate an inside-to-outside trip because of A3.3. Deploy/recovery evidence proves the new code is live and healthy, but the available cognition snapshots printed during Deploy #287 predated the deploy and therefore are not evidence of a post-deploy A3.3 choice.
+
+**Do not force an outing to manufacture acceptance.** Observe ordinary autonomous decisions. If the inside-to-outside gap persists after enough normal decision opportunities, inspect post-deploy cognition snapshots first and refine the generic bounded route-awareness relevance/selection only if evidence points there. Do not add an outdoor quota or character-specific behavior rule.
+
+## Universal cognition / mobility invariants
+
+Preserve:
+`world/event truth != stimulus availability != exposure != perception/interpretation != memory != mind state/thought != intention/plan != action proposal != action authority`.
+
+Mobility:
+`legal route existence != ordinary choice preference`.
+
+- Raw topology/access authority determines legal one-hop movement.
+- Ordinary repetition must not hide otherwise legal transit edges.
+- Known geography may support bounded planning but may not grant an executable move absent from current `action_options`.
+- Strong/critical biological need-resolution remains a deliberate causal override.
+- No named-character destination steering, outing quotas or campus scripts.
+
+## Deployed World Input / economy stack
+
 - W0 World Stimulus / Exposure Foundation
 - W1 Environment / Weather Foundation
 - W1.1 Historical Weather Provider
@@ -69,71 +117,12 @@ Production already includes:
 - Telegram Economy/Identity Observability Parity
 - Transit Route / Telegram Access Semantics correction
 
-The earlier W3/W3.1 checkpoint remains historically valid, but Deploy #268 is no longer the latest production checkpoint.
+W4 Information / Media Foundation remains the next planned world-input product slice after the current A3.3 production observation checkpoint unless the Creator reprioritizes.
 
-## Required cognition / world-input read order
+## Estate / outside-world lock
 
-For cognition/world-input work read, as relevant:
-1. `docs/INTELLIGENT_MIND_ENGINE_FOUNDATION_V1.md`
-2. `docs/WORLD_STIMULUS_EXPOSURE_FOUNDATION_V1.md`
-3. `docs/COMMITMENTS_OBLIGATIONS_FOUNDATION_V1.md`
-4. `docs/MONEY_ECONOMY_FOUNDATION_V1.md`
-5. `docs/UNIVERSE_OBJECT_VALUATION_RULES_V1.md`
-6. `docs/TELEGRAM_OBSERVER_ARCHITECTURE.md`
-7. `docs/ENVIRONMENT_WEATHER_FOUNDATION_V1.md`
-8. `docs/HISTORICAL_WEATHER_PROVIDER_V1.md`
-9. `docs/WEATHER_REGION_REGISTRY_V1.md`
-10. `docs/TELEGRAM_UNIVERSE_OBSERVABILITY_V1.md`
-11. `docs/HUMAN_MEMORY_DYNAMICS_V1.md`
-12. `docs/CHARACTER_MEMORY_FOUNDATION_V1.md`
-13. task-relevant world/profile/runtime docs only.
-
-Preserve:
-`world/event truth != stimulus availability != character exposure != perception != memory != mind/thought != intention/plan != action proposal != action authority`.
-
-MIND-F0 remains behavior-neutral. Do not activate Mental Episode/Planning runtime merely to fix ordinary movement selection.
-
-## Universal autonomy / mobility invariants
-
-Character-specific behavioral hard-coding is forbidden.
-
-Preserve:
-`legal route existence != ordinary choice preference`.
-
-- raw topology/access authority decides whether one-hop movement is legal;
-- ordinary repetition shaping must not hide otherwise legal transit edges;
-- preferences, habits and discretionary behavior may influence choice, not topology;
-- strong/critical biological need-resolution may deliberately narrow proposal surfaces;
-- do not add Darian-specific outdoor quotas, destination steering, mansion-exit scripts or bespoke autonomy prompts.
-
-Spatial movement remains graph-based. `contains` is structural containment; `connected_to` is traversable topology; `located_at` is dynamic presence. Deterministic routing derives from authored topology and access state.
-
-## Telegram observability parity
-
-Creator-useful authoritative state should appear in the semantically relevant Telegram surface in the same bounded feature slice when such a surface exists, unless explicitly documented as not relevant yet.
-
-Telegram remains downstream/read-only. Viewing diagnostics/profile/world state must not mutate simulation, create exposure, create cognition/memory, or grant action authority.
-
-## Current observed autonomy gap
-
-A current live-behavior observation remains unresolved:
-- once the actor is outdoors, outdoor behavior can persist naturally;
-- from indoor rooms, the actor does not appear to form the multi-step transition needed to reach known outdoor destinations naturally;
-- outdoor destinations, outdoor affordances, nature preference and emerging outdoor habits are represented;
-- from an indoor room such as Living Room, immediate `action_options` expose only adjacent legal first hops; an outdoor destination may require an intermediate hop such as Grand Foyer before Mansion Exterior / Estate Grounds;
-- therefore the leading hypothesis is a **generic multi-step destination-intent / reachable-preview bridge gap**, not missing outdoor semantics and not a need for an outdoor quota.
-
-This is still an investigation hypothesis, not an implemented fix. Any correction must remain universal and deterministic-authority-safe.
-
-## World-input roadmap status
-
-The previously documented product-roadmap next slice remains:
-- W4 Information / Media Foundation
-- then W5 Communication Exposure Foundation
-- then MIND-F2 Mental Episode Runtime only after minimum external-input foundations are sufficient.
-
-However, current Creator direction requires a fresh next-phase proposal after this documentation synchronization. Do not assume W4 should outrank the unresolved autonomy/mobility behavior gap without evaluating both against current production needs.
+Estate-first scope remains active. Existing Estate campus/exterior locations are represented and usable where topology permits. Broader South Lake Tahoe traversal remains intentionally paused: no public-road edge from Main Security Gate, Tahoe-backcountry edge from Concealed Forest Passage, or water-travel edge from Hidden Dock is open.
 
 ## Exact resume point
 
-**Diagnostics v2 is production-green through Deploy #286, production journal access is permanently usable by the `observer` service user, and `main`/`test` were synchronized at merge `034d0c22...` before this docs-only continuity update. No new runtime implementation is currently authorized. Next: propose the best next minimum-runnable phase, explicitly comparing the unresolved generic inside->outside multi-step autonomy gap against the existing W4 Information / Media roadmap candidate. Do not activate character-specific steering or Mental Episode/Planning as a shortcut.**
+**A3.3 Bounded Multi-Step Destination Intent v1 is production-green through Deploy #287. The immediate next step is read-only natural production observation: allow ordinary autonomous decisions to occur and verify whether post-deploy cognition uses bounded destination hints to initiate purposeful multi-hop movement, especially the previously missing inside-to-outside case. Do not force Darian outside and do not add further steering. If natural observation confirms the gap is resolved, resume the planned W4 Information / Media Foundation. If it does not, inspect post-deploy cognition evidence and make only an evidence-driven generic correction.**
