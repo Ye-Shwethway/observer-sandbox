@@ -126,7 +126,7 @@ def test_cognition_gets_schedule_and_availability_without_content_or_obligation(
         assert enriched["media_awareness"] == context
 
 
-def test_completed_media_action_records_exposure_once_without_memory_or_mind_mutation(tmp_path):
+def test_completed_media_action_records_exposure_and_only_generic_action_memory_once(tmp_path):
     db = tmp_path / "observer.sqlite3"
     initialize(db)
     with connect(db) as conn:
@@ -148,7 +148,27 @@ def test_completed_media_action_records_exposure_once_without_memory_or_mind_mut
         assert metadata["publication_id"] == publication["publication_id"]
         assert metadata["action_id"] == "action_media_consumption_test"
         assert metadata["proof"] == "completed_media_consumption_action"
-        assert conn.execute("SELECT COUNT(*) FROM character_memories").fetchone()[0] == before_memory
+
+        # Completed actions already produce one generic autobiographical episodic memory.
+        # Media exposure must not bypass that contract by copying bulletin/source content
+        # directly into Memory or creating a Mind episode.
+        assert conn.execute("SELECT COUNT(*) FROM character_memories").fetchone()[0] == before_memory + 1
+        memory = conn.execute(
+            """SELECT m.summary,m.content_json
+               FROM character_memories m
+               JOIN events e ON e.id=m.source_event_id
+               WHERE e.action_id=?
+               ORDER BY m.created_at DESC LIMIT 1""",
+            ("action_media_consumption_test",),
+        ).fetchone()
+        assert memory is not None
+        memory_content = json.loads(memory["content_json"])
+        assert memory_content["action"] == "consume_media"
+        assert memory_content["target_id"] == TV_DEVICE_ID
+        encoded_memory = json.dumps({"summary": memory["summary"], "content": memory_content})
+        assert "Source-only headline" not in encoded_memory
+        assert "Source-only summary" not in encoded_memory
+        assert "Editorial bulletin summary" not in encoded_memory
         assert conn.execute("SELECT COUNT(*) FROM mental_episodes").fetchone()[0] == before_mind
 
         instance = conn.execute(
@@ -161,5 +181,5 @@ def test_completed_media_action_records_exposure_once_without_memory_or_mind_mut
 
         apply_action(conn, action, ACTOR_ID, action_id="action_media_consumption_test")
         assert conn.execute("SELECT COUNT(*) FROM character_exposures").fetchone()[0] == before_exposures + 1
-        assert conn.execute("SELECT COUNT(*) FROM character_memories").fetchone()[0] == before_memory
+        assert conn.execute("SELECT COUNT(*) FROM character_memories").fetchone()[0] == before_memory + 1
         assert conn.execute("SELECT COUNT(*) FROM mental_episodes").fetchone()[0] == before_mind
