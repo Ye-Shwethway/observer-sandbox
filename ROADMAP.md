@@ -13,10 +13,11 @@ Roadmap synchronized: 2026-08-17
 - Character-specific behavioral hard-coding is forbidden.
 - Persistent branches are only `main` and `test`; normal development occurs on `test` and is promoted to `main` after validation.
 - Prefer vertical completeness and operational usefulness over subsystem sprawl.
+- At material checkpoints, reconcile roadmap/bootstrap state with implementation and verified runtime truth. Already-deployed work must never remain labeled as future work.
 
 ## Current production checkpoint
 
-**A3.3 Bounded Multi-Step Destination Intent v1 is COMPLETE / DEPLOYED.**
+**A3.3 Bounded Multi-Step Destination Intent v1 is COMPLETE / DEPLOYED on top of the already-deployed W0-W4.1 world-input stack.**
 
 Latest evidence:
 - PR #264 — `Add A3.3 bounded multi-step destination intent`
@@ -36,15 +37,27 @@ Diagnostics immediately below this checkpoint remain production-green:
 - PR #262 deploy-safe diagnostics hardening / Deploy #286
 - production `observer` user has persistent `systemd-journal` read access for Telegram system diagnostics.
 
+## Continuity correction — W4/W4.1 are already deployed
+
+The previous roadmap accidentally retained an older planning label and described W4 as `NEXT AFTER A3.3 OBSERVATION`. Repository history and current runtime/source prove W4 was implemented **before** A3.3.
+
+Implemented lineage:
+- PR #249 — W4 Information / Media Foundation + W4.1 Historical News Provider; merge `2e11b784f2c6ce651cced81d45d09c6e2977fe69`.
+- PR #250 — Creator News observability/generation surface; merge `4a764a5fdf2c9cc8c77533e002188c4a295a6c3c`.
+- PR #251 — autonomous simulation-time TV bulletin scheduling at 07:00 / 18:00 South Lake Tahoe local time.
+- PR #252 — first-class generic Media Console `consume_media` runtime; merge `2db08335a35fa7f96e03bbb9ed1f176b44d5e8b2`.
+
+All are ancestors of the current production checkpoint and therefore present in Deploy #287.
+
 ## A3.3 — Bounded Multi-Step Destination Intent v1 — DEPLOYED
 
-### Problem closed at the architecture level
+### Architecture gap closed
 
 Before A3.3:
 - exact immediate movement authority was correctly one-hop only;
 - semantic Character Memory already represented known distant Estate locations and connections;
 - existing short autonomy intent started only after a move was selected and used the one-hop target as the destination;
-- cognition therefore lacked an explicit bridge from a meaningful known distant destination to the legal immediate move that begins the route.
+- cognition lacked an explicit bridge from a meaningful known distant destination to the legal immediate move that begins the route.
 
 A3.3 introduces bounded read-only route-purpose awareness:
 
@@ -55,36 +68,22 @@ Properties:
 - only semantic-memory-known locations participate;
 - first hop must already be an exact current legal `move` option;
 - hints include destination name, first-hop name, hop count, arrival affordances and `planning_only=true`;
-- technical route target IDs are omitted from the planning hint;
+- technical route IDs are omitted;
 - hints are recomputed each decision boundary;
-- route awareness stores no persistent Mind intention or plan;
-- access/topology/physiology changes can redirect the next decision naturally;
+- no persistent Mind intention/plan is created;
 - no named-character destination rule, outdoor quota, destination preference or campus script exists;
-- deterministic `action_options` and committed validation remain the sole execution authority.
+- deterministic `action_options` and committed validation remain sole execution authority.
 
 Preserve:
-
 `bounded route awareness != intention != plan != action authority`.
-
-### Acceptance coverage
-
-Focused coverage proves:
-- a known distant destination can expose a purpose-bearing legal first hop while remaining absent from immediate executable targets;
-- unknown destinations are not leaked from objective world topology;
-- preview depth is bounded;
-- authored topology changes alter preview reachability;
-- absence of represented spatial memory disables the multi-hop projection;
-- cognition capability context receives the projection.
-
-The first full-CI attempt ended at 756 passed / 1 failed because the new test assumed deleting one Foyer-to-Exterior edge made Core Estate Grounds unreachable. The canonical Estate graph had a valid alternate route, so the BFS behavior was correct. The test was corrected to remove all inbound topology to the destination. Final CI and both relevant acceptance gates are green.
 
 ### Production observation still required
 
-Deploy #287 proves the implementation is live and healthy, but it does **not** yet prove that natural autonomous behavior will choose an inside-to-outside trip. The cognition snapshots visible in the deploy health output were captured before the new deploy and cannot be used as post-deploy behavioral proof.
+Deploy #287 proves A3.3 is live and healthy but not yet that natural autonomy will choose the previously missing inside-to-outside trip. The immediate operational checkpoint is read-only natural observation. Do not force an outing.
 
-The next checkpoint is therefore read-only natural observation. Do not force an outing merely to make the feature look successful.
+If ordinary decisions still fail to initiate known meaningful multi-hop destinations, inspect post-deploy cognition evidence. Any correction must remain generic and evidence-driven.
 
-If ordinary decisions still fail to initiate known meaningful multi-hop destinations, inspect post-deploy cognition snapshots and determine whether the A3.3 route set/relevance is actually visible and useful. Any correction must remain generic and evidence-driven; do not introduce outing quotas, destination steering or a full planning engine as a shortcut.
+A3.3's pre-Mind planning guidance is explicit scaffolding. When MIND-F4/F5 intention/planning runtime becomes active, review/migrate durable route purpose into typed Mind artifacts/candidates and remove or reduce duplicate prompt-level guidance so two planning authorities do not coexist.
 
 ## Operational diagnostics — DEPLOYED
 
@@ -95,13 +94,12 @@ Creator-only Telegram surfaces:
 - `/logs runtime` — concise DB/runtime context
 - `/logs file [lines]` — consolidated diagnostics v2 report
 
-The app owns a bounded rotating `/var/lib/observer-sandbox/runtime.log`. System journal read access is permanently available to the production service user through `systemd-journal` membership. Pre-Python startup failures remain deployment-diagnostic territory because the Telegram process does not yet exist at that boundary.
+The app owns bounded rotating `/var/lib/observer-sandbox/runtime.log`. System journal read access is available through `systemd-journal`. Pre-Python startup failures remain deployment-diagnostic territory.
 
 ## CI / acceptance efficiency — DEPLOYED
 
-CI/acceptance path-awareness remains active:
 - full CI covers runtime/code/config/test/script/pyproject or CI-workflow changes;
-- specialized VPS acceptances trigger on their owned surfaces instead of shared-service/docs noise;
+- specialized VPS acceptances trigger on owned surfaces rather than shared-service/docs noise;
 - docs-only continuity changes do not require the full Python suite.
 
 ## Completed foundation stack
@@ -111,7 +109,7 @@ Deployed:
 - Estate spatial/reachability and outdoor-affordance foundation
 - Universal Character Autonomy
 - Character Memory + Semantic Spatial Memory + Human Memory Dynamics
-- Intelligent Mind Engine Foundation v1
+- Intelligent Mind Engine Foundation v1 schema/contract
 - **A3.3 Bounded Multi-Step Destination Intent v1**
 - W0 World Stimulus / Exposure Foundation
 - W1 Environment / Weather Foundation
@@ -123,12 +121,16 @@ Deployed:
 - W3.1 Universe Object Valuation & Creation Rules v1
 - Telegram Economy/Identity Observability Parity
 - Transit Route / Telegram Access Semantics correction
+- **W4 Information / Media Foundation v1**
+- **W4.1 Historical News Provider v1**
+- **Autonomous simulation-time Morning/Evening TV bulletin scheduler**
+- **First-class Media Console media-consumption / W0 exposure bridge**
 - Production Diagnostics v2
 - CI / acceptance path-awareness
 
 South Lake Tahoe public traversal remains intentionally paused.
 
-## Canonical cognition / mobility chain
+## Canonical cognition / world-input chain
 
 Preserve:
 `world/event truth != stimulus availability != exposure != perception/interpretation != memory != mind state/thought != intention/plan != action proposal != action authority`.
@@ -142,7 +144,7 @@ Mobility additionally preserves:
 - strong/critical biological need-resolution remains a separate deliberate causal override;
 - no named-character route behavior is permitted.
 
-## Economy / world-input stack
+## World-input stack
 
 ### W0 — World Stimulus / Exposure — DEPLOYED
 
@@ -156,7 +158,7 @@ Only South Lake Tahoe is currently represented/registered.
 
 ### W2 — Commitments / Obligations — DEPLOYED
 
-Commitment truth supports appointment, promise, deadline and scheduled responsibility. Notices remain world-input availability and do not automatically create plans or behavior.
+Commitment truth supports appointment, promise, deadline and scheduled responsibility. Notices do not automatically create plans or behavior.
 
 ### W3 — Money / Economy Foundation — DEPLOYED
 
@@ -173,36 +175,91 @@ Canonical rule:
 
 Current represented objects/items have explicit value-policy coverage. Estate fixtures are included in the parent Estate asset rather than double-counted. Future runtime object creation must preserve the same valuation-policy boundary.
 
-## Remaining minimum World Input producers
+### W4 — Information / Media Foundation — DEPLOYED
 
-### W4 — Information / Media Foundation — NEXT AFTER A3.3 OBSERVATION
+Canonical chain:
+`source/world evidence -> information item -> publication/availability -> represented media device/channel -> W0 stimulus -> actual exposure -> later perception/appraisal -> later Memory/Mind`.
 
-Represent information/media truth separately from character knowledge:
-- information/media items;
-- source/publisher and provenance;
-- publication/availability;
-- credibility metadata;
-- represented access/device/media exposure through W0 when a concrete path exists;
-- `world knows != character knows`;
-- no automatic belief, Memory, concern, intention or action authority;
-- apply Telegram observability parity where Creator-useful state exists.
+Implemented minimum:
+- generic sources/publishers, provenance and credibility metadata;
+- generic information items and bounded publication windows;
+- existing Media Console reused as TV exemplar;
+- W0 information/media stimuli;
+- exposure only after represented compatible consumption;
+- no automatic belief, Memory, Mental Episode, intention or action authority;
+- independent News Generation AI binding with deterministic source-backed fallback;
+- Creator-facing News observability/generation diagnostics.
 
-Do not begin W4 merely to avoid observing the newly deployed autonomy correction. First establish whether the demonstrated inside-to-outside gap is actually resolved in natural production behavior.
+### W4.1 — Historical News Provider — DEPLOYED
 
-### W5 — Communication Exposure Foundation
+`universe simulation time -> GDELT GAL historical evidence -> normalized W4 source records -> optional AI editorial bulletin -> W0 TV publication/stimulus`.
 
-Sender/recipient/channel/content/delivery boundary, message/utterance stimulus creation, actual read/heard exposure, and later interpretation/response through social cognition.
+Historical-time selection prevents current server headlines from leaking into the earlier simulation timeline.
 
-## Mind sequence after sufficient minimum world inputs
+### W4 media-consumption bridge — DEPLOYED
 
-- MIND-F2 Mental Episode Runtime
-- MIND-F3 Attention / Appraisal / Active Concerns
-- MIND-F4 Intention Foundation
-- MIND-F5 Planning
-- MIND-F6 Social Cognition / Communication
-- MIND-F7 Relationship Adaptation
+- Morning News at 07:00 and Evening News at 18:00 South Lake Tahoe local time;
+- service loop performs bounded due-slot scheduling rather than per-tick AI generation;
+- `consume_media` is a generic action offered only for an available publication at a represented local media device;
+- completed consumption records W0 exposure;
+- publication/exposure content does not bypass Memory/Mind boundaries.
 
-A3.3 deliberately does not activate these layers.
+## Remaining minimum World Input producer
+
+### W5 — Communication Exposure Foundation — NEXT DEFAULT WORLD-INPUT SLICE
+
+Minimum contract:
+- sender / recipient / channel / content / delivery truth;
+- message or utterance becomes a W0 `communication` stimulus;
+- represented delivery/read/heard conditions determine actual exposure;
+- exposure does not automatically imply understanding, belief, memory, relationship change or response;
+- interpretation and response belong to later Social Cognition;
+- add represented devices/endpoints only when a concrete communication path needs them; do not prebuild a full phone/internet ecosystem.
+
+W5 is the only remaining producer in the canonical W0 preferred minimum W1-W5 sequence. The sequence is guidance and may be reprioritized by the Creator.
+
+## Intelligent Mind Engine route — PRE-PLANNED CANONICAL SEQUENCE
+
+`docs/INTELLIGENT_MIND_ENGINE_FOUNDATION_V1.md` is already the canonical integration contract. Its foundation schema/socket layer exists; the following phases activate richer character-owned mental runtime.
+
+### MIND-F2 — Mental Episode Runtime
+
+Activate bounded Mental Episodes at meaningful cognition boundaries rather than continuous LLM polling. Supported episode modes are designed for task-focused, spontaneous, reflective, prospective, social and evaluative processing.
+
+### MIND-F3 — Attention / Appraisal / Active Concerns
+
+Transform bounded actor-relative perceived/recalled inputs into attention allocation, appraisal and active concern state. External stimulus salience is not automatically mental importance.
+
+### MIND-F4 — Intention Foundation
+
+Introduce typed intention candidates/artifacts owned by the character Mind. Intention may influence proposals but never becomes executable action authority.
+
+### MIND-F5 — Planning
+
+Introduce bounded plan candidates/artifacts and continuity across steps while preserving deterministic validation and world topology. This phase must reconcile the interim A3.3 multi-hop purpose scaffolding and prevent duplicate planning authorities.
+
+### MIND-F6 — Social Cognition / Communication
+
+Consume represented communication/social exposure, Memory/person context and current state to form social appraisal/inference and response intentions. Direct communication does not bypass perception or Mind.
+
+### MIND-F7 — Relationship Adaptation
+
+Adapt relationship interpretation/state downstream of represented shared events, exposure, memory and social cognition rather than directly mutating trust/relationship from raw utterances.
+
+### Foundation hierarchy already reserved
+
+The Mind foundation already defines:
+- Mental Cycle
+- Mental Episode
+- Mental Artifact types including `concern`, `goal`, `intention`, `plan`, `social_inference`, `appraisal`, `working_item`
+- typed links to memories/events/entities/locations/actions/artifacts
+- input sockets for present state, profile, physiology, current action, perception, recallable memories, active mental artifacts, relationships, goals, world and communication context
+- output sockets for episodes, artifact changes, intention/plan candidates, social inference and action proposal.
+
+Default product route:
+`W5 -> MIND-F2 -> MIND-F3 -> MIND-F4 -> MIND-F5 -> MIND-F6 -> MIND-F7`.
+
+This is not a demand to exhaustively finish every possible world feature before Mind work. The canonical Mind contract explicitly allows bounded mental work once required inputs are sufficiently represented.
 
 ## World / spatial lock
 
@@ -210,4 +267,4 @@ Estate-first scope remains active. Broader public traversal stays closed: no pub
 
 ## Current exact resume point
 
-**A3.3 Bounded Multi-Step Destination Intent v1 is production-green through Deploy #287. The immediate next action is read-only natural production observation of ordinary autonomous decisions. Verify whether post-deploy cognition uses bounded route-purpose hints to begin meaningful multi-hop travel, especially the previously missing indoor-to-outdoor transition. Do not force an outing. If confirmed, proceed to W4 Information / Media Foundation as the next planned product slice. If not confirmed after reasonable ordinary decision opportunities, inspect post-deploy cognition evidence and make only a bounded generic correction supported by that evidence.**
+**A3.3 is production-green through Deploy #287 and remains under read-only natural observation for the inside-to-outside behavioral proof. W4/W4.1 and first-class Media Console news consumption are already deployed and must not be treated as future work. For new implementation, the default next minimum world-input slice is W5 Communication Exposure Foundation unless the Creator reprioritizes. After sufficient W5 coverage, continue the already-authored Mind route MIND-F2 -> F3 -> F4 -> F5 -> F6 -> F7. When MIND-F4/F5 become active, explicitly reconcile and retire/reduce interim A3.3 prompt-level planning scaffolding so deterministic action authority remains singular.**
