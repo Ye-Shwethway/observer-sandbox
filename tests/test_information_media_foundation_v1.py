@@ -111,15 +111,15 @@ def test_telegram_news_ai_reuses_provider_model_test_save_flow(tmp_path, monkeyp
         callbacks = [button["callback_data"] for row in keyboard for button in row]
         assert "Character AI" in home
         assert "News Generation AI" in home
-        assert "ng:home" in callbacks
+        assert "ai:n:home" in callbacks
 
-        telegram_ai_control.callback_view(conn, 111, "ng:m:groq:0")
+        telegram_ai_control.callback_view(conn, 111, "ai:n:m:groq:0")
         monkeypatch.setattr(telegram_ai_control, "probe_news_generation_model", lambda conn, provider_id, model_id: {
             "ok": True, "provider_id": provider_id, "model_id": model_id, "latency_ms": 12, "tested_at": "2026-08-17T00:00:00+00:00"
         })
-        tested, tested_keyboard = telegram_ai_control.callback_view(conn, 111, "ng:test")
+        tested, tested_keyboard = telegram_ai_control.callback_view(conn, 111, "ai:n:test")
         assert "Real inference succeeded" in tested
-        assert any(button.get("callback_data") == "ng:save" for row in tested_keyboard for button in row)
-        saved, _ = telegram_ai_control.callback_view(conn, 111, "ng:save")
+        assert any(button.get("callback_data") == "ai:n:save" for row in tested_keyboard for button in row)
+        saved, _ = telegram_ai_control.callback_view(conn, 111, "ai:n:save")
         assert "NEWS GENERATION AI ACTIVATED" in saved
         assert news_ai.news_generation_binding(conn)["model_id"] == "news/model"
