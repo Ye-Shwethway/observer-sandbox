@@ -41,6 +41,7 @@ def test_runtime_logs_can_export_consolidated_txt(tmp_path: Path, monkeypatch):
         text = report_path.read_text(encoding="utf-8")
         assert "OBSERVER SANDBOX DIAGNOSTICS V2" in text
         assert "ERROR SUMMARY" in text
+        assert "SYSTEMD SERVICE STDERR" in text
         assert "SYSTEM SERVICE STATE" in text
         assert "APPLICATION WARNINGS / ERRORS / TRACEBACKS" in text
         assert "RECENT SYSTEM JOURNAL" in text
