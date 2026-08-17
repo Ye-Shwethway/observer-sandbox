@@ -15,6 +15,7 @@ from .cognition_context_snapshots import record_cognition_context_snapshot
 from .eating_behavior import enrich_eating_action_options, validate_proposed_resources
 from .habit_adaptation import habit_dynamics_context
 from .meal_choice_intelligence import meal_choice_context
+from .media_runtime import media_cognition_context
 from .need_resolution import shape_action_options_for_needs
 from .personality_plasticity import personality_plasticity_context
 from .resource_awareness import (
@@ -363,6 +364,11 @@ class ModelDecisionProvider:
                 "When several suitable options exist, recent_usage is context for reasonable variety, not a hard prohibition on repetition."
             ),
         }
+        enriched["media_awareness"] = media_cognition_context(
+            self.conn,
+            actor_id=self.character_id,
+            sim_time=str(state["sim_time"]),
+        )
         enriched["character"] = self._character_context()
         enriched["capability_awareness"] = cognition_capability_awareness(
             self.conn,
