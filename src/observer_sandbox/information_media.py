@@ -12,7 +12,7 @@ from .world import get_field
 from .world_stimulus import add_stimulus_scope, create_world_stimulus, record_character_exposure
 
 
-TV_DEVICE_ID = "object_media_console"
+TV_DEVICE_ID = "obj_thorne_estate_living_media_console"
 TV_DEVICE_TYPE = "television"
 
 
