@@ -16,6 +16,7 @@ from .profile_change_observer import (
 from .telegram_ai_control import callback_view as ai_callback_view
 from .telegram_ai_control import home_view as ai_home_view
 from .telegram_inventory import inventory_callback_view, inventory_command_view
+from .telegram_news import generate_news_view, news_view
 from .telegram_profile_browser import profile_callback_view
 from .telegram_universe import locations_view, region_view, regions_view, universe_view, weather_view
 
@@ -210,6 +211,15 @@ def _callback_view(conn, user_id: int, callback_data: str):
         return universe_view(conn)
     if callback_data == "uni:weather":
         return weather_view(conn)
+    if callback_data == "uni:news":
+        return news_view(conn)
+    if callback_data == "uni:news:generate":
+        if base._user_role(user_id) != "owner":
+            return (
+                "🔒 Creator authority required to generate universe news.",
+                [[{"text": "← News", "callback_data": "uni:news"}]],
+            )
+        return generate_news_view(conn)
     if callback_data == "uni:regions":
         return regions_view(conn)
     if callback_data == "uni:locations":
