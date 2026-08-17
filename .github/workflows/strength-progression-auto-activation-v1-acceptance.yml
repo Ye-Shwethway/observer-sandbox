@@ -5,7 +5,6 @@ on:
     branches: [main]
     paths:
       - 'src/observer_sandbox/strength_progression_activation.py'
-      - 'src/observer_sandbox/service.py'
       - 'scripts/validation/validate_progression_activation_compatibility.py'
       - 'tests/test_strength_progression_activation_v1.py'
       - '.github/workflows/strength-progression-auto-activation-v1-acceptance.yml'
