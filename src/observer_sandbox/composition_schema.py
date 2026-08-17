@@ -181,6 +181,7 @@ ACTION_DEFINITIONS: tuple[dict[str, Any], ...] = (
     _definition("read", "Read", 5, 240, "object", "read", 1),
     _definition("research", "Research", 10, 180, "object", "research", 1),
     _definition("monitor", "Monitor", 5, 120, "object", "monitor", 1),
+    _definition("consume_media", "Consume media", 5, 120, "object", "consume_media", 1),
     _definition("self_satisfaction", "Private self-satisfaction", 5, 45, "none", None, 0),
     _definition("idle", "Idle", 1, 120, "none", None, 0),
 )
