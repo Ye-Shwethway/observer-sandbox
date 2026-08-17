@@ -5,13 +5,20 @@ from typing import Any
 
 from .character_memory import retrieve_relevant_memories
 from .model_decision import ModelDecisionProvider
+from .perception import recent_perception_context
 
 
 class MemoryAwareDecisionProvider(ModelDecisionProvider):
-    """Add bounded actor-owned memory retrieval to the shared model decision context."""
+    """Add bounded actor-owned perception and memory to shared cognition context."""
 
     def _enrich_state(self, state: dict[str, Any]) -> dict[str, Any]:
         enriched = super()._enrich_state(state)
+        enriched["perception"] = recent_perception_context(
+            self.conn,
+            self.character_id,
+            sim_time=str(state["sim_time"]),
+            limit=8,
+        )
         available_actions = sorted(
             {
                 str(option.get("action"))
