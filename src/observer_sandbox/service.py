@@ -30,7 +30,7 @@ from .simulation import snapshot
 from .skill_progression import maybe_settle_skill_progression
 from .stamina_progression_activation import maybe_settle_stamina_progression
 from .strength_progression_activation import maybe_settle_strength_progression
-from .telegram_creator_bot import run_polling
+from .telegram_runtime_bot import run_polling
 from .telegram_notifications import dispatch_action_completion
 from .telegram_profile_notifications import dispatch_profile_change_notifications
 
@@ -104,9 +104,6 @@ def main() -> None:
             with connect(DB_PATH) as conn:
                 actor_ids = _active_actor_ids(conn)
                 if actor_ids:
-                    # Weather and scheduled news belong to shared world time, not
-                    # to any character. Use one active actor only to read the shared
-                    # simulation clock, then synchronize independent world producers.
                     try:
                         world_now = snapshot(conn, actor_ids[0])
                         world_sim_time = str(world_now["sim_time"])
@@ -123,9 +120,6 @@ def main() -> None:
                         after = result["after"]
                         profile_before = capture_profile_change_state(conn, actor_id)
 
-                        # Completed represented behavior is the sole evidence source
-                        # for learned habit adaptation. Cognition never writes these
-                        # rows directly. The original action place is the stable cue.
                         try:
                             settle_habit_adaptation(
                                 conn,
@@ -143,10 +137,6 @@ def main() -> None:
                         except Exception:
                             conn.rollback()
 
-                        # Hobby/interest development uses the same immutable
-                        # completion boundary but a distinct evidence contract.
-                        # Only explicitly eligible voluntary target engagements
-                        # form interests; established interests project to hobbies.
                         try:
                             settle_hobby_interest_lifecycle(
                                 conn,
@@ -163,11 +153,6 @@ def main() -> None:
                         except Exception:
                             conn.rollback()
 
-                        # Preference adaptation is deliberately more conservative
-                        # than hobby formation. Repeated voluntary target engagement
-                        # supplies positive evidence; non-selection is never dislike
-                        # evidence. Explicit negative evidence requires a represented
-                        # aversive/outcome producer through the signed evidence API.
                         try:
                             settle_preference_adaptation(
                                 conn,
@@ -184,11 +169,6 @@ def main() -> None:
                         except Exception:
                             conn.rollback()
 
-                        # Personality is slower again: only explicitly registered
-                        # trait-evidence channels settle here. Same-day repetition
-                        # cannot accelerate the long-horizon gate, canonical trait
-                        # text remains untouched, and cognition sees only a small
-                        # established overlay rather than this evidence ledger.
                         try:
                             settle_personality_plasticity(
                                 conn,
@@ -251,9 +231,6 @@ def main() -> None:
                         except Exception:
                             pass
 
-                        # Skills independently consume immutable completed-action
-                        # evidence after the action has settled. They do not call
-                        # physiology/body progression engines as hidden authorities.
                         try:
                             maybe_settle_skill_progression(
                                 conn,
@@ -263,9 +240,6 @@ def main() -> None:
                         except Exception:
                             pass
 
-                        # Structural genital anatomy is a slow lifecycle value;
-                        # momentary arousal/erection remains context-driven and is
-                        # not inferred from ordinary actions here.
                         try:
                             maybe_settle_sexual_anatomy_physiology_lifecycle(
                                 conn,
@@ -277,9 +251,6 @@ def main() -> None:
                         except Exception:
                             pass
 
-                        # Materialized presentation fields are deterministic caches,
-                        # refreshed only after their authoritative body inputs have
-                        # settled. They are not independent progression authorities.
                         try:
                             refresh_physical_presentation(
                                 conn,
@@ -316,8 +287,6 @@ def main() -> None:
                             sim_time=str(after["sim_time"]),
                         )
         except Exception:
-            # Fatal service-loop faults must reach systemd so the existing
-            # Restart=on-failure contract can actually restart the process.
             raise
         time.sleep(2)
 
