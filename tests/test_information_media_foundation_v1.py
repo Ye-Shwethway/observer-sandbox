@@ -20,11 +20,13 @@ def _gal_blob(records):
     return gzip.compress(text.encode("utf-8"))
 
 
-def test_information_truth_publication_and_exposure_stay_separate(tmp_path, monkeypatch):
+def test_information_truth_publication_and_exposure_stay_separate(tmp_path):
     db = tmp_path / "observer.sqlite3"
     initialize(db)
     with connect(db) as conn:
         assert conn.execute("SELECT device_type FROM media_devices WHERE entity_id=?", (TV_DEVICE_ID,)).fetchone()[0] == "television"
+        before_memory = conn.execute("SELECT COUNT(*) FROM character_memories").fetchone()[0]
+        before_mind = conn.execute("SELECT COUNT(*) FROM mental_episodes").fetchone()[0]
         item_ids = import_external_articles(conn, [{
             "provider_id": "test_provider",
             "provider_ref": "story-1",
@@ -36,13 +38,6 @@ def test_information_truth_publication_and_exposure_stay_separate(tmp_path, monk
         }])
         assert conn.execute("SELECT verification_status FROM information_items WHERE item_id=?", (item_ids[0],)).fetchone()[0] == "reported"
 
-        monkeypatch.setattr(news_ai, "generate_structured", lambda *args, **kwargs: {
-            "title": "Evening News",
-            "summary": "One source-backed story.",
-            "stories": [{"source_item_id": item_ids[0], "headline": "A reported event", "summary": "The outlet reports a bounded claim."}],
-        })
-        # No binding means the deterministic bulletin path is used; publication
-        # truth still does not create character knowledge or Mind/Memory state.
         publication = refresh_historical_tv_news(
             conn,
             "2025-05-23T19:00:00+00:00",
@@ -63,7 +58,8 @@ def test_information_truth_publication_and_exposure_stay_separate(tmp_path, monk
         stimulus = conn.execute("SELECT stimulus_type,channel FROM world_stimuli WHERE stimulus_id=?", (stimulus_id,)).fetchone()
         assert tuple(stimulus) == ("information", "media")
         assert conn.execute("SELECT COUNT(*) FROM character_exposures").fetchone()[0] == 0
-        assert conn.execute("SELECT COUNT(*) FROM mental_episodes").fetchone()[0] == 0
+        assert conn.execute("SELECT COUNT(*) FROM mental_episodes").fetchone()[0] == before_mind
+        assert conn.execute("SELECT COUNT(*) FROM character_memories").fetchone()[0] == before_memory
 
         device_location = conn.execute(
             "SELECT source_id FROM relations WHERE relation_type='contains' AND target_id=? LIMIT 1",
@@ -78,8 +74,8 @@ def test_information_truth_publication_and_exposure_stay_separate(tmp_path, monk
         )
         assert exposure["channel"] == "media"
         assert exposure["source_entity_id"] == TV_DEVICE_ID
-        assert conn.execute("SELECT COUNT(*) FROM mental_episodes").fetchone()[0] == 0
-        assert conn.execute("SELECT COUNT(*) FROM character_memories").fetchone()[0] == 0
+        assert conn.execute("SELECT COUNT(*) FROM mental_episodes").fetchone()[0] == before_mind
+        assert conn.execute("SELECT COUNT(*) FROM character_memories").fetchone()[0] == before_memory
 
 
 def test_news_binding_is_independent_and_probe_is_non_mutating(tmp_path, monkeypatch):
@@ -87,9 +83,7 @@ def test_news_binding_is_independent_and_probe_is_non_mutating(tmp_path, monkeyp
     initialize(db)
     with connect(db) as conn:
         conn.execute("UPDATE ai_providers SET enabled=1 WHERE id='groq'")
-        conn.execute(
-            "INSERT INTO ai_models(provider_id,model_id,display_name,active) VALUES('groq','news/model','news/model',1)"
-        )
+        conn.execute("INSERT INTO ai_models(provider_id,model_id,display_name,active) VALUES('groq','news/model','news/model',1)")
         conn.commit()
         monkeypatch.setattr(news_ai, "generate_structured", lambda *args, **kwargs: {
             "title": "Probe bulletin",
