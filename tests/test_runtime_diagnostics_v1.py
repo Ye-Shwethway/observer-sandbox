@@ -1,13 +1,11 @@
 from __future__ import annotations
 
-import os
 from pathlib import Path
 
 from observer_sandbox.runtime import initialize
 from observer_sandbox.runtime_diagnostics import (
     build_diagnostics_report,
     collect_runtime_snapshot,
-    configure_runtime_logging,
     tail_runtime_log,
 )
 
@@ -31,12 +29,8 @@ def test_runtime_diagnostics_read_production_shape_without_mutation(tmp_path: Pa
     assert "OBSERVER_TELEGRAM_BOT_TOKEN" not in report
 
 
-def test_runtime_log_is_bounded_and_tail_readable(tmp_path: Path):
+def test_runtime_log_tail_is_bounded_and_readable(tmp_path: Path):
     log_path = tmp_path / "runtime.log"
-    logger = configure_runtime_logging(log_path)
-    logger.error("fixture diagnostic line")
-    for handler in logger.handlers:
-        if hasattr(handler, "flush"):
-            handler.flush()
+    log_path.write_text("one\ntwo\nthree\n", encoding="utf-8")
 
-    assert any("fixture diagnostic line" in line for line in tail_runtime_log(10, log_path))
+    assert tail_runtime_log(2, log_path) == ["two", "three"]
