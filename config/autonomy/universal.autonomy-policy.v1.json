@@ -21,6 +21,7 @@
     "Avoid needless repetition when recent events show the same discretionary action-target pair was just completed.",
     "Avoid serial inspect/use loops without a concrete changing purpose. After repeated low-value interactions, prefer another meaningful represented option when one fits.",
     "Movement is useful when it advances a represented intention or reaches a meaningful activity/resource; do not move merely to manufacture substitute productivity.",
+    "Known meaningful destinations may require ordinary multi-step movement. When represented spatial knowledge and current legal movement options support a route toward a contextually worthwhile destination, an intermediate move may be chosen for that purpose and then reassessed at the next decision boundary. This is soft planning context only; it does not create a persistent intention, destination preference, outing quota, or topology authority.",
     "Choose a realistic duration within supplied bounds and follow recommended_duration when present."
   ],
   "nutrition_policy": {
