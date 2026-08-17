@@ -86,7 +86,7 @@ jobs:
             chmod 600 /var/lib/observer-sandbox/secrets.env
           '
 
-      - name: Install, configure cognition, restart, and verify
+      - name: Install, verify cognition, restart, and verify runtime
         env:
           VPS_HOST: ${{ secrets.VPS_HOST }}
           VPS_USER: ${{ secrets.VPS_USER }}
@@ -102,26 +102,35 @@ jobs:
             .venv/bin/sandboxctl init
             if grep -Eq "^OBSERVER_GROQ_API_KEY=.+" /var/lib/observer-sandbox/secrets.env 2>/dev/null; then
               if .venv/bin/sandboxctl ai bootstrap-groq-cognition; then
-                echo "Groq cognition bootstrap succeeded"
+                echo "Groq cognition bootstrap/catalog step succeeded"
               elif grep -Eq "^OBSERVER_GEMINI_API_KEY=.+" /var/lib/observer-sandbox/secrets.env 2>/dev/null; then
-                echo "Groq cognition bootstrap failed; falling back to Gemini bootstrap"
+                echo "Groq bootstrap failed; trying Gemini bootstrap"
                 .venv/bin/sandboxctl ai bootstrap-gemini-cognition
               else
-                echo "Groq cognition bootstrap failed; preserving existing cognition binding"
+                echo "Groq bootstrap failed; preserving existing cognition binding"
               fi
             elif grep -Eq "^OBSERVER_GEMINI_API_KEY=.+" /var/lib/observer-sandbox/secrets.env 2>/dev/null; then
               .venv/bin/sandboxctl ai bootstrap-gemini-cognition
             else
               echo "Cognition bootstrap skipped: no supported credential provisioned"
             fi
+
+            # Catalog visibility is not enough to prove generation authorization.
+            # This command performs a real non-mutating decision probe. If the
+            # current provider fails and Gemini is available, it switches only
+            # after Gemini also passes a live probe, then clears provider retry
+            # backoff and wakes an otherwise idle autonomous actor.
+            .venv/bin/python -m observer_sandbox.ai_recovery --db "$OBSERVER_SANDBOX_DB" --character char_darian
+
             sudo -n /usr/bin/systemctl restart observer-sandbox
             sudo -n /usr/bin/systemctl is-active observer-sandbox
+            sleep 6
             .venv/bin/sandboxctl status
             .venv/bin/sandboxctl living-status
             .venv/bin/sandboxctl autonomy-status
             .venv/bin/sandboxctl ai resolve cognition --character char_darian
             .venv/bin/python -m observer_sandbox.cognition_context_audit --db "$OBSERVER_SANDBOX_DB" --character char_darian
-            .venv/bin/python -c "import json,sqlite3; db=sqlite3.connect('file:/var/lib/observer-sandbox/observer.sqlite3?mode=ro',uri=True); db.row_factory=sqlite3.Row; err=db.execute(\"SELECT sim_time,payload_json FROM events WHERE actor_id=? AND event_type='autonomy_error' ORDER BY id DESC LIMIT 1\",('char_darian',)).fetchone(); rec=db.execute(\"SELECT sim_time,payload_json FROM events WHERE actor_id=? AND event_type='autonomy_recovery' ORDER BY id DESC LIMIT 1\",('char_darian',)).fetchone(); print('LATEST_AUTONOMY_ERROR='+json.dumps(None if err is None else {'sim_time':err['sim_time'],**json.loads(err['payload_json'] or '{}')},sort_keys=True)); print('LATEST_AUTONOMY_RECOVERY='+json.dumps(None if rec is None else {'sim_time':rec['sim_time'],**json.loads(rec['payload_json'] or '{}')},sort_keys=True))"
+            .venv/bin/python -c "import json,sqlite3; db=sqlite3.connect('file:/var/lib/observer-sandbox/observer.sqlite3?mode=ro',uri=True); db.row_factory=sqlite3.Row; err=db.execute(\"SELECT sim_time,payload_json FROM events WHERE actor_id=? AND event_type='autonomy_error' ORDER BY id DESC LIMIT 1\",('char_darian',)).fetchone(); rec=db.execute(\"SELECT sim_time,payload_json FROM events WHERE actor_id=? AND event_type='autonomy_recovery' ORDER BY id DESC LIMIT 1\",('char_darian',)).fetchone(); provider=db.execute(\"SELECT sim_time,payload_json FROM events WHERE actor_id=? AND event_type='cognition_provider_recovered' ORDER BY id DESC LIMIT 1\",('char_darian',)).fetchone(); started=db.execute(\"SELECT sim_time,payload_json FROM events WHERE actor_id=? AND event_type='action_started' ORDER BY id DESC LIMIT 1\",('char_darian',)).fetchone(); print('LATEST_AUTONOMY_ERROR='+json.dumps(None if err is None else {'sim_time':err['sim_time'],**json.loads(err['payload_json'] or '{}')},sort_keys=True)); print('LATEST_AUTONOMY_RECOVERY='+json.dumps(None if rec is None else {'sim_time':rec['sim_time'],**json.loads(rec['payload_json'] or '{}')},sort_keys=True)); print('LATEST_PROVIDER_RECOVERY='+json.dumps(None if provider is None else {'sim_time':provider['sim_time'],**json.loads(provider['payload_json'] or '{}')},sort_keys=True)); print('LATEST_ACTION_STARTED='+json.dumps(None if started is None else {'sim_time':started['sim_time'],**json.loads(started['payload_json'] or '{}')},sort_keys=True))"
             if grep -Eq "^OBSERVER_TELEGRAM_BOT_TOKEN=.+" /var/lib/observer-sandbox/secrets.env 2>/dev/null; then
               echo "TELEGRAM_BOT_TOKEN_PRESENT=true"
               TOKEN=$(sed -n "s/^OBSERVER_TELEGRAM_BOT_TOKEN=//p" /var/lib/observer-sandbox/secrets.env | head -n1)
