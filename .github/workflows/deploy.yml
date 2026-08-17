@@ -203,3 +203,32 @@ jobs:
               echo "TELEGRAM_ALLOWED_USERS_PRESENT=false"
             fi
           '
+
+      - name: Capture runtime failure diagnostics
+        if: failure()
+        env:
+          VPS_HOST: ${{ secrets.VPS_HOST }}
+          VPS_USER: ${{ secrets.VPS_USER }}
+          VPS_PORT: ${{ secrets.VPS_PORT || '22' }}
+        run: |
+          ssh -p "$VPS_PORT" "$VPS_USER@$VPS_HOST" '
+            set +e
+            echo "=== SYSTEMD STATUS ==="
+            /usr/bin/systemctl status observer-sandbox --no-pager -l
+            echo "=== SYSTEMD STATE ==="
+            /usr/bin/systemctl show observer-sandbox -p ActiveState -p SubState -p Result -p ExecMainCode -p ExecMainStatus -p NRestarts -p MainPID
+            echo "=== SERVICE JOURNAL ==="
+            sudo -n /usr/bin/journalctl -u observer-sandbox -n 120 --no-pager 2>/dev/null || /usr/bin/journalctl -u observer-sandbox -n 120 --no-pager 2>&1
+            echo "=== PROCESS SNAPSHOT ==="
+            /usr/bin/ps -eo pid,ppid,user,stat,etime,cmd | /usr/bin/grep -E "observer_sandbox|observer-sandbox" | /usr/bin/grep -v grep
+            echo "=== RUNTIME FILE METADATA ==="
+            /usr/bin/stat -c "%U:%G %a %s %n" /var/lib/observer-sandbox/observer.sqlite3 /var/lib/observer-sandbox/secrets.env 2>&1
+          ' > runtime-diagnostics.txt 2>&1 || true
+
+      - name: Upload runtime failure diagnostics
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: runtime-failure-diagnostics
+          path: runtime-diagnostics.txt
+          if-no-files-found: error
