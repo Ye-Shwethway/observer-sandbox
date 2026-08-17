@@ -3,17 +3,23 @@ from __future__ import annotations
 import hashlib
 import json
 import sqlite3
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from typing import Any
+from zoneinfo import ZoneInfo
 
 from .historical_news_provider import gdelt_historical_articles
 from .news_ai import generate_news_bulletin
+from .simulation import runtime_value, set_runtime_value
 from .world import get_field
 from .world_stimulus import add_stimulus_scope, create_world_stimulus, record_character_exposure
 
 
 TV_DEVICE_ID = "obj_thorne_estate_living_media_console"
 TV_DEVICE_TYPE = "television"
+NEWS_BROADCAST_TIMEZONE = ZoneInfo("America/Los_Angeles")
+NEWS_BROADCAST_SLOTS: tuple[tuple[str, int], ...] = (("morning", 7), ("evening", 18))
+NEWS_SCHEDULER_STATE_KEY = "information_media.news_scheduler"
+NEWS_RETRY_MINUTES = 15
 
 
 def _json(value: Any) -> str:
@@ -22,6 +28,41 @@ def _json(value: Any) -> str:
 
 def _stable_id(prefix: str, value: str) -> str:
     return f"{prefix}_{hashlib.sha256(value.encode('utf-8')).hexdigest()[:20]}"
+
+
+def _aware_datetime(value: str) -> datetime:
+    parsed = datetime.fromisoformat(str(value).replace("Z", "+00:00"))
+    if parsed.tzinfo is None:
+        parsed = parsed.replace(tzinfo=timezone.utc)
+    return parsed
+
+
+def news_broadcast_slot(sim_time: str) -> dict[str, str]:
+    """Resolve the latest due South Lake Tahoe TV bulletin slot for shared universe time."""
+    current_utc = _aware_datetime(sim_time).astimezone(timezone.utc)
+    local_now = current_utc.astimezone(NEWS_BROADCAST_TIMEZONE)
+    local_date = local_now.date()
+    candidates: list[tuple[str, datetime]] = []
+    for day in (local_date - timedelta(days=1), local_date):
+        for slot_name, hour in NEWS_BROADCAST_SLOTS:
+            local_slot = datetime(day.year, day.month, day.day, hour, 0, tzinfo=NEWS_BROADCAST_TIMEZONE)
+            if local_slot <= local_now:
+                candidates.append((slot_name, local_slot))
+    slot_name, local_start = max(candidates, key=lambda item: item[1])
+    if slot_name == "morning":
+        local_end = datetime(local_start.year, local_start.month, local_start.day, 18, 0, tzinfo=NEWS_BROADCAST_TIMEZONE)
+    else:
+        next_day = local_start.date() + timedelta(days=1)
+        local_end = datetime(next_day.year, next_day.month, next_day.day, 7, 0, tzinfo=NEWS_BROADCAST_TIMEZONE)
+    label = "Morning News" if slot_name == "morning" else "Evening News"
+    return {
+        "slot_id": f"{local_start.date().isoformat()}:{slot_name}",
+        "slot_name": slot_name,
+        "label": label,
+        "local_date": local_start.date().isoformat(),
+        "available_from": local_start.astimezone(timezone.utc).isoformat(),
+        "available_until": local_end.astimezone(timezone.utc).isoformat(),
+    }
 
 
 def ensure_information_media_seed(conn: sqlite3.Connection) -> None:
@@ -251,6 +292,9 @@ def refresh_historical_tv_news(
     *,
     fetch=None,
     lookback_minutes: int = 90,
+    publication_id: str | None = None,
+    bulletin_title: str | None = None,
+    available_until: str | None = None,
 ) -> dict[str, Any] | None:
     kwargs: dict[str, Any] = {"lookback_minutes": lookback_minutes, "limit": 40}
     if fetch is not None:
@@ -261,26 +305,114 @@ def refresh_historical_tv_news(
     item_ids = import_external_articles(conn, records)
     source_items = [information_item(conn, item_id) for item_id in item_ids]
     label = str(sim_time)[:10]
-    bulletin, editorial = generate_news_bulletin(conn, source_items, bulletin_title=f"Evening News — {label}")
+    requested_title = bulletin_title or f"Evening News — {label}"
+    bulletin, editorial = generate_news_bulletin(conn, source_items, bulletin_title=requested_title)
     selected = [str(story["source_item_id"]) for story in bulletin["stories"]]
     if not selected:
         selected = item_ids[:6]
-    publication_id = _stable_id("publication", f"gdelt-tv:{sim_time[:16]}")
-    try:
-        available_until = (datetime.fromisoformat(sim_time.replace("Z", "+00:00")) + timedelta(hours=2)).isoformat()
-    except Exception:
-        available_until = None
+    resolved_publication_id = publication_id or _stable_id("publication", f"gdelt-tv:{sim_time[:16]}")
+    resolved_available_until = available_until
+    if resolved_available_until is None:
+        try:
+            resolved_available_until = (_aware_datetime(sim_time) + timedelta(hours=2)).isoformat()
+        except Exception:
+            resolved_available_until = None
     return create_tv_publication(
         conn,
-        publication_id=publication_id,
-        title=str(bulletin["title"]),
+        publication_id=resolved_publication_id,
+        title=requested_title if bulletin_title else str(bulletin["title"]),
         summary=str(bulletin["summary"]),
         item_ids=selected,
         available_from=sim_time,
-        available_until=available_until,
+        available_until=resolved_available_until,
         editorial_provider_id=None if editorial is None else editorial["provider_id"],
         editorial_model_id=None if editorial is None else editorial["model_id"],
     )
+
+
+def _publication_in_slot(conn: sqlite3.Connection, slot: dict[str, str]) -> dict[str, Any] | None:
+    row = conn.execute(
+        """
+        SELECT publication_id FROM media_publications
+        WHERE medium='television' AND available_from>=? AND available_from<?
+        ORDER BY available_from DESC,publication_id DESC LIMIT 1
+        """,
+        (slot["available_from"], slot["available_until"]),
+    ).fetchone()
+    return None if row is None else media_publication(conn, str(row["publication_id"]))
+
+
+def _scheduler_cooldown_active(conn: sqlite3.Connection, slot_id: str, *, now: datetime) -> bool:
+    state = runtime_value(conn, NEWS_SCHEDULER_STATE_KEY, {})
+    if not isinstance(state, dict) or state.get("slot_id") != slot_id or state.get("status") == "success":
+        return False
+    attempted_at = state.get("attempted_at")
+    if not attempted_at:
+        return False
+    try:
+        attempted = _aware_datetime(str(attempted_at)).astimezone(timezone.utc)
+    except Exception:
+        return False
+    return now.astimezone(timezone.utc) - attempted < timedelta(minutes=NEWS_RETRY_MINUTES)
+
+
+def ensure_historical_tv_news_for_sim_time(
+    conn: sqlite3.Connection,
+    sim_time: str,
+    *,
+    fetch=None,
+    lookback_minutes: int = 90,
+    now: datetime | None = None,
+) -> dict[str, Any] | None:
+    """Materialize only the latest due autonomous TV bulletin for shared universe time.
+
+    The service may call this cheaply every loop. A represented publication already
+    inside the current bulletin window satisfies the slot, while failed/no-data
+    provider attempts are wall-clock throttled so the external provider and AI are
+    never polled continuously. Large simulation-time jumps do not backfill missed
+    bulletins; only the latest due slot is materialized.
+    """
+    slot = news_broadcast_slot(sim_time)
+    existing = _publication_in_slot(conn, slot)
+    if existing is not None:
+        return existing
+
+    wall_now = (now or datetime.now(timezone.utc)).astimezone(timezone.utc)
+    if _scheduler_cooldown_active(conn, slot["slot_id"], now=wall_now):
+        return None
+
+    set_runtime_value(conn, NEWS_SCHEDULER_STATE_KEY, {
+        "slot_id": slot["slot_id"],
+        "attempted_at": wall_now.isoformat(),
+        "status": "attempting",
+    })
+    conn.commit()
+    try:
+        publication = refresh_historical_tv_news(
+            conn,
+            slot["available_from"],
+            fetch=fetch,
+            lookback_minutes=lookback_minutes,
+            publication_id=_stable_id("publication", f"gdelt-tv-slot:{slot['slot_id']}"),
+            bulletin_title=f"{slot['label']} — {slot['local_date']}",
+            available_until=slot["available_until"],
+        )
+    except Exception:
+        set_runtime_value(conn, NEWS_SCHEDULER_STATE_KEY, {
+            "slot_id": slot["slot_id"],
+            "attempted_at": wall_now.isoformat(),
+            "status": "error",
+        })
+        conn.commit()
+        raise
+
+    set_runtime_value(conn, NEWS_SCHEDULER_STATE_KEY, {
+        "slot_id": slot["slot_id"],
+        "attempted_at": wall_now.isoformat(),
+        "status": "success" if publication is not None else "no_records",
+    })
+    conn.commit()
+    return publication
 
 
 def record_tv_exposure(
