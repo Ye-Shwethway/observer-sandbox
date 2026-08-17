@@ -86,7 +86,7 @@ jobs:
             chmod 600 /var/lib/observer-sandbox/secrets.env
           '
 
-      - name: Install, verify cognition, restart, and verify runtime
+      - name: Install application runtime
         env:
           VPS_HOST: ${{ secrets.VPS_HOST }}
           VPS_USER: ${{ secrets.VPS_USER }}
@@ -96,10 +96,21 @@ jobs:
             set -euo pipefail
             cd /opt/observer-sandbox
             test -d .venv || python3 -m venv .venv
-            .venv/bin/python -m pip install --upgrade pip
             .venv/bin/pip install -e .
             export OBSERVER_SANDBOX_DB=/var/lib/observer-sandbox/observer.sqlite3
             .venv/bin/sandboxctl init
+          '
+
+      - name: Verify cognition recovery
+        env:
+          VPS_HOST: ${{ secrets.VPS_HOST }}
+          VPS_USER: ${{ secrets.VPS_USER }}
+          VPS_PORT: ${{ secrets.VPS_PORT || '22' }}
+        run: |
+          ssh -p "$VPS_PORT" "$VPS_USER@$VPS_HOST" '
+            set -euo pipefail
+            cd /opt/observer-sandbox
+            export OBSERVER_SANDBOX_DB=/var/lib/observer-sandbox/observer.sqlite3
             if grep -Eq "^OBSERVER_GROQ_API_KEY=.+" /var/lib/observer-sandbox/secrets.env 2>/dev/null; then
               if .venv/bin/sandboxctl ai bootstrap-groq-cognition; then
                 echo "Groq cognition bootstrap/catalog step succeeded"
@@ -114,16 +125,45 @@ jobs:
             else
               echo "Cognition bootstrap skipped: no supported credential provisioned"
             fi
-
-            # Catalog visibility is not enough to prove generation authorization.
-            # This command performs a real non-mutating decision probe. If the
-            # current provider fails and Gemini is available, it switches only
-            # after Gemini also passes a live probe, then clears provider retry
-            # backoff and wakes an otherwise idle autonomous actor.
             .venv/bin/python -m observer_sandbox.ai_recovery --db "$OBSERVER_SANDBOX_DB" --character char_darian
+          '
 
+      - name: Synchronize canonical service unit
+        env:
+          VPS_HOST: ${{ secrets.VPS_HOST }}
+          VPS_USER: ${{ secrets.VPS_USER }}
+          VPS_PORT: ${{ secrets.VPS_PORT || '22' }}
+        run: |
+          ssh -p "$VPS_PORT" "$VPS_USER@$VPS_HOST" '
+            set -euo pipefail
+            cd /opt/observer-sandbox
+            sudo -n /usr/bin/install -m 0644 deploy/observer-sandbox.service /etc/systemd/system/observer-sandbox.service
+            sudo -n /usr/bin/systemctl daemon-reload
+            sudo -n /usr/bin/systemctl cat observer-sandbox
+          '
+
+      - name: Restart runtime service
+        env:
+          VPS_HOST: ${{ secrets.VPS_HOST }}
+          VPS_USER: ${{ secrets.VPS_USER }}
+          VPS_PORT: ${{ secrets.VPS_PORT || '22' }}
+        run: |
+          ssh -p "$VPS_PORT" "$VPS_USER@$VPS_HOST" '
+            set -euo pipefail
             sudo -n /usr/bin/systemctl restart observer-sandbox
             sudo -n /usr/bin/systemctl is-active observer-sandbox
+          '
+
+      - name: Verify runtime health
+        env:
+          VPS_HOST: ${{ secrets.VPS_HOST }}
+          VPS_USER: ${{ secrets.VPS_USER }}
+          VPS_PORT: ${{ secrets.VPS_PORT || '22' }}
+        run: |
+          ssh -p "$VPS_PORT" "$VPS_USER@$VPS_HOST" '
+            set -euo pipefail
+            cd /opt/observer-sandbox
+            export OBSERVER_SANDBOX_DB=/var/lib/observer-sandbox/observer.sqlite3
             sleep 6
             .venv/bin/sandboxctl status
             .venv/bin/sandboxctl living-status
