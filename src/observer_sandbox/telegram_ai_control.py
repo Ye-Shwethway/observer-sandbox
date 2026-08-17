@@ -11,6 +11,11 @@ from .ai_control import (
     refresh_provider_catalog,
     remove_cognition_fallback,
 )
+from .news_ai import (
+    activate_news_generation_model,
+    news_generation_binding,
+    probe_news_generation_model,
+)
 from .simulation import runtime_value, set_runtime_value
 from .telegram_creator_diagnostics import callback_view as diagnostic_callback_view
 
@@ -37,59 +42,107 @@ def _provider_map(conn) -> dict[str, dict[str, Any]]:
 
 
 def _prefix(mode: str) -> str:
-    return "af" if mode == "fallback" else "ai"
+    if mode == "fallback":
+        return "af"
+    if mode == "news":
+        return "ng"
+    return "ai"
 
 
 def _mode_title(mode: str) -> str:
-    return "Fallback" if mode == "fallback" else "Primary"
+    if mode == "fallback":
+        return "Fallback"
+    if mode == "news":
+        return "News Generation"
+    return "Primary"
 
 
 def _home_keyboard() -> list[list[dict[str, str]]]:
     return [
-        [{"text": "🧠 Primary Cognition", "callback_data": "ai:providers"}],
-        [{"text": "🛟 Fallback Model", "callback_data": "af:providers"}],
+        [{"text": "🧠 Character AI", "callback_data": "ai:character"}],
+        [{"text": "📰 News Generation AI", "callback_data": "ng:home"}],
         [{"text": "🧪 Diagnostics", "callback_data": "ai:diag:home"}],
         [{"text": "⌂ Observer Home", "callback_data": "nav:home"}],
     ]
 
 
 def home_view(conn) -> tuple[str, list[list[dict[str, str]]]]:
+    cognition = cognition_overview(conn)
+    primary = cognition.get("binding") or {}
+    fallback = cognition.get("fallback") or {}
+    news = news_generation_binding(conn) or {}
+    lines = [
+        "⚙️ CREATOR SETTINGS",
+        "━━━━━━━━━━━━━━━━━━",
+        "🤖 AI SETTINGS",
+        "",
+        "🧠 Character AI",
+        f"Primary: {primary.get('provider_id', 'Not configured')} / {primary.get('model_id', 'Not configured')}",
+        f"Fallback: {fallback.get('provider_id', 'Not configured')} / {fallback.get('model_id', 'Not configured')}",
+        "",
+        "📰 News Generation AI",
+        f"Model: {news.get('provider_id', 'Not configured')} / {news.get('model_id', 'Not configured')}",
+        "",
+        "Character cognition and news editorial generation use independent role bindings.",
+    ]
+    return "\n".join(lines), _home_keyboard()
+
+
+def _character_home_view(conn) -> tuple[str, list[list[dict[str, str]]]]:
     overview = cognition_overview(conn)
     binding = overview.get("binding") or {}
     fallback = overview.get("fallback") or {}
     last = overview.get("last_fallback") or {}
     lines = [
-        "⚙️ CREATOR SETTINGS",
+        "🧠 CHARACTER AI",
         "━━━━━━━━━━━━━━━━━━",
-        "🧠 AI Cognition",
-        "",
         f"Primary: {binding.get('provider_id', 'Not configured')} / {binding.get('model_id', 'Not configured')}",
         f"Fallback: {fallback.get('provider_id', 'Not configured')} / {fallback.get('model_id', 'Not configured')}",
     ]
     if last:
-        lines.extend([
+        lines.extend(["", f"🛟 Last fallback: {last.get('fallback_provider_id')} / {last.get('fallback_model_id')}"])
+    lines.extend(["", "Primary and fallback affect autonomous character cognition only."])
+    return "\n".join(lines), [
+        [{"text": "🧠 Primary Cognition", "callback_data": "ai:providers"}],
+        [{"text": "🛟 Fallback Model", "callback_data": "af:providers"}],
+        [{"text": "← AI Settings", "callback_data": "ai:home"}],
+    ]
+
+
+def _news_home_view(conn) -> tuple[str, list[list[dict[str, str]]]]:
+    binding = news_generation_binding(conn) or {}
+    return (
+        "\n".join([
+            "📰 NEWS GENERATION AI",
+            "━━━━━━━━━━━━━━━━━━",
+            f"Current: {binding.get('provider_id', 'Not configured')} / {binding.get('model_id', 'Not configured')}",
             "",
-            f"🛟 Last fallback: {last.get('fallback_provider_id')} / {last.get('fallback_model_id')}",
-            f"🕒 {last.get('used_at', 'Unknown')}",
-        ])
-    lines.extend([
-        "",
-        "Primary is tried first. A configured fallback is used only when the provider/model call itself fails; deterministic action validation never triggers fallback.",
-        "",
-        "🧪 Diagnostics provides explicit Creator-only runtime controls for controlled experiments.",
-    ])
-    return "\n".join(lines), _home_keyboard()
+            "This role edits represented source evidence into bounded TV bulletins. It does not establish objective world truth.",
+        ]),
+        [
+            [{"text": "📰 Select News Model", "callback_data": "ng:providers"}],
+            [{"text": "← AI Settings", "callback_data": "ai:home"}],
+        ],
+    )
+
+
+def _selected_binding(conn, mode: str) -> dict[str, Any]:
+    if mode == "news":
+        return news_generation_binding(conn) or {}
+    overview = cognition_overview(conn)
+    return (overview.get("fallback") if mode == "fallback" else overview.get("binding")) or {}
 
 
 def _providers_view(conn, mode: str = "primary") -> tuple[str, list[list[dict[str, str]]]]:
     overview = cognition_overview(conn)
-    selected_binding = (overview.get("fallback") if mode == "fallback" else overview.get("binding")) or {}
+    selected_binding = _selected_binding(conn, mode)
     selected_provider = selected_binding.get("provider_id")
     prefix = _prefix(mode)
+    icon = "📰" if mode == "news" else "🧠"
     lines = [
-        f"🧠 AI COGNITION · {_mode_title(mode).upper()} PROVIDERS",
+        f"{icon} {_mode_title(mode).upper()} · PROVIDERS",
         "━━━━━━━━━━━━━━━━━━",
-        f"Current {_mode_title(mode).lower()}: {selected_binding.get('provider_id', 'None')} / {selected_binding.get('model_id', 'None')}",
+        f"Current: {selected_binding.get('provider_id', 'None')} / {selected_binding.get('model_id', 'None')}",
         "",
         "Select a provider:",
     ]
@@ -98,18 +151,12 @@ def _providers_view(conn, mode: str = "primary") -> tuple[str, list[list[dict[st
         provider_id = str(provider["id"])
         credential = "🔑" if provider.get("credential_present") else "⚪"
         current_icon = "✅" if provider_id == selected_provider else ""
-        lines.append(
-            f"• {provider['display_name']} · {'credential ready' if provider.get('credential_present') else 'credential missing'}"
-        )
-        keyboard.append(
-            [{"text": f"{current_icon}{credential} {provider['display_name']}", "callback_data": f"{prefix}:p:{provider_id}"}]
-        )
+        lines.append(f"• {provider['display_name']} · {'credential ready' if provider.get('credential_present') else 'credential missing'}")
+        keyboard.append([{"text": f"{current_icon}{credential} {provider['display_name']}", "callback_data": f"{prefix}:p:{provider_id}"}])
     if mode == "fallback" and overview.get("fallback"):
         keyboard.append([{"text": "🗑 Remove Fallback", "callback_data": "af:clear"}])
-    keyboard.extend([
-        [{"text": "← Creator Settings", "callback_data": "ai:home"}],
-        [{"text": "⌂ Observer Home", "callback_data": "nav:home"}],
-    ])
+    back = "ng:home" if mode == "news" else "ai:character"
+    keyboard.extend([[{"text": "← Back", "callback_data": back}], [{"text": "⌂ Observer Home", "callback_data": "nav:home"}]])
     return "\n".join(lines), keyboard
 
 
@@ -120,13 +167,7 @@ def _nanogpt_fetch_buttons(prefix: str) -> list[list[dict[str, str]]]:
     ]
 
 
-def _provider_view(
-    conn,
-    provider_id: str,
-    *,
-    mode: str = "primary",
-    notice: str | None = None,
-) -> tuple[str, list[list[dict[str, str]]]]:
+def _provider_view(conn, provider_id: str, *, mode: str = "primary", notice: str | None = None):
     providers = _provider_map(conn)
     provider = providers.get(provider_id)
     prefix = _prefix(mode)
@@ -134,7 +175,7 @@ def _provider_view(
         return "Unknown AI provider.", [[{"text": "← Providers", "callback_data": f"{prefix}:providers"}]]
     models = models_for_provider(conn, provider_id)
     lines = [
-        f"🧠 {_mode_title(mode)} · {provider['display_name']}",
+        f"{'📰' if mode == 'news' else '🧠'} {_mode_title(mode)} · {provider['display_name']}",
         "━━━━━━━━━━━━━━━━━━",
         f"🔐 Credential: {'Available' if provider.get('credential_present') else 'Missing'}",
         f"📚 Cached models: {len(models)}",
@@ -143,14 +184,10 @@ def _provider_view(
     if provider.get("last_refresh_at"):
         lines.append(f"🕒 Last refresh: {provider['last_refresh_at']}")
     if provider_id == "nanogpt":
-        lines.extend([
-            "",
-            "🟢 Subscription Only: models included in the NanoGPT subscription.",
-            "💳 All: subscription models plus paid/premium models. Paid-model tests and runtime calls may use account balance.",
-        ])
+        lines.extend(["", "🟢 Subscription Only · 💳 All includes paid/balance models."])
     if notice:
         lines.extend(["", notice])
-    lines.extend(["", "Fetching a catalog does not change primary or fallback cognition settings."])
+    lines.extend(["", "Fetching a catalog never changes an active binding."])
     keyboard: list[list[dict[str, str]]] = []
     if provider_id == "nanogpt":
         keyboard.extend(_nanogpt_fetch_buttons(prefix))
@@ -159,12 +196,11 @@ def _provider_view(
     keyboard.extend([
         [{"text": "📚 Browse Models", "callback_data": f"{prefix}:page:{provider_id}:0"}],
         [{"text": "← Providers", "callback_data": f"{prefix}:providers"}],
-        [{"text": "⌂ Observer Home", "callback_data": "nav:home"}],
     ])
     return "\n".join(lines), keyboard
 
 
-def _models_page(conn, provider_id: str, page: int, *, mode: str = "primary") -> tuple[str, list[list[dict[str, str]]]]:
+def _models_page(conn, provider_id: str, page: int, *, mode: str = "primary"):
     providers = _provider_map(conn)
     provider = providers.get(provider_id)
     prefix = _prefix(mode)
@@ -176,27 +212,21 @@ def _models_page(conn, provider_id: str, page: int, *, mode: str = "primary") ->
     pages = max(1, (len(models) + AI_PAGE_SIZE - 1) // AI_PAGE_SIZE)
     page = max(0, min(int(page), pages - 1))
     start = page * AI_PAGE_SIZE
-    visible = models[start : start + AI_PAGE_SIZE]
-    lines = [
-        f"📚 {_mode_title(mode).upper()} · {provider['display_name']} MODELS",
-        "━━━━━━━━━━━━━━━━━━",
-        f"Page {page + 1}/{pages} · {len(models)} models",
-        "",
-        "Select a candidate model. Selection alone changes nothing.",
-    ]
+    visible = models[start:start + AI_PAGE_SIZE]
+    lines = [f"📚 {_mode_title(mode).upper()} · {provider['display_name']} MODELS", "━━━━━━━━━━━━━━━━━━", f"Page {page + 1}/{pages} · {len(models)} models", "", "Select a candidate. Selection alone changes nothing."]
     if provider_id == "nanogpt":
-        lines.append("🟢 = subscription included · 💳 = paid/balance model")
+        lines.append("🟢 subscription included · 💳 paid/balance")
     keyboard: list[list[dict[str, str]]] = []
     for offset, model in enumerate(visible):
         index = start + offset
         label = str(model.get("display_name") or model["model_id"])
         if len(label) > 48:
             label = label[:45] + "…"
-        icon = "🧠"
+        item_icon = "📰" if mode == "news" else "🧠"
         if provider_id == "nanogpt":
             scope = str((model.get("metadata") or {}).get("observer_nanogpt_billing_scope") or "subscription")
-            icon = "💳" if scope == "paid" else "🟢"
-        keyboard.append([{"text": f"{icon} {label}", "callback_data": f"{prefix}:m:{provider_id}:{index}"}])
+            item_icon = "💳" if scope == "paid" else "🟢"
+        keyboard.append([{"text": f"{item_icon} {label}", "callback_data": f"{prefix}:m:{provider_id}:{index}"}])
     nav: list[dict[str, str]] = []
     if page > 0:
         nav.append({"text": "◀️", "callback_data": f"{prefix}:page:{provider_id}:{page - 1}"})
@@ -204,55 +234,39 @@ def _models_page(conn, provider_id: str, page: int, *, mode: str = "primary") ->
         nav.append({"text": "▶️", "callback_data": f"{prefix}:page:{provider_id}:{page + 1}"})
     if nav:
         keyboard.append(nav)
-    if provider_id == "nanogpt":
-        keyboard.extend(_nanogpt_fetch_buttons(prefix))
-    else:
-        keyboard.append([{"text": "🔄 Refresh Catalog", "callback_data": f"{prefix}:r:{provider_id}"}])
     keyboard.append([{"text": f"← {provider['display_name']}", "callback_data": f"{prefix}:p:{provider_id}"}])
     return "\n".join(lines), keyboard
 
 
-def _candidate_view(conn, user_id: int, *, notice: str | None = None) -> tuple[str, list[list[dict[str, str]]]]:
+def _candidate_view(conn, user_id: int, *, notice: str | None = None):
     candidate = _candidate(conn, user_id)
     if not candidate:
-        return "No AI model candidate is selected.", [[{"text": "← Creator Settings", "callback_data": "ai:home"}]]
+        return "No AI model candidate is selected.", [[{"text": "← AI Settings", "callback_data": "ai:home"}]]
     provider_id = str(candidate["provider_id"])
     model_id = str(candidate["model_id"])
     mode = str(candidate.get("mode") or "primary")
     prefix = _prefix(mode)
-    providers = _provider_map(conn)
-    provider_name = providers.get(provider_id, {}).get("display_name", provider_id)
+    provider_name = _provider_map(conn).get(provider_id, {}).get("display_name", provider_id)
     tested = bool(candidate.get("probe_ok"))
-    lines = [
-        f"🧪 {_mode_title(mode).upper()} MODEL CANDIDATE",
-        "━━━━━━━━━━━━━━━━━━",
-        f"Provider: {provider_name}",
-        f"Model: {model_id}",
-        f"Test: {'✅ Passed' if tested else '⚪ Not passed'}",
-    ]
+    lines = [f"🧪 {_mode_title(mode).upper()} MODEL CANDIDATE", "━━━━━━━━━━━━━━━━━━", f"Provider: {provider_name}", f"Model: {model_id}", f"Test: {'✅ Passed' if tested else '⚪ Not passed'}"]
     if provider_id == "nanogpt":
         scope = str(candidate.get("billing_scope") or "subscription")
         lines.append(f"Billing: {'💳 Paid / balance' if scope == 'paid' else '🟢 Subscription included'}")
-        if scope == "paid":
-            lines.append("⚠️ Test Model and future runtime calls may consume NanoGPT balance.")
     if candidate.get("latency_ms") is not None:
         lines.append(f"Latency: {candidate['latency_ms']} ms")
     if notice:
         lines.extend(["", notice])
-    if mode == "fallback":
-        lines.extend(["", "The primary binding stays unchanged. Save will configure this tested model only as runtime fallback."])
+    if mode == "news":
+        lines.extend(["", "The current news-generation binding is unchanged until Save & Activate."])
+    elif mode == "fallback":
+        lines.extend(["", "Primary remains unchanged. Save configures this tested model only as fallback."])
     else:
         lines.extend(["", "The current primary binding is unchanged until Save & Activate."])
-    keyboard: list[list[dict[str, str]]] = [
-        [{"text": "🧪 Test Model", "callback_data": f"{prefix}:test"}],
-    ]
+    keyboard = [[{"text": "🧪 Test Model", "callback_data": f"{prefix}:test"}]]
     if tested:
         label = "✅ Save Fallback" if mode == "fallback" else "✅ Save & Activate"
         keyboard.append([{"text": label, "callback_data": f"{prefix}:save"}])
-    keyboard.extend([
-        [{"text": "🗑 Cancel Candidate", "callback_data": f"{prefix}:cancel"}],
-        [{"text": f"← {provider_name} Models", "callback_data": f"{prefix}:page:{provider_id}:0"}],
-    ])
+    keyboard.extend([[{"text": "🗑 Cancel Candidate", "callback_data": f"{prefix}:cancel"}], [{"text": f"← {provider_name} Models", "callback_data": f"{prefix}:page:{provider_id}:0"}]])
     return "\n".join(lines), keyboard
 
 
@@ -285,17 +299,7 @@ def _select_model(conn, user_id: int, provider_id: str, index_text: str, *, mode
         return "That model selection is stale. Refresh the model list.", [[{"text": "← Providers", "callback_data": f"{prefix}:providers"}]]
     selected = models[index]
     billing_scope = str((selected.get("metadata") or {}).get("observer_nanogpt_billing_scope") or "subscription")
-    _save_candidate(
-        conn,
-        user_id,
-        {
-            "mode": mode,
-            "provider_id": provider_id,
-            "model_id": selected["model_id"],
-            "billing_scope": billing_scope if provider_id == "nanogpt" else None,
-            "probe_ok": False,
-        },
-    )
+    _save_candidate(conn, user_id, {"mode": mode, "provider_id": provider_id, "model_id": selected["model_id"], "billing_scope": billing_scope if provider_id == "nanogpt" else None, "probe_ok": False})
     return _candidate_view(conn, user_id)
 
 
@@ -304,14 +308,9 @@ def _test_candidate(conn, user_id: int, *, mode: str):
     if not candidate or str(candidate.get("mode") or "primary") != mode:
         return "No matching AI model candidate is selected.", [[{"text": "← Providers", "callback_data": f"{_prefix(mode)}:providers"}]]
     try:
-        result = probe_model(conn, str(candidate["provider_id"]), str(candidate["model_id"]))
-        candidate.update(
-            {
-                "probe_ok": True,
-                "latency_ms": result["latency_ms"],
-                "tested_at": result["tested_at"],
-            }
-        )
+        probe = probe_news_generation_model if mode == "news" else probe_model
+        result = probe(conn, str(candidate["provider_id"]), str(candidate["model_id"]))
+        candidate.update({"probe_ok": True, "latency_ms": result["latency_ms"], "tested_at": result["tested_at"]})
         _save_candidate(conn, user_id, candidate)
         return _candidate_view(conn, user_id, notice="✅ Real inference succeeded. This candidate may now be saved.")
     except Exception as exc:
@@ -328,57 +327,39 @@ def _save_selected_candidate(conn, user_id: int, *, mode: str):
     if not candidate or str(candidate.get("mode") or "primary") != mode or not candidate.get("probe_ok"):
         return "🔒 Test the selected model successfully before saving.", [[{"text": "← Providers", "callback_data": f"{prefix}:providers"}]]
     try:
-        if mode == "fallback":
-            binding = activate_cognition_fallback(
-                conn,
-                str(candidate["provider_id"]),
-                str(candidate["model_id"]),
-                tested_at=candidate.get("tested_at"),
-            )
+        if mode == "news":
+            binding = activate_news_generation_model(conn, str(candidate["provider_id"]), str(candidate["model_id"]))
+        elif mode == "fallback":
+            binding = activate_cognition_fallback(conn, str(candidate["provider_id"]), str(candidate["model_id"]), tested_at=candidate.get("tested_at"))
         else:
             binding = activate_cognition_model(conn, str(candidate["provider_id"]), str(candidate["model_id"]))
     except Exception as exc:
         return _candidate_view(conn, user_id, notice=f"❌ Save failed safely.\n{str(exc)[:900]}")
     _save_candidate(conn, user_id, None)
+    if mode == "news":
+        return ("✅ NEWS GENERATION AI ACTIVATED\n━━━━━━━━━━━━━━━━━━\n" f"Provider: {binding['provider_id']}\nModel: {binding['model_id']}\n\nCharacter cognition bindings were not changed.", _home_keyboard())
     if mode == "fallback":
-        return (
-            "✅ COGNITION FALLBACK SAVED\n"
-            "━━━━━━━━━━━━━━━━━━\n"
-            f"Provider: {binding['provider_id']}\n"
-            f"Model: {binding['model_id']}\n\n"
-            "Primary cognition is unchanged. This model is used only when the primary provider/model call fails.",
-            _home_keyboard(),
-        )
-    return (
-        "✅ AI COGNITION ACTIVATED\n"
-        "━━━━━━━━━━━━━━━━━━\n"
-        f"Provider: {binding['provider_id']}\n"
-        f"Model: {binding['model_id']}\n\n"
-        "Future cognition wakes will try this primary binding first. Existing world/profile state was not changed.",
-        _home_keyboard(),
-    )
+        return ("✅ COGNITION FALLBACK SAVED\n━━━━━━━━━━━━━━━━━━\n" f"Provider: {binding['provider_id']}\nModel: {binding['model_id']}\n\nPrimary cognition is unchanged.", _home_keyboard())
+    return ("✅ AI COGNITION ACTIVATED\n━━━━━━━━━━━━━━━━━━\n" f"Provider: {binding['provider_id']}\nModel: {binding['model_id']}\n\nFuture cognition wakes will try this primary binding first.", _home_keyboard())
 
 
 def callback_view(conn, user_id: int, callback_data: str) -> tuple[str, list[list[dict[str, str]]] | None]:
     if callback_data == "ai:home":
         return home_view(conn)
-
+    if callback_data == "ai:character":
+        return _character_home_view(conn)
+    if callback_data == "ng:home":
+        return _news_home_view(conn)
     if callback_data.startswith("ai:diag:"):
-        return diagnostic_callback_view(
-            conn,
-            user_id,
-            "diag:" + callback_data[len("ai:diag:"):],
-            requested_by=f"telegram:{user_id}",
-        )
+        return diagnostic_callback_view(conn, user_id, "diag:" + callback_data[len("ai:diag:"):], requested_by=f"telegram:{user_id}")
+    if callback_data in {"ai:providers", "af:providers", "ng:providers"}:
+        mode = "news" if callback_data.startswith("ng:") else "fallback" if callback_data.startswith("af:") else "primary"
+        return _providers_view(conn, mode)
 
-    if callback_data in {"ai:providers", "af:providers"}:
-        return _providers_view(conn, "fallback" if callback_data.startswith("af:") else "primary")
-
-    mode = "fallback" if callback_data.startswith("af:") else "primary"
+    mode = "news" if callback_data.startswith("ng:") else "fallback" if callback_data.startswith("af:") else "primary"
     prefix = _prefix(mode)
     if not callback_data.startswith(f"{prefix}:"):
         return "Unknown AI Creator setting.", _home_keyboard()
-
     if callback_data.startswith(f"{prefix}:p:"):
         return _provider_view(conn, callback_data.split(":", 2)[2], mode=mode)
     if callback_data.startswith(f"{prefix}:r:"):
@@ -387,12 +368,11 @@ def callback_view(conn, user_id: int, callback_data: str) -> tuple[str, list[lis
         catalog_mode = parts[3] if len(parts) >= 4 else None
         try:
             count = refresh_provider_catalog(conn, provider_id, catalog_mode=catalog_mode)
+            notice = f"✅ Catalog refreshed: {count} models available."
             if provider_id == "nanogpt" and catalog_mode == "subscription":
                 notice = f"✅ Subscription-only catalog refreshed: {count} included models available."
             elif provider_id == "nanogpt" and catalog_mode == "all":
                 notice = f"✅ All-model catalog refreshed: {count} subscription + paid models available. 💳 Paid models may consume balance."
-            else:
-                notice = f"✅ Catalog refreshed: {count} models available."
             return _provider_view(conn, provider_id, mode=mode, notice=notice)
         except Exception as exc:
             return _provider_view(conn, provider_id, mode=mode, notice=f"❌ Catalog refresh failed safely.\n{str(exc)[:900]}")
