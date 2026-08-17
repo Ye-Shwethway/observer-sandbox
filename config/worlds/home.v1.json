@@ -41,7 +41,7 @@
     {"id":"obj_thorne_estate_kitchen_stove","name":"Stove","room":"loc_thorne_estate_kitchen","capabilities":["cook","use"]},
     {"id":"obj_thorne_estate_dining_table","name":"Dining Table","room":"loc_thorne_estate_dining_area","capabilities":["use"]},
     {"id":"obj_thorne_estate_living_sofa","name":"Sofa","room":"loc_thorne_estate_living_room","capabilities":["rest","read"]},
-    {"id":"obj_thorne_estate_living_media_console","name":"Media Console","room":"loc_thorne_estate_living_room","capabilities":["inspect","use"]},
+    {"id":"obj_thorne_estate_living_media_console","name":"Media Console","room":"loc_thorne_estate_living_room","capabilities":["inspect","use","consume_media"]},
     {"id":"obj_thorne_estate_library_bookshelf","name":"Bookshelf","room":"loc_thorne_estate_library","capabilities":["inspect","read"]},
     {"id":"obj_thorne_estate_library_research_desk","name":"Research Desk","room":"loc_thorne_estate_library","capabilities":["inspect","use","read","research"]},
     {"id":"obj_thorne_estate_garage_workbench","name":"Workshop Bench","room":"loc_thorne_estate_garage","capabilities":["inspect","use"]},

@@ -5,7 +5,8 @@ def test_v1_scope_stays_bounded():
     assert "sleep" not in GENERIC_PROFILES
     assert "research" in GENERIC_PROFILES
     assert "monitor" in GENERIC_PROFILES
+    assert "consume_media" in GENERIC_PROFILES
     assert "self_satisfaction" in GENERIC_PROFILES
-    assert len(GENERIC_PROFILES) == 13
+    assert len(GENERIC_PROFILES) == 14
     assert len(TARGET_PROFILES) == 5
     assert all(action != "train" for action, _target in TARGET_PROFILES)
