@@ -198,8 +198,8 @@ def probe_model(conn: sqlite3.Connection, provider_id: str, model_id: str) -> di
 
     key = _credential(provider)
     prompt = (
-        'Connectivity probe only. Return exactly action "idle", duration_minutes 1, '
-        'target "", reason "probe" using the required structured response.'
+        'Connectivity probe only. Return exactly action "idle", duration_minutes 1, target "", '
+        'reason "probe", resources [], training_movements [] using the required structured response.'
     )
     started = time.monotonic()
     adapter = str(provider["adapter_type"])
@@ -224,7 +224,14 @@ def probe_model(conn: sqlite3.Connection, provider_id: str, model_id: str) -> di
 
     if not isinstance(decision, dict):
         raise ai_runtime.AIDecisionError("Probe response is not a JSON object")
-    expected = {"action": "idle", "duration_minutes": 1, "target": "", "reason": "probe"}
+    expected = {
+        "action": "idle",
+        "duration_minutes": 1,
+        "target": "",
+        "reason": "probe",
+        "resources": [],
+        "training_movements": [],
+    }
     if decision != expected:
         raise ai_runtime.AIDecisionError("Model responded but did not satisfy the required cognition schema probe")
     return {

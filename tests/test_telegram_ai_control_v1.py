@@ -73,7 +73,14 @@ def test_probe_is_real_adapter_path_but_non_mutating(tmp_path, monkeypatch):
 
     def fake_generate(provider, key, model_id, prompt, parameters):
         calls.append((provider["id"], key, model_id, prompt, parameters))
-        return {"action": "idle", "duration_minutes": 1, "target": "", "reason": "probe"}
+        return {
+            "action": "idle",
+            "duration_minutes": 1,
+            "target": "",
+            "reason": "probe",
+            "resources": [],
+            "training_movements": [],
+        }
 
     monkeypatch.setattr(ai_runtime, "_generate_openai_compatible", fake_generate)
     with connect(db) as conn:
