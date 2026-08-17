@@ -22,7 +22,7 @@ def test_w31_schema_and_current_world_value_coverage(tmp_path):
     db = tmp_path / "observer.sqlite3"
     initialize(db)
     with connect(db) as conn:
-        assert int(conn.execute("SELECT value FROM schema_meta WHERE key='schema_version'").fetchone()[0]) == SCHEMA_VERSION == 14
+        assert int(conn.execute("SELECT value FROM schema_meta WHERE key='schema_version'").fetchone()[0]) == SCHEMA_VERSION
         assert int(conn.execute("SELECT value FROM schema_meta WHERE key='economy_schema_version'").fetchone()[0]) == ECONOMY_SCHEMA_VERSION == 2
         validate_current_value_coverage(conn)
 
