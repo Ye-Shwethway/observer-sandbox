@@ -79,7 +79,7 @@ def test_news_view_is_read_only_and_shows_human_friendly_persisted_evidence(tmp_
         assert "AI · groq · news/model" in text
         assert "01-05-2025 (Thursday) 07:00 AM" in text
         assert "2025-05-01T07:00:00+00:00" not in text
-        assert "Tahoe Test News · 01-05-2025 (Thursday) 06:45 AM\n\n2. Second Tahoe source report" in text
+        assert "A represented historical source report for Telegram observability.\n\n2. Second Tahoe source report" in text
         assert "does not expose any character" in text
         callbacks = [button["callback_data"] for row in keyboard for button in row]
         labels = [button["text"] for row in keyboard for button in row]
