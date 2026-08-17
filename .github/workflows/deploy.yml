@@ -174,6 +174,9 @@ jobs:
             export OBSERVER_SANDBOX_DB=/var/lib/observer-sandbox/observer.sqlite3
             sleep 6
             sudo -n /usr/bin/systemctl is-active observer-sandbox
+            test -s /var/lib/observer-sandbox/runtime.log
+            grep -Fq "runtime_logging_ready" /var/lib/observer-sandbox/runtime.log
+            echo "RUNTIME_LOG_READY=true"
             .venv/bin/python -c "import json,sqlite3; uri=\"file:/var/lib/observer-sandbox/observer.sqlite3?mode=ro\"; db=sqlite3.connect(uri,uri=True,timeout=10); db.row_factory=sqlite3.Row; check=db.execute(\"PRAGMA quick_check\").fetchone()[0]; assert check == \"ok\", \"SQLITE_QUICK_CHECK=\" + str(check); version=db.execute(\"SELECT value FROM schema_meta WHERE key=?\",(\"schema_version\",)).fetchone(); assert version is not None, \"schema_version missing\"; runtime={r[\"key\"]:json.loads(r[\"value_json\"]) for r in db.execute(\"SELECT key,value_json FROM runtime_state ORDER BY key\")}; print(\"RUNTIME_DB_READABLE=true\"); print(\"SQLITE_QUICK_CHECK=ok\"); print(\"SCHEMA_VERSION=\"+str(version[0])); print(\"RUNTIME_STATE=\"+json.dumps(runtime,sort_keys=True))"
             .venv/bin/python -c "import json,sqlite3; db=sqlite3.connect(\"file:/var/lib/observer-sandbox/observer.sqlite3?mode=ro\",uri=True,timeout=10); db.row_factory=sqlite3.Row; err=db.execute(\"SELECT sim_time,payload_json FROM events WHERE actor_id=? AND event_type=? ORDER BY id DESC LIMIT 1\",(\"char_darian\",\"autonomy_error\")).fetchone(); rec=db.execute(\"SELECT sim_time,payload_json FROM events WHERE actor_id=? AND event_type=? ORDER BY id DESC LIMIT 1\",(\"char_darian\",\"autonomy_recovery\")).fetchone(); provider=db.execute(\"SELECT sim_time,payload_json FROM events WHERE actor_id=? AND event_type=? ORDER BY id DESC LIMIT 1\",(\"char_darian\",\"cognition_provider_recovered\")).fetchone(); started=db.execute(\"SELECT sim_time,payload_json FROM events WHERE actor_id=? AND event_type=? ORDER BY id DESC LIMIT 1\",(\"char_darian\",\"action_started\")).fetchone(); print(\"LATEST_AUTONOMY_ERROR=\"+json.dumps(None if err is None else {\"sim_time\":err[\"sim_time\"],**json.loads(err[\"payload_json\"] or \"{}\")},sort_keys=True)); print(\"LATEST_AUTONOMY_RECOVERY=\"+json.dumps(None if rec is None else {\"sim_time\":rec[\"sim_time\"],**json.loads(rec[\"payload_json\"] or \"{}\")},sort_keys=True)); print(\"LATEST_PROVIDER_RECOVERY=\"+json.dumps(None if provider is None else {\"sim_time\":provider[\"sim_time\"],**json.loads(provider[\"payload_json\"] or \"{}\")},sort_keys=True)); print(\"LATEST_ACTION_STARTED=\"+json.dumps(None if started is None else {\"sim_time\":started[\"sim_time\"],**json.loads(started[\"payload_json\"] or \"{}\")},sort_keys=True))"
             if grep -Eq "^OBSERVER_TELEGRAM_BOT_TOKEN=.+" /var/lib/observer-sandbox/secrets.env 2>/dev/null; then
@@ -217,12 +220,14 @@ jobs:
             /usr/bin/systemctl status observer-sandbox --no-pager -l
             echo "=== SYSTEMD STATE ==="
             /usr/bin/systemctl show observer-sandbox -p ActiveState -p SubState -p Result -p ExecMainCode -p ExecMainStatus -p NRestarts -p MainPID
+            echo "=== APP RUNTIME LOG ==="
+            /usr/bin/tail -n 500 /var/lib/observer-sandbox/runtime.log 2>&1
             echo "=== SERVICE JOURNAL ==="
             sudo -n /usr/bin/journalctl -u observer-sandbox -n 120 --no-pager 2>/dev/null || /usr/bin/journalctl -u observer-sandbox -n 120 --no-pager 2>&1
             echo "=== PROCESS SNAPSHOT ==="
             /usr/bin/ps -eo pid,ppid,user,stat,etime,cmd | /usr/bin/grep -E "observer_sandbox|observer-sandbox" | /usr/bin/grep -v grep
             echo "=== RUNTIME FILE METADATA ==="
-            /usr/bin/stat -c "%U:%G %a %s %n" /var/lib/observer-sandbox/observer.sqlite3 /var/lib/observer-sandbox/secrets.env 2>&1
+            /usr/bin/stat -c "%U:%G %a %s %n" /var/lib/observer-sandbox/observer.sqlite3 /var/lib/observer-sandbox/runtime.log /var/lib/observer-sandbox/secrets.env 2>&1
           ' > runtime-diagnostics.txt 2>&1 || true
 
       - name: Upload runtime failure diagnostics
