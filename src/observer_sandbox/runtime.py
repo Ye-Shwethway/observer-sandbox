@@ -15,6 +15,8 @@ from .economic_value import seed_economic_value_profiles, validate_current_value
 from .economy import seed_initial_economy
 from .estate_campus import seed_estate_campus
 from .field_medicine_stabilization import seed_field_medicine_stabilization_runtime
+from .information_media import ensure_information_media_seed
+from .information_schema import migrate_information_schema
 from .inventory import seed_home_inventory
 from .location_recovery import recover_missing_actor_location
 from .memory_profile import seed_memory_profile_definitions, seed_memory_profile_values
@@ -50,12 +52,16 @@ class RuntimeStatus:
 
 def _initialize_conn(conn) -> None:
     migrate(conn)
+    migrate_information_schema(conn)
     seed_builtin_providers(conn)
     seed_profile_field_definitions(conn)
     seed_source_union_extensions(conn)
     seed_sexual_state_fields(conn)
     seed_memory_profile_definitions(conn)
     seed_home_and_darian(conn)
+    # W4 maps the already represented Media Console into the generic media-device
+    # contract. It does not create a second TV object or bypass W3.1 valuation.
+    ensure_information_media_seed(conn)
     # W3 economy facts depend on represented character/location entities. Seed
     # after the canonical world/profile seed and never reset live account state.
     seed_initial_economy(conn)
