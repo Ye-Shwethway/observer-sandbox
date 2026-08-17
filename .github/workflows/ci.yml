@@ -2,9 +2,13 @@ name: CI
 
 on:
   pull_request:
-    paths-ignore:
-      - '**/*.md'
-      - 'docs/**'
+    paths:
+      - 'src/**'
+      - 'config/**'
+      - 'tests/**'
+      - 'scripts/**'
+      - 'pyproject.toml'
+      - '.github/workflows/ci.yml'
   workflow_dispatch:
 
 jobs:
