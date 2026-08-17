@@ -60,15 +60,10 @@ def _send(token: str, chat_id: int, text: str, keyboard=None):
     if text.startswith(_FILE_SENTINEL):
         path = Path(text[len(_FILE_SENTINEL) :])
         try:
-            _multipart_send_document(
-                token,
-                chat_id,
-                path,
-                caption="Observer Sandbox runtime diagnostics",
-            )
+            _multipart_send_document(token, chat_id, path, caption="Observer Sandbox diagnostics v2")
         except Exception:
             _LOG.exception("telegram_runtime_log_export_failed chat_id=%s", chat_id)
-            _ORIGINAL_SEND(token, chat_id, "Runtime log export failed. Use /logs for the inline preview.")
+            _ORIGINAL_SEND(token, chat_id, "Diagnostic export failed. Use /logs for the inline summary.")
         finally:
             try:
                 path.unlink(missing_ok=True)
@@ -81,8 +76,11 @@ def _send(token: str, chat_id: int, text: str, keyboard=None):
 def _help(role: str) -> str:
     text = _ORIGINAL_HELP(role)
     if role == "owner":
-        text += "\n/logs [lines] — Runtime diagnostic preview"
-        text += "\n/logs file [lines] — Download diagnostics as .txt"
+        text += "\n/logs — Error/system health summary"
+        text += "\n/logs errors [lines] — App warnings, errors and tracebacks"
+        text += "\n/logs system [lines] — systemd and journal diagnostics"
+        text += "\n/logs runtime — Concise universe runtime context"
+        text += "\n/logs file [lines] — Download consolidated diagnostics .txt"
     return text
 
 
@@ -106,22 +104,42 @@ def handle_command(db_path: str | Path, *, user_id: int, text: str) -> str:
         if role != "owner":
             return "🔒 Creator authority required for runtime diagnostics."
         try:
-            if len(parts) >= 2 and parts[1].lower() in {"file", "txt", "export"}:
+            mode = parts[1].lower() if len(parts) >= 2 else "summary"
+            if mode in {"file", "txt", "export"}:
                 lines = _parse_lines(parts[2] if len(parts) >= 3 else None, 500)
-                fd, raw_path = tempfile.mkstemp(prefix="observer-runtime-", suffix=".txt")
+                fd, raw_path = tempfile.mkstemp(prefix="observer-diagnostics-v2-", suffix=".txt")
                 os.close(fd)
                 path = Path(raw_path)
                 path.write_text(build_diagnostics_report(db_path, lines=lines), encoding="utf-8")
-                _LOG.info("telegram_runtime_log_export_requested user_id=%s lines=%s", user_id, lines)
+                _LOG.info("telegram_diagnostics_export_requested user_id=%s lines=%s", user_id, lines)
                 return _FILE_SENTINEL + str(path)
-            lines = _parse_lines(parts[1] if len(parts) >= 2 else None, 30)
-            _LOG.info("telegram_runtime_log_preview_requested user_id=%s lines=%s", user_id, lines)
-            return format_log_preview(db_path, lines=lines)
+            if mode in {"errors", "error"}:
+                lines = _parse_lines(parts[2] if len(parts) >= 3 else None, 80)
+                _LOG.info("telegram_diagnostics_errors_requested user_id=%s lines=%s", user_id, lines)
+                return format_log_preview(db_path, lines=lines, mode="errors")
+            if mode in {"system", "service", "journal"}:
+                lines = _parse_lines(parts[2] if len(parts) >= 3 else None, 40)
+                _LOG.info("telegram_diagnostics_system_requested user_id=%s lines=%s", user_id, lines)
+                return format_log_preview(db_path, lines=lines, mode="system")
+            if mode in {"runtime", "universe"}:
+                _LOG.info("telegram_diagnostics_runtime_requested user_id=%s", user_id)
+                return format_log_preview(db_path, lines=30, mode="runtime")
+            if mode == "summary":
+                _LOG.info("telegram_diagnostics_summary_requested user_id=%s", user_id)
+                return format_log_preview(db_path, lines=30, mode="summary")
+            # Backward compatibility: `/logs 50` becomes an error-focused preview.
+            lines = _parse_lines(parts[1], 30)
+            _LOG.info("telegram_diagnostics_errors_requested user_id=%s lines=%s", user_id, lines)
+            return format_log_preview(db_path, lines=lines, mode="errors")
         except ValueError as exc:
-            return f"Usage: /logs [1-2000] or /logs file [1-2000]\n{exc}"
+            return (
+                "Usage:\n/logs\n/logs errors [1-2000]\n/logs system [1-500]\n"
+                "/logs runtime\n/logs file [1-2000]\n"
+                f"{exc}"
+            )
         except Exception:
             _LOG.exception("telegram_runtime_diagnostics_command_failed user_id=%s", user_id)
-            return "Runtime diagnostics failed safely. Check the VPS runtime log."
+            return "Runtime diagnostics failed safely. Check the VPS runtime log or deployment diagnostic artifact."
 
     try:
         return _ORIGINAL_HANDLE_COMMAND(db_path, user_id=user_id, text=text)
