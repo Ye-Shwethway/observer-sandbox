@@ -21,6 +21,22 @@ _ORIGINAL_SEND = base._send
 _ORIGINAL_HELP = base._help
 _ORIGINAL_HANDLE_COMMAND = base.handle_command
 _FILE_SENTINEL = "__OBSERVER_RUNTIME_LOG_FILE__:"
+_SERVICE_STDERR_LOG = Path(os.environ.get("OBSERVER_SERVICE_STDERR_LOG", "/var/lib/observer-sandbox/service-stderr.log"))
+
+
+def _tail_text(path: Path, lines: int) -> str:
+    try:
+        values = path.read_text(encoding="utf-8", errors="replace").splitlines()
+    except OSError:
+        return ""
+    return "\n".join(values[-max(1, min(int(lines), 2000)):])
+
+
+def _inject_service_stderr(report: str, lines: int) -> str:
+    stderr = _tail_text(_SERVICE_STDERR_LOG, lines) or "(empty or unavailable)"
+    section = "SYSTEMD SERVICE STDERR\n======================\n" + stderr + "\n\n"
+    marker = "SYSTEM SERVICE STATE\n"
+    return report.replace(marker, section + marker, 1) if marker in report else report + "\n\n" + section
 
 
 def _api(token: str, method: str, payload: dict[str, Any] | None = None, *, timeout: int = 30) -> Any:
@@ -38,11 +54,7 @@ def _multipart_send_document(token: str, chat_id: int, path: Path, *, caption: s
     chunks = [
         f"--{boundary}\r\nContent-Disposition: form-data; name=\"chat_id\"\r\n\r\n{chat_id}\r\n".encode(),
         f"--{boundary}\r\nContent-Disposition: form-data; name=\"caption\"\r\n\r\n{caption}\r\n".encode(),
-        (
-            f"--{boundary}\r\n"
-            f"Content-Disposition: form-data; name=\"document\"; filename=\"{filename}\"\r\n"
-            "Content-Type: text/plain; charset=utf-8\r\n\r\n"
-        ).encode(),
+        (f"--{boundary}\r\nContent-Disposition: form-data; name=\"document\"; filename=\"{filename}\"\r\nContent-Type: text/plain; charset=utf-8\r\n\r\n").encode(),
         content,
         f"\r\n--{boundary}--\r\n".encode(),
     ]
@@ -58,7 +70,7 @@ def _multipart_send_document(token: str, chat_id: int, path: Path, *, caption: s
 
 def _send(token: str, chat_id: int, text: str, keyboard=None):
     if text.startswith(_FILE_SENTINEL):
-        path = Path(text[len(_FILE_SENTINEL) :])
+        path = Path(text[len(_FILE_SENTINEL):])
         try:
             _multipart_send_document(token, chat_id, path, caption="Observer Sandbox diagnostics v2")
         except Exception:
@@ -78,7 +90,7 @@ def _help(role: str) -> str:
     if role == "owner":
         text += "\n/logs — Error/system health summary"
         text += "\n/logs errors [lines] — App warnings, errors and tracebacks"
-        text += "\n/logs system [lines] — systemd and journal diagnostics"
+        text += "\n/logs system [lines] — systemd, stderr and journal diagnostics"
         text += "\n/logs runtime — Concise universe runtime context"
         text += "\n/logs file [lines] — Download consolidated diagnostics .txt"
     return text
@@ -110,7 +122,8 @@ def handle_command(db_path: str | Path, *, user_id: int, text: str) -> str:
                 fd, raw_path = tempfile.mkstemp(prefix="observer-diagnostics-v2-", suffix=".txt")
                 os.close(fd)
                 path = Path(raw_path)
-                path.write_text(build_diagnostics_report(db_path, lines=lines), encoding="utf-8")
+                report = _inject_service_stderr(build_diagnostics_report(db_path, lines=lines), lines)
+                path.write_text(report, encoding="utf-8")
                 _LOG.info("telegram_diagnostics_export_requested user_id=%s lines=%s", user_id, lines)
                 return _FILE_SENTINEL + str(path)
             if mode in {"errors", "error"}:
@@ -120,23 +133,20 @@ def handle_command(db_path: str | Path, *, user_id: int, text: str) -> str:
             if mode in {"system", "service", "journal"}:
                 lines = _parse_lines(parts[2] if len(parts) >= 3 else None, 40)
                 _LOG.info("telegram_diagnostics_system_requested user_id=%s lines=%s", user_id, lines)
-                return format_log_preview(db_path, lines=lines, mode="system")
+                base_preview = format_log_preview(db_path, lines=lines, mode="system")
+                stderr = _tail_text(_SERVICE_STDERR_LOG, lines) or "(empty or unavailable)"
+                return (base_preview + "\n\nSYSTEMD STDERR\n" + stderr)[-4096:]
             if mode in {"runtime", "universe"}:
                 _LOG.info("telegram_diagnostics_runtime_requested user_id=%s", user_id)
                 return format_log_preview(db_path, lines=30, mode="runtime")
             if mode == "summary":
                 _LOG.info("telegram_diagnostics_summary_requested user_id=%s", user_id)
                 return format_log_preview(db_path, lines=30, mode="summary")
-            # Backward compatibility: `/logs 50` becomes an error-focused preview.
             lines = _parse_lines(parts[1], 30)
             _LOG.info("telegram_diagnostics_errors_requested user_id=%s lines=%s", user_id, lines)
             return format_log_preview(db_path, lines=lines, mode="errors")
         except ValueError as exc:
-            return (
-                "Usage:\n/logs\n/logs errors [1-2000]\n/logs system [1-500]\n"
-                "/logs runtime\n/logs file [1-2000]\n"
-                f"{exc}"
-            )
+            return "Usage:\n/logs\n/logs errors [1-2000]\n/logs system [1-500]\n/logs runtime\n/logs file [1-2000]\n" + str(exc)
         except Exception:
             _LOG.exception("telegram_runtime_diagnostics_command_failed user_id=%s", user_id)
             return "Runtime diagnostics failed safely. Check the VPS runtime log or deployment diagnostic artifact."
