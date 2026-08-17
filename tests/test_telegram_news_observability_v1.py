@@ -6,15 +6,26 @@ from observer_sandbox.telegram_universe import universe_view
 
 
 def _seed_bulletin(conn, *, editorial_provider_id="groq", editorial_model_id="news/model"):
-    item_ids = import_external_articles(conn, [{
-        "provider_id": "test_provider",
-        "provider_ref": "story-telegram-news",
-        "title": "Tahoe source report",
-        "summary": "A represented historical source report for Telegram observability.",
-        "source_name": "Tahoe Test News",
-        "source_url": "https://example.invalid/tahoe-news",
-        "published_at": "2025-05-01T06:45:00+00:00",
-    }])
+    item_ids = import_external_articles(conn, [
+        {
+            "provider_id": "test_provider",
+            "provider_ref": "story-telegram-news-1",
+            "title": "Tahoe source report",
+            "summary": "A represented historical source report for Telegram observability.",
+            "source_name": "Tahoe Test News",
+            "source_url": "https://example.invalid/tahoe-news-1",
+            "published_at": "2025-05-01T06:45:00+00:00",
+        },
+        {
+            "provider_id": "test_provider",
+            "provider_ref": "story-telegram-news-2",
+            "title": "Second Tahoe source report",
+            "summary": "A second represented source report.",
+            "source_name": "Tahoe Test News",
+            "source_url": "https://example.invalid/tahoe-news-2",
+            "published_at": "2025-05-01T06:50:00+00:00",
+        },
+    ])
     return create_tv_publication(
         conn,
         publication_id="publication_telegram_news_test",
@@ -38,7 +49,7 @@ def test_universe_menu_exposes_news_alongside_weather(tmp_path):
         assert "uni:news" in callbacks
 
 
-def test_news_view_is_read_only_and_shows_persisted_editorial_evidence(tmp_path):
+def test_news_view_is_read_only_and_shows_human_friendly_persisted_evidence(tmp_path):
     db = tmp_path / "observer.sqlite3"
     initialize(db)
     with connect(db) as conn:
@@ -64,13 +75,19 @@ def test_news_view_is_read_only_and_shows_persisted_editorial_evidence(tmp_path)
         assert "UNIVERSE NEWS" in text
         assert "Morning News — 2025-05-01" in text
         assert "Tahoe source report" in text
+        assert "Second Tahoe source report" in text
         assert "AI · groq · news/model" in text
+        assert "01-05-2025 (Thursday) 07:00 AM" in text
+        assert "2025-05-01T07:00:00+00:00" not in text
+        assert "Tahoe Test News · 01-05-2025 (Thursday) 06:45 AM\n\n2. Second Tahoe source report" in text
         assert "does not expose any character" in text
         callbacks = [button["callback_data"] for row in keyboard for button in row]
+        labels = [button["text"] for row in keyboard for button in row]
         assert "uni:news:generate" in callbacks
+        assert "🧪 Test News Generation" in labels
 
 
-def test_generate_news_view_runs_explicit_refresh_once_then_renders_persisted_result(tmp_path, monkeypatch):
+def test_generate_news_view_runs_explicit_diagnostic_once_then_renders_persisted_result(tmp_path, monkeypatch):
     db = tmp_path / "observer.sqlite3"
     initialize(db)
     calls = []
