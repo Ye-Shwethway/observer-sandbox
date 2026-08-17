@@ -79,18 +79,26 @@ def test_generate_news_view_runs_explicit_refresh_once_then_renders_persisted_re
             "provider_id": "groq",
             "model_id": "news/model",
         })
+        cognition_before = {
+            "exposures": conn.execute("SELECT COUNT(*) FROM character_exposures").fetchone()[0],
+            "memories": conn.execute("SELECT COUNT(*) FROM character_memories").fetchone()[0],
+            "mind": conn.execute("SELECT COUNT(*) FROM mental_episodes").fetchone()[0],
+        }
 
         def fake_refresh(conn, sim_time):
             calls.append(sim_time)
             return _seed_bulletin(conn)
 
         text, _ = telegram_news.generate_news_view(conn, refresh_news=fake_refresh)
+        cognition_after = {
+            "exposures": conn.execute("SELECT COUNT(*) FROM character_exposures").fetchone()[0],
+            "memories": conn.execute("SELECT COUNT(*) FROM character_memories").fetchone()[0],
+            "mind": conn.execute("SELECT COUNT(*) FROM mental_episodes").fetchone()[0],
+        }
         assert calls == ["2025-05-01T07:00:00+00:00"]
         assert "News workflow completed with AI editorial: groq · news/model" in text
         assert "Morning News — 2025-05-01" in text
-        assert conn.execute("SELECT COUNT(*) FROM character_exposures").fetchone()[0] == 0
-        assert conn.execute("SELECT COUNT(*) FROM character_memories").fetchone()[0] == 0
-        assert conn.execute("SELECT COUNT(*) FROM mental_episodes").fetchone()[0] == 0
+        assert cognition_after == cognition_before
 
 
 def test_generate_news_view_warns_when_configured_ai_falls_back(tmp_path, monkeypatch):
