@@ -9,10 +9,7 @@ User=observer
 Group=observer
 WorkingDirectory=/opt/observer-sandbox
 Environment=OBSERVER_SANDBOX_DB=/var/lib/observer-sandbox/observer.sqlite3
-Environment=PYTHONUNBUFFERED=1
 ExecStart=/opt/observer-sandbox/.venv/bin/python -m observer_sandbox.service
-StandardOutput=append:/var/lib/observer-sandbox/service-stdout.log
-StandardError=append:/var/lib/observer-sandbox/service-stderr.log
 Restart=on-failure
 RestartSec=5
 NoNewPrivileges=true
