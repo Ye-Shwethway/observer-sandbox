@@ -89,9 +89,12 @@ def universe_view(conn) -> tuple[str, list[list[dict[str, str]]]]:
     keyboard = [
         [
             {"text": "🌤 Weather", "callback_data": "uni:weather"},
-            {"text": "🌎 Regions", "callback_data": "uni:regions"},
+            {"text": "📰 News", "callback_data": "uni:news"},
         ],
-        [{"text": "📍 Locations", "callback_data": "uni:locations"}],
+        [
+            {"text": "🌎 Regions", "callback_data": "uni:regions"},
+            {"text": "📍 Locations", "callback_data": "uni:locations"},
+        ],
         [{"text": "⌂ Observer Home", "callback_data": "nav:home"}],
     ]
     return "\n".join(lines), keyboard
