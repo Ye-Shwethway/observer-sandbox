@@ -79,9 +79,12 @@ def test_route_preview_is_bounded_and_reacts_to_topology_change(tmp_path):
         assert "Mansion Exterior" in names
         assert "Core Estate Grounds" not in names
 
+        # Remove every authored entry into the destination. The Estate graph has
+        # legitimate alternate interior paths, so deleting one foyer edge alone
+        # must not be treated as proof that the destination became unreachable.
         conn.execute(
-            "DELETE FROM relations WHERE source_id=? AND relation_type='connected_to' AND target_id=?",
-            (FOYER, MANSION_EXTERIOR),
+            "DELETE FROM relations WHERE relation_type='connected_to' AND target_id=?",
+            (CORE_GROUNDS,),
         )
         conn.commit()
         changed = bounded_destination_intent_awareness(conn, ACTOR)
