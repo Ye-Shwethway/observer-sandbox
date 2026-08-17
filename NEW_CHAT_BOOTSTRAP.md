@@ -22,38 +22,58 @@ Default workflow:
 
 ## Current canonical checkpoint
 
-**W3 Money / Economy Foundation v1, W3.1 Universe Object Valuation & Creation Rules v1, Telegram Economy/Identity Observability Parity, and the Transit Route / Telegram Access Semantics correction are COMPLETE / DEPLOYED.**
+The latest runtime-affecting production checkpoint is **Production Diagnostics v2 + deploy-safe hardening**, on top of the previously deployed world-input/economy/mobility stack.
 
-Latest production evidence:
-- W3 PR #232 — `Add W3 Money Economy Foundation v1`
-  - CI #1001: SUCCESS — 705 passed
-  - merge `135fee320c5f137b6f748f312d4105aa00b010e7`
-  - Deploy #265 / run `31961742114`: SUCCESS
-- W3.1 PR #233 — `Add W3.1 Universe Object Valuation Rules v1`
-  - CI #1004 / run `31962052231`: SUCCESS — 710 passed
-  - merge `ac07817979a55ca3846e5efee570c56493bd23c3`
-  - Deploy #266 / run `31962148301`: SUCCESS
-- Telegram observability parity PR #235 — `Add Telegram observability parity for economy and identity`
-  - final tested head `1308a07ae96b0987b1a7fe5fe748ac96dc2c9301`
-  - CI #1006 / run `31963175830`: SUCCESS — 717 passed
-  - Inventory Operations, Solo Regulation, Strength Live Cycle, Read-Only Grading and Attribute Grading acceptance gates: SUCCESS
-  - merge `cd291e993318cf54243a2383fcbc42ede58727a1`
-  - Deploy #267 / run `31963307250`: SUCCESS
-- Transit Route / Telegram Access Semantics correction PR #237 — `Preserve transit routes and Telegram access semantics`
-  - final tested head `9bef51b30ce27df27b4576c80f8441a45fae78ae`
-  - CI #1011 / run `31965205934`: SUCCESS
-  - Solo Regulation Naturalism v2 Acceptance #59: SUCCESS
-  - merge `e08fd3743ed2202030aab9d818826fadeee3162b`
-  - **Deploy #268 / run `31965320235`: SUCCESS**
-- main schema **v14**
-- economy schema **v2**
-- commitment schema v1
-- environment schema v2
-- world-input schema v1
-- mind schema v1
+Latest verified repository/runtime evidence before this documentation sync:
+- `main = test = 034d0c22a4d8edf35f439774a99059aa340cb559`
+- PR #258 — production health-probe shell/SQLite quoting correction; Deploy #283: SUCCESS
+- PR #259 — VPS-native runtime diagnostics v1; merge `bf02f15e2024ddd0e0583ce091af9a243982f996`; Deploy #284: SUCCESS
+- PR #260 — `Make CI and acceptance checks path-aware`; merge `dd7f8cadbe7b1a5abd8efdb5ff9feb85889e1470`
+- PR #261 — `Make production diagnostics error-first and system-aware`; merge `13881cb2e097b3f97e70e315cb81a265c0ee518b`; Deploy #285: SUCCESS
+- PR #262 — `Make diagnostics v2 deploy-safe and production-truthful`; merge `034d0c22a4d8edf35f439774a99059aa340cb559`
+- **Deploy #286 / run `32040416867`: SUCCESS**
+- production schema: **v15**
+- economy schema v2; commitment schema v1; environment schema v2; world-input schema v1; mind schema v1.
+
+### Production diagnostics v2 contract
+
+Creator-only Telegram diagnostics are operational and intentionally error-first:
+- `/logs` — concise health/error summary
+- `/logs errors [lines]` — application WARNING/ERROR/CRITICAL records with traceback continuation
+- `/logs system [lines]` — systemd state + unit journal
+- `/logs runtime` — concise runtime/DB context, excluding giant cognition-state dumps
+- `/logs file [lines]` — consolidated diagnostics v2 text report
+
+Guaranteed app-side evidence includes the rotating `/var/lib/observer-sandbox/runtime.log`, traceback-capable logging at recoverable/fatal exception boundaries, SQLite integrity/schema context and systemd service state.
+
+The deployed systemd unit is not rewritten by the normal deploy workflow. PR #262 therefore removed the false `service-stderr.log` dependency instead of pretending repo-only unit directives were active in production.
+
+Production infrastructure follow-up on 2026-08-17 permanently added service user `observer` to group `systemd-journal` and restarted `observer-sandbox.service`. A direct `sudo -u observer journalctl -u observer-sandbox.service ...` test returned live service journal lines. Therefore normal diagnostics now have persistent non-sudo unit-journal read access. Pre-Python startup/deploy failures remain covered by the GitHub deploy failure diagnostic artifact because the Telegram bot cannot report before the process exists.
+
+## Previously completed product stack
+
+Production already includes:
+- Character Profile / Skills and adaptive-profile foundations
+- Estate spatial/reachability and outdoor-affordance foundation
+- Universal Character Autonomy
+- Character Memory + Semantic Spatial Memory + Human Memory Dynamics
+- Intelligent Mind Engine Foundation v1
+- W0 World Stimulus / Exposure Foundation
+- W1 Environment / Weather Foundation
+- W1.1 Historical Weather Provider
+- Creator Universe Weather & Geography Observability
+- Weather Region Registry v1
+- W2 Commitments / Obligations Foundation v1
+- W3 Money / Economy Foundation v1
+- W3.1 Universe Object Valuation & Creation Rules v1
+- Telegram Economy/Identity Observability Parity
+- Transit Route / Telegram Access Semantics correction
+
+The earlier W3/W3.1 checkpoint remains historically valid, but Deploy #268 is no longer the latest production checkpoint.
 
 ## Required cognition / world-input read order
 
+For cognition/world-input work read, as relevant:
 1. `docs/INTELLIGENT_MIND_ENGINE_FOUNDATION_V1.md`
 2. `docs/WORLD_STIMULUS_EXPOSURE_FOUNDATION_V1.md`
 3. `docs/COMMITMENTS_OBLIGATIONS_FOUNDATION_V1.md`
@@ -68,186 +88,52 @@ Latest production evidence:
 12. `docs/CHARACTER_MEMORY_FOUNDATION_V1.md`
 13. task-relevant world/profile/runtime docs only.
 
-## Canonical layer separation
-
 Preserve:
 `world/event truth != stimulus availability != character exposure != perception != memory != mind/thought != intention/plan != action proposal != action authority`.
 
-Economy specifically:
-`economic truth != financial notice availability != exposure != perception/interpretation != memory != concern/thought != intention/plan != action proposal != action authority`.
+MIND-F0 remains behavior-neutral. Do not activate Mental Episode/Planning runtime merely to fix ordinary movement selection.
 
-MIND-F0 remains behavior-neutral. Current autonomy does not automatically create thoughts or plans.
+## Universal autonomy / mobility invariants
 
-## Telegram observability parity — DEPLOYED / MANDATORY
+Character-specific behavioral hard-coding is forbidden.
 
-Creator-facing Telegram observability is part of vertical completeness when a relevant observer surface exists.
-
-For every future subsystem that introduces authoritative state materially useful to the Creator:
-- expose it in the semantically relevant Telegram view in the same bounded slice; or
-- explicitly document why Telegram presentation is not relevant yet.
-
-Do not leave Creator-useful state implemented but invisible by default.
-
-Placement rule:
-- character/account/owner state -> Character or owner-facing detail;
-- location/property state -> Location detail;
-- concrete object state/value -> Object detail;
-- inventory quantity/value -> Inventory stack detail;
-- cross-entity summaries only when they add real value.
-
-Telegram remains downstream/read-only. Viewing state must not mutate simulation/economy, create exposure, or create cognition/Memory/Mind state. Existing role/sensitivity restrictions still apply.
-
-### Location access presentation invariant
-
-Telegram formatting must preserve authored location-access semantics and must not infer actor-relative denial from a generic policy string.
-
-Examples:
-- `open` -> Open;
-- `resident` -> Resident;
-- `private` -> Private;
-- `restricted` -> Restricted;
-- `closed` -> Closed;
-- `locked` -> Locked.
-
-A non-`open` value is not automatically `Access unavailable`. Renderer formatting may transform presentation only; access authority remains in canonical world/runtime services.
-
-### Current economy Telegram surfaces
-
-- Character -> **💰 Finances** (Owner only): net worth, accounts, assets, liabilities; explicitly distinguishes net worth from spendable balance.
-- Thorne Estate location detail: represented property valuation, owner and asset type.
-- Object detail: market/replacement value and W3.1 net-worth treatment. Estate fixtures show that their value is included in the Estate parent asset rather than independently double-counted.
-- Inventory stack detail: live current stock value plus canonical unit value.
-
-These are generic entity-driven query/presentation paths, not Darian/Estate-specialized economy logic.
-
-### Identity presentation correction
-
-Darian's canonical profile already contains:
-- `identity.sex = male`
-- `identity.gender = male`
-- `identity.sexual_orientation = heterosexual`
-
-Telegram Identity presentation now intentionally shows **Gender + Sexual orientation** for Owner and does not duplicate Sex beside Gender.
-
-`identity.sex` remains canonical underlying data for anatomy/compatibility consumers; it was not deleted. `identity.sexual_orientation` remains private and is not exposed to ordinary Allowed users. This field is available for later relationship-system consumers without inventing a new relationship fact store.
-
-## Transit route visibility invariant — DEPLOYED
-
-Canonical boundary:
+Preserve:
 `legal route existence != ordinary choice preference`.
 
-- Raw topology/access authority determines whether a one-hop move is legal.
-- Ordinary recent-use/repetition shaping must preserve every otherwise legal move option.
-- Repeated destinations remain visible and carry `recent_usage` context; repetition may inform choice but cannot silently remove a transit edge.
-- Preferences, habits and discretionary behavior may affect which legal destination the character chooses, not whether the topology exists.
-- Strong/critical biological need-resolution is a separate deliberate causal guard. It may temporarily narrow the current proposal surface to the resolver action or shortest resolver-route first hops.
-- Do not add Darian-specific outdoor quotas, destination steering or campus scripts.
+- raw topology/access authority decides whether one-hop movement is legal;
+- ordinary repetition shaping must not hide otherwise legal transit edges;
+- preferences, habits and discretionary behavior may influence choice, not topology;
+- strong/critical biological need-resolution may deliberately narrow proposal surfaces;
+- do not add Darian-specific outdoor quotas, destination steering, mansion-exit scripts or bespoke autonomy prompts.
 
-This invariant is required before broader outside-world traversal: future transit hubs must not self-seal merely because a character has traversed them repeatedly.
+Spatial movement remains graph-based. `contains` is structural containment; `connected_to` is traversable topology; `located_at` is dynamic presence. Deterministic routing derives from authored topology and access state.
 
-## Deployed World Input stack
+## Telegram observability parity
 
-- W0 World Stimulus / Exposure Foundation
-- W1 Environment / Weather Foundation
-- W1.1 Historical Weather Provider
-- Creator Universe Weather & Geography Observability
-- Weather Region Registry v1
-- W2 Commitments / Obligations Foundation v1
-- **W3 Money / Economy Foundation v1**
-- **W3.1 Universe Object Valuation & Creation Rules v1**
+Creator-useful authoritative state should appear in the semantically relevant Telegram surface in the same bounded feature slice when such a surface exists, unless explicitly documented as not relevant yet.
 
-## W3 runtime state
+Telegram remains downstream/read-only. Viewing diagnostics/profile/world state must not mutate simulation, create exposure, create cognition/memory, or grant action authority.
 
-W3 is a minimum active runtime on an expandable economic spine:
-- generic economic entities: character, household, company, organization, government, trust, other;
-- financial accounts with integer minor-unit balances;
-- immutable transaction headers with signed ledger entries;
-- assets, liabilities and append-only valuations;
-- deterministic affordability/same-currency settlement;
-- explicit W0 financial notices only.
+## Current observed autonomy gap
 
-No jobs, salaries, banks/cards, interest, taxes, dynamic markets, FX, business P&L or macroeconomic simulation is activated yet. These later systems should plug into W3 rather than replace it.
+A current live-behavior observation remains unresolved:
+- once the actor is outdoors, outdoor behavior can persist naturally;
+- from indoor rooms, the actor does not appear to form the multi-step transition needed to reach known outdoor destinations naturally;
+- outdoor destinations, outdoor affordances, nature preference and emerging outdoor habits are represented;
+- from an indoor room such as Living Room, immediate `action_options` expose only adjacent legal first hops; an outdoor destination may require an intermediate hop such as Grand Foyer before Mansion Exterior / Estate Grounds;
+- therefore the leading hypothesis is a **generic multi-step destination-intent / reachable-preview bridge gap**, not missing outdoor semantics and not a need for an outdoor quota.
 
-### Darian economy seed
+This is still an investigation hypothesis, not an implemented fix. Any correction must remain universal and deterministic-authority-safe.
 
-Creator-approved canonical opening scale:
-- Thorne Estate: USD 16.5M
-- investments: USD 6.5M
-- primary liquid holdings: USD 1.8M
-- other personal assets: USD 0.7M
-- liabilities: USD 0.5M
-- **net worth: USD 25.0M**
+## World-input roadmap status
 
-`net worth != spendable balance`.
+The previously documented product-roadmap next slice remains:
+- W4 Information / Media Foundation
+- then W5 Communication Exposure Foundation
+- then MIND-F2 Mental Episode Runtime only after minimum external-input foundations are sufficient.
 
-## W3.1 object valuation state
-
-Canonical rule:
-`has economic value != contributes independent net worth`.
-
-All currently represented `object` entities and all current inventory `item` definitions have explicit value-policy coverage. Production-copy validation exposed 13 additional runtime-seeded training/diagnostic simulator objects beyond the base world JSON; those are included in the canonical coverage set.
-
-Estate-installed components have replacement-value truth but are `included_in_parent` under `asset_thorne_estate`, so they do not double-count against Darian's USD 25M net worth.
-
-Legacy `Stored Food Provisions`, `Drinking Water` and `Meal Ingredients` objects are excluded resource proxies; actual stock truth is held by inventory/resource authorities.
-
-Current food inventory derives value from live quantities + item-definition unit values. At the deployed canonical seed quantities it totals **USD 2,443.50**. This stock value is not automatically added to Darian's personal net worth.
-
-Canonical initialization fails closed if a represented world object or item definition lacks an explicit economic-value policy. Future runtime object creation must use the same value-policy boundary or atomically create an object and approved policy together.
-
-## Global economy expansion direction
-
-The Creator expects W3 to remain easily expandable toward Jobs/Careers and potentially a full global economy, including later aggregate concepts such as world total wealth.
-
-Future aggregation must distinguish:
-- real/non-financial assets;
-- financial claims between entities;
-- liabilities;
-- consolidated net wealth;
-- valuation time/method/currency.
-
-Do not sum asset values and corresponding financial claims blindly; prevent macro-level double counting.
-
-## Weather / geography state
-
-Weather remains:
-`represented region -> registered provider -> universe sim-time query -> cache -> W1 -> W0`.
-Only South Lake Tahoe is currently registered/represented for weather.
-
-Estate-first spatial scope remains active. No public-road edge from Main Security Gate, Tahoe-backcountry edge from Concealed Forest Passage, or water-travel edge from Hidden Dock is open.
-
-## Next world-input sequence
-
-Completed:
-1. W0 World Stimulus / Exposure
-2. W1 Environment / Weather
-3. W1.1 Historical Weather Provider
-4. Creator Universe Weather & Geography Observability
-5. Weather Region Registry v1
-6. W2 Commitments / Obligations
-7. W3 Money / Economy Foundation
-8. W3.1 Universe Object Valuation & Creation Rules
-9. Telegram Economy/Identity Observability Parity
-10. Transit Route / Telegram Access Semantics correction
-
-Next:
-11. **W4 Information / Media Foundation**
-12. W5 Communication Exposure Foundation
-13. MIND-F2 Mental Episode Runtime only after minimum external-input foundations are sufficient.
-
-## W4 direction
-
-Represent information/media truth before interpretation:
-- information/media items;
-- source/publisher and provenance;
-- publication/availability;
-- credibility metadata;
-- represented access/device/media exposure through W0 when a concrete path exists;
-- `world knows != character knows`;
-- no automatic belief, Memory, concern, intention, plan or action authority.
-
-Apply the Telegram observability-parity rule during W4: if Creator-useful media/information state has a relevant mobile observer surface, expose it in the same slice rather than deferring presentation silently.
+However, current Creator direction requires a fresh next-phase proposal after this documentation synchronization. Do not assume W4 should outrank the unresolved autonomy/mobility behavior gap without evaluating both against current production needs.
 
 ## Exact resume point
 
-**Transit Route / Telegram Access Semantics correction is production-green through Deploy #268 on top of W3 + W3.1 + Telegram Economy/Identity Observability Parity. Ordinary repetition no longer hides legal transit edges; strong/critical biological need-resolution remains a deliberate causal override. W4 Information / Media Foundation is canonical NEXT unless the Creator gives a different instruction. Do not activate Mental Episode/Planning runtime yet.**
+**Diagnostics v2 is production-green through Deploy #286, production journal access is permanently usable by the `observer` service user, and `main`/`test` were synchronized at merge `034d0c22...` before this docs-only continuity update. No new runtime implementation is currently authorized. Next: propose the best next minimum-runnable phase, explicitly comparing the unresolved generic inside->outside multi-step autonomy gap against the existing W4 Information / Media roadmap candidate. Do not activate character-specific steering or Mental Episode/Planning as a shortcut.**
