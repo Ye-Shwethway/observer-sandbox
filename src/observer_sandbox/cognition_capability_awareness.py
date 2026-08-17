@@ -4,6 +4,7 @@ import json
 import sqlite3
 from typing import Any
 
+from .bounded_destination_intent import bounded_destination_intent_awareness
 from .grading import evaluate_skill_score
 from .skill_application_requirements import get_executable_skill_application
 from .skill_definitions import load_skill_definition_config
@@ -265,11 +266,13 @@ def cognition_capability_awareness(
         "reasoning_profile": {
             "factors": reasoning_factors,
             "spatial_knowledge": spatial_familiarity_context(conn, actor_id),
+            "bounded_destination_intent": bounded_destination_intent_awareness(conn, actor_id),
             "principles": [
                 "General reasoning capacity can affect planning and problem solving but does not create missing knowledge or learned Skill proficiency.",
                 "Supporting attributes inform judgment only where the relevant Skill/task contract declares them; they do not replace the authoritative Skill score.",
                 "Knowledge keys describe semantic support requirements only; no hidden actor Knowledge score is inferred when no Knowledge subsystem exists.",
                 "Known geography is planning knowledge, not immediate movement authority; exact executable moves must still appear in current action_options.",
+                "Bounded destination route hints may explain why an immediate legal move is useful, but they are recomputed planning context rather than persistent intentions or plans.",
                 "Locations absent from authored spatial knowledge must not be assumed known merely because they exist in world truth.",
                 "Use numeric scores and grade labels only to calibrate internal decision quality; do not mention game-stat numbers or grade letters in in-world reasons.",
                 "Action legality, target/resource validity, task outcomes, and state mutation remain deterministic engine authority.",
