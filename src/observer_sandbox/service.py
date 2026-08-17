@@ -17,6 +17,7 @@ from .habit_adaptation import settle_habit_adaptation
 from .height_lifecycle import maybe_settle_height_lifecycle
 from .historical_weather_provider import ensure_weather_for_sim_time, load_weather_provider_config
 from .hobby_interest_lifecycle import settle_hobby_interest_lifecycle
+from .information_media import ensure_historical_tv_news_for_sim_time
 from .personality_plasticity import settle_personality_plasticity
 from .physical_attribute_progression import maybe_settle_physical_attribute_batch
 from .physical_presentation import refresh_physical_presentation
@@ -67,6 +68,16 @@ def _sync_registered_weather(conn, sim_time: str) -> None:
             continue
 
 
+def _sync_scheduled_news(conn, sim_time: str) -> None:
+    """Materialize the latest due shared-world TV bulletin without character authority."""
+    try:
+        ensure_historical_tv_news_for_sim_time(conn, sim_time)
+    except Exception:
+        # External news/editorial failure must never stop world autonomy. The
+        # scheduler records a bounded retry state and can recover on a later loop.
+        pass
+
+
 def _autonomy_tick_with_recovery(conn, actor_id: str):
     """Run one autonomy boundary and recover only repeated deterministic livelocks."""
     result = autonomy_tick(conn, actor_id=actor_id)
@@ -93,12 +104,14 @@ def main() -> None:
             with connect(DB_PATH) as conn:
                 actor_ids = _active_actor_ids(conn)
                 if actor_ids:
-                    # Weather belongs to shared world time, not to any character.
-                    # Use one active actor only to read the shared simulation clock;
-                    # every enabled registered region is synchronized independently.
+                    # Weather and scheduled news belong to shared world time, not
+                    # to any character. Use one active actor only to read the shared
+                    # simulation clock, then synchronize independent world producers.
                     try:
                         world_now = snapshot(conn, actor_ids[0])
-                        _sync_registered_weather(conn, str(world_now["sim_time"]))
+                        world_sim_time = str(world_now["sim_time"])
+                        _sync_registered_weather(conn, world_sim_time)
+                        _sync_scheduled_news(conn, world_sim_time)
                     except Exception:
                         pass
 
