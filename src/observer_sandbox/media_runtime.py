@@ -3,7 +3,7 @@ from __future__ import annotations
 import hashlib
 import json
 import sqlite3
-from datetime import datetime, timezone
+from datetime import datetime, timedelta, timezone
 from typing import Any
 from zoneinfo import ZoneInfo
 
@@ -84,12 +84,25 @@ def media_consumption_option_context(
     )
     if publication is None:
         return None
+    remaining_minutes: int | None = None
+    if publication["available_until"]:
+        remaining_minutes = max(
+            0,
+            int(
+                (
+                    _aware_datetime(str(publication["available_until"]))
+                    - _aware_datetime(sim_time)
+                ).total_seconds()
+                // 60
+            ),
+        )
     return {
         "publication_id": str(publication["publication_id"]),
         "medium": str(publication["medium"]),
         "program": str(publication["title"]),
         "available_from": str(publication["available_from"]),
         "available_until": publication["available_until"],
+        "remaining_minutes": remaining_minutes,
         "availability_only": True,
     }
 
@@ -100,6 +113,7 @@ def validate_media_consumption(
     actor_id: str,
     device_entity_id: str,
     sim_time: str,
+    duration_minutes: int | None = None,
 ) -> dict[str, Any]:
     device = conn.execute(
         "SELECT device_type,status FROM media_devices WHERE entity_id=?",
@@ -119,6 +133,12 @@ def validate_media_consumption(
     )
     if publication is None:
         raise ValueError(f"Media device {device_entity_id} has no active publication at {sim_time}")
+    if duration_minutes is not None and publication["available_until"]:
+        requested_end = _aware_datetime(sim_time) + timedelta(minutes=int(duration_minutes))
+        if requested_end > _aware_datetime(str(publication["available_until"])):
+            raise ValueError(
+                f"Media publication {publication['publication_id']} is not available for the full requested duration"
+            )
     return publication
 
 
