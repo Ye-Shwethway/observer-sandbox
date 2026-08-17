@@ -11,6 +11,9 @@ def test_universal_autonomy_policy_is_character_agnostic_and_bounded():
     assert any("resource_awareness" in principle for principle in policy["decision_principles"])
     assert any("recent_usage" in principle for principle in policy["decision_principles"])
     assert any("Outdoor activity is never a quota" in principle for principle in policy["decision_principles"])
+    assert any("ordinary multi-step movement" in principle for principle in policy["decision_principles"])
+    assert any("soft planning context only" in principle for principle in policy["decision_principles"])
+    assert all("Darian" not in principle for principle in policy["decision_principles"])
     assert policy["nutrition_policy"]["dietary_constraints"] == []
     assert "resting-energy reference" in policy["nutrition_policy"]["guidance"]
     assert policy["need_priorities"]["critical"]["sleepiness_gte"] > policy["need_priorities"]["strong"]["sleepiness_gte"]
