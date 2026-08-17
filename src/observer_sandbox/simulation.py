@@ -14,6 +14,12 @@ from .actor_selection import list_actor_ids, resolve_actor_id
 from .composition_schema import TRAINING_FATIGUE_LIMIT
 from .event_log import record_event
 from .location_runtime import current_location, set_dynamic_location
+from .media_runtime import (
+    MEDIA_CONSUMPTION_ACTION,
+    media_consumption_option_context,
+    record_media_consumption_exposure,
+    validate_media_consumption,
+)
 from .solo_sexual_regulation import (
     begin_self_satisfaction_action,
     self_satisfaction_action_option,
@@ -43,18 +49,18 @@ class DecisionProvider(Protocol):
 
 ACTION_NAMES = [
     "move", "sleep", "eat", "drink", "shower", "rest", "walk", "relax", "observe",
-    "inspect", "use", "train", "read", "self_satisfaction", "idle",
+    "inspect", "use", "train", "read", "consume_media", "self_satisfaction", "idle",
 ]
 ACTION_DURATION_BOUNDS: dict[str, tuple[int, int]] = {
     "move": (1, 30), "sleep": (30, 720), "eat": (5, 90), "drink": (1, 30),
     "shower": (5, 60), "rest": (5, 240), "walk": (5, 120), "relax": (5, 180),
     "observe": (2, 60), "inspect": (1, 60), "use": (1, 120), "train": (10, 240),
-    "read": (5, 240), "self_satisfaction": (5, 45), "idle": (1, 120),
+    "read": (5, 240), "consume_media": (5, 120), "self_satisfaction": (5, 45), "idle": (1, 120),
 }
 ACTION_CAPABILITY: dict[str, str] = {
     "sleep": "sleep", "eat": "eat", "drink": "drink", "shower": "shower", "rest": "rest",
     "walk": "walk", "relax": "relax", "observe": "observe", "inspect": "inspect", "use": "use",
-    "train": "train", "read": "read",
+    "train": "train", "read": "read", "consume_media": "consume_media",
 }
 PHYSIOLOGY_FIELDS = {
     "needs.energy": "energy", "needs.hunger": "hunger", "needs.thirst": "thirst",
@@ -293,12 +299,23 @@ def action_options(conn: sqlite3.Connection, actor_id: str | None = None) -> lis
                 continue
             capability = definition["required_capability"]
             if capability and capability in obj["capabilities"]:
+                media_context = None
+                if name == MEDIA_CONSUMPTION_ACTION:
+                    media_context = media_consumption_option_context(
+                        conn,
+                        device_entity_id=str(obj["id"]),
+                        sim_time=str(state["sim_time"]),
+                    )
+                    if media_context is None:
+                        continue
                 option = {
                     "action": name,
                     "target": obj["id"],
                     "target_name": obj["name"],
                     "duration": (definition["min_duration_minutes"], definition["max_duration_minutes"]),
                 }
+                if media_context is not None:
+                    option["media"] = media_context
                 effects = obj["effects"].get(name)
                 if effects:
                     option["effects"] = effects
@@ -378,6 +395,13 @@ def validate_action(conn: sqlite3.Connection, actor_id: str, action: Action) -> 
         raise ValueError(f"Target {action.target} does not support {action.name}")
     if action.name in {"eat", "drink", "shower"} and action.name not in _object_effects(conn, action.target):
         raise ValueError(f"Target {action.target} has no authored {action.name} physiological effect")
+    if action.name == MEDIA_CONSUMPTION_ACTION:
+        validate_media_consumption(
+            conn,
+            actor_id=actor_id,
+            device_entity_id=action.target,
+            sim_time=str(state["sim_time"]),
+        )
 
 
 def _apply_effect_spec(values: dict[str, float], effects: dict[str, Any]) -> None:
@@ -523,6 +547,14 @@ def apply_action(
         return snapshot(conn, actor_id)
 
     validate_action(conn, actor_id, action)
+    media_publication: dict[str, Any] | None = None
+    if action.name == MEDIA_CONSUMPTION_ACTION and action.target:
+        media_publication = validate_media_consumption(
+            conn,
+            actor_id=actor_id,
+            device_entity_id=action.target,
+            sim_time=snapshot(conn, actor_id)["sim_time"],
+        )
     action_id = ensure_action_instance(conn, action, actor_id, action_id=action_id)
     instance = conn.execute(
         "SELECT planned_sim_time,modifiers_json FROM action_instances WHERE id=?",
@@ -559,6 +591,21 @@ def apply_action(
         outcome["training_load"] = training_load
     if training_stimulus is not None:
         outcome["training_stimulus"] = training_stimulus
+    if media_publication is not None and action.target:
+        exposure = record_media_consumption_exposure(
+            conn,
+            actor_id=actor_id,
+            device_entity_id=action.target,
+            publication_id=str(media_publication["publication_id"]),
+            sim_time=ended.isoformat(),
+            action_id=action_id,
+        )
+        outcome["media_exposure"] = {
+            "exposure_id": str(exposure["exposure_id"]),
+            "publication_id": str(media_publication["publication_id"]),
+            "device_entity_id": action.target,
+            "semantics": "exposure_only",
+        }
 
     # Mark completion before the rolling seven-day query so the just-finished
     # solo action participates in its own current evidence window. The entire
@@ -605,6 +652,8 @@ def apply_action(
         payload["training_load"] = training_load
     if training_stimulus is not None:
         payload["training_stimulus"] = training_stimulus
+    if "media_exposure" in outcome:
+        payload["media_exposure"] = outcome["media_exposure"]
     record_event(
         conn,
         sim_time=ended.isoformat(),
