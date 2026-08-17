@@ -9,7 +9,7 @@ from zoneinfo import ZoneInfo
 
 from .location_runtime import current_location
 from .spatial_familiarity import location_is_globally_hidden
-from .world_stimulus import character_exposure, record_character_exposure
+from .world_stimulus import character_exposure
 
 
 MEDIA_CONSUMPTION_ACTION = "consume_media"
@@ -131,6 +131,7 @@ def record_media_consumption_exposure(
     sim_time: str,
     action_id: str,
 ) -> dict[str, Any]:
+    """Stage one idempotent exposure inside the caller's action transaction."""
     publication = conn.execute(
         "SELECT status FROM media_publications WHERE publication_id=?",
         (publication_id,),
@@ -157,27 +158,37 @@ def record_media_consumption_exposure(
     exposure_id = "exposure_media_" + hashlib.sha256(
         f"{actor_id}:{action_id}:{stimulus['stimulus_id']}".encode("utf-8")
     ).hexdigest()[:20]
-    existing = conn.execute(
+    if conn.execute(
         "SELECT 1 FROM character_exposures WHERE exposure_id=?",
         (exposure_id,),
-    ).fetchone()
-    if existing is not None:
-        return character_exposure(conn, exposure_id)
-    return record_character_exposure(
-        conn,
-        exposure_id=exposure_id,
-        stimulus_id=str(stimulus["stimulus_id"]),
-        character_id=actor_id,
-        sim_time=sim_time,
-        channel="media",
-        source_location_id=location,
-        source_entity_id=device_entity_id,
-        metadata={
-            "publication_id": publication_id,
-            "proof": "completed_media_consumption_action",
-            "action_id": action_id,
-        },
-    )
+    ).fetchone() is None:
+        conn.execute(
+            """
+            INSERT INTO character_exposures(
+                exposure_id,stimulus_id,character_id,sim_time,channel,source_location_id,
+                source_entity_id,attention_hint,status,metadata_json
+            ) VALUES(?,?,?,?,?,?,?,NULL,'exposed',?)
+            """,
+            (
+                exposure_id,
+                str(stimulus["stimulus_id"]),
+                actor_id,
+                sim_time,
+                "media",
+                location,
+                device_entity_id,
+                json.dumps(
+                    {
+                        "publication_id": publication_id,
+                        "proof": "completed_media_consumption_action",
+                        "action_id": action_id,
+                    },
+                    sort_keys=True,
+                    separators=(",", ":"),
+                ),
+            ),
+        )
+    return character_exposure(conn, exposure_id)
 
 
 def media_cognition_context(
