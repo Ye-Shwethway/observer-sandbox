@@ -128,7 +128,7 @@ jobs:
             .venv/bin/python -m observer_sandbox.ai_recovery --db "$OBSERVER_SANDBOX_DB" --character char_darian
           '
 
-      - name: Synchronize canonical service unit
+      - name: Verify installed service entrypoint
         env:
           VPS_HOST: ${{ secrets.VPS_HOST }}
           VPS_USER: ${{ secrets.VPS_USER }}
@@ -137,9 +137,17 @@ jobs:
           ssh -p "$VPS_PORT" "$VPS_USER@$VPS_HOST" '
             set -euo pipefail
             cd /opt/observer-sandbox
-            sudo -n /usr/bin/install -m 0644 deploy/observer-sandbox.service /etc/systemd/system/observer-sandbox.service
-            sudo -n /usr/bin/systemctl daemon-reload
-            sudo -n /usr/bin/systemctl cat observer-sandbox
+            UNIT_TEXT=$(/usr/bin/systemctl cat observer-sandbox)
+            printf "%s\n" "$UNIT_TEXT"
+            if printf "%s\n" "$UNIT_TEXT" | grep -Fq "observer_sandbox.service_supervisor"; then
+              test -f src/observer_sandbox/service_supervisor.py
+              echo "SERVICE_ENTRYPOINT=legacy-compatible-supervisor-shim"
+            elif printf "%s\n" "$UNIT_TEXT" | grep -Fq "observer_sandbox.service"; then
+              echo "SERVICE_ENTRYPOINT=canonical-service"
+            else
+              echo "Unsupported observer-sandbox systemd entrypoint" >&2
+              exit 1
+            fi
           '
 
       - name: Restart runtime service
