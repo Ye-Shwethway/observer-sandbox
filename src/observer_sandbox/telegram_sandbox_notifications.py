@@ -1,7 +1,9 @@
 from __future__ import annotations
 
 import json
+import os
 import sqlite3
+import urllib.error
 from typing import Any, Callable
 
 from .creation_sandbox import DEFAULT_SANDBOX_ID, ensure_sandbox, get_sandbox_object
@@ -224,7 +226,26 @@ def dispatch_pending_sandbox_notifications(
     return len(events)
 
 
+def dispatch_owner_sandbox_notifications(conn: sqlite3.Connection) -> int:
+    """Transport adapter for the runtime service; event selection remains sandbox-owned."""
+    from .telegram_bot import _notifications_enabled, _owner_user_id, _send
+
+    token = os.environ.get("OBSERVER_TELEGRAM_BOT_TOKEN", "").strip()
+    owner_id = _owner_user_id()
+    if not token or owner_id is None or not _notifications_enabled(conn, owner_id):
+        return 0
+    try:
+        return dispatch_pending_sandbox_notifications(
+            conn,
+            owner_id,
+            send=lambda user_id, text: _send(token, user_id, text),
+        )
+    except (urllib.error.URLError, TimeoutError, RuntimeError, OSError, ValueError):
+        return 0
+
+
 __all__ = [
+    "dispatch_owner_sandbox_notifications",
     "dispatch_pending_sandbox_notifications",
     "format_sandbox_notification",
     "mark_sandbox_events_seen",
