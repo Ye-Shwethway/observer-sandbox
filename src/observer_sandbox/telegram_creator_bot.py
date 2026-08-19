@@ -7,6 +7,7 @@ from typing import Any
 
 from . import telegram_bot as base
 from .creator_control import replenish_inventory_stack
+from .creator_studio import CreatorStudioError, ai_draft, manual_draft
 from .db import connect, migrate
 from .profile_change_observer import (
     reset_all_stat_notification_baselines,
@@ -15,6 +16,7 @@ from .profile_change_observer import (
 )
 from .telegram_ai_control import callback_view as ai_callback_view
 from .telegram_ai_control import home_view as ai_home_view
+from .telegram_creator_studio import draft_preview_view, studio_callback_view, studio_home_view
 from .telegram_inventory import inventory_callback_view, inventory_command_view
 from .telegram_news import generate_news_view, news_view
 from .telegram_profile_browser import profile_callback_view
@@ -221,6 +223,8 @@ def _callback_view(conn, user_id: int, callback_data: str):
                 "🔒 Creator authority required for the Creation Sandbox.",
                 [[{"text": "⌂ Observer Home", "callback_data": "nav:home"}]],
             )
+        if callback_data == "sw:studio" or callback_data.startswith("sw:cs:"):
+            return studio_callback_view(conn, user_id, callback_data)
         return world_layer_callback_view(conn, callback_data)
     if callback_data == "nav:universe":
         return universe_view(conn)
@@ -300,7 +304,30 @@ def _help(role: str) -> str:
     if role == "owner":
         text += "\n/replenish <stack_id> <quantity> — Add stock with Creator authority"
         text += "\n/settings — Creator settings and AI cognition"
+        text += "\n/studio — Open Creator Studio"
+        text += "\n/create character|location <name> — Manual sandbox draft"
+        text += "\n/createai character|location <description> — AI-assisted sandbox draft"
     return text
+
+
+def _studio_command_result(conn, user_id: int, command: str, parts: list[str]) -> str | None:
+    if command == "/studio":
+        return studio_home_view(conn, user_id)[0]
+    if command not in {"/create", "/createai"}:
+        return None
+    if len(parts) < 3 or parts[1].lower() not in {"character", "location"}:
+        verb = "name" if command == "/create" else "description"
+        return f"Usage: {command} character|location <{verb}>"
+    creation_type = parts[1].lower()
+    intent = " ".join(parts[2:]).strip()
+    try:
+        if command == "/create":
+            manual_draft(conn, user_id, creation_type, intent)
+        else:
+            ai_draft(conn, user_id, creation_type, intent)
+    except Exception as exc:
+        return f"Creator Studio draft rejected: {exc}"
+    return draft_preview_view(conn, user_id)[0]
 
 
 def handle_command(db_path: str | Path, *, user_id: int, text: str) -> str:
@@ -312,6 +339,15 @@ def handle_command(db_path: str | Path, *, user_id: int, text: str) -> str:
 
     if command in {"/inventory", "/replenish", "/statnotify"} and role == "unauthorized":
         return "Not authorized. Use /whoami to obtain your Telegram user id."
+
+    if command in {"/studio", "/create", "/createai"}:
+        if role != "owner":
+            return "🔒 Creator authority required for Creator Studio."
+        with connect(db_path) as conn:
+            migrate(conn)
+            result = _studio_command_result(conn, user_id, command, parts)
+            if result is not None:
+                return result
 
     if command == "/statnotify":
         with connect(db_path) as conn:
@@ -404,6 +440,12 @@ def _command_keyboard(command: str):
                 {"text": "🧺 All Stocks", "callback_data": "inv:all:0"},
             ],
             [{"text": "⌂ Observer Home", "callback_data": "nav:home"}],
+        ]
+    if command in {"/studio", "/create", "/createai"}:
+        return [
+            [{"text": "📋 Preview Draft", "callback_data": "sw:cs:preview"}],
+            [{"text": "🛠 Creator Studio", "callback_data": "sw:studio"}],
+            [{"text": "← Sandbox World", "callback_data": "nav:sandbox"}],
         ]
     if command in {"/settings", "/ai"}:
         return [
