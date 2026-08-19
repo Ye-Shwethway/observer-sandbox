@@ -21,6 +21,14 @@ def _profile_menu_keyboard(data):
     keyboard.append(
         [
             {
+                "text": "✏️ Edit Profile",
+                "callback_data": f"sw:pedit:enter:{character_id}",
+            }
+        ]
+    )
+    keyboard.append(
+        [
+            {
                 "text": f"← {data['character']['name']}",
                 "callback_data": f"sw:o:{character_id}",
             }
@@ -52,8 +60,6 @@ def sandbox_profile_callback_view(conn, callback_data: str, *, role: str = "allo
         try:
             data = sandbox_profile_section(conn, character_id, section_id, role=role)
             if section_id == "identity":
-                # Keep Sandbox presentation in parity with the Real World profile:
-                # biological sex remains represented but is not duplicated here.
                 data["content"] = [
                     item
                     for item in data.get("content") or []

@@ -28,6 +28,12 @@ from .telegram_profile_edit_ui import (
     profile_edit_callback_view,
     unpack_profile_edit_ui,
 )
+from .telegram_sandbox_profile_edit import (
+    exit_sandbox_profile_edit,
+    get_sandbox_profile_edit_session,
+    handle_sandbox_profile_edit_text,
+    sandbox_profile_edit_callback_view,
+)
 
 _LOG = configure_runtime_logging()
 _ORIGINAL_API = base._api
@@ -105,6 +111,19 @@ def _profile_menu_with_creator_edit(
 
 def _callback_view(conn, user_id: int, callback_data: str):
     role = base._user_role(user_id)
+    if callback_data.startswith("sw:pedit:"):
+        if role != "owner":
+            return "🔒 Creator authority required for Sandbox profile editing.", [[{"text": "⌂ Sandbox World", "callback_data": "nav:sandbox"}]]
+        try:
+            view = sandbox_profile_edit_callback_view(conn, user_id=user_id, callback_data=callback_data)
+            if view is not None:
+                return view
+        except (CreatorProfileEditError, KeyError, ValueError, PermissionError, RuntimeError) as exc:
+            _LOG.warning("telegram_sandbox_profile_edit_callback_rejected user_id=%s callback=%s error=%s", user_id, callback_data, exc)
+            return (
+                f"Sandbox profile update rejected: {exc}\n\nNo profile value changed. Sandbox World remains paused while Creator Edit Mode is open.",
+                [[{"text": "← Edit Profile", "callback_data": "sw:pedit:home"}], [{"text": "✅ Done Editing", "callback_data": "sw:pedit:done"}]],
+            )
     if callback_data.startswith("pedit:"):
         if role != "owner":
             return "🔒 Creator authority required for character profile editing.", [[{"text": "⌂ Observer Home", "callback_data": "nav:home"}]]
@@ -198,13 +217,32 @@ def handle_command(db_path: str | Path, *, user_id: int, text: str) -> str:
         try:
             with connect(db_path) as conn:
                 migrate(conn)
+                sandbox_ui = handle_sandbox_profile_edit_text(conn, user_id=user_id, text=command_line)
+                if sandbox_ui is not None:
+                    return pack_profile_edit_ui(sandbox_ui)
                 profile_ui = handle_profile_edit_text(conn, user_id=user_id, text=command_line)
                 if profile_ui is not None:
                     return pack_profile_edit_ui(profile_ui)
         except (CreatorProfileEditError, KeyError, ValueError, PermissionError, RuntimeError) as exc:
+            if get_sandbox_profile_edit_session(user_id=user_id) is not None:
+                return pack_profile_edit_ui((
+                    f"Sandbox profile update rejected: {exc}\n\nNo profile value changed. Sandbox World remains paused in Creator Edit Mode.",
+                    [[{"text": "← Edit Profile", "callback_data": "sw:pedit:home"}], [{"text": "✅ Done Editing", "callback_data": "sw:pedit:done"}]],
+                ))
             return pack_profile_edit_ui((
                 f"Creator profile update rejected: {exc}\n\nNo profile value changed. Universe remains paused in Creator Edit Mode.",
                 [[{"text": "← Edit Profile", "callback_data": "pedit:home"}], [{"text": "✅ Done Editing", "callback_data": "pedit:done"}]],
+            ))
+
+    if role == "owner" and command == "/cancel" and get_sandbox_profile_edit_session(user_id=user_id) is not None:
+        try:
+            with connect(db_path) as conn:
+                migrate(conn)
+                return pack_profile_edit_ui(exit_sandbox_profile_edit(conn, user_id=user_id))
+        except (CreatorProfileEditError, KeyError, ValueError, PermissionError, RuntimeError) as exc:
+            return pack_profile_edit_ui((
+                f"Sandbox profile edit cancellation rejected: {exc}",
+                [[{"text": "✅ Done Editing", "callback_data": "sw:pedit:done"}]],
             ))
 
     if command in {"/profileedit", "/profilegrade", "/profileapply"}:
