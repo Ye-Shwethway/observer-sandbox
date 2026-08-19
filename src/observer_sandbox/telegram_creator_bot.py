@@ -20,6 +20,8 @@ from .telegram_creator_studio import draft_preview_view, studio_callback_view, s
 from .telegram_inventory import inventory_callback_view, inventory_command_view
 from .telegram_news import generate_news_view, news_view
 from .telegram_profile_browser import profile_callback_view
+from .telegram_real_runtime import handle_real_runtime_command
+from .telegram_sandbox_runtime import handle_sandbox_runtime_command
 from .telegram_universe import locations_view, region_view, regions_view, universe_view, weather_view
 from .telegram_world_layers import world_layer_callback_view
 
@@ -35,6 +37,9 @@ _ORIGINAL_HELP = base._help
 _ORIGINAL_CHARACTER_KEYBOARD_FOR_USER = base._character_keyboard_for_user
 _DELETE_SENTINEL = "__DELETE_OBSERVER_HOME__"
 _HOME_DELETE_DEADLINES: dict[tuple[int, int], float] = {}
+_REAL_RUNTIME_COMMANDS = {"/realstatus", "/realpause", "/realresume", "/realspeed", "/realtime"}
+_SANDBOX_RUNTIME_COMMANDS = {"/sandboxstatus", "/sandboxpause", "/sandboxresume", "/sandboxspeed", "/sandboxtime"}
+_AMBIGUOUS_RUNTIME_COMMANDS = {"/pause", "/resume", "/speed", "/time"}
 
 
 def _home_ttl_seconds() -> int:
@@ -217,6 +222,13 @@ def _callback_view(conn, user_id: int, callback_data: str):
         return _DELETE_SENTINEL, None
     if callback_data == "nav:real":
         return world_layer_callback_view(conn, callback_data)
+    if callback_data == "nav:runtime" or callback_data == "rw:runtime" or callback_data.startswith("rw:rt:"):
+        if callback_data.startswith("rw:rt:") and base._user_role(user_id) != "owner":
+            return (
+                "🔒 Creator authority required for Real World runtime control.",
+                [[{"text": "← Real World", "callback_data": "nav:real"}]],
+            )
+        return world_layer_callback_view(conn, callback_data)
     if callback_data == "nav:sandbox" or callback_data.startswith("sw:"):
         if base._user_role(user_id) != "owner":
             return (
@@ -299,6 +311,18 @@ def _callback_view(conn, user_id: int, callback_data: str):
 
 def _help(role: str) -> str:
     text = _ORIGINAL_HELP(role)
+    text = text.replace("\n/pause — Pause autonomy", "")
+    text = text.replace("\n/resume — Resume autonomy", "")
+    text = text.replace("\n/speed <value> — Set runtime speed", "")
+    text += "\n/realstatus — Real World runtime status"
+    if role == "owner":
+        text += "\n/realpause | /realresume — Real World pause control"
+        text += "\n/realspeed <value> — Real World runtime speed"
+        text += "\n/realtime <ISO-8601> — Set Real World time; auto-pauses"
+        text += "\n/sandboxstatus — Sandbox World runtime status"
+        text += "\n/sandboxpause | /sandboxresume — Sandbox pause control"
+        text += "\n/sandboxspeed <value> — Sandbox runtime speed"
+        text += "\n/sandboxtime <ISO-8601> — Set Sandbox time; auto-pauses"
     text += "\n/statnotify <character> on|off — Character profile/progression updates"
     text += "\n/inventory — Browse universe inventory"
     if role == "owner":
@@ -330,12 +354,51 @@ def _studio_command_result(conn, user_id: int, command: str, parts: list[str]) -
     return draft_preview_view(conn, user_id)[0]
 
 
+def _ambiguous_runtime_redirect(command: str) -> str:
+    action = command.lstrip("/")
+    if action == "time":
+        return (
+            "🌐 World required for time control.\n"
+            "Use /realtime <ISO-8601> for Real World or /sandboxtime <ISO-8601> for Sandbox World."
+        )
+    return (
+        "🌐 World required for runtime control.\n"
+        f"Use /real{action} for Real World or /sandbox{action} for Sandbox World."
+    )
+
+
 def handle_command(db_path: str | Path, *, user_id: int, text: str) -> str:
     command_line = (text or "").strip()
     parts = command_line.split()
     first = parts[0] if parts else ""
     command = first.split("@", 1)[0].lower()
     role = base._user_role(user_id)
+
+    if command in _AMBIGUOUS_RUNTIME_COMMANDS:
+        if role == "unauthorized":
+            return "Not authorized. Use /whoami to obtain your Telegram user id."
+        return _ambiguous_runtime_redirect(command)
+
+    if command in _REAL_RUNTIME_COMMANDS:
+        if role == "unauthorized":
+            return "Not authorized. Use /whoami to obtain your Telegram user id."
+        if command != "/realstatus" and role != "owner":
+            return "🔒 Creator authority required for Real World runtime control."
+        with connect(db_path) as conn:
+            migrate(conn)
+            return handle_real_runtime_command(
+                conn,
+                command,
+                parts[1:],
+                requested_by=f"telegram:{user_id}",
+            )
+
+    if command in _SANDBOX_RUNTIME_COMMANDS:
+        if role != "owner":
+            return "🔒 Creator authority required for Sandbox World runtime control."
+        with connect(db_path) as conn:
+            migrate(conn)
+            return handle_sandbox_runtime_command(conn, command, parts[1:])
 
     if command in {"/inventory", "/replenish", "/statnotify"} and role == "unauthorized":
         return "Not authorized. Use /whoami to obtain your Telegram user id."
@@ -429,6 +492,16 @@ def handle_command(db_path: str | Path, *, user_id: int, text: str) -> str:
 
 
 def _command_keyboard(command: str):
+    if command in _REAL_RUNTIME_COMMANDS:
+        return [
+            [{"text": "🕒 Real World Runtime", "callback_data": "nav:runtime"}],
+            [{"text": "← Real World", "callback_data": "nav:real"}],
+        ]
+    if command in _SANDBOX_RUNTIME_COMMANDS:
+        return [
+            [{"text": "🕒 Sandbox Runtime", "callback_data": "sw:runtime"}],
+            [{"text": "← Sandbox World", "callback_data": "nav:sandbox"}],
+        ]
     if command == "/inventory":
         return [
             [
