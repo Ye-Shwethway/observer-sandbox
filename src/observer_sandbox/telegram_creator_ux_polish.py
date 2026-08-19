@@ -4,7 +4,6 @@ import json
 import os
 import threading
 import urllib.request
-from typing import Any
 
 from .db import connect, migrate
 
@@ -22,6 +21,27 @@ def _is_creator_input_prompt(text: str) -> bool:
         "📍 LOCATION · AI DRAFT",
         "📍 LOCATION · MANUAL",
     }
+
+
+def _record_prompt_edit(chat_id: int, message_id: int, text: str) -> None:
+    chat_id = int(chat_id)
+    message_id = int(message_id)
+    if _is_creator_input_prompt(text):
+        _PROMPT_MESSAGES[chat_id] = message_id
+    elif _PROMPT_MESSAGES.get(chat_id) == message_id:
+        _PROMPT_MESSAGES.pop(chat_id, None)
+
+
+def _mark_studio_input_consumed(user_id: int) -> None:
+    _DELETE_AFTER_INPUT.add(int(user_id))
+
+
+def _take_prompt_delete(chat_id: int) -> int | None:
+    chat_id = int(chat_id)
+    if chat_id not in _DELETE_AFTER_INPUT:
+        return None
+    _DELETE_AFTER_INPUT.discard(chat_id)
+    return _PROMPT_MESSAGES.pop(chat_id, None)
 
 
 def _active_studio_input_mode(db_path: str, user_id: int) -> str | None:
@@ -110,13 +130,8 @@ def install_creator_ux_polish() -> None:
         )
 
     def edit(token: str, chat_id: int, message_id: int, text: str, keyboard=None):
-        chat_id = int(chat_id)
-        message_id = int(message_id)
-        if _is_creator_input_prompt(text):
-            _PROMPT_MESSAGES[chat_id] = message_id
-        elif _PROMPT_MESSAGES.get(chat_id) == message_id:
-            _PROMPT_MESSAGES.pop(chat_id, None)
-        return original_edit(token, chat_id, message_id, text, keyboard)
+        _record_prompt_edit(chat_id, message_id, text)
+        return original_edit(token, int(chat_id), int(message_id), text, keyboard)
 
     def handle_command(db_path, *, user_id: int, text: str) -> str:
         raw = (text or "").strip()
@@ -125,7 +140,7 @@ def install_creator_ux_polish() -> None:
         creator_ai = mode == "ai_generated" or command == "/createai"
         consumed_studio_input = mode is not None and bool(raw) and not raw.startswith("/")
         if consumed_studio_input:
-            _DELETE_AFTER_INPUT.add(int(user_id))
+            _mark_studio_input_consumed(user_id)
 
         pump = None
         if creator_ai:
@@ -140,21 +155,18 @@ def install_creator_ux_polish() -> None:
                 thread.join(timeout=1.0)
 
     def send(token: str, chat_id: int, text: str, keyboard=None):
-        chat_id = int(chat_id)
-        if chat_id in _DELETE_AFTER_INPUT:
-            _DELETE_AFTER_INPUT.discard(chat_id)
-            prompt_message_id = _PROMPT_MESSAGES.pop(chat_id, None)
-            if prompt_message_id is not None:
-                try:
-                    original_api(
-                        token,
-                        "deleteMessage",
-                        {"chat_id": chat_id, "message_id": int(prompt_message_id)},
-                        timeout=10,
-                    )
-                except Exception:
-                    pass
-        return original_send(token, chat_id, text, keyboard)
+        prompt_message_id = _take_prompt_delete(chat_id)
+        if prompt_message_id is not None:
+            try:
+                original_api(
+                    token,
+                    "deleteMessage",
+                    {"chat_id": int(chat_id), "message_id": int(prompt_message_id)},
+                    timeout=10,
+                )
+            except Exception:
+                pass
+        return original_send(token, int(chat_id), text, keyboard)
 
     base._boot_message = boot_message
     base._edit = edit
@@ -166,5 +178,9 @@ def install_creator_ux_polish() -> None:
 __all__ = [
     "install_creator_ux_polish",
     "_is_creator_input_prompt",
+    "_record_prompt_edit",
+    "_mark_studio_input_consumed",
+    "_take_prompt_delete",
     "_meaningful_commit_summary",
+    "_start_typing_pump",
 ]
