@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import json
+import os
 import sqlite3
 from typing import Any
 
@@ -9,6 +10,14 @@ from .sandbox_runtime import sandbox_character_readiness, sandbox_runtime_status
 from .telegram_sandbox_character_config import character_config_callback_view
 from .telegram_sandbox_notifications import sandbox_notification_callback_view
 from .telegram_sandbox_runtime import sandbox_runtime_callback_view
+
+
+def _notification_user_id() -> int:
+    raw = os.environ.get("OBSERVER_TELEGRAM_OWNER_ID", "").strip()
+    try:
+        return int(raw)
+    except ValueError:
+        return 0
 
 
 def real_world_view() -> tuple[str, list[list[dict[str, str]]]]:
@@ -75,11 +84,7 @@ def sandbox_world_view(conn: sqlite3.Connection) -> tuple[str, list[list[dict[st
 
 def sandbox_universe_view(conn: sqlite3.Connection) -> tuple[str, list[list[dict[str, str]]]]:
     objects = list_sandbox_objects(conn, sandbox_id=DEFAULT_SANDBOX_ID)
-    lines = [
-        "🌐 SANDBOX UNIVERSE",
-        "━━━━━━━━━━━━━━━━━━",
-        "Isolated staging namespace. Nothing here is canonical.",
-    ]
+    lines = ["🌐 SANDBOX UNIVERSE", "━━━━━━━━━━━━━━━━━━", "Isolated staging namespace. Nothing here is canonical."]
     if not objects:
         lines.extend(["", "No sandbox creations yet."])
     else:
@@ -90,17 +95,10 @@ def sandbox_universe_view(conn: sqlite3.Connection) -> tuple[str, list[list[dict
     return "\n".join(lines), [[{"text": "← Sandbox World", "callback_data": "nav:sandbox"}]]
 
 
-def sandbox_list_view(
-    conn: sqlite3.Connection,
-    creation_type: str,
-) -> tuple[str, list[list[dict[str, str]]]]:
+def sandbox_list_view(conn: sqlite3.Connection, creation_type: str) -> tuple[str, list[list[dict[str, str]]]]:
     if creation_type not in {"character", "location"}:
         return sandbox_world_view(conn)
-    values = [
-        value
-        for value in list_sandbox_objects(conn, sandbox_id=DEFAULT_SANDBOX_ID)
-        if value["creation_type"] == creation_type
-    ]
+    values = [value for value in list_sandbox_objects(conn, sandbox_id=DEFAULT_SANDBOX_ID) if value["creation_type"] == creation_type]
     label = "CHARACTERS" if creation_type == "character" else "LOCATIONS"
     icon = "👥" if creation_type == "character" else "📍"
     lines = [f"{icon} SANDBOX {label}", "━━━━━━━━━━━━━━━━━━"]
@@ -109,26 +107,15 @@ def sandbox_list_view(
         lines.append("No active sandbox creations.")
     for value in values:
         name = str(value["identity"].get("name") or value["object_id"])
-        lines.append(f"• {name}")
         keyboard.append([{"text": f"{'👤' if creation_type == 'character' else '📍'} {name}", "callback_data": f"sw:o:{value['object_id']}"}])
     keyboard.append([{"text": "← Sandbox World", "callback_data": "nav:sandbox"}])
     return "\n".join(lines), keyboard
 
 
-def sandbox_object_view(
-    conn: sqlite3.Connection,
-    object_id: str,
-) -> tuple[str, list[list[dict[str, str]]]]:
+def sandbox_object_view(conn: sqlite3.Connection, object_id: str) -> tuple[str, list[list[dict[str, str]]]]:
     value = get_sandbox_object(conn, object_id)
     icon = "👤" if value["creation_type"] == "character" else "📍"
-    lines = [
-        f"{icon} {value['identity'].get('name', value['object_id'])}",
-        "━━━━━━━━━━━━━━━━━━",
-        "🧪 Creation Sandbox",
-        f"Type: {value['creation_type'].title()}",
-        f"Lifecycle: {value['lifecycle_status'].title()}",
-        f"ID: {value['object_id']}",
-    ]
+    lines = [f"{icon} {value['identity'].get('name', value['object_id'])}", "━━━━━━━━━━━━━━━━━━", "🧪 Creation Sandbox", f"Type: {value['creation_type'].title()}", f"Lifecycle: {value['lifecycle_status'].title()}", f"ID: {value['object_id']}"]
     keyboard: list[list[dict[str, str]]] = []
     if value["creation_type"] == "character":
         readiness = sandbox_character_readiness(conn, object_id)
@@ -146,49 +133,30 @@ def sandbox_object_view(
             lines.append(f"• {relation['relation_type'].replace('_', ' ').title()} → {relation['target_object_id']}")
     lines.extend(["", "Canonical universe: unchanged."])
     back = "sw:list:character" if value["creation_type"] == "character" else "sw:list:location"
-    keyboard.extend(
-        [
-            [{"text": "← Back", "callback_data": back}],
-            [{"text": "⌂ Sandbox World", "callback_data": "nav:sandbox"}],
-        ]
-    )
+    keyboard.extend([[{"text": "← Back", "callback_data": back}], [{"text": "⌂ Sandbox World", "callback_data": "nav:sandbox"}]])
     return "\n".join(lines), keyboard
 
 
 def sandbox_history_view(conn: sqlite3.Connection) -> tuple[str, list[list[dict[str, str]]]]:
     ensure_sandbox(conn, DEFAULT_SANDBOX_ID)
-    rows = conn.execute(
-        """
-        SELECT event_type,payload_json,created_at
-        FROM creation_sandbox_events
-        WHERE sandbox_id=?
-        ORDER BY id DESC LIMIT 12
-        """,
-        (DEFAULT_SANDBOX_ID,),
-    ).fetchall()
+    rows = conn.execute("SELECT event_type,payload_json,created_at FROM creation_sandbox_events WHERE sandbox_id=? ORDER BY id DESC LIMIT 12", (DEFAULT_SANDBOX_ID,)).fetchall()
     lines = ["📜 SANDBOX HISTORY", "━━━━━━━━━━━━━━━━━━"]
     if not rows:
         lines.append("No sandbox activity yet.")
     for row in rows:
         event = str(row["event_type"]).replace("_", " ").title()
-        payload: Any
         try:
-            payload = json.loads(row["payload_json"] or "{}")
+            payload: Any = json.loads(row["payload_json"] or "{}")
         except json.JSONDecodeError:
             payload = {}
-        detail = ""
-        if isinstance(payload, dict):
-            detail = str(payload.get("name") or payload.get("creation_type") or "")
+        detail = str(payload.get("name") or payload.get("creation_type") or "") if isinstance(payload, dict) else ""
         lines.append(f"• {event}{' · ' + detail if detail else ''}")
         lines.append(f"  {row['created_at']}")
     lines.extend(["", "Canonical history is separate and unchanged."])
     return "\n".join(lines), [[{"text": "← Sandbox World", "callback_data": "nav:sandbox"}]]
 
 
-def world_layer_callback_view(
-    conn: sqlite3.Connection,
-    callback_data: str,
-) -> tuple[str, list[list[dict[str, str]]]] | None:
+def world_layer_callback_view(conn: sqlite3.Connection, callback_data: str) -> tuple[str, list[list[dict[str, str]]]] | None:
     if callback_data == "nav:real":
         return real_world_view()
     if callback_data == "nav:sandbox":
@@ -202,7 +170,7 @@ def world_layer_callback_view(
     if callback_data == "sw:history":
         return sandbox_history_view(conn)
     if callback_data == "sw:notif" or callback_data.startswith("sw:notif:"):
-        raise KeyError("Sandbox notification callbacks require user context")
+        return sandbox_notification_callback_view(conn, _notification_user_id(), callback_data)
     if callback_data.startswith("sw:cfg:"):
         return character_config_callback_view(conn, callback_data)
     if callback_data == "sw:runtime" or callback_data.startswith(("sw:rt:", "sw:cr:")):
@@ -212,12 +180,4 @@ def world_layer_callback_view(
     raise KeyError(callback_data)
 
 
-__all__ = [
-    "real_world_view",
-    "sandbox_history_view",
-    "sandbox_list_view",
-    "sandbox_object_view",
-    "sandbox_universe_view",
-    "sandbox_world_view",
-    "world_layer_callback_view",
-]
+__all__ = ["real_world_view", "sandbox_history_view", "sandbox_list_view", "sandbox_object_view", "sandbox_universe_view", "sandbox_world_view", "world_layer_callback_view"]
