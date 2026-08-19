@@ -103,18 +103,62 @@ def _start_typing_pump(api, token: str, chat_id: int) -> tuple[threading.Event, 
     return stop, thread
 
 
+def _stop_typing_pump(pump: tuple[threading.Event, threading.Thread] | None) -> None:
+    if pump is None:
+        return
+    stop, thread = pump
+    stop.set()
+    thread.join(timeout=1.0)
+
+
+def _wrap_active_studio_router(base, api) -> bool:
+    """Attach UX lifecycle to the one-shot Creator Studio router if it is active.
+
+    Creator Studio dynamically replaces ``base.handle_command`` after a guided
+    input card is opened. That router must therefore be wrapped after installation;
+    wrapping only the long-lived runtime handler is insufficient.
+    """
+    routed = base.handle_command
+    if not getattr(routed, "_creator_studio_input_router", False):
+        return False
+    if getattr(routed, "_creator_ux_wrapped", False):
+        return True
+
+    def routed_with_ux(db_path, *, user_id: int, text: str) -> str:
+        raw = (text or "").strip()
+        ordinary_input = bool(raw) and not raw.startswith("/")
+        mode = _active_studio_input_mode(str(db_path), user_id) if ordinary_input else None
+        if mode is not None:
+            _mark_studio_input_consumed(user_id)
+        pump = None
+        if mode == "ai_generated":
+            token = os.environ.get("OBSERVER_TELEGRAM_BOT_TOKEN", "").strip()
+            pump = _start_typing_pump(api, token, int(user_id))
+        try:
+            return routed(db_path, user_id=user_id, text=text)
+        finally:
+            _stop_typing_pump(pump)
+
+    routed_with_ux._creator_studio_input_router = True  # type: ignore[attr-defined]
+    routed_with_ux._creator_ux_wrapped = True  # type: ignore[attr-defined]
+    base.handle_command = routed_with_ux
+    return True
+
+
 def install_creator_ux_polish() -> None:
     global _INSTALLED
     if _INSTALLED:
         return
 
     from . import telegram_bot as base
+    from . import telegram_creator_studio as studio
 
     original_api = base._api
     original_send = base._send
     original_edit = base._edit
     original_handle = base.handle_command
     original_boot = base._boot_message
+    original_install_input_router = studio._install_input_router
 
     def boot_message() -> str:
         text = original_boot()
@@ -136,23 +180,14 @@ def install_creator_ux_polish() -> None:
     def handle_command(db_path, *, user_id: int, text: str) -> str:
         raw = (text or "").strip()
         command = raw.split()[0].split("@", 1)[0].lower() if raw else ""
-        mode = None if raw.startswith("/") else _active_studio_input_mode(str(db_path), user_id)
-        creator_ai = mode == "ai_generated" or command == "/createai"
-        consumed_studio_input = mode is not None and bool(raw) and not raw.startswith("/")
-        if consumed_studio_input:
-            _mark_studio_input_consumed(user_id)
-
         pump = None
-        if creator_ai:
+        if command == "/createai":
             token = os.environ.get("OBSERVER_TELEGRAM_BOT_TOKEN", "").strip()
             pump = _start_typing_pump(original_api, token, int(user_id))
         try:
             return original_handle(db_path, user_id=user_id, text=text)
         finally:
-            if pump is not None:
-                stop, thread = pump
-                stop.set()
-                thread.join(timeout=1.0)
+            _stop_typing_pump(pump)
 
     def send(token: str, chat_id: int, text: str, keyboard=None):
         prompt_message_id = _take_prompt_delete(chat_id)
@@ -168,10 +203,16 @@ def install_creator_ux_polish() -> None:
                 pass
         return original_send(token, int(chat_id), text, keyboard)
 
+    def install_input_router_with_ux() -> None:
+        original_install_input_router()
+        _wrap_active_studio_router(base, original_api)
+
     base._boot_message = boot_message
     base._edit = edit
     base.handle_command = handle_command
     base._send = send
+    studio._install_input_router = install_input_router_with_ux
+    _wrap_active_studio_router(base, original_api)
     _INSTALLED = True
 
 
@@ -183,4 +224,6 @@ __all__ = [
     "_take_prompt_delete",
     "_meaningful_commit_summary",
     "_start_typing_pump",
+    "_stop_typing_pump",
+    "_wrap_active_studio_router",
 ]
