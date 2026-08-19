@@ -39,6 +39,29 @@ def test_creation_profile_strips_runtime_fields_and_normalizes_source_union_alia
     assert "sleep.quality" not in value
 
 
+def test_creation_profile_respects_registered_text_raps_fields(tmp_path):
+    with _conn(tmp_path) as conn:
+        value = sanitize_creation_profile_values(
+            conn,
+            {
+                "raps_ia.capability_notes": "Practical thinker with strong real-world judgment.",
+                "raps_ia.problem_solving": 75,
+            },
+        )
+    assert value["raps_ia.capability_notes"].startswith("Practical thinker")
+    assert value["raps_ia.problem_solving"] == 75
+
+
+def test_creation_profile_rejects_wrong_type_for_registered_text_raps_field(tmp_path):
+    with _conn(tmp_path) as conn:
+        try:
+            sanitize_creation_profile_values(conn, {"raps_ia.capability_notes": 75})
+        except ValueError as exc:
+            assert "must be text" in str(exc)
+        else:
+            raise AssertionError("Expected registered text type rejection")
+
+
 def test_creation_profile_rejects_conflicting_compatibility_aliases(tmp_path):
     with _conn(tmp_path) as conn:
         try:
