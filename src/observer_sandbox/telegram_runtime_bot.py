@@ -264,4 +264,7 @@ base._help = _help
 base._callback_view = _callback_view
 base.handle_command = handle_command
 
+from .telegram_creator_ux_polish import install_creator_ux_polish
+install_creator_ux_polish()
+
 run_polling = base.run_polling
