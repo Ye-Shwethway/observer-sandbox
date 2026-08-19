@@ -3,6 +3,7 @@ import json
 import pytest
 
 from observer_sandbox.creation_sandbox import ensure_sandbox
+from observer_sandbox.creator_profile_edit import CreatorProfileEditError
 from observer_sandbox.db import connect
 from observer_sandbox.runtime import initialize
 from observer_sandbox.sandbox_representation import set_sandbox_profile_values
@@ -198,7 +199,7 @@ def test_sandbox_profile_edit_restores_preexisting_pause_and_rejects_bad_value(t
         strength_index = session["field_picker_keys"].index("raps_pa.strength")
         sandbox_field_prompt_view(conn, user_id=USER_ID + 1, index=strength_index)
 
-        with pytest.raises(Exception):
+        with pytest.raises(CreatorProfileEditError):
             handle_sandbox_profile_edit_text(conn, user_id=USER_ID + 1, text="not-a-number")
         stored = conn.execute(
             """
