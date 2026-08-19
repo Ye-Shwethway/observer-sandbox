@@ -24,88 +24,76 @@ Never claim production deployment without independent deploy/runtime evidence or
 
 ## Current repository checkpoint
 
+### PR #291 — Sandbox Character Configuration UX I4.1
+
+Merged:
+`ad799cc621630978fd8fda9c8ae0d4d3a5ca4a9b`
+
+Final head:
+`daf853944cc3ee08e34b23f876f2c3c8393492c8`
+
+Evidence:
+- CI #1084 — **SUCCESS**;
+- schema remains v19.
+
+Canonical contract:
+`docs/SANDBOX_CHARACTER_CONFIGURATION_I4_1.md`.
+
+Sandbox Character detail now exposes `⚙️ Configure` with one consolidated inline dashboard for:
+- represented Sandbox Location assignment;
+- deterministic runtime-option refresh;
+- isolated per-Character cognition AI selection using the shared enabled provider/model catalog;
+- Sandbox clock state and initialization from a read-only Real World time snapshot;
+- readiness summary and detailed readiness diagnostics.
+
+Location assignment refreshes options immediately. A fully configured Character may reach `runtime_ready`; acceptance proves `autonomy_enabled=0` remains locked and canonical-state fingerprint stays unchanged. **I4.1 does not run the Character.**
+
+### PR #290 — Guided Creator Studio dual-pattern UX
+
+Merged:
+`c742309bf4c2480d8184e030b830d98cb0975b35`
+
+Evidence:
+- CI #1083 — **SUCCESS**.
+
+Normal creation path is now inline-first:
+`Creator Studio -> Create -> Character | Location -> Build Manually | Generate with AI -> next-message name/description -> Draft Preview`.
+
+The pending text-input session is UI-scoped and one-shot. It is cleared/restored after consumption or cancel. `/studio`, `/create`, `/createai` remain optional shortcuts rather than required UX.
+
 ### PR #288 — Telegram Creator Studio I4
 
 Merged:
 `2cec0e44b85d9ffaa489344d9202594735dac13b`
 
-Final head:
-`418df9ac8e4b45875f26f1c267657b21675b3f96`
-
 Evidence:
-- CI #1080 — **SUCCESS**
-- Inventory Foundation v1 Acceptance #98 — **SUCCESS**
-- Inventory Operations v1 Acceptance #54 — **SUCCESS**
+- CI #1080 — **SUCCESS**;
+- Inventory Foundation #98 — **SUCCESS**;
+- Inventory Operations #54 — **SUCCESS**;
 - schema v19.
 
-Initial CI #1079 reached `813 passed / 1 failed`; the only failure was a prior sandbox-isolation assertion hard-coded to schema v18. New I4 tests passed on the first run. Narrow schema alignment produced final green CI #1080.
-
-Canonical contract:
-`docs/TELEGRAM_CREATOR_STUDIO_I4.md`.
-
-Creator Studio now provides owner-only:
-- Sandbox World -> `🛠 Creator Studio`;
-- `/studio`;
-- `/create character <name>`;
-- `/create location <name>`;
-- `/createai character <description>`;
-- `/createai location <description>`;
-- draft preview;
-- AI reroll;
-- cancel;
-- explicit Approve into Sandbox.
-
 Proposal lifecycle:
-
 `Creator intent -> Manual or AI Draft -> Sandbox Draft -> Preview -> Explicit Approve -> Sandbox Object`.
 
-A draft is not a sandbox object. A sandbox object is not canonical. Creator Creation AI has proposal authority only and cannot directly activate sandbox objects, write canonical universe state or transmigrate creations.
+A draft is not a sandbox object. A sandbox object is not canonical. Creator Creation AI has proposal authority only.
 
-### PR #286 — Sandbox Character + Location Vertical Proof I3
+### Earlier Creator Creation foundations
 
-Merged:
-`bf0ed6fbd508b66db026d3a4861b2237354e2691`
+- PR #286 / I3: isolated Character profile/skills, Location containment, represented affordance projection; merge `bf0ed6fbd508b66db026d3a4861b2237354e2691`.
+- PR #284 / I2.5: isolated sandbox clock/speed/pause, Character readiness, AI assignment and runtime options; merge `afedd4a3bc966b2cd09985ad26fda87adf0347ba`.
+- PR #283 / I2: isolated Creation Sandbox persistence and Real World/Sandbox World Telegram layers; merge `b8c92ba28f551533190d50f0ac8cb9be2fa75003`.
+- PR #281 / I0-I1: generic Creator authority + universal Character/Location proposal sockets + Creator Creation AI settings; merge `c60ba00921e1a14132c4422d1e96eed2e623b2ab`.
 
-I3 provides isolated Character profile/skills using canonical profile vocabulary, cycle-safe Location containment and deterministic Character/current-Location capability projection into runtime options. The vertical can reach `runtime_ready` without canonical writes.
-
-### PR #284 — Sandbox Runtime Readiness Foundation
-
-Merged:
-`afedd4a3bc966b2cd09985ad26fda87adf0347ba`
-
-Lifecycle:
+Lifecycle remains:
 `created -> configured -> runtime_ready -> running -> stopped`.
 
-Sandbox owns separate clock/speed/pause, Character readiness, sandbox cognition AI assignment and runtime options. Full sandbox autonomous ticking remains **not implemented**.
-
-### PR #283 — Creation Sandbox isolation + world layers
-
-Merged:
-`b8c92ba28f551533190d50f0ac8cb9be2fa75003`
-
-Telegram `/start` hierarchy:
-`Observer Home -> Real World | Sandbox World | Creator Settings`.
-
-Sandbox objects use isolated `sbx_*` identities and separate object/relation/event/runtime state.
-
-### PR #281 — Creator Creation I0/I1
-
-Merged:
-`c60ba00921e1a14132c4422d1e96eed2e623b2ab`
-
-Generic authority precedence:
-`Creator-approved live state > simulation-owned live state > ordinary seed/default`.
-
-AI settings hierarchy:
-`Creator Settings -> AI Settings -> Character AI / News Generation AI / Creator Creation AI`.
+Full sandbox autonomous ticking is **not implemented**.
 
 ## AI binding facts
 
-Real World backend already supports per-character AI overrides through `ai_bindings` / `resolve_binding()`. Do not rebuild that resolver.
+Real World backend already supports per-character AI overrides through canonical `ai_bindings` / `resolve_binding()`. Do not rebuild that resolver. Telegram UX for explicit Real World per-character assignment remains a separate gap.
 
-Remaining Real World gap is Telegram UX for explicit per-character assignment.
-
-Creation Sandbox stores sandbox Character AI assignments separately while sharing the provider/model catalog. Never insert `sbx_*` Character IDs into canonical bindings.
+Creation Sandbox stores Character AI assignments separately while sharing provider/model catalog metadata. I4.1 exposes this isolated assignment in Telegram. Never insert `sbx_*` Character IDs into canonical bindings.
 
 ## Creator Staging & Transmigration
 
@@ -113,54 +101,52 @@ Creation Sandbox stores sandbox Character AI assignments separately while sharin
 
 > **schema-valid does not imply universe-compatible.**
 
-All Creator creations begin isolated. Canonical activation requires target-universe compatibility validation plus explicit Creator approval in a future atomic transmigration transaction.
+All Creator creations begin isolated. Canonical activation requires future target-universe compatibility validation plus explicit Creator approval in an atomic transmigration transaction.
 
 Supernatural/impossible-physics systems may be sandbox-valid yet incompatible with the current realistic universe. Future universes may use different compatibility profiles. Do not smuggle new system concepts into arbitrary Character profile keys.
 
-Canonical docs:
+Canonical docs include:
 - `docs/UNIVERSAL_CREATION_SOCKET_FOUNDATION_V1.md`
 - `docs/CREATOR_STAGING_TRANSMIGRATION_ARCHITECTURE_V1.md`
 - `docs/CREATOR_CREATION_FULL_ROADMAP_V1.md`
 - `docs/CREATOR_CREATION_IMPLEMENTATION_PLAN_V1.md`
 - `docs/SANDBOX_RUNTIME_READINESS_FOUNDATION_V1.md`
 - `docs/SANDBOX_CHARACTER_LOCATION_VERTICAL_I3.md`
-- `docs/TELEGRAM_CREATOR_STUDIO_I4.md`.
+- `docs/TELEGRAM_CREATOR_STUDIO_I4.md`
+- `docs/SANDBOX_CHARACTER_CONFIGURATION_I4_1.md`.
 
 ## Immediate implementation route
 
-- I0 Creator authority hardening — **COMPLETE**;
+- I0 Creator authority — **COMPLETE**;
 - I1 universal proposal/socket core — **COMPLETE**;
 - I2 isolated Creation Sandbox persistence/lifecycle — **COMPLETE**;
 - I2.5 isolated sandbox runtime/time/AI/readiness — **COMPLETE**;
 - I3 Character + Location representation proof — **COMPLETE**;
-- I4 Telegram Creator Studio proposal lifecycle — **COMPLETE**;
-- I4.1 Creator Studio Character configuration UX — **NEXT**;
-- I5 sandbox-specific notifications;
+- I4 Creator Studio proposal lifecycle — **COMPLETE**;
+- I4 guided dual-pattern creation UX — **COMPLETE**;
+- I4.1 Sandbox Character configuration UX — **COMPLETE**;
+- I5 sandbox-specific notifications/observer flow — **NEXT**;
 - I6 target-universe compatibility/transmigration planning;
 - then resume MIND-F2.
 
-## I4.1 rules
+## I5 rules
 
-Extend existing Studio; do not create another creation backend.
+I5 must observe only real Creation Sandbox state. Do not fabricate autonomous activity merely to produce notifications.
 
-Minimum next UX:
-- select a Sandbox Character;
-- assign/change a represented Sandbox Location;
-- inspect/refresh derived runtime options;
-- assign/change sandbox cognition AI from shared provider/model catalog;
-- expose sandbox clock state;
-- show one consolidated readiness checklist;
-- profile/Body/Skill editing only through existing sandbox representation vocabulary.
+Minimum direction:
+- visibly mark sandbox notifications with `🧪` / Creation Sandbox identity;
+- use sandbox lifecycle/configuration/readiness/runtime events only;
+- keep notification preferences/baselines separate from canonical Character notification state;
+- never imply `runtime_ready` means `running`;
+- if no sandbox execution event source exists, notify only on real sandbox configuration/lifecycle/readiness changes.
 
-Do not automatically run a Character when readiness becomes green. `runtime_ready != running`.
-
-Full sandbox autonomous execution still requires a separate sandbox-safe execution adapter and explicit authorization.
+Full autonomous sandbox execution requires a separate sandbox-safe execution adapter and explicit implementation boundary. Do not smuggle execution into I5.
 
 ## Sandbox time controls
 
-Sandbox Runtime buttons are live and isolated from Real World time controls. Sandbox time can initialize from Real World time as a one-time copy, then diverge independently.
+Sandbox Runtime buttons remain isolated from Real World time controls. Sandbox time can initialize from Real World time as a snapshot, then diverges independently.
 
-An internal `/sandbox ...` helper exists but is not publicly wired. Do not claim that command works until it is wired.
+The internal `/sandbox ...` helper is not publicly wired. Do not claim the command works until it is wired.
 
 ## Second-character gate remains closed
 
@@ -191,8 +177,8 @@ A3.3 remains deployed. Continue read-only natural observation; do not force Dari
 
 ## Production evidence boundary
 
-Latest independently recorded production checkpoint remains Perception Foundation v1 / Deploy #289. PRs through #288 are repo/CI verified. Runtime-affecting main merges trigger deploy workflow, but do not claim a newer deploy without independent deploy/runtime evidence or explicit live verification.
+Latest independently recorded production checkpoint remains Perception Foundation v1 / Deploy #289. PRs through #291 are repo/CI verified. Runtime-affecting main merges trigger deploy workflow, but do not claim a newer production deploy without independent deploy/runtime evidence or explicit live verification.
 
 ## Exact resume point
 
-**PR #288 is merged at `2cec0e44b85d9ffaa489344d9202594735dac13b` after CI #1080 SUCCESS, Inventory Foundation #98 SUCCESS and Inventory Operations #54 SUCCESS. Schema v19. Creator Studio now supports owner-only Manual/AI Character and Location drafts, Preview/Reroll/Cancel and explicit Approve into Creation Sandbox. Drafts do not create sandbox objects before approval and never mutate canonical state. Full sandbox autonomy execution is not implemented. Next authorized slice: I4.1 — Sandbox Character configuration UX for Location, per-character sandbox AI, derived runtime options and readiness. Do not add another canonical Character.**
+**PR #291 is merged at `ad799cc621630978fd8fda9c8ae0d4d3a5ca4a9b` after CI #1084 SUCCESS. Schema remains v19. PR #290 provides inline guided Manual/AI creation with next-message input while commands remain optional shortcuts. I4.1 provides inline Sandbox Character configuration for Location, isolated per-Character AI, deterministic runtime options, Sandbox clock and readiness. `runtime_ready != running`; autonomy remains disabled and full sandbox execution is not implemented. Next route: I5 sandbox-specific notifications/observer flow using only real sandbox state. Do not add another canonical Character.**
