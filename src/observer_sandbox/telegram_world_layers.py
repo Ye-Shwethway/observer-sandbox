@@ -6,6 +6,7 @@ from typing import Any
 
 from .creation_sandbox import DEFAULT_SANDBOX_ID, ensure_sandbox, get_sandbox_object, list_sandbox_objects
 from .sandbox_runtime import sandbox_character_readiness, sandbox_runtime_status
+from .telegram_sandbox_runtime import sandbox_runtime_callback_view
 
 
 def real_world_view() -> tuple[str, list[list[dict[str, str]]]]:
@@ -193,6 +194,8 @@ def world_layer_callback_view(
         return sandbox_list_view(conn, "location")
     if callback_data == "sw:history":
         return sandbox_history_view(conn)
+    if callback_data == "sw:runtime" or callback_data.startswith(("sw:rt:", "sw:cr:")):
+        return sandbox_runtime_callback_view(conn, callback_data)
     if callback_data.startswith("sw:o:"):
         return sandbox_object_view(conn, callback_data[5:])
     raise KeyError(callback_data)
