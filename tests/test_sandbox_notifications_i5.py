@@ -7,8 +7,21 @@ from observer_sandbox.telegram_sandbox_notifications import (
     pending_sandbox_events,
     sandbox_notification_callback_view,
     sandbox_notifications_enabled,
+    set_sandbox_notifications,
 )
 from observer_sandbox.telegram_world_layers import world_layer_callback_view
+
+
+def _create_location(conn, name):
+    return activate_creation_proposal(
+        conn,
+        build_creation_proposal(
+            "location",
+            identity={"name": name},
+            provenance_mode="manual",
+            requested_by="test",
+        ),
+    )
 
 
 def test_schema_v20_registers_isolated_notification_state(tmp_path):
@@ -22,34 +35,36 @@ def test_schema_v20_registers_isolated_notification_state(tmp_path):
         ).fetchone() is not None
 
 
-def test_observer_feed_toggle_and_world_entry(tmp_path, monkeypatch):
+def test_observer_feed_defaults_off_and_toggle_baselines_current_history(tmp_path, monkeypatch):
     db = tmp_path / "observer.sqlite3"
     initialize(db)
     monkeypatch.setenv("OBSERVER_TELEGRAM_OWNER_ID", "111")
     with connect(db) as conn:
+        _create_location(conn, "Historical Cabin")
         _, keyboard = world_layer_callback_view(conn, "nav:sandbox")
         callbacks = {b["callback_data"] for row in keyboard for b in row}
         assert "sw:notif" in callbacks
         text, _ = world_layer_callback_view(conn, "sw:notif")
         assert "SANDBOX OBSERVER" in text
-        assert sandbox_notifications_enabled(conn, 111) is True
-        world_layer_callback_view(conn, "sw:notif:toggle")
+        assert "Historical Cabin" in text
         assert sandbox_notifications_enabled(conn, 111) is False
+        assert pending_sandbox_events(conn, 111) == []
+        world_layer_callback_view(conn, "sw:notif:toggle")
+        assert sandbox_notifications_enabled(conn, 111) is True
+        assert pending_sandbox_events(conn, 111) == []
 
 
-def test_pending_dispatch_is_cursor_based_and_does_not_touch_canonical_state(tmp_path):
+def test_pending_dispatch_is_cursor_based_after_enable_and_does_not_touch_canonical_state(tmp_path):
     db = tmp_path / "observer.sqlite3"
     initialize(db)
     with connect(db) as conn:
         before_entities = conn.execute("SELECT COUNT(*) FROM entities").fetchone()[0]
-        proposal = build_creation_proposal(
-            "location",
-            identity={"name": "Observer Test Cabin"},
-            provenance_mode="manual",
-            requested_by="test",
-        )
-        activate_creation_proposal(conn, proposal)
-        assert pending_sandbox_events(conn, 111)
+        _create_location(conn, "Before Enable")
+        assert set_sandbox_notifications(conn, 111, True) is True
+        assert pending_sandbox_events(conn, 111) == []
+
+        _create_location(conn, "Observer Test Cabin")
+        assert len(pending_sandbox_events(conn, 111)) == 1
         sent = []
         count = dispatch_pending_sandbox_notifications(
             conn,
@@ -60,6 +75,7 @@ def test_pending_dispatch_is_cursor_based_and_does_not_touch_canonical_state(tmp
         assert sent and sent[0][0] == 111
         assert "SANDBOX UPDATE" in sent[0][1]
         assert "Creation approved" in sent[0][1]
+        assert "Observer Test Cabin" in sent[0][1]
         assert dispatch_pending_sandbox_notifications(
             conn,
             111,
@@ -68,10 +84,28 @@ def test_pending_dispatch_is_cursor_based_and_does_not_touch_canonical_state(tmp
         assert conn.execute("SELECT COUNT(*) FROM entities").fetchone()[0] == before_entities
 
 
-def test_mark_current_seen_suppresses_backlog(tmp_path):
+def test_transport_failure_keeps_event_pending(tmp_path):
     db = tmp_path / "observer.sqlite3"
     initialize(db)
     with connect(db) as conn:
+        set_sandbox_notifications(conn, 111, True)
+        _create_location(conn, "Retry Cabin")
+        try:
+            dispatch_pending_sandbox_notifications(
+                conn,
+                111,
+                send=lambda user_id, text: (_ for _ in ()).throw(RuntimeError("network")),
+            )
+        except RuntimeError:
+            pass
+        assert len(pending_sandbox_events(conn, 111)) == 1
+
+
+def test_mark_current_seen_suppresses_new_pending_events(tmp_path):
+    db = tmp_path / "observer.sqlite3"
+    initialize(db)
+    with connect(db) as conn:
+        set_sandbox_notifications(conn, 111, True)
         proposal = build_creation_proposal(
             "character",
             identity={"name": "Observer Test Character"},
