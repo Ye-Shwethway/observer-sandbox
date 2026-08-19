@@ -144,7 +144,7 @@ def _apply_grade_target(conn: sqlite3.Connection, *, user_id: int) -> tuple[str,
             if change.get("store") == "skill":
                 skill_key = str(change["field_key"]).split(":", 1)[1]
                 conn.execute(
-                    "UPDATE creation_sandbox_character_skills SET score=?,updated_at=CURRENT_TIMESTAMP WHERE object_id=? AND skill_key=?",
+                    "UPDATE creation_sandbox_character_skills SET score=? WHERE object_id=? AND skill_key=?",
                     (float(change["new_value"]), object_id, skill_key),
                 )
             else:
