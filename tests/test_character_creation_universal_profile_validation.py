@@ -1,7 +1,12 @@
 import json
 
 from observer_sandbox.character_creation_policy import sanitize_creation_profile_values
-from observer_sandbox.creator_studio import CreatorStudioError, _explicit_requested_age, _validate_requested_age
+from observer_sandbox.creator_studio import (
+    CreatorStudioError,
+    _explicit_requested_age,
+    _validate_character_payload,
+    _validate_requested_age,
+)
 from observer_sandbox.db import connect, migrate
 from observer_sandbox.profile_schema import seed_profile_field_definitions
 from observer_sandbox.profile_schema_source_union import seed_source_union_extensions
@@ -118,3 +123,28 @@ def test_requested_age_must_match_dob_on_universe_reference_date(tmp_path):
             assert "gives age 26" in str(exc)
         else:
             raise AssertionError("Expected Creator-requested age mismatch rejection")
+
+
+def test_trained_background_cannot_survive_with_empty_structured_skills(tmp_path):
+    with _conn(tmp_path) as conn:
+        proposal = {
+            "identity": {"name": "Adrian Vale"},
+            "properties": {
+                "character_profile": {
+                    "values": {
+                        "identity.full_name": "Adrian Vale",
+                        "background.origins": "Professional wilderness search-and-rescue training with navigation and first aid.",
+                    },
+                    "preferences": [],
+                    "hobbies": [],
+                    "habits": [],
+                    "skills": [],
+                }
+            },
+        }
+        try:
+            _validate_character_payload(conn, proposal)
+        except CreatorStudioError as exc:
+            assert "structured skills are empty" in str(exc)
+        else:
+            raise AssertionError("Expected trained-background skill consistency rejection")
