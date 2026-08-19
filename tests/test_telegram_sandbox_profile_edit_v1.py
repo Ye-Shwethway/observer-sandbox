@@ -52,10 +52,7 @@ def _seed_sandbox_character(conn):
     set_sandbox_profile_values(
         conn,
         CHARACTER_ID,
-        {
-            "identity.name": "Adrian Test",
-            "raps_pa.strength": 72.0,
-        },
+        {"raps_pa.strength": 72.0},
         authority="creator",
         source="test",
     )
