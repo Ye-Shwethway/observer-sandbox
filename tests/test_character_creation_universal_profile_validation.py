@@ -117,9 +117,16 @@ def test_creation_profile_rejects_bad_ranges_and_invalid_date(tmp_path):
                 raise AssertionError(f"Expected rejection for {values}")
 
 
-def test_explicit_age_parser_supports_creator_phrasing():
+def test_explicit_age_parser_supports_current_age_and_ignores_biography_ages():
     assert _explicit_requested_age("Create a male character who is 24 years old") == 24
+    assert _explicit_requested_age("Create a 24-year-old male character") == 24
     assert _explicit_requested_age("Character age: 31, physically capable") == 31
+    assert _explicit_requested_age("Create a character aged 28") == 28
+    assert _explicit_requested_age("At age 20 he joined wilderness search-and-rescue.") is None
+    assert _explicit_requested_age("He started boxing at age 17 and joined SAR at age 20.") is None
+    assert _explicit_requested_age(
+        "Create Adrian, a 24-year-old man. At age 20 he joined professional wilderness search-and-rescue."
+    ) == 24
     assert _explicit_requested_age("No age specified") is None
 
 
@@ -132,7 +139,7 @@ def test_requested_age_must_match_dob_on_universe_reference_date(tmp_path):
         conn.commit()
         _validate_requested_age(
             conn,
-            "Create Adrian as a 24 years old man",
+            "Create Adrian as a 24 years old man; at age 20 he joined SAR",
             {"identity.date_of_birth": "2001-05-12"},
         )
         try:
