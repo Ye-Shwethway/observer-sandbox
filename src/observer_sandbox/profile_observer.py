@@ -6,12 +6,11 @@ import sqlite3
 from pathlib import Path
 from typing import Any
 
+from .body_aesthetic import evaluate_body
 from .grading import (
     GradeResult,
-    aggregate_body_grades,
     aggregate_raps_100,
     aggregate_skill_100,
-    derive_body_grade_items,
     evaluate_profile_field,
     evaluate_skill_score,
 )
@@ -174,7 +173,7 @@ def profile_section(conn: sqlite3.Connection, character_id: str, section_id: str
 
     sensitivities = _allowed_sensitivities(section, role)
     collection = section.get("collection")
-    body_grade_items: list[dict[str, Any]] = []
+    body_evaluation: dict[str, Any] | None = None
     if collection == "skills":
         content = _skills(conn, character_id)
     elif collection == "preferences":
@@ -203,12 +202,19 @@ def profile_section(conn: sqlite3.Connection, character_id: str, section_id: str
                 for item in content
                 if item.get("kind") == "field" and item.get("domain") == "body"
             }
-            body_grade_items = derive_body_grade_items(body_values)
-            for item in body_grade_items:
-                result = item.pop("grade_result", None)
-                if isinstance(result, GradeResult):
-                    item["grade"] = _grade_payload(result)
-            content.extend(body_grade_items)
+            sex_row = conn.execute(
+                "SELECT value_json FROM character_profile_values WHERE entity_id=? AND field_key='identity.sex'",
+                (character_id,),
+            ).fetchone()
+            if sex_row is not None:
+                body_evaluation = evaluate_body(body_values, json.loads(sex_row["value_json"]))
+                body_items = list(body_evaluation.get("aesthetic_items") or []) + list(body_evaluation.get("health_items") or [])
+                for item in body_items:
+                    result = item.pop("grade_result", None)
+                    item.pop("raw_value", None)
+                    if isinstance(result, GradeResult):
+                        item["grade"] = _grade_payload(result)
+                content.extend(body_items)
 
     section_result: dict[str, Any] = {
         "id": section["id"],
@@ -222,23 +228,10 @@ def profile_section(conn: sqlite3.Connection, character_id: str, section_id: str
         section_result["group_grades"] = groups
     elif collection == "skills":
         section_result["overall_grade"] = _skill_grade_summary(content)
-    elif body_grade_items:
-        reconstructed: list[dict[str, Any]] = []
-        for item in body_grade_items:
-            grade = item.get("grade") or {}
-            if grade.get("grade"):
-                reconstructed.append(
-                    {
-                        **item,
-                        "grade_result": GradeResult(
-                            scheme_id=str(grade["scheme_id"]),
-                            grade=str(grade["grade"]),
-                            label=str(grade["label"]),
-                            value=float(grade["value"]),
-                        ),
-                    }
-                )
-        section_result["overall_grade"] = _grade_payload(aggregate_body_grades(reconstructed))
+    elif body_evaluation is not None:
+        section_result["overall_grade"] = _grade_payload(body_evaluation.get("overall_grade"))
+        section_result["body_reference_profile"] = body_evaluation.get("reference_profile")
+        section_result["body_grade_coverage"] = body_evaluation.get("coverage")
 
     return {"character": character, "section": section_result, "content": content}
 
