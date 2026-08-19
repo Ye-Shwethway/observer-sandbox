@@ -228,11 +228,11 @@ def character_config_callback_view(
         )
     if callback_data.startswith("sw:cfg:am:"):
         parts = callback_data.split(":")
-        if len(parts) != 7:
+        if len(parts) != 6:
             raise SandboxCharacterConfigError("Invalid model selection")
         character_id = parts[3]
         provider_index = int(parts[4])
-        model_index = int(parts[5]) if parts[6] == "" else int(parts[6])
+        model_index = int(parts[5])
         providers = _providers(conn)
         if provider_index < 0 or provider_index >= len(providers):
             raise SandboxCharacterConfigError("AI provider selection is stale; reopen Character AI")
