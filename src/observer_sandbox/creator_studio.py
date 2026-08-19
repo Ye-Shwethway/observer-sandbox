@@ -124,9 +124,8 @@ def _character_profile_schema(conn: sqlite3.Connection) -> dict[str, Any]:
 def _schema(conn: sqlite3.Connection, creation_type: str) -> dict[str, Any]:
     if creation_type not in {"character", "location"}:
         raise CreatorStudioError("Creator Studio currently supports Character and Location")
-    properties_schema: dict[str, Any]
     if creation_type == "character":
-        properties_schema = {
+        properties_schema: dict[str, Any] = {
             "type": "object",
             "properties": {
                 "character_profile": _character_profile_schema(conn),
@@ -165,7 +164,7 @@ def _schema(conn: sqlite3.Connection, creation_type: str) -> dict[str, Any]:
         },
         "required": [
             "proposal_version", "creation_type", "schema_version", "target_scope",
-            "identity", "properties", "relationships", "capabilities", "provenance"
+            "identity", "properties", "relationships", "capabilities", "provenance",
         ],
         "additionalProperties": False,
     }
@@ -195,12 +194,7 @@ def _canonical_reference(conn: sqlite3.Connection, prompt_text: str) -> dict[str
         "SELECT skill_key,category,score,tier,experience FROM character_skills WHERE entity_id=? ORDER BY skill_key",
         (entity_id,),
     ).fetchall()]
-    return {
-        "entity_id": entity_id,
-        "name": str(match["name"]),
-        "values": values,
-        "skills": skills,
-    }
+    return {"entity_id": entity_id, "name": str(match["name"]), "values": values, "skills": skills}
 
 
 def _dedupe_skills(skills: list[dict[str, Any]]) -> list[dict[str, Any]]:
@@ -237,10 +231,12 @@ def _sim_reference_date(conn: sqlite3.Connection) -> date | None:
 
 
 def _explicit_requested_age(prompt_text: str | None) -> int | None:
+    """Return only a declared current age, never an age inside biography history."""
     text = str(prompt_text or "")
     patterns = (
-        r"\bage(?:d)?\s*[:=]?\s*(\d{1,3})\b",
         r"\b(\d{1,3})\s*(?:years? old|year-old)\b",
+        r"\bage\s*[:=]\s*(\d{1,3})\b",
+        r"\baged\s+(\d{1,3})\b",
     )
     for pattern in patterns:
         match = re.search(pattern, text, flags=re.IGNORECASE)
@@ -256,11 +252,7 @@ def _age_on(dob: date, reference_date: date) -> int:
     return reference_date.year - dob.year - int(before_birthday)
 
 
-def _validate_requested_age(
-    conn: sqlite3.Connection,
-    prompt_text: str | None,
-    values: dict[str, Any],
-) -> None:
+def _validate_requested_age(conn: sqlite3.Connection, prompt_text: str | None, values: dict[str, Any]) -> None:
     requested_age = _explicit_requested_age(prompt_text)
     dob_raw = values.get("identity.date_of_birth")
     reference_date = _sim_reference_date(conn)
@@ -282,10 +274,7 @@ def _requires_structured_skills(values: dict[str, Any]) -> bool:
     training_age = values.get("training.training_age_years")
     if isinstance(training_age, (int, float)) and not isinstance(training_age, bool) and float(training_age) > 0:
         return True
-    background = " ".join(
-        str(values.get(key) or "")
-        for key in ("background.origins", "background.story_elements")
-    ).lower()
+    background = " ".join(str(values.get(key) or "") for key in ("background.origins", "background.story_elements")).lower()
     cues = (
         "trained", "training", "professional", "search-and-rescue", "search and rescue",
         "combat", "boxing", "wrestling", "navigation", "first aid", "fieldcraft",
@@ -309,21 +298,14 @@ def _validate_character_payload(
     profile["values"] = sanitize_creation_profile_values(conn, values)
     if not str(profile["values"].get("identity.full_name") or "").strip():
         profile["values"]["identity.full_name"] = str(proposal.get("identity", {}).get("name") or "").strip()
-
-    # A new independent Character must make an explicit age consistent with DOB on
-    # the current Universe date. An exact-name canonical reference is different:
-    # requested age is a developmental snapshot, and canonical DOB must be preserved.
     if reference is None:
         _validate_requested_age(conn, prompt_text, profile["values"])
-
     skills = _dedupe_skills([dict(item) for item in profile.get("skills") or [] if isinstance(item, dict)])
     if reference and reference.get("skills"):
         reference_keys = {str(item.get("skill_key") or "") for item in reference["skills"]}
         skills = [item for item in skills if str(item.get("skill_key") or "") in reference_keys]
     if not skills and _requires_structured_skills(profile["values"]):
-        raise CreatorStudioError(
-            "Character background establishes trained competencies but structured skills are empty"
-        )
+        raise CreatorStudioError("Character background establishes trained competencies but structured skills are empty")
     profile["skills"] = skills
 
 
@@ -359,10 +341,7 @@ def _save_draft(
             revision=excluded.revision,
             updated_at=CURRENT_TIMESTAMP
         """,
-        (
-            sandbox_id, int(user_id), normalized["creation_type"], draft_mode,
-            prompt_text, _json(normalized), revision,
-        ),
+        (sandbox_id, int(user_id), normalized["creation_type"], draft_mode, prompt_text, _json(normalized), revision),
     )
     conn.commit()
     return active_draft(conn, user_id, sandbox_id=sandbox_id) or {}
@@ -543,5 +522,5 @@ def approve_draft(
 
 __all__ = [
     "CreatorStudioError", "active_draft", "ai_draft", "approve_draft", "cancel_draft",
-    "manual_draft", "reroll_draft"
+    "manual_draft", "reroll_draft",
 ]
