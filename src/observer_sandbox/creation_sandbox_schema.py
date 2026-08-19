@@ -2,6 +2,8 @@ from __future__ import annotations
 
 import sqlite3
 
+from .sandbox_representation import migrate_sandbox_representation_schema
+
 
 SCHEMA_SQL = """
 CREATE TABLE IF NOT EXISTS creation_sandboxes (
@@ -105,6 +107,7 @@ CREATE TABLE IF NOT EXISTS creation_sandbox_runtime_options (
 
 def migrate_creation_sandbox_schema(conn: sqlite3.Connection) -> None:
     conn.executescript(SCHEMA_SQL)
+    migrate_sandbox_representation_schema(conn)
 
 
 __all__ = ["migrate_creation_sandbox_schema"]
