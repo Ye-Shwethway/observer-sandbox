@@ -22,12 +22,19 @@ from .telegram_profile_edit import (
     profile_edit_usage,
     profile_grade_command,
 )
+from .telegram_profile_edit_ui import (
+    handle_profile_edit_text,
+    pack_profile_edit_ui,
+    profile_edit_callback_view,
+    unpack_profile_edit_ui,
+)
 
 _LOG = configure_runtime_logging()
 _ORIGINAL_API = base._api
 _ORIGINAL_SEND = base._send
 _ORIGINAL_HELP = base._help
 _ORIGINAL_HANDLE_COMMAND = base.handle_command
+_ORIGINAL_CALLBACK_VIEW = base._callback_view
 _FILE_SENTINEL = "__OBSERVER_RUNTIME_LOG_FILE__:"
 
 
@@ -65,6 +72,10 @@ def _multipart_send_document(token: str, chat_id: int, path: Path, *, caption: s
 
 
 def _send(token: str, chat_id: int, text: str, keyboard=None):
+    profile_ui = unpack_profile_edit_ui(text)
+    if profile_ui is not None:
+        ui_text, ui_keyboard = profile_ui
+        return _ORIGINAL_SEND(token, chat_id, ui_text, ui_keyboard)
     if text.startswith(_FILE_SENTINEL):
         path = Path(text[len(_FILE_SENTINEL) :])
         try:
@@ -81,6 +92,39 @@ def _send(token: str, chat_id: int, text: str, keyboard=None):
     return _ORIGINAL_SEND(token, chat_id, text, keyboard)
 
 
+def _profile_menu_with_creator_edit(
+    view: tuple[str, list[list[dict[str, str]]] | None],
+    character_id: str,
+) -> tuple[str, list[list[dict[str, str]]]]:
+    text, keyboard = view
+    rows = [list(row) for row in (keyboard or [])]
+    insert_at = max(0, len(rows) - 2)
+    rows.insert(insert_at, [{"text": "✏️ Edit Profile", "callback_data": f"pedit:enter:{character_id}"}])
+    return text, rows
+
+
+def _callback_view(conn, user_id: int, callback_data: str):
+    role = base._user_role(user_id)
+    if callback_data.startswith("pedit:"):
+        if role != "owner":
+            return "🔒 Creator authority required for character profile editing.", [[{"text": "⌂ Observer Home", "callback_data": "nav:home"}]]
+        try:
+            view = profile_edit_callback_view(conn, user_id=user_id, callback_data=callback_data)
+            if view is not None:
+                return view
+        except (CreatorProfileEditError, KeyError, ValueError, PermissionError, RuntimeError) as exc:
+            _LOG.warning("telegram_profile_edit_callback_rejected user_id=%s callback=%s error=%s", user_id, callback_data, exc)
+            return (
+                f"Creator profile update rejected: {exc}\n\nUniverse remains paused while Creator Edit Mode is open.",
+                [[{"text": "← Edit Profile", "callback_data": "pedit:home"}], [{"text": "✅ Done Editing", "callback_data": "pedit:done"}]],
+            )
+    view = _ORIGINAL_CALLBACK_VIEW(conn, user_id, callback_data)
+    if role == "owner" and callback_data.startswith("prof:"):
+        character_id = callback_data.split(":", 1)[1]
+        return _profile_menu_with_creator_edit(view, character_id)
+    return view
+
+
 def _help(role: str) -> str:
     text = _ORIGINAL_HELP(role)
     if role == "owner":
@@ -89,9 +133,10 @@ def _help(role: str) -> str:
         text += "\n/logs system [lines] — systemd and journal diagnostics"
         text += "\n/logs runtime — Concise universe runtime context"
         text += "\n/logs file [lines] — Download consolidated diagnostics .txt"
-        text += "\n/profileedit <character_id> <field_key> <value> — Preview Creator profile edit"
-        text += "\n/profilegrade <character_id> <group> <grade> [preserve|normalize] — Preview section grade target"
-        text += "\n/profileapply <token> — Apply a Creator profile preview"
+        text += "\n/profileedit <character_id> <field_key> <value> — Advanced direct profile preview"
+        text += "\n/profilegrade <character_id> <group> <grade> [preserve|normalize] — Advanced grade-target preview"
+        text += "\n/profileapply <token> — Apply an advanced Creator profile preview"
+        text += "\nProfile → Edit Profile — Preferred paused Creator editing UX"
     return text
 
 
@@ -149,6 +194,19 @@ def handle_command(db_path: str | Path, *, user_id: int, text: str) -> str:
     command = first.split("@", 1)[0].lower()
     role = base._user_role(user_id)
 
+    if role == "owner" and command_line and not command_line.startswith("/"):
+        try:
+            with connect(db_path) as conn:
+                migrate(conn)
+                profile_ui = handle_profile_edit_text(conn, user_id=user_id, text=command_line)
+                if profile_ui is not None:
+                    return pack_profile_edit_ui(profile_ui)
+        except (CreatorProfileEditError, KeyError, ValueError, PermissionError, RuntimeError) as exc:
+            return pack_profile_edit_ui((
+                f"Creator profile update rejected: {exc}\n\nNo profile value changed. Universe remains paused in Creator Edit Mode.",
+                [[{"text": "← Edit Profile", "callback_data": "pedit:home"}], [{"text": "✅ Done Editing", "callback_data": "pedit:done"}]],
+            ))
+
     if command in {"/profileedit", "/profilegrade", "/profileapply"}:
         if role != "owner":
             return "🔒 Creator authority required for character profile editing."
@@ -203,6 +261,7 @@ def handle_command(db_path: str | Path, *, user_id: int, text: str) -> str:
 base._api = _api
 base._send = _send
 base._help = _help
+base._callback_view = _callback_view
 base.handle_command = handle_command
 
 run_polling = base.run_polling
