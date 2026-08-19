@@ -32,8 +32,8 @@ from .telegram_sandbox_profile_edit import (
     exit_sandbox_profile_edit,
     get_sandbox_profile_edit_session,
     handle_sandbox_profile_edit_text,
-    sandbox_profile_edit_callback_view,
 )
+from .telegram_sandbox_grade_target import sandbox_profile_edit_callback_view
 
 _LOG = configure_runtime_logging()
 _ORIGINAL_API = base._api
