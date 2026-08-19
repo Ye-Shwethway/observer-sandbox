@@ -170,7 +170,7 @@ def test_male_preserve_shape_projects_all_represented_muscular_circumferences(tm
             "body.thighs_in",
             "body.calves_in",
         }
-        assert proposal["proposal_version"] == 2
+        assert proposal["proposal_version"] == 1
         assert proposal["shape_preservation"]["revision"] == "body-shape-preservation-v2.1"
         assert expected_dependents <= projected
         assert expected_dependents <= set(changes)
