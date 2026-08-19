@@ -34,6 +34,7 @@ from .strength_progression_activation import maybe_settle_strength_progression
 from .telegram_runtime_bot import run_polling
 from .telegram_notifications import dispatch_action_completion
 from .telegram_profile_notifications import dispatch_profile_change_notifications
+from .telegram_sandbox_notifications import dispatch_owner_sandbox_notifications
 
 DB_PATH = Path(os.environ.get("OBSERVER_SANDBOX_DB", "/var/lib/observer-sandbox/observer.sqlite3"))
 RUNNING = True
@@ -255,6 +256,8 @@ def main() -> None:
                             current=profile_after,
                             sim_time=str(after["sim_time"]),
                         )
+
+                dispatch_owner_sandbox_notifications(conn)
         except Exception:
             _LOG.critical("service_loop_fatal", exc_info=True)
             raise
