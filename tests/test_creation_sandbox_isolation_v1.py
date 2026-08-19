@@ -45,12 +45,12 @@ def _sandbox_pair(conn):
     return character, location
 
 
-def test_schema_v18_registers_isolated_creation_sandbox_runtime_tables(tmp_path):
+def test_schema_v19_registers_isolated_creation_sandbox_runtime_tables(tmp_path):
     db = tmp_path / "observer.sqlite3"
     initialize(db)
     with connect(db) as conn:
-        assert SCHEMA_VERSION == 18
-        assert conn.execute("SELECT value FROM schema_meta WHERE key='schema_version'").fetchone()[0] == "18"
+        assert SCHEMA_VERSION == 19
+        assert conn.execute("SELECT value FROM schema_meta WHERE key='schema_version'").fetchone()[0] == "19"
         tables = {
             row[0]
             for row in conn.execute("SELECT name FROM sqlite_master WHERE type='table'")
@@ -66,6 +66,7 @@ def test_schema_v18_registers_isolated_creation_sandbox_runtime_tables(tmp_path)
             "creation_sandbox_runtime_options",
             "creation_sandbox_profile_values",
             "creation_sandbox_character_skills",
+            "creation_sandbox_drafts",
         } <= tables
 
 
@@ -139,6 +140,7 @@ def test_start_menu_uses_real_and_sandbox_world_upper_layers(tmp_path, monkeypat
         assert "SANDBOX WORLD" in sandbox_text
         assert "Canonical universe: unchanged" in sandbox_text
         assert {
+            "sw:studio",
             "sw:universe",
             "sw:list:character",
             "sw:list:location",
