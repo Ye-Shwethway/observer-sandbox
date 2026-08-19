@@ -21,6 +21,7 @@ CREATE TABLE IF NOT EXISTS creation_sandbox_objects (
     lifecycle_status TEXT NOT NULL DEFAULT 'active' CHECK(lifecycle_status IN ('active','archived')),
     identity_json TEXT NOT NULL DEFAULT '{}',
     properties_json TEXT NOT NULL DEFAULT '{}',
+    relationships_json TEXT NOT NULL DEFAULT '[]',
     capabilities_json TEXT NOT NULL DEFAULT '[]',
     provenance_json TEXT NOT NULL DEFAULT '{}',
     created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
