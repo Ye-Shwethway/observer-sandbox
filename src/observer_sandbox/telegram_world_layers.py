@@ -7,6 +7,7 @@ from typing import Any
 from .creation_sandbox import DEFAULT_SANDBOX_ID, ensure_sandbox, get_sandbox_object, list_sandbox_objects
 from .sandbox_runtime import sandbox_character_readiness, sandbox_runtime_status
 from .telegram_sandbox_character_config import character_config_callback_view
+from .telegram_sandbox_notifications import sandbox_notification_callback_view
 from .telegram_sandbox_runtime import sandbox_runtime_callback_view
 
 
@@ -63,7 +64,10 @@ def sandbox_world_view(conn: sqlite3.Connection) -> tuple[str, list[list[dict[st
             {"text": "📍 Locations", "callback_data": "sw:list:location"},
             {"text": "🕒 Runtime", "callback_data": "sw:runtime"},
         ],
-        [{"text": "📜 History", "callback_data": "sw:history"}],
+        [
+            {"text": "📜 History", "callback_data": "sw:history"},
+            {"text": "📡 Observer", "callback_data": "sw:notif"},
+        ],
         [{"text": "← Observer Home", "callback_data": "nav:home"}],
     ]
     return text, keyboard
@@ -197,6 +201,8 @@ def world_layer_callback_view(
         return sandbox_list_view(conn, "location")
     if callback_data == "sw:history":
         return sandbox_history_view(conn)
+    if callback_data == "sw:notif" or callback_data.startswith("sw:notif:"):
+        raise KeyError("Sandbox notification callbacks require user context")
     if callback_data.startswith("sw:cfg:"):
         return character_config_callback_view(conn, callback_data)
     if callback_data == "sw:runtime" or callback_data.startswith(("sw:rt:", "sw:cr:")):
