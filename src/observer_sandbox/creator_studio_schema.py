@@ -16,6 +16,17 @@ CREATE TABLE IF NOT EXISTS creation_sandbox_drafts (
     updated_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
     PRIMARY KEY(sandbox_id, user_id)
 );
+
+CREATE TABLE IF NOT EXISTS creation_sandbox_studio_sessions (
+    sandbox_id TEXT NOT NULL REFERENCES creation_sandboxes(sandbox_id) ON DELETE CASCADE,
+    user_id INTEGER NOT NULL,
+    creation_type TEXT NOT NULL CHECK(creation_type IN ('character','location')),
+    input_mode TEXT NOT NULL CHECK(input_mode IN ('manual','ai_generated')),
+    expected_input TEXT NOT NULL CHECK(expected_input IN ('name','description')),
+    created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    updated_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    PRIMARY KEY(sandbox_id, user_id)
+);
 """
 
 
