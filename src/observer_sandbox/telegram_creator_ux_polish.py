@@ -152,11 +152,18 @@ def install_creator_ux_polish() -> None:
 
     from . import telegram_bot as base
     from . import telegram_creator_studio as studio
+    from .sandbox_profile_edit import SandboxProfileEditError
+    from .telegram_profile_edit_ui import pack_profile_edit_ui
+    from .telegram_sandbox_profile_edit_ui import (
+        handle_sandbox_profile_edit_text,
+        sandbox_profile_edit_callback_view,
+    )
 
     original_api = base._api
     original_send = base._send
     original_edit = base._edit
     original_handle = base.handle_command
+    original_callback = base._callback_view
     original_boot = base._boot_message
     original_install_input_router = studio._install_input_router
 
@@ -177,9 +184,57 @@ def install_creator_ux_polish() -> None:
         _record_prompt_edit(chat_id, message_id, text)
         return original_edit(token, int(chat_id), int(message_id), text, keyboard)
 
+    def callback_view(conn, user_id: int, callback_data: str):
+        if callback_data.startswith("sw:pedit:"):
+            if base._user_role(user_id) != "owner":
+                return (
+                    "🔒 Creator authority required for Sandbox profile editing.",
+                    [[{"text": "⌂ Sandbox World", "callback_data": "nav:sandbox"}]],
+                )
+            try:
+                view = sandbox_profile_edit_callback_view(
+                    conn,
+                    user_id=user_id,
+                    callback_data=callback_data,
+                )
+                if view is not None:
+                    return view
+            except (SandboxProfileEditError, KeyError, ValueError, PermissionError, RuntimeError) as exc:
+                return (
+                    f"Sandbox profile update rejected: {exc}\n\n"
+                    "No profile value changed. Sandbox World remains paused while Creator Edit Mode is open.",
+                    [
+                        [{"text": "← Edit Profile", "callback_data": "sw:pedit:home"}],
+                        [{"text": "✅ Done Editing", "callback_data": "sw:pedit:done"}],
+                    ],
+                )
+        return original_callback(conn, user_id, callback_data)
+
     def handle_command(db_path, *, user_id: int, text: str) -> str:
         raw = (text or "").strip()
         command = raw.split()[0].split("@", 1)[0].lower() if raw else ""
+        if base._user_role(user_id) == "owner" and raw and not raw.startswith("/"):
+            try:
+                with connect(db_path) as conn:
+                    migrate(conn)
+                    sandbox_ui = handle_sandbox_profile_edit_text(
+                        conn,
+                        user_id=user_id,
+                        text=raw,
+                    )
+                    if sandbox_ui is not None:
+                        return pack_profile_edit_ui(sandbox_ui)
+            except (SandboxProfileEditError, KeyError, ValueError, PermissionError, RuntimeError) as exc:
+                return pack_profile_edit_ui(
+                    (
+                        f"Sandbox profile update rejected: {exc}\n\n"
+                        "No Sandbox profile value changed. Sandbox World remains paused in Creator Edit Mode.",
+                        [
+                            [{"text": "← Edit Profile", "callback_data": "sw:pedit:home"}],
+                            [{"text": "✅ Done Editing", "callback_data": "sw:pedit:done"}],
+                        ],
+                    )
+                )
         pump = None
         if command == "/createai":
             token = os.environ.get("OBSERVER_TELEGRAM_BOT_TOKEN", "").strip()
@@ -209,6 +264,7 @@ def install_creator_ux_polish() -> None:
 
     base._boot_message = boot_message
     base._edit = edit
+    base._callback_view = callback_view
     base.handle_command = handle_command
     base._send = send
     studio._install_input_router = install_input_router_with_ux
