@@ -114,6 +114,15 @@ def activate_creation_proposal(
             _json(normalized["provenance"]),
         ),
     )
+    if normalized["creation_type"] == "character":
+        conn.execute(
+            """
+            INSERT INTO creation_sandbox_actor_runtime(object_id,sandbox_id,activation_status)
+            VALUES(?,?,'created')
+            ON CONFLICT(object_id) DO NOTHING
+            """,
+            (object_id, sandbox_id),
+        )
     conn.execute(
         "INSERT INTO creation_sandbox_events(sandbox_id,object_id,event_type,payload_json) VALUES(?,?,?,?)",
         (
@@ -185,13 +194,32 @@ def bind_sandbox_character_to_location(
     if character["lifecycle_status"] != "active" or location["lifecycle_status"] != "active":
         raise CreationSandboxError("Archived sandbox objects cannot receive active relations")
     conn.execute(
+        "DELETE FROM creation_sandbox_relations WHERE sandbox_id=? AND source_object_id=? AND relation_type='located_in'",
+        (character["sandbox_id"], character_object_id),
+    )
+    conn.execute(
         """
         INSERT INTO creation_sandbox_relations(
             sandbox_id,source_object_id,relation_type,target_object_id,metadata_json
         ) VALUES(?,?, 'located_in', ?, '{}')
-        ON CONFLICT(sandbox_id,source_object_id,relation_type,target_object_id) DO NOTHING
         """,
         (character["sandbox_id"], character_object_id, location_object_id),
+    )
+    conn.execute(
+        """
+        INSERT INTO creation_sandbox_actor_runtime(
+            object_id,sandbox_id,activation_status,current_location_object_id,autonomy_enabled
+        ) VALUES(?,?,'configured',?,0)
+        ON CONFLICT(object_id) DO UPDATE SET
+            activation_status=CASE
+                WHEN creation_sandbox_actor_runtime.activation_status='running' THEN 'running'
+                ELSE 'configured'
+            END,
+            current_location_object_id=excluded.current_location_object_id,
+            autonomy_enabled=0,
+            updated_at=CURRENT_TIMESTAMP
+        """,
+        (character_object_id, character["sandbox_id"], location_object_id),
     )
     conn.execute(
         "INSERT INTO creation_sandbox_events(sandbox_id,object_id,event_type,payload_json) VALUES(?,?,?,?)",
@@ -216,6 +244,24 @@ def archive_sandbox_object(conn: sqlite3.Connection, object_id: str) -> dict[str
         "DELETE FROM creation_sandbox_relations WHERE source_object_id=? OR target_object_id=?",
         (object_id, object_id),
     )
+    if obj["creation_type"] == "character":
+        conn.execute(
+            """
+            UPDATE creation_sandbox_actor_runtime
+            SET activation_status='stopped',current_location_object_id=NULL,autonomy_enabled=0,updated_at=CURRENT_TIMESTAMP
+            WHERE object_id=?
+            """,
+            (object_id,),
+        )
+    else:
+        conn.execute(
+            """
+            UPDATE creation_sandbox_actor_runtime
+            SET activation_status='configured',current_location_object_id=NULL,autonomy_enabled=0,updated_at=CURRENT_TIMESTAMP
+            WHERE sandbox_id=? AND current_location_object_id=?
+            """,
+            (obj["sandbox_id"], object_id),
+        )
     conn.execute(
         "INSERT INTO creation_sandbox_events(sandbox_id,object_id,event_type,payload_json) VALUES(?,?, 'sandbox_object_archived', '{}')",
         (obj["sandbox_id"], object_id),
@@ -241,6 +287,7 @@ def reset_sandbox(
 ) -> dict[str, Any]:
     sandbox = ensure_sandbox(conn, sandbox_id)
     next_revision = int(sandbox["revision"]) + 1
+    conn.execute("DELETE FROM creation_sandbox_runtime WHERE sandbox_id=?", (sandbox_id,))
     conn.execute("DELETE FROM creation_sandbox_relations WHERE sandbox_id=?", (sandbox_id,))
     conn.execute("DELETE FROM creation_sandbox_events WHERE sandbox_id=?", (sandbox_id,))
     conn.execute("DELETE FROM creation_sandbox_objects WHERE sandbox_id=?", (sandbox_id,))

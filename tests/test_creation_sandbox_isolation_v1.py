@@ -45,12 +45,12 @@ def _sandbox_pair(conn):
     return character, location
 
 
-def test_schema_v16_registers_isolated_creation_sandbox_tables(tmp_path):
+def test_schema_v17_registers_isolated_creation_sandbox_runtime_tables(tmp_path):
     db = tmp_path / "observer.sqlite3"
     initialize(db)
     with connect(db) as conn:
-        assert SCHEMA_VERSION == 16
-        assert conn.execute("SELECT value FROM schema_meta WHERE key='schema_version'").fetchone()[0] == "16"
+        assert SCHEMA_VERSION == 17
+        assert conn.execute("SELECT value FROM schema_meta WHERE key='schema_version'").fetchone()[0] == "17"
         tables = {
             row[0]
             for row in conn.execute("SELECT name FROM sqlite_master WHERE type='table'")
@@ -60,6 +60,10 @@ def test_schema_v16_registers_isolated_creation_sandbox_tables(tmp_path):
             "creation_sandbox_objects",
             "creation_sandbox_relations",
             "creation_sandbox_events",
+            "creation_sandbox_runtime",
+            "creation_sandbox_actor_runtime",
+            "creation_sandbox_ai_bindings",
+            "creation_sandbox_runtime_options",
         } <= tables
 
 
@@ -136,6 +140,7 @@ def test_start_menu_uses_real_and_sandbox_world_upper_layers(tmp_path, monkeypat
             "sw:universe",
             "sw:list:character",
             "sw:list:location",
+            "sw:runtime",
             "sw:history",
         } <= set(_callbacks(sandbox_keyboard))
 

@@ -76,6 +76,51 @@ Acceptance:
 
 ---
 
+## Phase I2.5 — Sandbox Runtime Readiness Foundation
+
+Canonical contract:
+`docs/SANDBOX_RUNTIME_READINESS_FOUNDATION_V1.md`.
+
+Creation is not activation.
+
+Add a sandbox-owned runtime substrate before the Character/Location vertical proof becomes executable.
+
+Minimum runtime ownership:
+- one simulation clock per sandbox namespace;
+- sandbox speed multiplier;
+- sandbox paused/resumed state;
+- sandbox runtime status;
+- sandbox Character activation/readiness state;
+- sandbox Character cognition AI binding;
+- represented sandbox runtime/action options.
+
+Provider/model catalogs remain shared infrastructure, but sandbox Character assignments must be stored in sandbox-owned binding state rather than ordinary canonical character bindings.
+
+Readiness contract:
+
+`active sandbox Character + active sandbox Location assignment + runtime/action options + explicit cognition AI binding + configured sandbox clock -> runtime_ready`
+
+If any dependency is absent, start/run fails closed and reports exact unmet requirements.
+
+Important isolation:
+- canonical `runtime_state` is not used for sandbox clock/speed/pause;
+- canonical `actor_runtime` is not used for sandbox Character readiness;
+- canonical events are not used for sandbox controls;
+- Real World `/speed`, `/pause`, `/resume` semantics remain unchanged;
+- sandbox controls use explicit sandbox-scoped callbacks/commands until a safe persistent world-context selector exists.
+
+This phase establishes readiness and controls only. It does not yet require full autonomous sandbox ticking.
+
+Acceptance:
+- canonical and sandbox clocks hold independent values;
+- sandbox speed/pause does not mutate canonical runtime state;
+- sandbox AI binding is independent from canonical character/global bindings;
+- incomplete readiness is rejected with structured missing gates;
+- readiness becomes true only after Location + options + cognition model + clock exist;
+- sandbox reset/delete cleans runtime/binding state.
+
+---
+
 ## Phase I3 — Character + Location vertical proof
 
 Character minimum:
@@ -84,18 +129,22 @@ Character minimum:
 - date of birth or age-compatible representation;
 - basic represented body/profile fields using existing definitions;
 - optional initial skills only through existing skill schema when available;
-- sandbox lifecycle/provenance.
+- sandbox lifecycle/provenance;
+- sandbox runtime-readiness state from I2.5.
 
 Location minimum:
 - name;
 - type/category;
 - parent/containment when represented;
 - basic location properties using existing spatial schema;
-- sandbox lifecycle/provenance.
+- sandbox lifecycle/provenance;
+- enough represented affordances/elements or approved shared-system options to produce real runtime choices.
 
 Do not build full profession/quest/inventory creation here.
 
 Do not connect sandbox Character to canonical Darian or canonical relationships.
+
+Do not mark the Character running merely because profile creation succeeded.
 
 ---
 
@@ -110,7 +159,9 @@ Minimum screens:
 - Sandbox Creations;
 - View creation;
 - Delete/Reset;
-- Validate.
+- Validate;
+- Runtime Readiness;
+- sandbox Character AI assignment.
 
 For Character and Location:
 
@@ -134,6 +185,8 @@ Minimum controls:
 - Reroll whole proposal;
 - Validate;
 - Approve into Sandbox;
+- Configure Runtime;
+- Assign Cognition AI;
 - Cancel.
 
 No AI direct DB/canonical write.
@@ -157,6 +210,8 @@ Do not send ordinary CHARACTER UPDATE / canonical progression notifications for 
 Minimum notifications:
 - sandbox creation activated;
 - validation failed/passed;
+- runtime readiness changed;
+- sandbox paused/resumed/speed changed;
 - sandbox reset/deleted;
 - AI reroll ready.
 
@@ -189,10 +244,11 @@ Return to MIND-F2 when all are true:
 1. Creator authority no-snap-back invariant is regression-tested;
 2. Character/Location creation sockets exist;
 3. Creation Sandbox isolation is proven;
-4. Creator can create/manage those types from Telegram;
-5. AI and manual modes share one proposal path;
-6. compatibility/transmigration planning boundary exists;
-7. production second-character transmigration remains blocked.
+4. Sandbox runtime/time/AI ownership is isolated and readiness-gated;
+5. Creator can create/manage those types from Telegram;
+6. AI and manual creation modes share one proposal path;
+7. compatibility/transmigration planning boundary exists;
+8. production second-character transmigration remains blocked.
 
 Then continue:
 
@@ -226,6 +282,9 @@ Required high-value acceptance:
 - proposal validation;
 - sandbox/canonical isolation;
 - reset/delete safety;
+- sandbox clock/speed/pause isolation;
+- sandbox Character AI-binding isolation;
+- runtime-readiness gating;
 - batch internal reference resolution;
 - manual/AI proposal equivalence at the apply boundary;
 - target-universe incompatibility rejection;

@@ -5,6 +5,8 @@ import sqlite3
 from typing import Any
 
 from .creation_sandbox import DEFAULT_SANDBOX_ID, ensure_sandbox, get_sandbox_object, list_sandbox_objects
+from .sandbox_runtime import sandbox_character_readiness, sandbox_runtime_status
+from .telegram_sandbox_runtime import sandbox_runtime_callback_view
 
 
 def real_world_view() -> tuple[str, list[list[dict[str, str]]]]:
@@ -37,12 +39,17 @@ def _sandbox_counts(conn: sqlite3.Connection) -> tuple[int, int, int]:
 def sandbox_world_view(conn: sqlite3.Connection) -> tuple[str, list[list[dict[str, str]]]]:
     sandbox = ensure_sandbox(conn, DEFAULT_SANDBOX_ID)
     total, characters, locations = _sandbox_counts(conn)
+    runtime = sandbox_runtime_status(conn, DEFAULT_SANDBOX_ID)
+    runtime_label = "Not configured" if not runtime["configured"] else (
+        f"{'Paused' if runtime['paused'] else 'Active'} · {runtime['speed']:g}x"
+    )
     text = (
         "🧪 SANDBOX WORLD\n"
         "━━━━━━━━━━━━━━━━━━\n"
         "Creation Sandbox · isolated from the canonical universe.\n\n"
         f"Revision: {sandbox['revision']}\n"
         f"Objects: {total} · Characters: {characters} · Locations: {locations}\n"
+        f"Runtime: {runtime_label}\n"
         "Canonical universe: unchanged by sandbox-only operations."
     )
     keyboard = [
@@ -52,8 +59,9 @@ def sandbox_world_view(conn: sqlite3.Connection) -> tuple[str, list[list[dict[st
         ],
         [
             {"text": "📍 Locations", "callback_data": "sw:list:location"},
-            {"text": "📜 History", "callback_data": "sw:history"},
+            {"text": "🕒 Runtime", "callback_data": "sw:runtime"},
         ],
+        [{"text": "📜 History", "callback_data": "sw:history"}],
         [{"text": "← Observer Home", "callback_data": "nav:home"}],
     ]
     return text, keyboard
@@ -115,6 +123,12 @@ def sandbox_object_view(
         f"Lifecycle: {value['lifecycle_status'].title()}",
         f"ID: {value['object_id']}",
     ]
+    keyboard: list[list[dict[str, str]]] = []
+    if value["creation_type"] == "character":
+        readiness = sandbox_character_readiness(conn, object_id)
+        lines.append(f"Runtime: {readiness['activation_status'].replace('_', ' ').title()}")
+        lines.append(f"Ready: {'Yes' if readiness['ready'] else 'No'}")
+        keyboard.append([{"text": "🧠 Runtime Readiness", "callback_data": f"sw:cr:{object_id}"}])
     if value["properties"]:
         lines.extend(["", "Properties"])
         for key, item in sorted(value["properties"].items()):
@@ -125,7 +139,13 @@ def sandbox_object_view(
             lines.append(f"• {relation['relation_type'].replace('_', ' ').title()} → {relation['target_object_id']}")
     lines.extend(["", "Canonical universe: unchanged."])
     back = "sw:list:character" if value["creation_type"] == "character" else "sw:list:location"
-    return "\n".join(lines), [[{"text": "← Back", "callback_data": back}], [{"text": "⌂ Sandbox World", "callback_data": "nav:sandbox"}]]
+    keyboard.extend(
+        [
+            [{"text": "← Back", "callback_data": back}],
+            [{"text": "⌂ Sandbox World", "callback_data": "nav:sandbox"}],
+        ]
+    )
+    return "\n".join(lines), keyboard
 
 
 def sandbox_history_view(conn: sqlite3.Connection) -> tuple[str, list[list[dict[str, str]]]]:
@@ -174,6 +194,8 @@ def world_layer_callback_view(
         return sandbox_list_view(conn, "location")
     if callback_data == "sw:history":
         return sandbox_history_view(conn)
+    if callback_data == "sw:runtime" or callback_data.startswith(("sw:rt:", "sw:cr:")):
+        return sandbox_runtime_callback_view(conn, callback_data)
     if callback_data.startswith("sw:o:"):
         return sandbox_object_view(conn, callback_data[5:])
     raise KeyError(callback_data)
