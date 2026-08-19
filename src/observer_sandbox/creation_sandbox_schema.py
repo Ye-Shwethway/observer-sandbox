@@ -54,6 +54,15 @@ CREATE TABLE IF NOT EXISTS creation_sandbox_events (
     created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
 
+CREATE TABLE IF NOT EXISTS creation_sandbox_notification_state (
+    sandbox_id TEXT NOT NULL REFERENCES creation_sandboxes(sandbox_id) ON DELETE CASCADE,
+    user_id INTEGER NOT NULL,
+    enabled INTEGER NOT NULL DEFAULT 1 CHECK(enabled IN (0,1)),
+    last_event_id INTEGER NOT NULL DEFAULT 0 CHECK(last_event_id >= 0),
+    updated_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    PRIMARY KEY(sandbox_id,user_id)
+);
+
 CREATE TABLE IF NOT EXISTS creation_sandbox_runtime (
     sandbox_id TEXT PRIMARY KEY REFERENCES creation_sandboxes(sandbox_id) ON DELETE CASCADE,
     sim_time TEXT,
