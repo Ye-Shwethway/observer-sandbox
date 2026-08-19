@@ -53,6 +53,7 @@ def sandbox_world_view(conn: sqlite3.Connection) -> tuple[str, list[list[dict[st
         "Canonical universe: unchanged by sandbox-only operations."
     )
     keyboard = [
+        [{"text": "🛠 Creator Studio", "callback_data": "sw:studio"}],
         [
             {"text": "🌐 Universe", "callback_data": "sw:universe"},
             {"text": "👥 Characters", "callback_data": "sw:list:character"},
