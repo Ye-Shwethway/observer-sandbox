@@ -278,6 +278,21 @@ def _validate_requested_age(
         )
 
 
+def _requires_structured_skills(values: dict[str, Any]) -> bool:
+    training_age = values.get("training.training_age_years")
+    if isinstance(training_age, (int, float)) and not isinstance(training_age, bool) and float(training_age) > 0:
+        return True
+    background = " ".join(
+        str(values.get(key) or "")
+        for key in ("background.origins", "background.story_elements")
+    ).lower()
+    cues = (
+        "trained", "training", "professional", "search-and-rescue", "search and rescue",
+        "combat", "boxing", "wrestling", "navigation", "first aid", "fieldcraft",
+    )
+    return any(cue in background for cue in cues)
+
+
 def _validate_character_payload(
     conn: sqlite3.Connection,
     proposal: dict[str, Any],
@@ -294,11 +309,21 @@ def _validate_character_payload(
     profile["values"] = sanitize_creation_profile_values(conn, values)
     if not str(profile["values"].get("identity.full_name") or "").strip():
         profile["values"]["identity.full_name"] = str(proposal.get("identity", {}).get("name") or "").strip()
-    _validate_requested_age(conn, prompt_text, profile["values"])
+
+    # A new independent Character must make an explicit age consistent with DOB on
+    # the current Universe date. An exact-name canonical reference is different:
+    # requested age is a developmental snapshot, and canonical DOB must be preserved.
+    if reference is None:
+        _validate_requested_age(conn, prompt_text, profile["values"])
+
     skills = _dedupe_skills([dict(item) for item in profile.get("skills") or [] if isinstance(item, dict)])
     if reference and reference.get("skills"):
         reference_keys = {str(item.get("skill_key") or "") for item in reference["skills"]}
         skills = [item for item in skills if str(item.get("skill_key") or "") in reference_keys]
+    if not skills and _requires_structured_skills(profile["values"]):
+        raise CreatorStudioError(
+            "Character background establishes trained competencies but structured skills are empty"
+        )
     profile["skills"] = skills
 
 
@@ -309,12 +334,13 @@ def _save_draft(
     *,
     draft_mode: str,
     prompt_text: str | None,
+    reference: dict[str, Any] | None = None,
     sandbox_id: str = DEFAULT_SANDBOX_ID,
 ) -> dict[str, Any]:
     ensure_sandbox(conn, sandbox_id)
     normalized = validate_creation_proposal(proposal)
     if normalized["creation_type"] == "character" and draft_mode == "ai_generated":
-        _validate_character_payload(conn, normalized, prompt_text=prompt_text)
+        _validate_character_payload(conn, normalized, reference=reference, prompt_text=prompt_text)
     existing = conn.execute(
         "SELECT revision FROM creation_sandbox_drafts WHERE sandbox_id=? AND user_id=?",
         (sandbox_id, int(user_id)),
@@ -382,29 +408,32 @@ def ai_draft(
         reference_text = (
             " A canonical Character with the same explicit name exists. Use this read-only reference only for stable identity, "
             "genetic/appearance continuity, established background and existing skill vocabulary while following the Creator's "
-            "requested developmental stage. Do not mechanically scale mutable adult values and do not mutate the reference. "
-            "Do not import live preferences, object associations, runtime state or current goals. Reference JSON: " + _json(reference)
+            "requested developmental stage. Preserve the canonical date_of_birth exactly; an explicit requested age describes a "
+            "developmental snapshot and must not rewrite DOB to match the current Universe date. Do not mechanically scale mutable "
+            "adult values and do not mutate the reference. Do not import live preferences, object associations, runtime state or "
+            "current goals. Reference JSON: " + _json(reference)
         )
     character_rules = ""
     if creation_type == "character":
         reference_date = _sim_reference_date(conn)
-        age_rule = (
-            f" The current Universe reference date is {reference_date.isoformat()}. If the Creator specifies an explicit age, "
-            "identity.date_of_birth must make the Character exactly that age on this reference date."
-            if reference_date is not None
-            else ""
-        )
+        age_rule = ""
+        if reference is None and reference_date is not None:
+            age_rule = (
+                f" The current Universe reference date is {reference_date.isoformat()}. If the Creator specifies an explicit age, "
+                "identity.date_of_birth must make the new Character exactly that age on this reference date."
+            )
         character_rules = (
             " For Character drafts, properties.character_profile is authoritative creation-owned structured data. The supplied "
             "schema intentionally excludes runtime-owned and derived fields. Populate only fields that are stable at creation or "
             "believable baseline/developmental traits. Never invent current emotion, needs, nutrition, physiology, sleep, current "
             "sexual state, current goals, narrative state, weekly counters, BMI, lean/fat mass or age-derived values. Preferences, "
             "hobbies and habits must be intrinsic personal tendencies only: never copy named furniture, inventory objects, locations, "
-            "simulators, action-source labels or UI strings. Skills must use a clean non-duplicated taxonomy; do not emit both a "
-            "generic skill and synonymous mastery alias. Material trained competencies established by the background should appear "
-            "as structured skills rather than existing only as free-form capabilities. Keep current body measurements at or below "
-            "their matching genetic ceilings, keep fixed anatomy consistent with fixed genetic values, and keep 0-100 attributes "
-            "inside their legal range. Omit anything uncertain rather than filling every available field."
+            "simulators, action-source labels or UI strings. Skills must use a clean non-duplicated taxonomy. Material trained "
+            "competencies established by background history must be represented as structured skills rather than existing only as "
+            "free-form capabilities. Keep current body measurements at or below their matching genetic ceilings, keep fixed anatomy "
+            "consistent with fixed genetic values, and keep 0-100 attributes inside their legal range. Use the canonical field "
+            "raps_pa.practical_skills; do not also emit the compatibility alias raps_pa.practical_skill. Omit uncertain optional "
+            "details rather than filling every available field."
             + age_rule
         )
     prompt = (
@@ -427,7 +456,15 @@ def ai_draft(
     value["provenance"]["requested_by"] = f"telegram:{int(user_id)}"
     if creation_type == "character":
         _validate_character_payload(conn, value, reference=reference, prompt_text=prompt_text)
-    return _save_draft(conn, user_id, value, draft_mode="ai_generated", prompt_text=prompt_text, sandbox_id=sandbox_id)
+    return _save_draft(
+        conn,
+        user_id,
+        value,
+        draft_mode="ai_generated",
+        prompt_text=prompt_text,
+        reference=reference,
+        sandbox_id=sandbox_id,
+    )
 
 
 def active_draft(
