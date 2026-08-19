@@ -9,12 +9,11 @@ from typing import Any
 from .ai import AIConfigurationError
 from .ai_runtime import AIDecisionError, _post_json, nanogpt_model_billing_scope
 from .secrets import load_runtime_secrets
-from .skill_vocabulary import (
-    SKILL_DEFINITIONS,
-    canonical_skill_keys,
-    missing_background_skill_coverage,
-    normalize_creator_skills,
-)
+from .skill_vocabulary import canonical_skill_keys, normalize_creator_skills
+
+
+_CREATOR_CHARACTER_SCHEMA = "observer_creator_studio_character"
+_CREATOR_PROFILE_ALIAS_FIELDS = {"raps_pa.practical_skill"}
 
 
 def _provider_and_credential(conn: sqlite3.Connection, provider_id: str) -> tuple[sqlite3.Row, str]:
@@ -29,61 +28,111 @@ def _provider_and_credential(conn: sqlite3.Connection, provider_id: str) -> tupl
     return provider, key
 
 
+def _character_profile_schema(schema: dict[str, Any]) -> dict[str, Any]:
+    return schema["properties"]["properties"]["properties"]["character_profile"]
+
+
 def _prepare_creator_character_contract(
     prompt: str,
     schema: dict[str, Any],
     schema_name: str,
 ) -> tuple[str, dict[str, Any]]:
-    if schema_name != "observer_creator_studio_character":
+    """Turn the existing Character profile registry into one exact AI fill template.
+
+    Creator Creation does not ask the model to choose which profile fields matter.
+    Every creation-owned canonical field exposed by Creator Studio is required once;
+    runtime/derived fields were already excluded upstream by character_creation_policy.
+    Skills use the same rule: every canonical key appears once, with 0 representing
+    no trained proficiency. The backend then validates the exact key sets.
+    """
+    if schema_name != _CREATOR_CHARACTER_SCHEMA:
         return prompt, schema
+
     tightened = copy.deepcopy(schema)
     try:
-        skill_key_schema = tightened["properties"]["properties"]["properties"]["character_profile"]["properties"]["skills"]["items"]["properties"]["skill_key"]
-        skill_key_schema["enum"] = list(canonical_skill_keys())
+        profile = _character_profile_schema(tightened)
+        values_schema = profile["properties"]["values"]
+        value_properties = values_schema["properties"]
+        for alias in _CREATOR_PROFILE_ALIAS_FIELDS:
+            value_properties.pop(alias, None)
+        value_keys = sorted(value_properties)
+        values_schema["required"] = value_keys
+        values_schema["minProperties"] = len(value_keys)
+        values_schema["maxProperties"] = len(value_keys)
+        values_schema["additionalProperties"] = False
+
+        skills_schema = profile["properties"]["skills"]
+        skill_item = skills_schema["items"]
+        skill_item["properties"]["skill_key"]["enum"] = list(canonical_skill_keys())
+        skill_item["properties"]["score"] = {"type": "number", "minimum": 0, "maximum": 100}
+        skill_item["properties"]["experience"] = {"type": "number", "minimum": 0}
+        skills_schema["minItems"] = len(canonical_skill_keys())
+        skills_schema["maxItems"] = len(canonical_skill_keys())
     except (KeyError, TypeError):
         return prompt, schema
 
-    mapping = "; ".join(
-        f"{key} ({definition['category']}): {', '.join(definition.get('cues', ()))}"
-        for key, definition in SKILL_DEFINITIONS.items()
-    )
     strengthened_prompt = (
         prompt
-        + " Universal Character skill vocabulary: "
-        + mapping
-        + ". Use only these skill_key values. Inspect the generated background itself before finalizing the JSON. "
-          "Every material trained or professional competency explicitly established in background.origins or "
-          "background.story_elements must have semantic coverage in the structured skills array. Related techniques "
-          "may aggregate under one canonical skill (for example boxing and wrestling under hand_to_hand_combat), but "
-          "distinct material domains such as navigation, climbing, emergency response, field medicine, survival, "
-          "technology, tactical planning, firearms, or bladed weapons must not disappear when the background explicitly "
-          "establishes them. Do not invent a competency in background prose unless you are also willing to represent it "
-          "with its corresponding structured skill."
+        + " Fill the supplied Character seed schema exactly. Do not select, omit, rename, or invent profile fields. "
+          "Every key under properties.character_profile.values is required and must receive one value of the declared type. "
+          "The schema is the Character profile contract; do not summarize it into prose and do not add compatibility aliases. "
+          "For properties.character_profile.skills, include every allowed skill_key exactly once. Use score=0 and experience=0 "
+          "when the Character has no trained proficiency in that skill; otherwise assign values consistent with the Creator intent "
+          "and background. Preferences, hobbies, and habits may be empty arrays when genuinely absent. Return only the completed "
+          "schema object."
     )
     return strengthened_prompt, tightened
 
 
-def _validate_creator_character_skill_contract(value: dict[str, Any], schema_name: str) -> None:
-    if schema_name != "observer_creator_studio_character":
+def _validate_creator_character_contract(
+    value: dict[str, Any],
+    schema: dict[str, Any],
+    schema_name: str,
+) -> None:
+    if schema_name != _CREATOR_CHARACTER_SCHEMA:
         return
     try:
+        expected_profile = _character_profile_schema(schema)
+        expected_value_keys = set(expected_profile["properties"]["values"]["properties"])
         profile = value["properties"]["character_profile"]
         values = profile["values"]
         skills = profile["skills"]
     except (KeyError, TypeError) as exc:
-        raise AIDecisionError("Creator Character output is missing structured profile skill data") from exc
+        raise AIDecisionError("Creator Character output is missing the exact Character seed structure") from exc
+
     if not isinstance(values, dict) or not isinstance(skills, list):
         raise AIDecisionError("Creator Character profile values/skills have invalid structure")
+
+    actual_value_keys = set(str(key) for key in values)
+    missing_values = sorted(expected_value_keys - actual_value_keys)
+    extra_values = sorted(actual_value_keys - expected_value_keys)
+    if missing_values or extra_values:
+        details: list[str] = []
+        if missing_values:
+            details.append("missing=" + ", ".join(missing_values))
+        if extra_values:
+            details.append("extra=" + ", ".join(extra_values))
+        raise AIDecisionError("Creator Character seed profile keys do not match the canonical template: " + "; ".join(details))
+
     try:
         normalized = normalize_creator_skills(item for item in skills if isinstance(item, dict))
     except ValueError as exc:
         raise AIDecisionError(str(exc)) from exc
-    missing = missing_background_skill_coverage(values, normalized)
-    if missing:
-        raise AIDecisionError(
-            "Character background has trained competencies without structured skill coverage: "
-            + ", ".join(sorted(missing))
-        )
+
+    expected_skills = set(canonical_skill_keys())
+    actual_skills = {str(item.get("skill_key") or "") for item in normalized}
+    missing_skills = sorted(expected_skills - actual_skills)
+    extra_skills = sorted(actual_skills - expected_skills)
+    if len(normalized) != len(expected_skills) or missing_skills or extra_skills:
+        details: list[str] = []
+        if missing_skills:
+            details.append("missing=" + ", ".join(missing_skills))
+        if extra_skills:
+            details.append("extra=" + ", ".join(extra_skills))
+        if len(normalized) != len(expected_skills):
+            details.append(f"count={len(normalized)} expected={len(expected_skills)}")
+        raise AIDecisionError("Creator Character seed skill keys do not match the canonical template: " + "; ".join(details))
+
     profile["skills"] = normalized
 
 
@@ -98,13 +147,7 @@ def generate_structured(
     parameters: dict[str, Any] | None = None,
     timeout: float = 120.0,
 ) -> dict[str, Any]:
-    """Run one real structured inference through the existing provider registry.
-
-    Candidate probes may call a currently disabled provider without enabling it;
-    activation remains an explicit later binding operation. Structured generation
-    can produce materially larger responses than ordinary autonomy decisions, so it
-    receives a separate bounded transport timeout.
-    """
+    """Run one real structured inference through the existing provider registry."""
     model = conn.execute(
         "SELECT 1 FROM ai_models WHERE provider_id=? AND model_id=? AND active=1",
         (provider_id, model_id),
@@ -169,5 +212,5 @@ def generate_structured(
 
     if not isinstance(value, dict):
         raise AIDecisionError("Structured AI output must be a JSON object")
-    _validate_creator_character_skill_contract(value, schema_name)
+    _validate_creator_character_contract(value, schema, schema_name)
     return value
