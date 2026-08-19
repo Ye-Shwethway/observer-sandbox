@@ -52,9 +52,12 @@ DENY_EXACT = frozenset({
 
 ALLOW_TRAINING_EXACT = frozenset({"training.training_age_years"})
 
-# Current baseline measurements that have an explicit genetic ceiling in the
-# shared Character profile vocabulary. This is deliberately representation-level
-# validation: both Real World and Creation Sandbox use these same field keys.
+# Source-union compatibility fields can remain registered for old canonical data
+# while new Creator Studio output converges on one universal key.
+CREATION_FIELD_ALIASES = {
+    "raps_pa.practical_skill": "raps_pa.practical_skills",
+}
+
 _BODY_GENETIC_MAX = {
     "body.height_in": "genetics.height_max_in",
     "body.neck_in": "genetics.neck_max_in",
@@ -132,12 +135,7 @@ def _validate_registered_types(conn: sqlite3.Connection, values: dict[str, Any])
 
 
 def validate_creation_profile_values(conn: sqlite3.Connection, values: dict[str, Any]) -> None:
-    """Validate model-independent Character creation semantics.
-
-    The AI provider is never trusted to enforce the universal profile contract.
-    This gate runs on both draft persistence and sandbox approval because both
-    paths already call ``sanitize_creation_profile_values``.
-    """
+    """Validate provider-independent universal Character creation semantics."""
     _validate_registered_types(conn, values)
 
     for key in values:
@@ -185,15 +183,34 @@ def validate_creation_profile_values(conn: sqlite3.Connection, values: dict[str,
             raise ValueError(f"{anatomy_key} must match fixed genetic value {genetic_key}")
 
 
+def _normalize_creation_aliases(values: dict[str, Any]) -> dict[str, Any]:
+    normalized = dict(values)
+    for alias, canonical in CREATION_FIELD_ALIASES.items():
+        if alias not in normalized:
+            continue
+        alias_value = normalized.pop(alias)
+        if canonical in normalized:
+            canonical_value = normalized[canonical]
+            if canonical_value != alias_value:
+                raise ValueError(
+                    f"Character profile alias conflict: {alias} and {canonical} must agree"
+                )
+        else:
+            normalized[canonical] = alias_value
+    return normalized
+
+
 def sanitize_creation_profile_values(conn: sqlite3.Connection, values: dict[str, Any]) -> dict[str, Any]:
     allowed = creation_field_keys(conn)
     sanitized = {str(key): value for key, value in values.items() if str(key) in allowed}
+    sanitized = _normalize_creation_aliases(sanitized)
     validate_creation_profile_values(conn, sanitized)
     return sanitized
 
 
 __all__ = [
     "CREATION_DOMAINS",
+    "CREATION_FIELD_ALIASES",
     "DENY_EXACT",
     "DENY_PREFIXES",
     "creation_field_keys",
