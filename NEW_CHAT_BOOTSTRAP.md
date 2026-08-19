@@ -22,267 +22,196 @@ Default workflow:
 
 `develop on test -> focused tests + final PR CI -> merge test into main -> automatic deploy when runtime-affecting -> production verification -> continuity sync -> test/main synchronization`.
 
-Do not claim production deployment without deploy/runtime evidence.
-
----
+Never claim production deployment without independent deploy/runtime evidence.
 
 ## Current repository checkpoint
 
-### PR #278 — Creator Override Persistence & Progression Re-anchor Correctness v1
+### PR #281 — Creator Creation I0/I1 Foundation
 
-Merged at:
-`b50fdc9abb7670ad9e473c24901d154a3816b171`
+Merged:
+`c60ba00921e1a14132c4422d1e96eed2e623b2ab`
 
-Final pre-merge head:
-`455dc95daf19760698abc250b5ef723c85615a57`
-
-Evidence:
-- CI #1067 — SUCCESS
-- Skill Progression Foundation v1 Acceptance #105 — SUCCESS
-
-Closed issues:
-- canonical seed/import no longer silently overwrites Creator-controlled profile values;
-- Creator edits establish progression re-anchor boundaries so pre-edit stimulus/evidence cannot replay against corrected values;
-- unchanged raw values with only grade/evaluator reclassification do not emit false CHARACTER PROGRESSION.
-
-Canonical contract:
-`docs/CREATOR_OVERRIDE_PERSISTENCE_PROGRESSION_REANCHOR_V1.md`.
-
-### PR #279 — Body Preserve Shape Completeness v2.1
-
-Merged at:
-`4a176c2d53670e0415957272ed034a1e26d70500`
-
-Final pre-merge head:
-`c1d1488f58bf3b4b12186fc71d1aca1ee16a986e`
+Final head:
+`51ef1c5267bc8d963bbf498d3b67c17bfa7f86ab`
 
 Evidence:
-- CI #1068 — SUCCESS
-- Strength Live Cycle Validation #124 — SUCCESS
+- CI #1071 — **SUCCESS**
+- Skill Progression Foundation v1 Acceptance #109 — **SUCCESS**
+- no schema migration.
 
-Body Grade Target Preserve Shape now performs:
+Initial CI #1069 reached `792 passed / 2 failed`. Both failures were stale/overly literal test expectations after the approved AI Settings hierarchy change. Narrow expectation alignment produced final green CI #1071; runtime architecture did not require redesign.
 
-`primary grade-ratio search -> registry-driven whole-body projection -> secondary-ratio drift scoring -> forward verification -> preview -> Apply`.
-
-Represented muscular circumferences such as neck, arms, forearms, thighs and calves can follow torso changes coherently instead of being left at an unrelated scale.
-
-Height remains a hard anchor. Physiology/derived values are not blindly scaled.
-
-Canonical docs:
-- `docs/BODY_AESTHETIC_PROPORTION_GRADE_TARGETING_V2.md`
-- `docs/BODY_PRESERVE_SHAPE_COMPLETENESS_V2_1.md`
-
-Creator has observed the new whole-body preview behavior through Telegram. Keep that distinct from exact GitHub deploy-run evidence unless a deploy run is independently recorded.
-
-Latest independently recorded deploy checkpoint in continuity remains Perception Foundation v1 / Deploy #289.
-
----
-
-## Creator authority invariant
-
-The profile seed snap-back defect is now treated as a general architectural lesson.
+I0 now provides generic Creator authority precedence and profile seed import uses it directly.
 
 Canonical precedence:
 
-`explicit Creator-approved canonical state > live simulation-owned state within declared authority > canonical seed/default/import baseline`.
+`Creator-approved live state > simulation-derived live state > canonical seed/default`.
 
-A seed initializes missing/unclaimed state. It is not allowed to silently restore an older value over explicit Creator authority.
+Ordinary seed/import/reinitialization may initialize missing or unclaimed baseline state but must not silently overwrite Creator-owned or simulated live state.
 
-The next Creator Creation work must generalize this protection beyond profile values.
+I1 now provides a shared sandbox-only creation proposal envelope with initial Character and Location sockets. Direct `target_scope = canonical` requests fail closed.
 
----
+No Creation Sandbox persistence, canonical creation/transmigration, or new real character exists yet.
 
-## NEW PRIORITY — Creator Creation Foundation
+## AI Settings hierarchy
 
-Before resuming deeper Mind work, build only the minimum stable Creator Creation substrate.
+Canonical Telegram structure:
+
+`Creator Settings -> AI Settings -> Character AI / News Generation AI / Creator Creation AI`.
+
+Creator Creation AI has its own independent binding:
+- scope type `engine`;
+- scope id `creator_creation`;
+- role `creator_creation_assist`.
+
+Its capability probe is structured and non-mutating. The model may eventually draft Creation Sandbox proposals, but AI model configuration does not grant creation or canonical write authority.
 
 Canonical docs:
-- `docs/UNIVERSAL_CREATION_SOCKET_FOUNDATION_V1.md`
-- `docs/CREATOR_STAGING_TRANSMIGRATION_ARCHITECTURE_V1.md`
-- `docs/CREATOR_CREATION_FULL_ROADMAP_V1.md`
-- `docs/CREATOR_CREATION_IMPLEMENTATION_PLAN_V1.md`
+- `docs/CREATOR_CREATION_AI_SETTINGS_V1.md`
+- `docs/CREATOR_CREATION_I0_I1_ACCEPTANCE_V1.md`
 
-Long-term product goal:
-Creator can create characters, locations, items, skills, jobs, quests, organizations, services, world elements, event/action templates and future systems from Telegram, either manually or through AI-generated structured proposals.
+## Prior completed Creator controls
 
-AI never receives direct canonical DB-write authority.
+### PR #278 — Creator Override Persistence & Progression Re-anchor Correctness v1
 
----
+Merged:
+`b50fdc9abb7670ad9e473c24901d154a3816b171`
 
-## Creation Sandbox / Staging Universe
+Evidence:
+- CI #1067 — SUCCESS
+- Skill Progression Foundation v1 Acceptance #105 — SUCCESS.
 
-Every new Creator creation begins outside the canonical universe.
+Closed:
+- Creator-controlled profile values survive ordinary seed import/reinitialize;
+- Creator edits re-anchor progression so old evidence cannot replay against corrected values;
+- grade-only evaluator changes do not emit false CHARACTER PROGRESSION.
 
-Canonical flow:
+### PR #279 — Body Preserve Shape Completeness v2.1
 
-`Creator intent -> Draft -> Creation Sandbox -> target-universe validation -> Transmigration Preview -> explicit Creator approval -> Canonical Universe`
+Merged:
+`4a176c2d53670e0415957272ed034a1e26d70500`
+
+Evidence:
+- CI #1068 — SUCCESS
+- Strength Live Cycle Validation #124 — SUCCESS.
+
+Body Preserve Shape now propagates target-grade adjustment through represented muscular circumferences while retaining deterministic forward-grade verification and hard anchors such as height.
+
+## Creator Staging & Transmigration architecture
 
 Core principle:
 
 > **Create anywhere safely; canon nowhere automatically.**
 
-Sandbox implementation uses **shared engine, isolated state**.
+All Creator-created things — Character, Location, Quest, Job, Skill, Item, Organization, Service, world element, future system/rule descriptors and future socket types — first belong to isolated Creation Sandbox state.
 
-Shared:
+Architecture:
+
+`Creator intent -> structured proposal -> sandbox validation -> explicit sandbox approval -> isolated sandbox object -> test/revise/reroll -> target-universe validation -> transmigration preview -> explicit Creator approval -> atomic canonical activation`.
+
+Creation Sandbox uses **shared engine, isolated state**.
+
+Shared where appropriate:
 - schemas;
 - validators;
 - deterministic grading/runtime helpers;
-- approved project rules where applicable.
+- approved universe rules.
 
 Isolated:
-- entities/objects;
-- state;
-- runtime events;
+- mutable entities/objects;
+- events;
 - autonomy membership;
 - relationships;
 - world graph mutations;
 - notifications.
 
-Sandbox objects may be reset, rerolled, cloned, archived or deleted without touching canonical state.
+Sandbox objects may be reset, rerolled, cloned, revised, archived or deleted without affecting canon.
 
----
+## Target-universe compatibility
 
-## Universal creation socket model
+Schema validity alone is insufficient for transmigration.
 
-Do not build a bespoke CRUD backend for every type.
+Before canonical activation, validate:
+- schema and dependencies;
+- references;
+- target-universe ontology;
+- realism/genre/rule policy;
+- capabilities and runtime requirements;
+- canonical conflicts;
+- forbidden assumptions.
 
-One generic creation envelope/registry handles:
-- type + schema version;
-- lifecycle;
-- provenance;
-- sandbox/batch identity;
-- references/dependencies;
-- validation;
-- transmigration planning.
-
-Type sockets add domain-specific fields/validators/hooks.
-
-Minimum first proof:
-- Character
-- Location
-
-Manual and AI creation must converge on the same structured proposal pipeline.
-
----
-
-## Transmigration compatibility
-
-Sandbox creation is not automatically eligible for canon.
-
-Transmigration requires:
-
-`freeze sandbox revision -> schema/dependency validation -> target universe selection -> universe compatibility -> canonical conflict check -> deterministic mutation plan -> Creator preview -> explicit approval -> atomic activation`.
-
-Failure must produce zero canonical writes.
-
-Important distinction:
+Therefore:
 
 > **schema-valid does not imply universe-compatible.**
 
-The current production universe remains realism-constrained. Supernatural/magic/impossible-physics systems may exist in sandbox experiments but must be rejected for this target universe unless its policy explicitly allows them.
+Example: supernatural powers or impossible-physics systems may be valid sandbox experiments but must be rejected for the current realism-constrained universe unless its policy explicitly allows them. A future fantasy universe may accept them under a different universe profile.
 
-Future separate universes may allow different physics, technology, supernatural or capability systems through their own universe compatibility profiles.
+Transmigration must be atomic. Failure produces zero canonical writes.
 
----
+Canonical architecture docs:
+- `docs/UNIVERSAL_CREATION_SOCKET_FOUNDATION_V1.md`
+- `docs/CREATOR_STAGING_TRANSMIGRATION_ARCHITECTURE_V1.md`
+- `docs/CREATOR_CREATION_FULL_ROADMAP_V1.md`
+- `docs/CREATOR_CREATION_IMPLEMENTATION_PLAN_V1.md`.
 
-## Full Creator Creation roadmap
+## Immediate implementation route
 
-Detailed canonical roadmap:
-`docs/CREATOR_CREATION_FULL_ROADMAP_V1.md`.
+- I0 generic Creator authority hardening — **COMPLETE / MERGED**;
+- I1 universal proposal/socket core — **COMPLETE / MERGED**;
+- I2 isolated Creation Sandbox persistence/lifecycle — **NEXT**;
+- I3 Character + Location sandbox vertical proof;
+- I4 minimum Telegram Creator Studio with Manual + AI Draft, preview/edit/reroll and explicit sandbox approval;
+- I5 sandbox-specific Telegram notifications/observer surface;
+- I6 target-universe compatibility/transmigration planning boundary;
+- then resume MIND-F2.
 
-Tracks:
-- C0 Creator Authority & Canonical Protection
-- C1 Universal Creation Socket Foundation
-- C2 Creation Sandbox / Staging Universe
-- C3 Character + Location Vertical Proof
-- C4 Telegram Creator Studio v1
-- C5 Transmigration Foundation
-- C6 Universe Compatibility Profiles
-- C7 Creation Type Expansion
-- C8 Rich Batch Worldbuilding
-- C9 Multiple Universe Creation
-
-This is the long-term roadmap only. Do not implement all tracks before returning to Mind.
-
----
-
-## Immediate minimum implementation
-
-Canonical:
-`docs/CREATOR_CREATION_IMPLEMENTATION_PLAN_V1.md`.
-
-Implement next:
-
-1. I0 — general Creator authority/no-snap-back hardening;
-2. I1 — universal proposal/socket core;
-3. I2 — isolated Creation Sandbox;
-4. I3 — Character + Location sandbox proof;
-5. I4 — minimum Telegram Creator Studio with Manual + AI Draft;
-6. I5 — separate sandbox Telegram notifications;
-7. I6 — target-universe compatibility/transmigration planning boundary.
-
-Do not build all creation types yet.
-
----
+Do not implement every creation type before returning to Mind. Character + Location are the first vertical proof; later sockets expand by the same registry pattern.
 
 ## Second-character gate remains closed
 
-The project rule remains:
-
-> Do not add another real production character until Mind/Relationship foundations and Foundation Completion Review are complete.
-
-A sandbox Character **does not count as a real production character** because it has no canonical universe membership.
-
-Character transmigration to the current canonical production universe remains blocked until:
+Do not add or transmigrate another real production character into the current universe before:
 1. W0-W5/perception foundations remain healthy;
-2. Creator profile/body controls are stable;
-3. MIND-F2..F7 minimum foundations are complete;
-4. Relationship Adaptation foundation is complete;
-5. A3.3 interim planning scaffolding is reconciled;
-6. Foundation Completion Review v2 passes;
-7. Creator explicitly approves transmigration.
+2. Creator profile/body controls remain stable;
+3. minimum Creator Creation staging threshold is complete;
+4. MIND-F2..F7 minimum foundations are complete;
+5. Relationship Adaptation foundation is complete;
+6. A3.3 interim planning scaffolding is reconciled;
+7. Foundation Completion Review v2 passes;
+8. Creator explicitly approves that character's canonical transmigration.
 
-The next real character remains live multi-character acceptance, never a test dummy.
-
----
+Sandbox Characters do not violate this gate because they have no canonical-universe membership.
 
 ## Mind Engine continuation
 
 Canonical:
 `docs/INTELLIGENT_MIND_ENGINE_FOUNDATION_V1.md`.
 
-MIND-F2 is temporarily deferred while the minimum Creator Creation staging foundation is built.
+MIND-F2 remains the next Mind slice but is intentionally deferred until the minimum Creator Creation staging threshold exists.
 
-Resume MIND-F2 as soon as all are true:
-- Creator authority no-snap-back invariant is regression-tested;
-- Character/Location creation sockets exist;
-- Creation Sandbox isolation is proven;
-- minimum Telegram Creator Studio can create/manage those sandbox objects;
-- manual and AI modes share one proposal/apply path;
-- compatibility/transmigration planning boundary exists;
-- second-character canonical activation remains gated.
+Then:
 
-Then continue:
+`MIND-F2 -> F3 Attention/Appraisal/Active Concerns -> F4 Intention -> F5 Planning -> F6 Social Cognition/Communication -> F7 Relationship Adaptation -> Foundation Completion Review v2 -> next real character transmigration proposal`.
 
-`MIND-F2 -> F3 Attention/Appraisal/Active Concerns -> F4 Intention -> F5 Planning -> F6 Social Cognition/Communication -> F7 Relationship Adaptation -> Foundation Completion Review v2`.
+## Existing world/runtime locks
 
----
+Completed external-input minimum stack remains W0-W5 plus Perception Foundation v1.
 
-## Existing completed external-input foundation
+A3.3 Bounded Multi-Step Destination Intent remains deployed. Continue read-only natural observation; do not force Darian outside. When F4/F5 activate, reconcile interim route-purpose scaffolding into canonical Mind intention/planning.
 
-Minimum stack remains:
-- W0 World Stimulus / Exposure
-- W1 / W1.1 Weather
-- W2 Commitments / Obligations
-- W3 / W3.1 Economy / Valuation
-- W4 / W4.1 Information / Media
-- W5 Communication Exposure
-- Perception Foundation v1
+Estate-first spatial scope remains active unless Creator explicitly expands it.
 
-A3.3 Bounded Multi-Step Destination Intent remains deployed. Continue read-only natural observation; do not force Darian outside. When F4/F5 activate, reconcile duplicate interim route-purpose scaffolding into canonical Mind intention/planning.
+## Production evidence boundary
 
----
+Latest independently recorded production checkpoint in continuity remains Perception Foundation v1 / Deploy #289:
+- PR #269;
+- CI #1054 / run `32045634180`: SUCCESS;
+- merge `ebe5bb923c90c77dd878bd6e485e20d7fc68dea7`;
+- Deploy #289 / run `32045825836`: SUCCESS;
+- service/runtime/SQLite/Telegram/cognition recovery healthy;
+- schema v15.
+
+PRs #278/#279/#281 are repository-verified as described above. Do not invent newer deploy success until independent push-deploy/runtime evidence is available.
 
 ## Exact resume point
 
-**PR #278 and PR #279 are merged and CI-green. Creator profile edits are protected against ordinary seed snap-back/evidence replay, and Body Preserve Shape now propagates across represented muscular measurements. The next authorized work is the minimum Creator Creation staging implementation: I0 authority hardening -> I1 socket/proposal core -> I2 isolated Creation Sandbox -> I3 Character/Location proof -> I4 Telegram Creator Studio -> I5 sandbox notifications -> I6 compatibility/transmigration planning. Do not add another canonical character. Resume MIND-F2 once this minimum staging threshold is stable.**
+**PR #281 is merged at `c60ba00921e1a14132c4422d1e96eed2e623b2ab` after CI #1071 SUCCESS and Skill Progression Acceptance #109 SUCCESS. I0/I1 now provide generic Creator authority precedence, sandbox-only Character/Location proposal sockets, independent Creator Creation AI configuration/probe, and the `Creator Settings -> AI Settings` hierarchy. No sandbox persistence or canonical creation exists yet. Next authorized implementation slice: I2 — isolated Creation Sandbox persistence/lifecycle. Do not add another canonical character.**
