@@ -234,7 +234,7 @@ def _explicit_requested_age(prompt_text: str | None) -> int | None:
     """Return only a declared current age, never an age inside biography history."""
     text = str(prompt_text or "")
     patterns = (
-        r"\b(\d{1,3})\s*(?:years? old|year-old)\b",
+        r"\b(\d{1,3})\s*(?:years?\s+old|[-‑–]year[-‑–]old)\b",
         r"\bage\s*[:=]\s*(\d{1,3})\b",
         r"\baged\s+(\d{1,3})\b",
     )
