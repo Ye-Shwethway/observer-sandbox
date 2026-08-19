@@ -141,35 +141,64 @@ def sandbox_runtime_callback_view(
     raise KeyError(callback_data)
 
 
-def handle_sandbox_command(conn: sqlite3.Connection, parts: list[str]) -> str:
-    if len(parts) == 1 or parts[1].lower() == "status":
+def handle_sandbox_runtime_command(
+    conn: sqlite3.Connection,
+    command: str,
+    args: list[str],
+) -> str:
+    if command == "/sandboxstatus":
         return sandbox_runtime_view(conn)[0]
-    action = parts[1].lower()
-    if action == "pause":
-        return sandbox_runtime_view_after(conn, set_sandbox_paused(conn, True))
-    if action == "resume":
+    if command == "/sandboxpause":
+        set_sandbox_paused(conn, True)
+        return sandbox_runtime_view(conn)[0]
+    if command == "/sandboxresume":
         status = sandbox_runtime_status(conn)
         if not status["configured"]:
             return "Sandbox runtime rejected: configure the sandbox clock first."
-        return sandbox_runtime_view_after(conn, set_sandbox_paused(conn, False))
-    if action == "speed":
-        if len(parts) != 3:
-            return "Usage: /sandbox speed <1-3600>"
+        set_sandbox_paused(conn, False)
+        return sandbox_runtime_view(conn)[0]
+    if command == "/sandboxspeed":
+        if len(args) != 1:
+            return "Usage: /sandboxspeed <0-3600>"
         try:
-            status = set_sandbox_speed(conn, float(parts[2]))
+            set_sandbox_speed(conn, float(args[0]))
         except (ValueError, SandboxRuntimeError) as exc:
             return f"Sandbox runtime rejected: {exc}"
-        return sandbox_runtime_view_after(conn, status)
-    if action == "time":
-        if len(parts) < 3:
-            return "Usage: /sandbox time <ISO-8601>"
-        raw = " ".join(parts[2:]).strip()
+        return sandbox_runtime_view(conn)[0]
+    if command == "/sandboxtime":
+        if not args:
+            return sandbox_runtime_view(conn)[0] + "\n\nSet manually with /sandboxtime <ISO-8601>."
+        raw = " ".join(args).strip()
         try:
-            status = configure_sandbox_clock(conn, raw)
+            set_sandbox_paused(conn, True)
+            configure_sandbox_clock(conn, raw)
         except SandboxRuntimeError as exc:
             return f"Sandbox runtime rejected: {exc}"
-        return sandbox_runtime_view_after(conn, status)
-    return "Usage: /sandbox [status|pause|resume|speed <value>|time <ISO-8601>]"
+        return (
+            sandbox_runtime_view(conn)[0]
+            + "\n\n✅ Manual time applied. Sandbox World was auto-paused and remains paused."
+        )
+    raise KeyError(command)
+
+
+def handle_sandbox_command(conn: sqlite3.Connection, parts: list[str]) -> str:
+    """Legacy internal grouped adapter retained for compatibility tests/callers.
+
+    Public Telegram UX uses the explicit /sandbox* command family so every
+    runtime mutation names its world directly.
+    """
+    if len(parts) == 1 or parts[1].lower() == "status":
+        return handle_sandbox_runtime_command(conn, "/sandboxstatus", [])
+    action = parts[1].lower()
+    if action == "pause":
+        return handle_sandbox_runtime_command(conn, "/sandboxpause", [])
+    if action == "resume":
+        return handle_sandbox_runtime_command(conn, "/sandboxresume", [])
+    if action == "speed":
+        return handle_sandbox_runtime_command(conn, "/sandboxspeed", parts[2:])
+    if action == "time":
+        return handle_sandbox_runtime_command(conn, "/sandboxtime", parts[2:])
+    return "Use /sandboxstatus, /sandboxpause, /sandboxresume, /sandboxspeed, or /sandboxtime."
 
 
 def sandbox_runtime_view_after(conn: sqlite3.Connection, status: dict[str, Any]) -> str:
@@ -178,6 +207,7 @@ def sandbox_runtime_view_after(conn: sqlite3.Connection, status: dict[str, Any])
 
 __all__ = [
     "handle_sandbox_command",
+    "handle_sandbox_runtime_command",
     "sandbox_character_runtime_view",
     "sandbox_runtime_callback_view",
     "sandbox_runtime_view",

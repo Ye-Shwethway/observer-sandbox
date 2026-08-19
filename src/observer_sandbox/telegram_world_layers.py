@@ -7,6 +7,7 @@ from typing import Any
 
 from .creation_sandbox import DEFAULT_SANDBOX_ID, ensure_sandbox, get_sandbox_object, list_sandbox_objects
 from .sandbox_runtime import sandbox_character_readiness, sandbox_runtime_status
+from .telegram_real_runtime import real_runtime_callback_view
 from .telegram_sandbox_character_config import character_config_callback_view
 from .telegram_sandbox_notifications import sandbox_notification_callback_view
 from .telegram_sandbox_profile_browser import sandbox_profile_callback_view
@@ -162,6 +163,8 @@ def sandbox_history_view(conn: sqlite3.Connection) -> tuple[str, list[list[dict[
 def world_layer_callback_view(conn: sqlite3.Connection, callback_data: str) -> tuple[str, list[list[dict[str, str]]]] | None:
     if callback_data == "nav:real":
         return real_world_view()
+    if callback_data == "nav:runtime" or callback_data == "rw:runtime" or callback_data.startswith("rw:rt:"):
+        return real_runtime_callback_view(conn, callback_data)
     if callback_data == "nav:sandbox":
         return sandbox_world_view(conn)
     if callback_data == "sw:universe":
