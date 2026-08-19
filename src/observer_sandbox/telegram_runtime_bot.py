@@ -305,4 +305,4 @@ base.handle_command = handle_command
 from .telegram_creator_ux_polish import install_creator_ux_polish
 install_creator_ux_polish()
 
-run_polling = base.run_polling
+from .telegram_fast_polling import run_polling
