@@ -74,9 +74,18 @@ def test_observer_home_uses_stable_inline_navigation(tmp_path, monkeypatch):
     initialize(db)
     monkeypatch.setenv("OBSERVER_TELEGRAM_OWNER_ID", "111")
     keyboard = _home_keyboard()
-    assert keyboard[0][0]["callback_data"] == "nav:universe"
-    assert keyboard[0][1]["callback_data"] == "nav:characters"
+    assert keyboard[0][0]["callback_data"] == "nav:real"
+    assert keyboard[0][1]["callback_data"] == "nav:sandbox"
     with connect(db) as conn:
+        real_text, real_keyboard = _callback_view(conn, 111, "nav:real")
+        assert "REAL WORLD" in real_text
+        real_callbacks = [button["callback_data"] for row in real_keyboard for button in row]
+        assert "nav:universe" in real_callbacks
+        assert "nav:characters" in real_callbacks
+        assert "nav:runtime" in real_callbacks
+        assert "nav:history" in real_callbacks
+        assert "inv:home" in real_callbacks
+
         text, universe_keyboard = _callback_view(conn, 111, "nav:universe")
         assert "UNIVERSE" in text
         callbacks = [button["callback_data"] for row in universe_keyboard for button in row]
