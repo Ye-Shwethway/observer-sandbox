@@ -6,6 +6,7 @@ from typing import Any
 
 from .creation_sandbox import DEFAULT_SANDBOX_ID, ensure_sandbox, get_sandbox_object, list_sandbox_objects
 from .sandbox_runtime import sandbox_character_readiness, sandbox_runtime_status
+from .telegram_sandbox_character_config import character_config_callback_view
 from .telegram_sandbox_runtime import sandbox_runtime_callback_view
 
 
@@ -129,6 +130,7 @@ def sandbox_object_view(
         readiness = sandbox_character_readiness(conn, object_id)
         lines.append(f"Runtime: {readiness['activation_status'].replace('_', ' ').title()}")
         lines.append(f"Ready: {'Yes' if readiness['ready'] else 'No'}")
+        keyboard.append([{"text": "⚙️ Configure", "callback_data": f"sw:cfg:{object_id}"}])
         keyboard.append([{"text": "🧠 Runtime Readiness", "callback_data": f"sw:cr:{object_id}"}])
     if value["properties"]:
         lines.extend(["", "Properties"])
@@ -195,6 +197,8 @@ def world_layer_callback_view(
         return sandbox_list_view(conn, "location")
     if callback_data == "sw:history":
         return sandbox_history_view(conn)
+    if callback_data.startswith("sw:cfg:"):
+        return character_config_callback_view(conn, callback_data)
     if callback_data == "sw:runtime" or callback_data.startswith(("sw:rt:", "sw:cr:")):
         return sandbox_runtime_callback_view(conn, callback_data)
     if callback_data.startswith("sw:o:"):
