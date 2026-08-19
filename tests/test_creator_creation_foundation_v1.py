@@ -133,7 +133,8 @@ def test_creator_settings_has_ai_upper_layer_and_creation_ai_page(tmp_path):
 
         creation_text, creation_keyboard = callback_view(conn, 123, "ai:c:home")
         assert "CREATOR CREATION AI" in creation_text
-        assert "sandbox proposals only" in creation_text.lower()
+        assert "creation sandbox proposals" in creation_text.lower()
+        assert "cannot activate canonical universe state" in creation_text.lower()
         assert any(
             button.get("callback_data") == "ai:c:providers"
             for row in creation_keyboard
