@@ -1,37 +1,68 @@
 # Observer Sandbox Roadmap
 
-Status: ACTIVE
-Roadmap synchronized: 2026-08-19
+Status: **ACTIVE**
+Roadmap synchronized: **2026-08-19**
 
 ## Operating principles
 
-- Current Creator instruction, canonical repo contracts/config/schema, and verified live production outrank remembered chat context.
-- AI proposes structured cognition; deterministic runtime validates and mutates.
+- Current Creator instruction, canonical repo contracts/config/schema and verified live production outrank remembered chat context.
+- AI proposes structured cognition/creation; deterministic runtime validates and mutates.
 - Telegram is observer/control, never simulation authority.
-- Preserve world truth, exposure, perception, memory, Mind and action-authority separation.
 - Use minimum-runnable reversible slices; prefer exemplar-first, then batch-by-pattern.
 - Character-specific behavioral hard-coding is forbidden.
-- Persistent branches are only `main` and `test`; normal development occurs on `test` and is promoted after validation.
-- Prefer vertical completeness and operational usefulness over subsystem sprawl.
-- Reconcile roadmap/bootstrap at material checkpoints and do not claim production without deploy/runtime evidence.
+- Persistent development branches are `main` and `test`; normal work occurs on `test` and is promoted after validation.
+- Reconcile roadmap/bootstrap at material checkpoints and never claim production without deploy/runtime evidence.
 - Do not seed another real production character merely to test unfinished foundations.
+- Explicit Creator-approved canonical state must not be silently overwritten by ordinary seed/import/reinitialize flows.
+
+---
 
 ## Current canonical repository checkpoint
 
-**Body Aesthetic Proportion & Grade Targeting v2 is IMPLEMENTED / CI-GREEN / MERGED. Exact newer production deploy verification is still pending independent evidence.**
+Latest merged runtime-affecting work:
 
-Verified repository evidence:
-- PR #275 — `Add Body aesthetic grade targeting v2`
-- final head `9cd286b95f81f1f5849e5c089be0abdeeb472ccd`
-- CI #1064 / run `32221713304`: **SUCCESS**
-- Read-Only Grading Proof Acceptance #56: **SUCCESS**
-- Attribute Grading Batch 1 Acceptance #55: **SUCCESS**
-- merge `cb68d51125610fc52cc146c0d69910257ebd7258`
-- no schema migration; schema remains v15.
+### Creator Override Persistence & Progression Re-anchor Correctness v1
 
-Initial CI #1062 reached `782 passed / 1 failed`. The single failure was the existing display expectation `Chest / Waist: 1.364`. V2 deliberately makes `Waist / Chest` the grade-driving male metric, but the approved design also allows the intuitive inverse display. The final fix preserves `Chest / Waist` as derived display context only; it does not participate in Body scoring. Final CI #1064 is green.
+- PR #278 — merged.
+- Merge: `b50fdc9abb7670ad9e473c24901d154a3816b171`.
+- Final head before merge: `455dc95daf19760698abc250b5ef723c85615a57`.
+- CI #1067: **SUCCESS**.
+- Skill Progression Foundation v1 Acceptance #105: **SUCCESS**.
 
-Latest independently verified production remains Perception Foundation v1 / Deploy #289 until newer push-deploy/runtime evidence is available. Do not invent a deploy number or success state.
+Closed defects:
+- ordinary canonical seed import no longer overwrites Creator-controlled profile values;
+- Creator edits establish new progression evidence boundaries so pre-edit evidence cannot replay against the corrected baseline;
+- grade-only observer recalibration with unchanged raw value is not emitted as CHARACTER PROGRESSION.
+
+### Body Preserve Shape Completeness v2.1
+
+- PR #279 — merged.
+- Merge: `4a176c2d53670e0415957272ed034a1e26d70500`.
+- Final head before merge: `c1d1488f58bf3b4b12186fc71d1aca1ee16a986e`.
+- CI #1068: **SUCCESS**.
+- Strength Live Cycle Validation #124: **SUCCESS**.
+
+Canonical docs:
+- `docs/BODY_AESTHETIC_PROPORTION_GRADE_TARGETING_V2.md`
+- `docs/BODY_PRESERVE_SHAPE_COMPLETENESS_V2_1.md`
+
+Body Grade Target now uses:
+
+`requested grade -> sex-aware primary ratio search -> registry-driven whole-body projection -> secondary-ratio drift objective -> forward grade verification -> preview -> Apply`
+
+Preserve Shape may coherently adjust represented neck, shoulders, chest, waist, hips, biceps, triceps, forearms, thighs and calves while keeping height as a hard anchor and avoiding unrelated physiology/derived fields.
+
+Body grading remains sex-aware, proportion-based and deterministic. Raw measurements are authoritative; grades remain read-time derived.
+
+### Production evidence
+
+Do not infer production solely from merge/CI.
+
+Latest independently recorded production checkpoint in canonical continuity remains **Perception Foundation v1 / Deploy #289** until a newer deploy/runtime check is independently captured.
+
+The Creator has subsequently observed the Body v2.1 Telegram preview behavior in the live bot, which is useful runtime evidence, but continuity should still keep deploy-number claims separate from direct observation unless the workflow run is independently recorded.
+
+---
 
 ## Creator Character Profile Editing & Grade Targeting
 
@@ -40,217 +71,229 @@ Canonical docs:
 - `docs/CREATOR_PROFILE_EDITING_GRADE_TARGETING_ACCEPTANCE_V1.md`
 - `docs/TELEGRAM_CREATOR_PROFILE_EDIT_UX_V1.md`
 - `docs/BODY_AESTHETIC_PROPORTION_GRADE_TARGETING_V2.md`
-- `docs/BODY_AESTHETIC_PROPORTION_GRADE_TARGETING_IMPLEMENTATION_PLAN_V2.md`
+- `docs/BODY_PRESERVE_SHAPE_COMPLETENESS_V2_1.md`
+- `docs/CREATOR_OVERRIDE_PERSISTENCE_PROGRESSION_REANCHOR_V1.md`
 
-Runtime:
-- `src/observer_sandbox/creator_profile_edit.py`
-- `src/observer_sandbox/telegram_profile_edit.py`
-- `src/observer_sandbox/telegram_profile_edit_ui.py`
-- `src/observer_sandbox/body_aesthetic.py`
-- `src/observer_sandbox/body_grade_target.py`
-- `src/observer_sandbox/profile_observer.py`
+Authority rule:
 
-Acceptance includes:
-- `tests/test_creator_profile_editing_grade_targeting_v1.py`
-- `tests/test_telegram_profile_edit_paused_ux_v1.py`
-- `tests/test_body_aesthetic_grade_targeting_v2.py`
+`explicit Creator-approved state > simulation-owned state within declared authority > canonical seed/default baseline`
 
-### Profile edit authority
+Creator profile editing remains preview-first, owner-only, auditable and atomic. Entering edit mode pauses the universe and Done Editing restores the prior pause state.
 
-Creator controls may correct represented profile facts and explicitly override represented engine-owned/progression values through one generic control contract.
+Applied Creator edits are control-plane corrections, not earned character progression or autobiographical events.
 
-Mutation classes:
-- `canonical_correction` — replace represented canon without fabricating an in-world change experience;
-- `creator_override` — replace represented current/progression state and re-anchor future progression from the corrected value.
+---
+
+## Creator Creation Systems — NEW PRIORITY TRACK
+
+The next development direction is now **Creator Creation Foundation before MIND-F2**, but only to the minimum stable socket/staging threshold. Do not build the entire Creator ecosystem before returning to Mind.
+
+Canonical new docs:
+- `docs/UNIVERSAL_CREATION_SOCKET_FOUNDATION_V1.md`
+- `docs/CREATOR_STAGING_TRANSMIGRATION_ARCHITECTURE_V1.md`
+- `docs/CREATOR_CREATION_FULL_ROADMAP_V1.md`
+- `docs/CREATOR_CREATION_IMPLEMENTATION_PLAN_V1.md`
+
+### Core product goal
+
+Creator must eventually be able to create from Telegram:
+- characters;
+- locations;
+- items/resources/equipment;
+- skills;
+- jobs/roles;
+- quests;
+- organizations/factions;
+- services/facilities;
+- events/actions/world elements;
+- system/rule descriptors;
+- future registered creation types.
+
+Creation may be manual or AI-assisted, but both paths converge on the same structured proposal/validation/apply contract.
+
+AI has proposal authority only. It never receives direct canonical DB-write authority.
+
+---
+
+## Creation Sandbox / Staging Universe
+
+All Creator-created content begins outside the canonical universe.
 
 Canonical flow:
-`Creator preview -> validated raw-value proposal -> explicit Apply -> atomic mutation -> derived grade/progression/self-knowledge reconciliation -> future cognition`.
 
-Raw values remain authoritative. Grades remain read-time derived. No persisted grade column or label becomes a second source of truth.
+`Creator intent -> Draft -> Creation Sandbox -> compatibility validation -> Transmigration Preview -> explicit Creator approval -> Canonical Universe`
 
-### Native paused Telegram Profile edit UX
+Principle:
 
-Preferred Creator path:
-`Characters -> Character -> Profile -> ✏️ Edit Profile`.
+> **Create anywhere safely; canon nowhere automatically.**
 
-Entering Edit Profile:
-- owner-only;
-- records prior pause state;
-- pauses a running universe;
-- persistently shows `UNIVERSE PAUSED — CREATOR EDIT MODE`;
-- Apply keeps the universe paused;
-- Done Editing restores the pre-edit pause state;
-- an already-paused universe remains paused afterward.
+Sandbox architecture is **shared engine, isolated state**:
+- approved schemas/rules/validators are reused;
+- sandbox state is isolated;
+- canonical runtime/events/relationships/autonomy are not mutated;
+- sandbox objects can be reset, cloned, rerolled, archived or deleted safely;
+- sandbox Telegram observability is Creator-only and visually separate from canonical Observer output.
 
-Individual fields are still editable through section -> field -> typed value -> preview -> Apply/Cancel.
+---
 
-General Grade Target still supports monotonic RAPS/Skills groups with E-S Preserve/Normalize.
+## Universal Creation Socket Foundation
 
-## Body Aesthetic Proportion & Grade Targeting v2 — MERGED
+Do not implement bespoke CRUD pipelines per type.
 
-### Forward grading contract
+One shared creation envelope/registry handles:
+- type/schema identity;
+- lifecycle;
+- provenance;
+- sandbox scope;
+- validation;
+- dependency/reference graph;
+- batch creation;
+- transmigration planning.
 
-Body does **not** grade ordinary circumferences as `larger = better`.
+Type-specific sockets provide their own fields/validators/hooks.
 
-Canonical forward flow:
-`raw body measurements -> sex-aware ratio registry -> per-ratio target-range grade -> weighted Body aesthetic composite`.
+Minimum first proof:
+1. Character
+2. Location
 
-Reference profiles:
-- `body-aesthetic-male-v2`
-- `body-aesthetic-female-v2`
+This is intentionally enough to validate the ontology and isolation architecture without broad subsystem sprawl.
 
-Profile selection is based on represented canonical sex/body facts, not character identity.
+---
 
-### Male minimum
+## Transmigration and target-universe compatibility
 
-Grade-driving metrics and initial weights:
-- Waist / Chest: 0.45 — empirical anchor near 0.70, project-calibrated S band 0.68..0.74;
-- Waist / Shoulders: 0.35 — project-calibrated S band 0.55..0.65;
-- Waist / Hips: 0.20 — empirical anchor near 0.80, project-calibrated S band 0.78..0.84.
+Transmigration is not blind merge/copy.
 
-For readability:
-- `Waist / Chest` is authoritative for grading;
-- `Chest / Waist` remains a derived inverse display context;
-- the inverse display contributes zero scoring weight.
+Canonical pipeline:
 
-### Female minimum
+`freeze sandbox revision -> validate schema/dependencies -> select target universe -> compatibility checks -> conflict checks -> deterministic canonical mutation plan -> Creator preview -> explicit approval -> atomic activation`
 
-Current minimum grade-driving metric:
-- Waist / Hips — empirical anchor near 0.70 with project-calibrated S band 0.67..0.73.
+Failure produces **zero canonical writes**.
 
-Richer female metrics activate only when authoritative raw inputs exist. Do not fabricate bust/underbust/body-volume fields to satisfy grading.
+A structurally valid sandbox creation may still be incompatible with the target universe.
 
-Composite output remains coverage-aware so a one-metric evaluation is distinguishable from a richer multi-metric evaluation.
+Current production universe remains realism-constrained. A sandbox supernatural power/system may be valid as sandbox content but must be rejected from this universe unless target-universe policy explicitly supports it.
 
-### Health context separation
+Future separate universes may adopt different physics, technology, supernatural or capability policies without changing the generic creation socket architecture.
 
-Waist / Height remains health/central-adiposity context. It is displayed separately and is **not** silently averaged into Body aesthetic score.
+Key rule:
 
-### Body inverse targeting
+> **schema-valid does not imply universe-compatible.**
 
-Creator UX:
-`Edit Profile -> Body -> 🎯 Body Grade Target`.
+---
 
-The general Grade Target menu also includes Body.
+## Creator Creation full roadmap
 
-Supported targets: E/D/C/B/A/S.
+Canonical detailed roadmap: `docs/CREATOR_CREATION_FULL_ROADMAP_V1.md`.
 
-Modes:
-- `Preserve Shape` — default; deterministic nearest valid measurement vector, minimizing normalized raw changes and unnecessary proportional drift;
-- `Normalize` — explicit stronger movement toward deterministic target ratios.
+Tracks:
 
-Height is a hard anchor in the initial solver. Shoulder/hip movement is more heavily penalized than ordinary soft-tissue circumference movement.
+- **C0** Creator Authority & Canonical Protection
+- **C1** Universal Creation Socket Foundation
+- **C2** Creation Sandbox / Staging Universe
+- **C3** Character + Location Vertical Proof
+- **C4** Telegram Creator Studio v1
+- **C5** Transmigration Foundation
+- **C6** Universe Compatibility Profiles
+- **C7** Creation Type Expansion
+- **C8** Rich Batch Worldbuilding
+- **C9** Multiple Universe Creation
 
-The solver is deterministic and bounded. It uses no LLM and never writes a grade. Every proposal must pass the ordinary forward Body evaluator and produce the requested composite grade before preview is created.
+Long-term roadmap is documented now; implementation remains minimum-first.
 
-Preview exposes:
-- sex-aware reference profile;
-- old/new Body composite;
-- metric coverage;
-- projected ratio grades;
-- separate Waist/Height health context;
-- every raw measurement change;
-- unchanged hard anchors.
+---
 
-Apply reuses the existing generic Creator mutation/reconciliation authority.
+## Immediate implementation plan
 
-### Reconciliation
+Canonical: `docs/CREATOR_CREATION_IMPLEMENTATION_PLAN_V1.md`.
 
-Body grade targeting remains a Creator control, not a character action or autobiographical event.
+Implement only:
 
-Apply:
-- preserves audit/profile history;
-- emits `creator_profile_corrected` provenance;
-- re-anchors profile/stat-notification baselines;
-- does not emit false earned-progression notifications;
-- does not wipe Character Memory;
-- retires only explicitly profile-derived stale semantic self-knowledge when present;
-- preserves unrelated semantic/episodic Memory;
-- never rewrites historical Cognition Context;
-- creates no Mental Cycle/Episode/Artifact merely because a profile edit occurred.
+1. **I0 — Creator authority hardening**
+   - generalize no-snap-back invariant beyond profile-specific code.
 
-Production Darian is not mutated merely for acceptance; disposable initialized databases prove mutation behavior.
+2. **I1 — Universal proposal/socket core**
+   - registry, proposal envelope, validation, sandbox/batch identity;
+   - initial Character + Location sockets only.
 
-## Perception Foundation v1 — DEPLOYED / MINIMUM COMPLETE
+3. **I2 — Isolated Creation Sandbox**
+   - sandbox namespace/state, delete/reset, canonical leakage guards.
 
-Verified production:
-- PR #269
-- CI #1054 / run `32045634180`: SUCCESS
-- merge `ebe5bb923c90c77dd878bd6e485e20d7fc68dea7`
-- Deploy #289 / run `32045825836`: SUCCESS
-- canonical service active;
-- runtime log ready;
-- SQLite quick-check green;
-- schema v15;
-- cognition recovery validated;
-- Telegram healthy.
+4. **I3 — Character + Location sandbox vertical proof**
+   - no canonical Darian/relationship/autonomy connection.
 
-Perception closes:
-`W0 actor exposure -> bounded actor-relative perception input`
-without implying understanding, belief, Memory, Mind artifact, intention, plan or action authority.
+5. **I4 — Telegram Creator Studio minimum**
+   - manual + AI draft modes;
+   - preview/edit/reroll/validate/approve into sandbox.
+
+6. **I5 — Sandbox Telegram notifications**
+   - explicitly separate from canonical Observer notifications.
+
+7. **I6 — Transmigration planning/compatibility boundary**
+   - plan/validate only is sufficient before Mind resumes;
+   - production character activation remains gate-blocked.
+
+---
+
+## Relationship to Mind Engine
+
+Mind Engine remains canonical and required.
+
+Canonical doc: `docs/INTELLIGENT_MIND_ENGINE_FOUNDATION_V1.md`.
+
+MIND-F2 is **deferred temporarily**, not replaced.
+
+Return to MIND-F2 once the minimum Creator Creation threshold is proven:
+- Creator authority no-snap-back invariant regression-tested;
+- universal proposal/socket foundation stable;
+- isolated Creation Sandbox proven;
+- Character + Location sandbox proof complete;
+- minimum Telegram Creator Studio works;
+- compatibility/transmigration planning boundary exists;
+- second-character canonical promotion remains blocked.
+
+Then continue:
+
+`MIND-F2 -> F3 Attention/Appraisal/Active Concerns -> F4 Intention -> F5 Planning -> F6 Social Cognition/Communication -> F7 Relationship Adaptation -> Foundation Completion Review v2`
+
+Later Creator creation sockets expand incrementally alongside/after Mind work.
+
+---
+
+## Second-character canonical gate
+
+The prior gate remains intact.
+
+**Creating a character in Creation Sandbox does not count as adding another real production character.**
+
+Character transmigration into the current canonical production universe remains blocked until:
+1. W0-W5 minimum external inputs remain healthy;
+2. Perception handoff remains healthy;
+3. Creator profile/body controls are production-stable;
+4. MIND-F2..F7 minimum foundations are complete;
+5. Relationship Adaptation foundation is complete;
+6. A3.3 interim planning scaffolding is reconciled;
+7. Foundation Completion Review v2 passes;
+8. Creator explicitly approves transmigration.
+
+The next canonical character remains live multi-character architecture acceptance, not a test dummy.
+
+---
 
 ## Completed minimum external-input stack
 
-- W0 World Stimulus / Exposure — DEPLOYED
-- W1 / W1.1 Weather — DEPLOYED
-- W2 Commitments / Obligations — DEPLOYED
-- W3 / W3.1 Economy / Valuation — DEPLOYED
-- W4 / W4.1 Information / Media — DEPLOYED
-- W5 Communication Exposure — DEPLOYED
-- Perception Foundation v1 — DEPLOYED
+- W0 World Stimulus / Exposure — complete/deployed
+- W1 / W1.1 Weather — complete/deployed
+- W2 Commitments / Obligations — complete/deployed
+- W3 / W3.1 Economy / Valuation — complete/deployed
+- W4 / W4.1 Information / Media — complete/deployed
+- W5 Communication Exposure — complete/deployed
+- Perception Foundation v1 — complete/deployed
 
-## Intelligent Mind Engine route
+A3.3 Bounded Multi-Step Destination Intent remains deployed; continue read-only natural observation and migrate duplicate interim route-purpose scaffolding when F4/F5 activate.
 
-Canonical: `docs/INTELLIGENT_MIND_ENGINE_FOUNDATION_V1.md`.
-
-After Body v2 production deploy/health verification, exact next development returns to:
-
-### MIND-F2 — Mental Episode Runtime
-
-Approved boundaries:
-- keep Cognition Context as model-input observability;
-- no extra LLM call merely to populate Cognition Context;
-- generic context assembly provides structured sockets universally;
-- one bounded cognition call is the normal path;
-- the same call may emit a small represented Mental Episode bundle plus action proposal;
-- use existing Mental Cycle/Episode substrate;
-- episodes are bounded represented summaries, not hidden chain-of-thought transcripts;
-- Mental Episodes do not automatically become Character Memory;
-- prospective thought does not automatically become intention/plan;
-- deterministic runtime remains executable action authority;
-- no continuous/per-minute LLM thought polling;
-- no character-specific prompt scripts;
-- do not prebuild F3-F7 inside F2.
-
-Then:
-`MIND-F2 -> F3 Attention/Appraisal/Active Concerns -> F4 Intention -> F5 Planning -> F6 Social Cognition/Communication -> F7 Relationship Adaptation -> Foundation Completion Review v2 -> next real production character seed`.
-
-## Second-character seed gate
-
-Required before another real production character:
-1. W0-W5 minimum producers — satisfied;
-2. Perception handoff — satisfied;
-3. Creator profile editing + Body v2 production verification;
-4. MIND-F2..F7 minimum foundations;
-5. A3.3 interim planning scaffolding reconciliation;
-6. Foundation Completion Review v2;
-7. only then propose/authorize the next real character seed.
-
-The next character is live multi-character architecture acceptance, not a test dummy.
-
-## A3.3 — Bounded Multi-Step Destination Intent v1
-
-A3.3 remains deployed. Continue read-only natural observation of inside-to-outside multi-hop initiation; do not force an outing. When F4/F5 activate, migrate/retire duplicate interim route-purpose scaffolding into canonical Mind intention/plan flow.
-
-## Operational diagnostics
-
-Creator-only Telegram diagnostics remain:
-`/logs`, `/logs errors [lines]`, `/logs system [lines]`, `/logs runtime`, `/logs file [lines]`.
-
-## World / spatial lock
-
-Estate-first scope remains active. Broader public South Lake Tahoe traversal stays closed until explicitly authorized.
+---
 
 ## Exact resume point
 
-**PR #275 is merged at `cb68d51125610fc52cc146c0d69910257ebd7258` after final CI #1064 SUCCESS. Body v2 now provides sex-aware weighted forward grading, male Waist/Chest grading with Chest/Wasit display compatibility, deterministic E-S Preserve/Normalize inverse measurement targeting, and native paused Telegram Body Grade Target UX. No schema migration and no production Darian mutation were required for acceptance. Exact newer push-deploy evidence is not yet independently recorded; after runtime health verification, MIND-F2 is the next development slice.**
+**Current repository has PR #278 and PR #279 merged, closing Creator profile seed snap-back/evidence-replay issues and completing whole-body Preserve Shape targeting. The next authorized development direction is docs-first Creator Creation Foundation. Full C0-C9 roadmap is recorded, but implementation must follow the minimum I0-I6 plan: universal socket/proposal foundation + isolated Creation Sandbox + Character/Location proof + minimum Telegram Creator Studio + compatibility/transmigration planning. Do not add another canonical character. Return to MIND-F2 after that minimum staging threshold is stable.**
