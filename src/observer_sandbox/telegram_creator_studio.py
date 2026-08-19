@@ -14,6 +14,8 @@ from .creator_studio import (
 )
 
 _NEXT_INPUT_KEYBOARD: list[list[dict[str, str]]] | None = None
+_ROUTER_ORIGINAL_HANDLE = None
+_ROUTER_ORIGINAL_KEYBOARD = None
 
 
 def _session(conn: sqlite3.Connection, user_id: int):
@@ -76,8 +78,20 @@ def _prompt_view(creation_type: str, input_mode: str):
     )
 
 
+def _restore_input_router() -> None:
+    global _ROUTER_ORIGINAL_HANDLE, _ROUTER_ORIGINAL_KEYBOARD
+    from . import telegram_bot as base
+    if _ROUTER_ORIGINAL_HANDLE is not None:
+        base.handle_command = _ROUTER_ORIGINAL_HANDLE
+    if _ROUTER_ORIGINAL_KEYBOARD is not None:
+        base._command_keyboard = _ROUTER_ORIGINAL_KEYBOARD
+    _ROUTER_ORIGINAL_HANDLE = None
+    _ROUTER_ORIGINAL_KEYBOARD = None
+
+
 def _install_input_router() -> None:
-    """Install one bounded plain-text router into the existing single-threaded Telegram adapter."""
+    """Install a one-shot plain-text router into the single-threaded Telegram adapter."""
+    global _ROUTER_ORIGINAL_HANDLE, _ROUTER_ORIGINAL_KEYBOARD
     from . import telegram_bot as base
     from .db import connect, migrate
 
@@ -85,6 +99,8 @@ def _install_input_router() -> None:
         return
     original_handle = base.handle_command
     original_keyboard = base._command_keyboard
+    _ROUTER_ORIGINAL_HANDLE = original_handle
+    _ROUTER_ORIGINAL_KEYBOARD = original_keyboard
 
     def routed_handle(db_path: str | Path, *, user_id: int, text: str) -> str:
         global _NEXT_INPUT_KEYBOARD
@@ -125,6 +141,7 @@ def _install_input_router() -> None:
         if _NEXT_INPUT_KEYBOARD is not None:
             keyboard = _NEXT_INPUT_KEYBOARD
             _NEXT_INPUT_KEYBOARD = None
+            _restore_input_router()
             return keyboard
         return original_keyboard(command)
 
@@ -134,7 +151,6 @@ def _install_input_router() -> None:
 
 
 def studio_home_view(conn: sqlite3.Connection, user_id: int):
-    _install_input_router()
     draft = active_draft(conn, user_id)
     session = _session(conn, user_id)
     lines = [
@@ -145,6 +161,7 @@ def studio_home_view(conn: sqlite3.Connection, user_id: int):
     ]
     keyboard = [[{"text": "➕ Create", "callback_data": "sw:cs:create"}]]
     if session:
+        _install_input_router()
         lines.extend(["", f"Waiting for {session['expected_input']}: {session['creation_type'].title()}"])
         keyboard.append([{"text": "✕ Cancel Input", "callback_data": "sw:cs:input:cancel"}])
     if draft:
@@ -228,16 +245,17 @@ def draft_preview_view(conn: sqlite3.Connection, user_id: int, *, notice: str | 
 
 
 def studio_callback_view(conn: sqlite3.Connection, user_id: int, callback_data: str):
-    _install_input_router()
     if callback_data == "sw:studio":
         return studio_home_view(conn, user_id)
     if callback_data == "sw:cs:create":
         _clear_session(conn, user_id)
+        _restore_input_router()
         return _create_type_view()
     if callback_data.startswith("sw:cs:type:"):
         creation_type = callback_data.rsplit(":", 1)[-1]
         if creation_type in {"character", "location"}:
             _clear_session(conn, user_id)
+            _restore_input_router()
             return _method_view(creation_type)
         return _create_type_view()
     if callback_data.startswith("sw:cs:input:") and callback_data != "sw:cs:input:cancel":
@@ -245,10 +263,12 @@ def studio_callback_view(conn: sqlite3.Connection, user_id: int, callback_data: 
         if len(parts) == 5 and parts[3] in {"character", "location"} and parts[4] in {"manual", "ai"}:
             mode = "manual" if parts[4] == "manual" else "ai_generated"
             _begin_session(conn, user_id, parts[3], mode)
+            _install_input_router()
             return _prompt_view(parts[3], mode)
         return studio_home_view(conn, user_id)
     if callback_data == "sw:cs:input:cancel":
         _clear_session(conn, user_id)
+        _restore_input_router()
         return studio_home_view(conn, user_id)
     if callback_data == "sw:cs:preview":
         return draft_preview_view(conn, user_id)
@@ -261,6 +281,7 @@ def studio_callback_view(conn: sqlite3.Connection, user_id: int, callback_data: 
     if callback_data == "sw:cs:cancel":
         cancel_draft(conn, user_id)
         _clear_session(conn, user_id)
+        _restore_input_router()
         return studio_home_view(conn, user_id)
     if callback_data == "sw:cs:approve":
         try:
