@@ -4,7 +4,7 @@ from .sandbox_profile_observer import sandbox_profile_menu, sandbox_profile_sect
 from .telegram_profile_browser import _fmt_profile_menu, _fmt_profile_section
 
 
-def _profile_menu_keyboard(data):
+def _profile_menu_keyboard(data, *, role: str = "allowed"):
     character_id = data["character"]["id"]
     keyboard = []
     sections = data.get("sections") or []
@@ -18,6 +18,15 @@ def _profile_menu_keyboard(data):
                 }
             )
         keyboard.append(row)
+    if role == "owner":
+        keyboard.append(
+            [
+                {
+                    "text": "✏️ Edit Profile",
+                    "callback_data": f"sw:pedit:enter:{character_id}",
+                }
+            ]
+        )
     keyboard.append(
         [
             {
@@ -42,7 +51,7 @@ def sandbox_profile_callback_view(conn, callback_data: str, *, role: str = "allo
     if callback_data.startswith("sw:prof:"):
         character_id = callback_data.split(":", 2)[2]
         data = sandbox_profile_menu(conn, character_id, role=role)
-        return _fmt_profile_menu(data), _profile_menu_keyboard(data)
+        return _fmt_profile_menu(data), _profile_menu_keyboard(data, role=role)
 
     if callback_data.startswith("sw:psec:"):
         parts = callback_data.split(":", 3)
