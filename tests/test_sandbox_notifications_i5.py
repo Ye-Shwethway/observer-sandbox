@@ -3,6 +3,7 @@ from observer_sandbox.creation_socket import build_creation_proposal
 from observer_sandbox.db import SCHEMA_VERSION, connect
 from observer_sandbox.runtime import initialize
 from observer_sandbox.telegram_sandbox_notifications import (
+    dispatch_owner_sandbox_notifications,
     dispatch_pending_sandbox_notifications,
     pending_sandbox_events,
     sandbox_notification_callback_view,
@@ -99,6 +100,30 @@ def test_transport_failure_keeps_event_pending(tmp_path):
         except RuntimeError:
             pass
         assert len(pending_sandbox_events(conn, 111)) == 1
+
+
+def test_owner_transport_respects_global_and_sandbox_preferences(tmp_path, monkeypatch):
+    db = tmp_path / "observer.sqlite3"
+    initialize(db)
+    monkeypatch.setenv("OBSERVER_TELEGRAM_OWNER_ID", "111")
+    monkeypatch.setenv("OBSERVER_TELEGRAM_BOT_TOKEN", "test-token")
+    sent = []
+    monkeypatch.setattr(
+        "observer_sandbox.telegram_bot._send",
+        lambda token, user_id, text, keyboard=None: sent.append((token, user_id, text)),
+    )
+    with connect(db) as conn:
+        set_sandbox_notifications(conn, 111, True)
+        _create_location(conn, "Transport Cabin")
+        assert dispatch_owner_sandbox_notifications(conn) == 1
+        assert sent == [("test-token", 111, sent[0][2])]
+        assert "Transport Cabin" in sent[0][2]
+        assert pending_sandbox_events(conn, 111) == []
+
+        set_sandbox_notifications(conn, 111, False)
+        _create_location(conn, "Muted Cabin")
+        assert dispatch_owner_sandbox_notifications(conn) == 0
+        assert len(sent) == 1
 
 
 def test_mark_current_seen_suppresses_new_pending_events(tmp_path):
