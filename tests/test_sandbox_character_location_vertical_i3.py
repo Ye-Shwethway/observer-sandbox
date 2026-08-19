@@ -73,12 +73,12 @@ def _create_vertical(conn):
     return character, room, estate
 
 
-def test_schema_v18_adds_isolated_profile_and_skill_representation(tmp_path):
+def test_schema_v19_keeps_isolated_profile_and_skill_representation(tmp_path):
     db = tmp_path / "observer.sqlite3"
     initialize(db)
     with connect(db) as conn:
-        assert SCHEMA_VERSION == 18
-        assert conn.execute("SELECT value FROM schema_meta WHERE key='schema_version'").fetchone()[0] == "18"
+        assert SCHEMA_VERSION == 19
+        assert conn.execute("SELECT value FROM schema_meta WHERE key='schema_version'").fetchone()[0] == "19"
         tables = {row[0] for row in conn.execute("SELECT name FROM sqlite_master WHERE type='table'")}
         assert {"creation_sandbox_profile_values", "creation_sandbox_character_skills"} <= tables
 
