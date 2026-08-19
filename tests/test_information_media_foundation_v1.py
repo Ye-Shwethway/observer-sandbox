@@ -198,10 +198,15 @@ def test_telegram_news_ai_reuses_provider_model_test_save_flow(tmp_path, monkeyp
         conn.execute("UPDATE ai_providers SET enabled=1 WHERE id='groq'")
         conn.execute("INSERT INTO ai_models(provider_id,model_id,display_name,active) VALUES('groq','news/model','News Model',1)")
         conn.commit()
-        home, keyboard = telegram_ai_control.home_view(conn)
+        creator_home, creator_keyboard = telegram_ai_control.home_view(conn)
+        creator_callbacks = [button["callback_data"] for row in creator_keyboard for button in row]
+        assert "CREATOR SETTINGS" in creator_home
+        assert "ai:settings" in creator_callbacks
+
+        ai_home, keyboard = telegram_ai_control.callback_view(conn, 111, "ai:settings")
         callbacks = [button["callback_data"] for row in keyboard for button in row]
-        assert "Character AI" in home
-        assert "News Generation AI" in home
+        assert "Character AI" in ai_home
+        assert "News Generation AI" in ai_home
         assert "ai:n:home" in callbacks
 
         telegram_ai_control.callback_view(conn, 111, "ai:n:m:groq:0")

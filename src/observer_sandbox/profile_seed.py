@@ -5,6 +5,8 @@ import sqlite3
 from pathlib import Path
 from typing import Any
 
+from .creator_authority import ordinary_seed_may_replace
+
 
 class ProfileSeedError(RuntimeError):
     pass
@@ -15,13 +17,12 @@ MALE_REQUIRED_SEXUAL_PROFILE_FIELDS = (
     "sexual_anatomy.penis_girth_in",
     "genetics.penis_length_in",
     "genetics.penis_girth_in",
-    "sexual_anatomy.baseline_ereile_function" if False else "sexual_anatomy.baseline_erectile_function",
+    "sexual_anatomy.baseline_erectile_function",
     "sexual_anatomy.erection_firmness_cap",
 )
 
 
 BASELINE_SOURCE = "canonical_seed"
-CREATOR_PROFILE_CONTROL_SOURCE = "creator-profile-control-v1"
 
 
 def load_seed(path: str | Path) -> dict[str, Any]:
@@ -75,12 +76,6 @@ def _skill_progression_active(row: sqlite3.Row | None) -> bool:
     metadata = json.loads(row["metadata_json"] or "{}")
     metadata_active = isinstance(metadata, dict) and bool(metadata.get("progression_active"))
     return metadata_active or row["experience"] is not None
-
-
-def _creator_profile_controlled(row: sqlite3.Row | None) -> bool:
-    if row is None:
-        return False
-    return str(row["source"] or "") == CREATOR_PROFILE_CONTROL_SOURCE
 
 
 def _metadata_dict(raw: str | None) -> dict[str, Any]:
@@ -189,25 +184,15 @@ def _seed_habits(
 
 
 def import_seed(conn: sqlite3.Connection, seed: dict[str, Any]) -> None:
-    """Import canonical/static character data without clobbering live or Creator-corrected state.
+    """Import canonical/static character data without clobbering stronger live authority.
 
-    Canonical seeds initialize profile values and may update fields that have not
-    been activated by a simulation engine or explicitly corrected by Creator
-    profile control. Once a field's persisted mode is ``simulated``, that live
-    engine-owned value is authoritative across ordinary re-initialization and is
-    not reset from the seed. Likewise, a row sourced from
-    ``creator-profile-control-v1`` is an explicit persisted Creator correction
-    and ordinary seed import must not silently overwrite it.
+    Ordinary canonical seed refreshes may initialize missing state or refresh an
+    unclaimed static baseline. Simulated live state and explicit Creator-owned
+    state outrank seed/default state and survive ordinary re-initialization.
 
-    Skills follow the same initialization rule. Seed rows may refresh an
-    unactivated skill baseline, but a progression-active/experienced skill keeps
-    its current score/experience/metadata. Extra learned skills that are not
-    present in the canonical seed are preserved instead of being deleted on
-    initialization.
-
-    Preferences, hobbies and habits are adaptive surfaces. Canonical entries are
-    ensured as starting baselines, but initialization never deletes extra learned
-    rows and never resets dynamic strength/evidence metadata.
+    Skills follow their existing progression-active preservation rule. Adaptive
+    preference/hobby/habit rows are ensured as baselines without deleting learned
+    additions or resetting their dynamic evidence metadata.
     """
     validate_seed(conn, seed)
     entity_id = seed["entity_id"]
@@ -243,7 +228,12 @@ def import_seed(conn: sqlite3.Connection, seed: dict[str, Any]) -> None:
             (entity_id, field_key),
         ).fetchone()
 
-        if old is not None and (old["mode"] == "simulated" or _creator_profile_controlled(old)):
+        if not ordinary_seed_may_replace(
+            existing=old is not None,
+            mode=None if old is None else old["mode"],
+            authority=None if old is None else old["authority"],
+            source=None if old is None else old["source"],
+        ):
             continue
 
         if old is not None and old["value_json"] != value_json:

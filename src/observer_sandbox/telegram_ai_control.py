@@ -11,6 +11,11 @@ from .ai_control import (
     refresh_provider_catalog,
     remove_cognition_fallback,
 )
+from .creator_creation_ai import (
+    activate_creator_creation_model,
+    creator_creation_binding,
+    probe_creator_creation_model,
+)
 from .news_ai import activate_news_generation_model, news_generation_binding, probe_news_generation_model
 from .simulation import runtime_value, set_runtime_value
 from .telegram_creator_diagnostics import callback_view as diagnostic_callback_view
@@ -42,33 +47,79 @@ def _prefix(mode: str) -> str:
         return "af"
     if mode == "news":
         return "ai:n"
+    if mode == "creation":
+        return "ai:c"
     return "ai"
 
 
 def _mode_title(mode: str) -> str:
-    return {"primary": "Primary", "fallback": "Fallback", "news": "News Generation"}[mode]
+    return {
+        "primary": "Primary",
+        "fallback": "Fallback",
+        "news": "News Generation",
+        "creation": "Creator Creation",
+    }[mode]
 
 
-def _home_keyboard() -> list[list[dict[str, str]]]:
+def _mode_icon(mode: str) -> str:
+    return {
+        "primary": "🧠",
+        "fallback": "🛟",
+        "news": "📰",
+        "creation": "🛠",
+    }[mode]
+
+
+def _mode_home_callback(mode: str) -> str:
+    if mode == "news":
+        return "ai:n:home"
+    if mode == "creation":
+        return "ai:c:home"
+    return "ai:character"
+
+
+def _creator_settings_keyboard() -> list[list[dict[str, str]]]:
     return [
-        [{"text": "🧠 Character AI", "callback_data": "ai:character"}],
-        [{"text": "📰 News Generation AI", "callback_data": "ai:n:home"}],
+        [{"text": "🤖 AI Settings", "callback_data": "ai:settings"}],
         [{"text": "🧪 Diagnostics", "callback_data": "ai:diag:home"}],
         [{"text": "⌂ Observer Home", "callback_data": "nav:home"}],
     ]
 
 
+def _home_keyboard() -> list[list[dict[str, str]]]:
+    """AI Settings keyboard retained as the common return surface for AI roles."""
+    return [
+        [{"text": "🧠 Character AI", "callback_data": "ai:character"}],
+        [{"text": "📰 News Generation AI", "callback_data": "ai:n:home"}],
+        [{"text": "🛠 Creator Creation AI", "callback_data": "ai:c:home"}],
+        [{"text": "← Creator Settings", "callback_data": "ai:home"}],
+        [{"text": "⌂ Observer Home", "callback_data": "nav:home"}],
+    ]
+
+
 def home_view(conn) -> tuple[str, list[list[dict[str, str]]]]:
-    overview = cognition_overview(conn)
-    primary = overview.get("binding") or {}
-    fallback = overview.get("fallback") or {}
-    news = news_generation_binding(conn) or {}
     return (
         "\n".join([
             "⚙️ CREATOR SETTINGS",
             "━━━━━━━━━━━━━━━━━━",
-            "🤖 AI SETTINGS",
+            "Creator-only configuration and diagnostics.",
             "",
+            "AI roles are grouped under AI Settings so additional Creator tools can grow without flattening this menu.",
+        ]),
+        _creator_settings_keyboard(),
+    )
+
+
+def _ai_settings_view(conn) -> tuple[str, list[list[dict[str, str]]]]:
+    overview = cognition_overview(conn)
+    primary = overview.get("binding") or {}
+    fallback = overview.get("fallback") or {}
+    news = news_generation_binding(conn) or {}
+    creation = creator_creation_binding(conn) or {}
+    return (
+        "\n".join([
+            "🤖 AI SETTINGS",
+            "━━━━━━━━━━━━━━━━━━",
             "🧠 Character AI",
             f"Primary: {primary.get('provider_id', 'Not configured')} / {primary.get('model_id', 'Not configured')}",
             f"Fallback: {fallback.get('provider_id', 'Not configured')} / {fallback.get('model_id', 'Not configured')}",
@@ -76,7 +127,10 @@ def home_view(conn) -> tuple[str, list[list[dict[str, str]]]]:
             "📰 News Generation AI",
             f"Model: {news.get('provider_id', 'Not configured')} / {news.get('model_id', 'Not configured')}",
             "",
-            "Character cognition and news editorial generation use independent role bindings.",
+            "🛠 Creator Creation AI",
+            f"Model: {creation.get('provider_id', 'Not configured')} / {creation.get('model_id', 'Not configured')}",
+            "",
+            "Each role has an independent binding. Creator Creation AI may draft structured sandbox proposals only; it has no canonical write authority.",
         ]),
         _home_keyboard(),
     )
@@ -98,7 +152,7 @@ def _character_home_view(conn):
         [
             [{"text": "🧠 Primary Cognition", "callback_data": "ai:providers"}],
             [{"text": "🛟 Fallback Model", "callback_data": "af:providers"}],
-            [{"text": "← AI Settings", "callback_data": "ai:home"}],
+            [{"text": "← AI Settings", "callback_data": "ai:settings"}],
         ],
     )
 
@@ -115,7 +169,25 @@ def _news_home_view(conn):
         ]),
         [
             [{"text": "📰 Select News Model", "callback_data": "ai:n:providers"}],
-            [{"text": "← AI Settings", "callback_data": "ai:home"}],
+            [{"text": "← AI Settings", "callback_data": "ai:settings"}],
+        ],
+    )
+
+
+def _creation_home_view(conn):
+    binding = creator_creation_binding(conn) or {}
+    return (
+        "\n".join([
+            "🛠 CREATOR CREATION AI",
+            "━━━━━━━━━━━━━━━━━━",
+            f"Current: {binding.get('provider_id', 'Not configured')} / {binding.get('model_id', 'Not configured')}",
+            "",
+            "This role assists Creator by drafting structured Creation Sandbox proposals.",
+            "It cannot activate canonical universe state or bypass transmigration validation.",
+        ]),
+        [
+            [{"text": "🛠 Select Creation Model", "callback_data": "ai:c:providers"}],
+            [{"text": "← AI Settings", "callback_data": "ai:settings"}],
         ],
     )
 
@@ -123,6 +195,8 @@ def _news_home_view(conn):
 def _selected_binding(conn, mode: str) -> dict[str, Any]:
     if mode == "news":
         return news_generation_binding(conn) or {}
+    if mode == "creation":
+        return creator_creation_binding(conn) or {}
     overview = cognition_overview(conn)
     return (overview.get("fallback") if mode == "fallback" else overview.get("binding")) or {}
 
@@ -131,8 +205,9 @@ def _providers_view(conn, mode: str = "primary"):
     overview = cognition_overview(conn)
     selected = _selected_binding(conn, mode)
     prefix = _prefix(mode)
+    icon = _mode_icon(mode)
     lines = [
-        f"{'📰' if mode == 'news' else '🧠'} {_mode_title(mode).upper()} PROVIDERS",
+        f"{icon} {_mode_title(mode).upper()} PROVIDERS",
         "━━━━━━━━━━━━━━━━━━",
         f"Current {_mode_title(mode).lower()}: {selected.get('provider_id', 'None')} / {selected.get('model_id', 'None')}",
         "",
@@ -147,7 +222,7 @@ def _providers_view(conn, mode: str = "primary"):
         keyboard.append([{"text": f"{current}{credential} {provider['display_name']}", "callback_data": f"{prefix}:p:{provider_id}"}])
     if mode == "fallback" and overview.get("fallback"):
         keyboard.append([{"text": "🗑 Remove Fallback", "callback_data": "af:clear"}])
-    keyboard.append([{"text": "← Back", "callback_data": "ai:n:home" if mode == "news" else "ai:character"}])
+    keyboard.append([{"text": "← Back", "callback_data": _mode_home_callback(mode)}])
     keyboard.append([{"text": "⌂ Observer Home", "callback_data": "nav:home"}])
     return "\n".join(lines), keyboard
 
@@ -166,7 +241,7 @@ def _provider_view(conn, provider_id: str, *, mode: str = "primary", notice: str
         return "Unknown AI provider.", [[{"text": "← Providers", "callback_data": f"{prefix}:providers"}]]
     models = models_for_provider(conn, provider_id)
     lines = [
-        f"{'📰' if mode == 'news' else '🧠'} {_mode_title(mode)} · {provider['display_name']}",
+        f"{_mode_icon(mode)} {_mode_title(mode)} · {provider['display_name']}",
         "━━━━━━━━━━━━━━━━━━",
         f"🔐 Credential: {'Available' if provider.get('credential_present') else 'Missing'}",
         f"📚 Cached models: {len(models)}",
@@ -210,7 +285,7 @@ def _models_page(conn, provider_id: str, page: int, *, mode: str = "primary"):
         label = str(model.get("display_name") or model["model_id"])
         if len(label) > 48:
             label = label[:45] + "…"
-        icon = "📰" if mode == "news" else "🧠"
+        icon = _mode_icon(mode)
         if provider_id == "nanogpt":
             scope = str((model.get("metadata") or {}).get("observer_nanogpt_billing_scope") or "subscription")
             icon = "💳" if scope == "paid" else "🟢"
@@ -229,7 +304,7 @@ def _models_page(conn, provider_id: str, page: int, *, mode: str = "primary"):
 def _candidate_view(conn, user_id: int, *, notice: str | None = None):
     candidate = _candidate(conn, user_id)
     if not candidate:
-        return "No AI model candidate is selected.", [[{"text": "← AI Settings", "callback_data": "ai:home"}]]
+        return "No AI model candidate is selected.", [[{"text": "← AI Settings", "callback_data": "ai:settings"}]]
     provider_id = str(candidate["provider_id"])
     model_id = str(candidate["model_id"])
     mode = str(candidate.get("mode") or "primary")
@@ -254,6 +329,8 @@ def _candidate_view(conn, user_id: int, *, notice: str | None = None):
         lines.extend(["", "The primary binding stays unchanged. Save configures this model only as runtime fallback."])
     elif mode == "news":
         lines.extend(["", "The current news-generation binding is unchanged until Save & Activate."])
+    elif mode == "creation":
+        lines.extend(["", "The current Creator Creation AI binding is unchanged until Save & Activate. This role can draft sandbox proposals only."])
     else:
         lines.extend(["", "The current primary binding is unchanged until Save & Activate."])
     keyboard = [[{"text": "🧪 Test Model", "callback_data": f"{prefix}:test"}]]
@@ -310,7 +387,12 @@ def _test_candidate(conn, user_id: int, *, mode: str):
     if not candidate or str(candidate.get("mode") or "primary") != mode:
         return "No matching AI model candidate is selected.", [[{"text": "← Providers", "callback_data": f"{_prefix(mode)}:providers"}]]
     try:
-        probe = probe_news_generation_model if mode == "news" else probe_model
+        if mode == "news":
+            probe = probe_news_generation_model
+        elif mode == "creation":
+            probe = probe_creator_creation_model
+        else:
+            probe = probe_model
         result = probe(conn, str(candidate["provider_id"]), str(candidate["model_id"]))
         candidate.update({"probe_ok": True, "latency_ms": result["latency_ms"], "tested_at": result["tested_at"]})
         _save_candidate(conn, user_id, candidate)
@@ -333,6 +415,8 @@ def _save_selected_candidate(conn, user_id: int, *, mode: str):
             binding = activate_cognition_fallback(conn, str(candidate["provider_id"]), str(candidate["model_id"]), tested_at=candidate.get("tested_at"))
         elif mode == "news":
             binding = activate_news_generation_model(conn, str(candidate["provider_id"]), str(candidate["model_id"]))
+        elif mode == "creation":
+            binding = activate_creator_creation_model(conn, str(candidate["provider_id"]), str(candidate["model_id"]))
         else:
             binding = activate_cognition_model(conn, str(candidate["provider_id"]), str(candidate["model_id"]))
     except Exception as exc:
@@ -342,12 +426,16 @@ def _save_selected_candidate(conn, user_id: int, *, mode: str):
         return ("✅ COGNITION FALLBACK SAVED\n━━━━━━━━━━━━━━━━━━\n" f"Provider: {binding['provider_id']}\nModel: {binding['model_id']}\n\nPrimary cognition is unchanged.", _home_keyboard())
     if mode == "news":
         return ("✅ NEWS GENERATION AI ACTIVATED\n━━━━━━━━━━━━━━━━━━\n" f"Provider: {binding['provider_id']}\nModel: {binding['model_id']}\n\nCharacter cognition bindings were not changed.", _home_keyboard())
+    if mode == "creation":
+        return ("✅ CREATOR CREATION AI ACTIVATED\n━━━━━━━━━━━━━━━━━━\n" f"Provider: {binding['provider_id']}\nModel: {binding['model_id']}\n\nCharacter cognition and News Generation AI bindings were not changed. Creation output remains proposal-only.", _home_keyboard())
     return ("✅ AI COGNITION ACTIVATED\n━━━━━━━━━━━━━━━━━━\n" f"Provider: {binding['provider_id']}\nModel: {binding['model_id']}\n\nFuture cognition wakes will try this primary binding first.", _home_keyboard())
 
 
 def _mode_and_rest(callback_data: str) -> tuple[str, str]:
     if callback_data.startswith("ai:n:"):
         return "news", callback_data[len("ai:n:"):]
+    if callback_data.startswith("ai:c:"):
+        return "creation", callback_data[len("ai:c:"):]
     if callback_data.startswith("af:"):
         return "fallback", callback_data[len("af:"):]
     if callback_data.startswith("ai:"):
@@ -358,10 +446,14 @@ def _mode_and_rest(callback_data: str) -> tuple[str, str]:
 def callback_view(conn, user_id: int, callback_data: str) -> tuple[str, list[list[dict[str, str]]] | None]:
     if callback_data == "ai:home":
         return home_view(conn)
+    if callback_data == "ai:settings":
+        return _ai_settings_view(conn)
     if callback_data == "ai:character":
         return _character_home_view(conn)
     if callback_data == "ai:n:home":
         return _news_home_view(conn)
+    if callback_data == "ai:c:home":
+        return _creation_home_view(conn)
     if callback_data.startswith("ai:diag:"):
         return diagnostic_callback_view(conn, user_id, "diag:" + callback_data[len("ai:diag:"):], requested_by=f"telegram:{user_id}")
 
