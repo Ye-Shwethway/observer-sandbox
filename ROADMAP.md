@@ -8,63 +8,69 @@ Roadmap synchronized: 2026-08-19
 - Current Creator instruction, canonical repo contracts/config/schema, and verified live production outrank remembered chat context.
 - AI proposes structured cognition; deterministic runtime validates and mutates.
 - Telegram is observer/control, never simulation authority.
-- Preserve the separation of world truth, exposure, perception, memory, Mind and action authority.
-- Use minimum-runnable reversible slices and **exemplar-first, then batch-by-pattern**.
+- Preserve world truth, exposure, perception, memory, Mind and action-authority separation.
+- Use minimum-runnable reversible slices; prefer exemplar-first, then batch-by-pattern.
 - Character-specific behavioral hard-coding is forbidden.
-- Persistent branches are only `main` and `test`; normal development occurs on `test` and is promoted to `main` after validation.
+- Persistent branches are only `main` and `test`; normal development occurs on `test` and is promoted after validation.
 - Prefer vertical completeness and operational usefulness over subsystem sprawl.
-- At material checkpoints, reconcile roadmap/bootstrap state with implementation and verified runtime truth. Do not claim production deployment without deploy/runtime evidence.
-- Do not seed another real production character merely to test unfinished foundations; use generic fixtures until the foundation-completion gate is reached.
+- Reconcile roadmap/bootstrap at material checkpoints and do not claim production without deploy/runtime evidence.
+- Do not seed another real production character merely to test unfinished foundations.
 
 ## Current canonical repository checkpoint
 
-**Creator Character Profile Editing & Grade Targeting v1 is IMPLEMENTED / CI-GREEN / MERGED. Production deploy verification is still pending exact evidence.**
+**Creator Character Profile Editing & Grade Targeting v1 and its native paused Telegram Profile UX are IMPLEMENTED / CI-GREEN / MERGED. Exact production deploy verification is pending independent evidence.**
 
-Verified repository evidence:
-- PR #271 — `Add Creator profile editing and grade targeting v1`
-- final head `36de367cfe89b5602088273342e2665617bb928d`
-- **CI #1060 / run `32210592168`: SUCCESS**
-- initial CI #1055: `770 passed / 1 failed`; the sole failure was a stale implementation assumption that `character_skills` had an `updated_at` column. The fix preserved the existing schema and moved Creator re-anchor time into skill metadata.
+Latest repository evidence:
+- PR #273 — `Add paused Telegram profile edit UX`
+- final head `232c4db3098940e09696cb6af90296db8f466091`
+- CI #1061 / run `32214382666`: **SUCCESS**
+- merge `a324a9a8b0ff0dc9538b850ccd7ab0d59ed1eef0`
+- no schema migration; schema contract remains v15.
+
+Underlying editor foundation:
+- PR #271
+- CI #1060 / run `32210592168`: SUCCESS
 - merge `da64a8278d44c94c2db4b7fcac2e086d9e034269`
-- no schema migration introduced; repository contract remains compatible with production schema **v15**.
+- first CI #1055 was `770 passed / 1 failed`; the sole issue was a false `character_skills.updated_at` assumption and was fixed without schema expansion.
 
-The automatic deploy workflow is configured to run on `main` changes under `src/**`, but the currently available GitHub connector can list only PR-triggered runs for a commit and exposes no push-run listing action. Therefore the deploy number/run/status is **not recorded here until independently verified**. Do not infer or fabricate a Deploy #290 result.
+PR #273 contains deploy-triggering source changes. The current connector cannot list push-triggered workflow runs, and public search did not provide independently usable deploy evidence. Do not fabricate a deployment number or success state. Latest independently verified production remains Perception Foundation v1 / Deploy #289.
 
-Latest independently verified production checkpoint remains **Perception Foundation v1 / Deploy #289 / run `32045825836`: SUCCESS**.
-
-## Creator Character Profile Editing & Grade Targeting v1 — MERGED / DEPLOY VERIFICATION PENDING
+## Creator Character Profile Editing & Grade Targeting v1
 
 Canonical docs:
 - `docs/CREATOR_PROFILE_EDITING_GRADE_TARGETING_V1.md`
 - `docs/CREATOR_PROFILE_EDITING_GRADE_TARGETING_ACCEPTANCE_V1.md`
+- `docs/TELEGRAM_CREATOR_PROFILE_EDIT_UX_V1.md`
 
 Runtime:
 - `src/observer_sandbox/creator_profile_edit.py`
 - `src/observer_sandbox/telegram_profile_edit.py`
+- `src/observer_sandbox/telegram_profile_edit_ui.py`
 - `src/observer_sandbox/telegram_runtime_bot.py`
 
 Acceptance:
 - `tests/test_creator_profile_editing_grade_targeting_v1.py`
 - `tests/test_telegram_creator_profile_edit_v1.py`
+- `tests/test_telegram_profile_edit_paused_ux_v1.py`
 
 ### Authority and edit semantics
 
-Creator control may edit represented profile/seed facts and explicitly override represented engine-owned/progression values through the generic control contract.
+Creator controls may correct represented profile facts and explicitly override represented engine-owned/progression values through one generic control contract.
 
 Mutation classes:
-- `canonical_correction` — replace a represented canonical fact without inventing an in-world change event;
-- `creator_override` — explicitly replace a currently represented value and re-anchor its owning progression/runtime context.
+- `canonical_correction` — replace represented canon without fabricating an in-world change experience;
+- `creator_override` — replace represented current/progression state and re-anchor future progression from the corrected value.
+
+Canonical flow:
+`Creator preview -> validated raw-value proposal -> explicit Apply -> atomic mutation -> derived grade/progression/self-knowledge reconciliation -> future cognition`.
 
 Guards preserve data/schema/cross-field validity; they are not arbitrary realism restrictions on Creator authority.
 
-Canonical flow:
-`Creator preview -> validated authoritative raw-value proposal -> explicit apply -> atomic mutation -> derived grade/progression/self-knowledge reconciliation -> future cognition`.
+### Raw values / grades
 
-### Raw values remain grading authority
+Grades remain read-time derived. No grade label or grade column becomes authoritative state.
 
-Grades remain read-time derived. No grade column or grade label becomes authoritative state.
-
-Existing monotonic 0..100 grading intervals remain:
+Monotonic RAPS/Skill intervals:
 - E: 0..<20
 - D: 20..<40
 - C: 40..<60
@@ -72,62 +78,60 @@ Existing monotonic 0..100 grading intervals remain:
 - A: 75..<90
 - S: 90..100
 
-Editing an authoritative RAPS or Skill value therefore automatically changes its individual and compatible aggregate grade on the next ordinary profile read.
+Section inverse targeting supports compatible monotonic RAPS/Attributes and Skills families. `preserve_shape` is default; `normalize` is explicit. Representative v1 targets: E=10, D=30, C=50, B=67.5, A=82.5, S=95.
 
-### Section-level inverse grade targeting
+Body grading remains ratio/reference/composite. Individual authoritative Body inputs may be edited and auto-regraded, but no arbitrary bulk inverse Body vector is created in v1.
 
-V1 supports deterministic inverse targeting for monotonic 0..100 RAPS/Attributes and Skills families.
+## Native Telegram Profile Edit UX — MERGED
 
-Example:
-`Physical Attributes -> Grade B -> preserve_shape`
+Preferred Creator path:
+`Characters -> Character -> Profile -> ✏️ Edit Profile`.
 
-The system converts the requested grade into the existing scheme's numeric interval, proposes raw values, verifies the existing grading evaluator returns the requested aggregate, previews every change, and mutates only after explicit Creator apply.
+Owner-only behavior:
+- owner Profile menu receives `Edit Profile`;
+- allowed non-owner Profile remains read-only;
+- entering edit mode records the pre-edit pause state and pauses a running universe through canonical autonomy pause control;
+- every edit screen shows `UNIVERSE PAUSED — CREATOR EDIT MODE`;
+- section -> represented writable field -> next typed Telegram message -> validated preview -> Apply/Cancel;
+- raw state remains unchanged before Apply;
+- Apply keeps the universe paused so Creator may continue editing;
+- Done Editing restores the pause state that existed before entry;
+- a universe already paused before editing remains paused afterward.
 
-Modes:
-- `preserve_shape` — default; preserve relative strengths/weaknesses as far as bounded 0..100 constraints permit;
-- `normalize` — intentionally move compatible fields to a common representative target value.
+The visible pause warning is persistent in the edit message, not a short-lived toast. It explicitly tells the Creator that simulation is frozen and Done Editing restores the prior state.
 
-Representative midpoint targets in v1 are E=10, D=30, C=50, B=67.5, A=82.5, S=95.
+Native Grade Target buttons support Physical, Mental, Intellectual, Verbal Charisma, All Attributes and All Skills with E-S plus Preserve/Normalize choices. `Physical Attributes -> Grade B -> Preserve` is acceptance-covered and resolves against the existing grading engine.
 
-Body grading remains read-time ratio/reference/composite grading. Individual authoritative body inputs may be edited and will auto-regrade, but Body composite grades are **not bulk-inverted in v1** because there is no single canonical inverse measurement vector.
+The advanced `/profileedit`, `/profilegrade`, `/profileapply` commands remain available but are fallback/manual controls rather than the primary UX.
 
-### Preview-first Creator Telegram surface
-
-Owner-only commands:
-- `/profileedit <character_id> <field_key> <value>`
-- `/profilegrade <character_id> <group> <grade> [preserve|normalize]`
-- `/profileapply <preview_token>`
-
-Unapplied previews do not mutate character state. Apply tokens are requester-bound and stale proposals fail closed if any affected raw value changed since preview.
-
-Production Darian must not be modified merely to prove deployment. Automated acceptance uses disposable initialized databases.
+Derived-only fields and collections not owned by the current editor remain read-only.
 
 ### Reconciliation semantics
 
 Applied Creator edits:
-- reuse `character_profile_history` for scalar profile audit where applicable;
-- emit Creator control provenance through `creator_profile_corrected`;
-- preserve existing skill storage and store Creator re-anchor provenance in skill metadata;
-- re-anchor profile display/stat-notification baselines so the edit is not later announced as organically earned progression;
-- do **not** wipe Character Memory;
-- retire only active semantic self-knowledge explicitly tagged as derived from affected profile field keys;
+- reuse profile history where applicable;
+- emit `creator_profile_corrected` audit provenance;
+- preserve existing skill storage and write re-anchor provenance to skill metadata;
+- re-anchor profile display/stat-notification baselines so corrections are not announced as organically earned progression;
+- do not wipe Character Memory;
+- retire only semantic self-knowledge explicitly tagged as derived from corrected profile field keys;
 - preserve unrelated semantic/episodic memory;
-- do not rewrite historical Cognition Context snapshots;
-- create no Mental Cycle, Mental Episode or Mental Artifact in this slice.
+- never rewrite historical Cognition Context snapshots;
+- create no Mental Cycle, Mental Episode or Mental Artifact.
 
-Future Mind reconciliation remains targeted: historical episodes remain historical represented activity; only active artifacts whose premises are invalidated by a later correction should be reevaluated/retired by their owning F3-F7 modules.
+Production Darian must not be changed merely to prove deployment. Acceptance uses disposable initialized databases.
 
 ## Perception Foundation v1 — DEPLOYED / MINIMUM COMPLETE
 
-Verified:
+Verified production:
 - PR #269
-- CI #1054 / `32045634180`: SUCCESS
+- CI #1054 / run `32045634180`: SUCCESS
 - merge `ebe5bb923c90c77dd878bd6e485e20d7fc68dea7`
-- Deploy #289 / `32045825836`: SUCCESS
-- production service/runtime log/SQLite/Telegram/cognition-recovery health green; schema v15 unchanged.
+- Deploy #289 / run `32045825836`: SUCCESS
+- canonical service active, runtime log ready, SQLite quick-check green, schema v15, cognition recovery validated, Telegram healthy.
 
-Perception v1 is a deterministic bounded read projection:
-`W0 actor exposure -> actor-relative perception input`.
+Perception v1 closes:
+`W0 actor exposure -> bounded actor-relative perception input`.
 
 It preserves provenance and creates no understanding, belief, Memory, Mind artifact, intention, plan or action authority.
 
@@ -145,48 +149,48 @@ The W0-W5 producer sequence and minimum exposure-to-perception handoff are compl
 
 ## Intelligent Mind Engine route
 
-Canonical contract: `docs/INTELLIGENT_MIND_ENGINE_FOUNDATION_V1.md`.
+Canonical: `docs/INTELLIGENT_MIND_ENGINE_FOUNDATION_V1.md`.
 
-Once the merged Creator Profile Editing slice has verified production deployment/health, resume the previously approved Mind sequence.
+MIND-F2 design is approved. Resume it after independent verification of the merged profile-control/Telegram UX deployment, or earlier only if the Creator explicitly directs continuation despite the deploy-observability limitation.
 
-### MIND-F2 — Mental Episode Runtime — NEXT DEVELOPMENT SLICE AFTER DEPLOY VERIFICATION
+### MIND-F2 — Mental Episode Runtime
 
-Approved design:
-- Cognition Context remains an observability snapshot and is **not** deleted;
-- Cognition Context is not a second LLM call;
-- one bounded cognition call is the default;
-- generic context assembly supplies purpose-specific sockets such as present state, physiology, perception, recallable Memory and later active Mind artifacts;
-- the same cognition call may emit a small structured Mental Episode bundle plus an action proposal;
-- episodes are represented actor-owned mental state, not raw hidden chain-of-thought transcripts;
-- Mental Episodes remain separate from durable Character Memory;
-- prospective thought is not automatically an intention or plan;
-- action proposal remains separate from deterministic action authority;
-- no continuous/per-minute thought polling;
-- no character-specific prompt scripts or algorithms.
+Approved boundaries:
+- keep Cognition Context as model-input observability;
+- no extra LLM call merely to populate Cognition Context;
+- generic context assembly provides structured sockets universally;
+- one bounded cognition call is the normal path;
+- the same call may emit a small represented Mental Episode bundle plus action proposal;
+- use the existing Mental Cycle/Episode substrate;
+- episodes are bounded represented summaries, not hidden chain-of-thought transcripts;
+- Mental Episodes do not automatically become Character Memory;
+- prospective thought does not automatically become intention/plan;
+- deterministic runtime remains executable action authority;
+- no continuous/per-minute LLM thought polling;
+- no character-specific prompt scripts;
+- do not prebuild F3-F7 behavior inside F2.
 
-Then continue:
-`MIND-F2 -> MIND-F3 Attention/Appraisal/Active Concerns -> MIND-F4 Intention -> MIND-F5 Planning -> MIND-F6 Social Cognition/Communication -> MIND-F7 Relationship Adaptation -> Foundation Completion Review v2 -> next real production character seed`.
+Then:
+`MIND-F2 -> F3 Attention/Appraisal/Active Concerns -> F4 Intention -> F5 Planning -> F6 Social Cognition/Communication -> F7 Relationship Adaptation -> Foundation Completion Review v2 -> next real production character seed`.
 
 ## Second-character seed gate
 
 Required before another real production character:
-1. W0-W5 minimum producer foundations — satisfied;
+1. W0-W5 minimum producers — satisfied;
 2. Perception handoff — satisfied;
-3. Creator profile correction/reconciliation control — repository implementation merged; production deploy verification pending;
+3. Creator profile correction + native Telegram edit control production verification;
 4. MIND-F2..F7 minimum foundations;
-5. A3.3 interim planning scaffolding reconciled into canonical Mind planning where appropriate;
+5. A3.3 interim planning scaffolding reconciliation;
 6. Foundation Completion Review v2;
 7. only then propose/authorize the next real character seed.
 
-The next character is live multi-character architecture acceptance, not a test dummy.
+The next character is live multi-character acceptance, not a test dummy.
 
-## A3.3 — Bounded Multi-Step Destination Intent v1 — DEPLOYED / OBSERVATION CONTINUES
+## A3.3 — Bounded Multi-Step Destination Intent v1
 
-A3.3 remains deployed and provides actor-known bounded route-purpose hints while one-hop `action_options` remain deterministic movement authority.
+A3.3 remains deployed. Continue read-only natural observation of the missing inside-to-outside multi-hop initiation; do not force an outing. When F4/F5 activate, migrate/retire duplicate interim planning scaffolding into canonical Mind intention/plan flow.
 
-Natural proof of the previously missing inside-to-outside initiation remains read-only observation. Do not force an outing. When F4/F5 activate, reconcile/retire duplicate interim planning scaffolding into canonical Mind intention/plan flow.
-
-## Operational diagnostics — DEPLOYED
+## Operational diagnostics
 
 Creator-only Telegram diagnostics remain:
 `/logs`, `/logs errors [lines]`, `/logs system [lines]`, `/logs runtime`, `/logs file [lines]`.
@@ -197,4 +201,4 @@ Estate-first scope remains active. Broader public South Lake Tahoe traversal sta
 
 ## Exact resume point
 
-**Creator Character Profile Editing & Grade Targeting v1 is merged at `da64a8278d44c94c2db4b7fcac2e086d9e034269` after final CI #1060 SUCCESS. Its deploy-triggering source changes are on main, but exact push-triggered deploy/run evidence is not visible through the current GitHub connector, so production deployment is intentionally not claimed yet. The next operational step is read-only deploy/production verification; once verified, MIND-F2 Mental Episode Runtime is the next development slice. Do not mutate Darian merely for profile-editor acceptance, and do not seed a second real character before the F2-F7 + Foundation Completion Review v2 gate.**
+**PR #273 is merged at `a324a9a8b0ff0dc9538b850ccd7ab0d59ed1eef0` after CI #1061 SUCCESS. Native Character -> Profile -> Edit Profile editing now exists in canonical source with automatic universe pause, persistent warning, direct field selection + typed input, preview/apply, native grade targeting, and prior-pause restoration on Done Editing. Exact newer push-deploy evidence remains unavailable, so production deployment is intentionally not claimed; Deploy #289 remains the latest independently verified production checkpoint. After verification, MIND-F2 is next. Do not mutate Darian merely for acceptance and do not seed a second real character before the foundation gate.**
