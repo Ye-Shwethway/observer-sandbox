@@ -260,6 +260,28 @@ def draft_preview_view(conn: sqlite3.Connection, user_id: int, *, notice: str | 
     return "\n".join(lines), keyboard
 
 
+def _approval_confirmation_view(conn: sqlite3.Connection, user_id: int):
+    draft = active_draft(conn, user_id)
+    if not draft:
+        return draft_preview_view(conn, user_id)
+    proposal = draft["proposal"]
+    name = proposal["identity"].get("name", "Unnamed")
+    revision = int(draft["revision"])
+    return (
+        "⚠️ CONFIRM SANDBOX APPROVAL\n"
+        "━━━━━━━━━━━━━━━━━━\n"
+        f"{proposal['creation_type'].title()}: {name}\n"
+        f"Draft revision: {revision}\n\n"
+        "This will create the reviewed revision as an active object in Creation Sandbox.\n"
+        "It will NOT become canonical, transmigrate to Real World, or start autonomy.\n\n"
+        "Confirm only if this is the exact draft you intend to approve.",
+        [
+            [{"text": "✅ Confirm Approve", "callback_data": f"sw:cs:approve:confirm:{revision}"}],
+            [{"text": "← Review Draft", "callback_data": "sw:cs:preview"}],
+        ],
+    )
+
+
 def studio_callback_view(conn: sqlite3.Connection, user_id: int, callback_data: str):
     if callback_data == "sw:studio":
         return studio_home_view(conn, user_id)
@@ -318,6 +340,21 @@ def studio_callback_view(conn: sqlite3.Connection, user_id: int, callback_data: 
         _restore_input_router()
         return studio_home_view(conn, user_id)
     if callback_data == "sw:cs:approve":
+        return _approval_confirmation_view(conn, user_id)
+    if callback_data.startswith("sw:cs:approve:confirm:"):
+        try:
+            expected_revision = int(callback_data.rsplit(":", 1)[-1])
+        except ValueError:
+            return draft_preview_view(conn, user_id, notice="Approval confirmation is invalid. Review the current draft again.")
+        draft = active_draft(conn, user_id)
+        if not draft:
+            return draft_preview_view(conn, user_id)
+        if int(draft["revision"]) != expected_revision:
+            return draft_preview_view(
+                conn,
+                user_id,
+                notice="⚠️ Draft changed after confirmation. Review the current revision before approving.",
+            )
         try:
             obj = approve_draft(conn, user_id)
         except CreatorStudioError as exc:
