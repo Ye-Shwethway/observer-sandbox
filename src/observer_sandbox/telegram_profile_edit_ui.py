@@ -4,6 +4,7 @@ import json
 from typing import Any
 
 from .autonomy import set_autonomy_paused
+from .body_grade_target import BodyGradeTargetError, preview_body_grade_target
 from .creator_profile_edit import (
     CreatorProfileEditError,
     apply_saved_proposal,
@@ -17,6 +18,7 @@ from .simulation import runtime_value, set_runtime_value
 SESSION_PREFIX = "telegram_creator_profile_edit_session:"
 UI_SENTINEL = "__OBSERVER_PROFILE_EDIT_UI__:"
 GRADE_GROUPS = (
+    ("body", "Body Measurements"),
     ("physical", "Physical Attributes"),
     ("mental", "Mental Attributes"),
     ("intellectual", "Intellectual Attributes"),
@@ -58,6 +60,8 @@ def _pause_banner(session: dict[str, Any]) -> list[str]:
 def enter_profile_edit(conn, *, user_id: int, character_id: str) -> tuple[str, list[list[dict[str, str]]]]:
     name = _character_name(conn, character_id)
     existing = _session(conn, user_id)
+    if existing is not None and existing.get("character_id") == character_id:
+        return edit_home_view(conn, user_id=user_id)
     if existing is not None and existing.get("character_id") != character_id:
         exit_profile_edit(conn, user_id=user_id)
     was_paused = bool(runtime_value(conn, "paused", False))
@@ -154,6 +158,8 @@ def section_edit_view(conn, *, user_id: int, section_id: str) -> tuple[str, list
         keyboard.append([{"text": f"✏️ {item.get('label')}: {value_text}"[:60], "callback_data": f"pedit:f:{index}"}])
     if not items:
         lines.append("No fields in this section are writable through the current profile editor contract.")
+    if section_id == "body":
+        keyboard.append([{"text": "🎯 Body Grade Target", "callback_data": "pedit:gg:body"}])
     keyboard.append([{"text": "← Edit Profile", "callback_data": "pedit:home"}])
     keyboard.append([{"text": "✅ Done Editing", "callback_data": "pedit:done"}])
     return "\n".join(lines), keyboard
@@ -192,7 +198,7 @@ def grade_groups_view(conn, *, user_id: int) -> tuple[str, list[list[dict[str, s
     session = _session(conn, user_id)
     if session is None:
         raise CreatorProfileEditError("Profile edit session expired")
-    lines = _pause_banner(session) + ["🎯 GRADE TARGET", "Choose the compatible monotonic grading group to retarget."]
+    lines = _pause_banner(session) + ["🎯 GRADE TARGET", "Choose a compatible grading group to retarget."]
     keyboard = [[{"text": label, "callback_data": f"pedit:gg:{group}"}] for group, label in GRADE_GROUPS]
     keyboard.append([{"text": "← Edit Profile", "callback_data": "pedit:home"}])
     return "\n".join(lines), keyboard
@@ -203,7 +209,12 @@ def grade_choice_view(conn, *, user_id: int, group: str) -> tuple[str, list[list
     if session is None:
         raise CreatorProfileEditError("Profile edit session expired")
     label = dict(GRADE_GROUPS).get(group, group)
-    lines = _pause_banner(session) + [f"🎯 {label.upper()}", "Choose target grade. Preserve Shape is the default adjustment mode."]
+    detail = (
+        "Body uses sex-aware aesthetic ratios and a deterministic inverse measurement solver. Preserve Shape is the default."
+        if group == "body"
+        else "Choose target grade. Preserve Shape is the default adjustment mode."
+    )
+    lines = _pause_banner(session) + [f"🎯 {label.upper()}", detail]
     keyboard = []
     for grade in ("E", "D", "C", "B", "A", "S"):
         keyboard.append([
@@ -220,15 +231,36 @@ def _preview_view(conn, *, user_id: int, proposal: dict[str, Any]) -> tuple[str,
         raise CreatorProfileEditError("Profile edit session expired")
     token = save_proposal(conn, proposal, requested_by=f"telegram:{user_id}")
     lines = _pause_banner(session) + ["🔎 CREATOR PROFILE CHANGE PREVIEW"]
-    if proposal.get("kind") == "section_grade_target":
+    if proposal.get("kind") in {"section_grade_target", "body_grade_target"}:
         old = proposal.get("old_aggregate") or {}
         new = proposal.get("new_aggregate") or {}
         lines.extend([
             f"Target: {proposal.get('group')} → Grade {proposal.get('target_grade')}",
             f"Mode: {proposal.get('mode')}",
             f"Overall: {old.get('grade')} {old.get('value')} → {new.get('grade')} {new.get('value')}",
-            "",
         ])
+        if proposal.get("kind") == "body_grade_target":
+            coverage = proposal.get("new_coverage") or {}
+            lines.extend([
+                f"Reference: {proposal.get('reference_profile')}",
+                f"Metric coverage: {coverage.get('active_metrics')}/{coverage.get('eligible_metrics')}",
+                "",
+                "Projected proportions:",
+            ])
+            for metric in proposal.get("new_metrics") or []:
+                grade = metric.get("grade") or {}
+                lines.append(
+                    f"• {metric.get('label')}: {metric.get('value')} · {grade.get('grade') or '—'}"
+                )
+            health = proposal.get("health_context") or []
+            if health:
+                lines.extend(["", "Health context (not aesthetic score):"])
+                for metric in health:
+                    grade = metric.get("grade") or {}
+                    lines.append(f"• {metric.get('label')}: {metric.get('value')} · {grade.get('grade') or '—'}")
+            lines.extend(["", "Proposed measurements:"])
+        else:
+            lines.append("")
     for change in proposal.get("changes") or []:
         lines.append(f"• {change.get('label') or change.get('field_key')}: {change.get('old_value')} → {change.get('new_value')}")
     lines.extend(["", "⚠️ Apply will correct authoritative profile state and reconcile only dependent profile-derived state."])
@@ -303,13 +335,15 @@ def profile_edit_callback_view(conn, *, user_id: int, callback_data: str) -> tup
         session = _session(conn, user_id)
         if session is None:
             raise CreatorProfileEditError("Profile edit session expired")
-        proposal = preview_section_grade_target(
-            conn,
-            str(session["character_id"]),
-            group,
-            grade,
-            mode="preserve_shape" if mode_code == "p" else "normalize",
-        )
+        mode = "preserve_shape" if mode_code == "p" else "normalize"
+        try:
+            proposal = (
+                preview_body_grade_target(conn, str(session["character_id"]), grade, mode=mode)
+                if group == "body"
+                else preview_section_grade_target(conn, str(session["character_id"]), group, grade, mode=mode)
+            )
+        except BodyGradeTargetError as exc:
+            raise CreatorProfileEditError(str(exc)) from exc
         return _preview_view(conn, user_id=user_id, proposal=proposal)
     if callback_data.startswith("pedit:apply:"):
         return _apply_view(conn, user_id=user_id, token=callback_data.split(":", 2)[2])
