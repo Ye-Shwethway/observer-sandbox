@@ -14,7 +14,7 @@ from .memory_schema import migrate_memory_schema
 from .mind_schema import migrate_mind_schema
 from .world_input_schema import migrate_world_input_schema
 
-SCHEMA_VERSION = 18
+SCHEMA_VERSION = 19
 
 SCHEMA_SQL = """
 PRAGMA foreign_keys = ON;
