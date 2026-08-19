@@ -5,6 +5,7 @@ import pytest
 from observer_sandbox.creation_sandbox import ensure_sandbox
 from observer_sandbox.db import connect
 from observer_sandbox.runtime import initialize
+from observer_sandbox.sandbox_representation import set_sandbox_profile_values
 from observer_sandbox.sandbox_runtime import (
     ensure_sandbox_runtime,
     sandbox_runtime_status,
@@ -46,19 +47,17 @@ def _seed_sandbox_character(conn):
             json.dumps({"source": "test"}),
         ),
     )
-    for field_key, value in (
-        ("identity.name", "Adrian Test"),
-        ("raps_pa.strength", 72.0),
-    ):
-        conn.execute(
-            """
-            INSERT INTO creation_sandbox_profile_values(
-                sandbox_id,object_id,field_key,value_json,mode,authority,source
-            ) VALUES(?,?,?,?,'stored','creator','test')
-            """,
-            (SANDBOX_ID, CHARACTER_ID, field_key, json.dumps(value)),
-        )
     conn.commit()
+    set_sandbox_profile_values(
+        conn,
+        CHARACTER_ID,
+        {
+            "identity.name": "Adrian Test",
+            "raps_pa.strength": 72.0,
+        },
+        authority="creator",
+        source="test",
+    )
     ensure_sandbox_runtime(conn, SANDBOX_ID)
 
 
@@ -72,7 +71,7 @@ def _canonical_snapshot(conn):
         """
     ).fetchall()
     runtime = conn.execute(
-        "SELECT key,value FROM runtime_state ORDER BY key"
+        "SELECT key,value_json FROM runtime_state ORDER BY key"
     ).fetchall()
     return (
         tuple(tuple(row) for row in profile),
