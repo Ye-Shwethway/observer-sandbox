@@ -1,0 +1,80 @@
+{
+  "revision": "body-shape-preservation-v2.1",
+  "hard_anchors": [
+    "body.height_in"
+  ],
+  "field_change_penalties": {
+    "body.shoulders_in": 1.6,
+    "body.hips_in": 1.6,
+    "body.chest_in": 1.0,
+    "body.waist_in": 1.0,
+    "body.neck_in": 1.1,
+    "body.biceps_relaxed_in": 1.0,
+    "body.biceps_flexed_in": 1.0,
+    "body.triceps_in": 1.0,
+    "body.forearms_in": 1.0,
+    "body.thighs_in": 1.0,
+    "body.calves_in": 1.0
+  },
+  "dependent_fields": [
+    {
+      "field_key": "body.neck_in",
+      "anchors": [
+        {"field_key": "body.chest_in", "weight": 0.55},
+        {"field_key": "body.shoulders_in", "weight": 0.45}
+      ]
+    },
+    {
+      "field_key": "body.biceps_relaxed_in",
+      "anchors": [
+        {"field_key": "body.chest_in", "weight": 0.45},
+        {"field_key": "body.shoulders_in", "weight": 0.55}
+      ]
+    },
+    {
+      "field_key": "body.biceps_flexed_in",
+      "anchors": [
+        {"field_key": "body.chest_in", "weight": 0.45},
+        {"field_key": "body.shoulders_in", "weight": 0.55}
+      ]
+    },
+    {
+      "field_key": "body.triceps_in",
+      "anchors": [
+        {"field_key": "body.chest_in", "weight": 0.45},
+        {"field_key": "body.shoulders_in", "weight": 0.55}
+      ]
+    },
+    {
+      "field_key": "body.forearms_in",
+      "anchors": [
+        {"field_key": "body.biceps_relaxed_in", "weight": 0.45},
+        {"field_key": "body.biceps_flexed_in", "weight": 0.55}
+      ]
+    },
+    {
+      "field_key": "body.thighs_in",
+      "anchors": [
+        {"field_key": "body.hips_in", "weight": 0.70},
+        {"field_key": "body.waist_in", "weight": 0.30}
+      ]
+    },
+    {
+      "field_key": "body.calves_in",
+      "anchors": [
+        {"field_key": "body.thighs_in", "weight": 1.0}
+      ]
+    }
+  ],
+  "secondary_ratio_constraints": [
+    {"numerator_field": "body.neck_in", "denominator_field": "body.chest_in", "weight": 1.0},
+    {"numerator_field": "body.biceps_relaxed_in", "denominator_field": "body.chest_in", "weight": 1.4},
+    {"numerator_field": "body.biceps_flexed_in", "denominator_field": "body.chest_in", "weight": 1.6},
+    {"numerator_field": "body.triceps_in", "denominator_field": "body.chest_in", "weight": 1.2},
+    {"numerator_field": "body.forearms_in", "denominator_field": "body.biceps_flexed_in", "weight": 1.3},
+    {"numerator_field": "body.thighs_in", "denominator_field": "body.hips_in", "weight": 1.6},
+    {"numerator_field": "body.calves_in", "denominator_field": "body.thighs_in", "weight": 1.3}
+  ],
+  "preserve_ratio_penalty_scale": 1.0,
+  "normalize_ratio_penalty_scale": 0.35
+}

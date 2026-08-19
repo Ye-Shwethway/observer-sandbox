@@ -3,7 +3,11 @@ import json
 import pytest
 
 from observer_sandbox.body_aesthetic import evaluate_body
-from observer_sandbox.body_grade_target import BodyGradeTargetError, preview_body_grade_target
+from observer_sandbox.body_grade_target import (
+    BodyGradeTargetError,
+    load_body_shape_preservation_policy,
+    preview_body_grade_target,
+)
 from observer_sandbox.creator_profile_edit import apply_profile_proposal
 from observer_sandbox.db import connect
 from observer_sandbox.profile_observer import profile_section
@@ -146,3 +150,84 @@ def test_body_grade_target_is_native_to_paused_body_edit_ux(tmp_path):
         assert "Health context (not aesthetic score):" in preview_text
         assert any(button.get("text") == "✅ Apply Change" for row in preview_keyboard for button in row)
         assert runtime_value(conn, "paused", False) is True
+
+
+def test_male_preserve_shape_projects_all_represented_muscular_circumferences(tmp_path):
+    db = tmp_path / "observer.sqlite3"
+    initialize(db)
+    with connect(db) as conn:
+        before = _body_values(conn)
+        proposal = preview_body_grade_target(conn, "char_darian", "A", mode="preserve_shape")
+        changes = {change["field_key"]: change for change in proposal["changes"]}
+        projected = set(proposal["shape_preservation"]["projected_fields"])
+
+        expected_dependents = {
+            "body.neck_in",
+            "body.biceps_relaxed_in",
+            "body.biceps_flexed_in",
+            "body.triceps_in",
+            "body.forearms_in",
+            "body.thighs_in",
+            "body.calves_in",
+        }
+        assert proposal["proposal_version"] == 1
+        assert proposal["shape_preservation"]["revision"] == "body-shape-preservation-v2.1"
+        assert expected_dependents <= projected
+        assert expected_dependents <= set(changes)
+        assert "body.height_in" not in changes
+
+        after = dict(before)
+        after.update({key: change["new_value"] for key, change in changes.items()})
+        assert evaluate_body(after, "Male")["overall_grade"].grade == "A"
+
+
+def test_preserve_shape_secondary_ratio_drift_is_bounded_by_projected_follow_through(tmp_path):
+    db = tmp_path / "observer.sqlite3"
+    initialize(db)
+    with connect(db) as conn:
+        before = _body_values(conn)
+        proposal = preview_body_grade_target(conn, "char_darian", "A", mode="preserve_shape")
+        after = dict(before)
+        after.update({change["field_key"]: change["new_value"] for change in proposal["changes"]})
+        policy = load_body_shape_preservation_policy()
+
+        for rule in policy["secondary_ratio_constraints"]:
+            n = rule["numerator_field"]
+            d = rule["denominator_field"]
+            if n not in before or d not in before or n not in after or d not in after:
+                continue
+            old_ratio = float(before[n]) / float(before[d])
+            new_ratio = float(after[n]) / float(after[d])
+            assert abs(new_ratio / old_ratio - 1.0) < 0.03
+
+
+def test_female_target_reuses_generic_shape_projection_without_male_grade_metrics(tmp_path):
+    db = tmp_path / "observer.sqlite3"
+    initialize(db)
+    with connect(db) as conn:
+        _set_profile_value(conn, "identity.sex", "Female")
+        _set_profile_value(conn, "body.waist_in", 28.0)
+        _set_profile_value(conn, "body.hips_in", 40.0)
+        proposal = preview_body_grade_target(conn, "char_darian", "A", mode="preserve_shape")
+        changed = {change["field_key"] for change in proposal["changes"]}
+
+        assert proposal["reference_profile"] == "body-aesthetic-female-v2"
+        assert [item["field_key"] for item in proposal["new_metrics"]] == ["body.waist_to_hips_ratio"]
+        assert "body.thighs_in" in changed
+        assert "body.calves_in" in changed
+        assert proposal["new_aggregate"]["grade"] == "A"
+
+
+def test_missing_dependent_measurement_is_skipped_not_fabricated(tmp_path):
+    db = tmp_path / "observer.sqlite3"
+    initialize(db)
+    with connect(db) as conn:
+        conn.execute(
+            "DELETE FROM character_profile_values WHERE entity_id=? AND field_key=?",
+            ("char_darian", "body.calves_in"),
+        )
+        conn.commit()
+        proposal = preview_body_grade_target(conn, "char_darian", "A", mode="preserve_shape")
+
+        assert "body.calves_in" not in proposal["shape_preservation"]["projected_fields"]
+        assert all(change["field_key"] != "body.calves_in" for change in proposal["changes"])
