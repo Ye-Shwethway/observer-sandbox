@@ -1,16 +1,10 @@
-import copy
-
 import pytest
 
 from observer_sandbox.ai_runtime import AIDecisionError
-from observer_sandbox.skill_vocabulary import (
-    canonical_skill_keys,
-    missing_background_skill_coverage,
-    normalize_creator_skills,
-)
+from observer_sandbox.skill_vocabulary import canonical_skill_keys, normalize_creator_skills
 from observer_sandbox.structured_ai import (
     _prepare_creator_character_contract,
-    _validate_creator_character_skill_contract,
+    _validate_creator_character_contract,
 )
 
 
@@ -21,13 +15,33 @@ def _schema():
                 "properties": {
                     "character_profile": {
                         "properties": {
+                            "values": {
+                                "type": "object",
+                                "properties": {
+                                    "identity.full_name": {"type": "string"},
+                                    "body.height_in": {"type": "number"},
+                                    "raps_pa.strength": {"type": "number"},
+                                    "raps_pa.practical_skills": {"type": "number"},
+                                    "raps_pa.practical_skill": {"type": "number"},
+                                },
+                                "additionalProperties": False,
+                                "minProperties": 4,
+                            },
                             "skills": {
+                                "type": "array",
                                 "items": {
+                                    "type": "object",
                                     "properties": {
                                         "skill_key": {"type": "string"},
-                                    }
-                                }
-                            }
+                                        "category": {"type": ["string", "null"]},
+                                        "score": {"type": ["number", "null"]},
+                                        "tier": {"type": ["string", "null"]},
+                                        "experience": {"type": ["number", "null"]},
+                                    },
+                                    "required": ["skill_key", "category", "score", "tier", "experience"],
+                                    "additionalProperties": False,
+                                },
+                            },
                         }
                     }
                 }
@@ -36,84 +50,86 @@ def _schema():
     }
 
 
-def _adrian_value(skills):
+def _skill(key, score=0, experience=0):
+    return {"skill_key": key, "category": None, "score": score, "tier": None, "experience": experience}
+
+
+def _all_skills():
+    return [_skill(key) for key in canonical_skill_keys()]
+
+
+def _value(values=None, skills=None):
     return {
         "properties": {
             "character_profile": {
-                "values": {
-                    "background.origins": (
-                        "Joined a professional wilderness search-and-rescue organization, gaining practical "
-                        "experience in difficult terrain, navigation, climbing, and emergency response. "
-                        "Has amateur boxing and wrestling training."
-                    )
+                "values": values or {
+                    "identity.full_name": "Adrian Vale",
+                    "body.height_in": 74.0,
+                    "raps_pa.strength": 82.0,
+                    "raps_pa.practical_skills": 78.0,
                 },
-                "skills": skills,
+                "skills": _all_skills() if skills is None else skills,
             }
         }
     }
 
 
-def _skill(key, score=70):
-    return {"skill_key": key, "category": None, "score": score, "tier": None, "experience": 2.0}
-
-
-def test_creator_character_schema_is_tightened_to_shared_skill_vocabulary():
+def test_creator_character_contract_is_exact_full_seed_template():
     original = _schema()
     prompt, tightened = _prepare_creator_character_contract(
-        "Create a trained rescue character.", original, "observer_creator_studio_character"
+        "Create Adrian Vale.", original, "observer_creator_studio_character"
     )
-    enum = tightened["properties"]["properties"]["properties"]["character_profile"]["properties"]["skills"]["items"]["properties"]["skill_key"]["enum"]
-    assert tuple(enum) == canonical_skill_keys()
-    assert "navigation" in enum
-    assert "climbing" in enum
-    assert "emergency_response" in enum
-    assert "Universal Character skill vocabulary" in prompt
-    assert original == _schema()  # caller schema is not mutated
-
-
-def test_adrian_style_background_rejects_partial_structured_skill_coverage():
-    value = _adrian_value([
-        _skill("survival"),
-        _skill("hand_to_hand_combat"),
-    ])
-    with pytest.raises(AIDecisionError) as exc:
-        _validate_creator_character_skill_contract(value, "observer_creator_studio_character")
-    message = str(exc.value)
-    assert "navigation" in message
-    assert "climbing" in message
-    assert "emergency_response" in message
-
-
-def test_adrian_style_background_accepts_material_skill_coverage_and_normalizes_categories():
-    skills = [
-        _skill("survival"),
-        _skill("navigation"),
-        _skill("climbing"),
-        _skill("emergency_response"),
-        _skill("hand_to_hand_combat"),
-    ]
-    value = _adrian_value(skills)
-    _validate_creator_character_skill_contract(value, "observer_creator_studio_character")
-    normalized = value["properties"]["character_profile"]["skills"]
-    assert {item["skill_key"] for item in normalized} == {
-        "survival", "navigation", "climbing", "emergency_response", "hand_to_hand_combat"
+    profile = tightened["properties"]["properties"]["properties"]["character_profile"]
+    values = profile["properties"]["values"]
+    assert set(values["required"]) == {
+        "identity.full_name", "body.height_in", "raps_pa.strength", "raps_pa.practical_skills"
     }
-    categories = {item["skill_key"]: item["category"] for item in normalized}
-    assert categories["navigation"] == "fieldcraft"
-    assert categories["emergency_response"] == "rescue"
+    assert "raps_pa.practical_skill" not in values["properties"]
+    assert values["minProperties"] == values["maxProperties"] == 4
+
+    skills = profile["properties"]["skills"]
+    assert skills["minItems"] == skills["maxItems"] == len(canonical_skill_keys())
+    assert tuple(skills["items"]["properties"]["skill_key"]["enum"]) == canonical_skill_keys()
+    assert skills["items"]["properties"]["score"] == {"type": "number", "minimum": 0, "maximum": 100}
+    assert skills["items"]["properties"]["experience"] == {"type": "number", "minimum": 0}
+    assert "Fill the supplied Character seed schema exactly" in prompt
+    assert original == _schema()
 
 
-def test_skill_vocabulary_aliases_are_normalized_and_unknown_creator_skills_reject():
-    normalized = normalize_creator_skills([_skill("first_aid")])
+def test_exact_seed_rejects_missing_or_extra_profile_keys():
+    _, schema = _prepare_creator_character_contract(
+        "Create Adrian Vale.", _schema(), "observer_creator_studio_character"
+    )
+    value = _value()
+    del value["properties"]["character_profile"]["values"]["body.height_in"]
+    with pytest.raises(AIDecisionError, match="canonical template"):
+        _validate_creator_character_contract(value, schema, "observer_creator_studio_character")
+
+    value = _value()
+    value["properties"]["character_profile"]["values"]["made_up.field"] = 1
+    with pytest.raises(AIDecisionError, match="canonical template"):
+        _validate_creator_character_contract(value, schema, "observer_creator_studio_character")
+
+
+def test_exact_seed_requires_every_canonical_skill_once():
+    _, schema = _prepare_creator_character_contract(
+        "Create Adrian Vale.", _schema(), "observer_creator_studio_character"
+    )
+    incomplete = _all_skills()[:-1]
+    with pytest.raises(AIDecisionError, match="skill keys do not match"):
+        _validate_creator_character_contract(
+            _value(skills=incomplete), schema, "observer_creator_studio_character"
+        )
+
+    value = _value(skills=_all_skills())
+    _validate_creator_character_contract(value, schema, "observer_creator_studio_character")
+    normalized = value["properties"]["character_profile"]["skills"]
+    assert {item["skill_key"] for item in normalized} == set(canonical_skill_keys())
+
+
+def test_skill_vocabulary_aliases_still_normalize_and_unknown_keys_reject():
+    normalized = normalize_creator_skills([_skill("first_aid", score=50, experience=1)])
     assert normalized[0]["skill_key"] == "field_medicine"
     assert normalized[0]["category"] == "medical"
     with pytest.raises(ValueError, match="Unknown Creator Character skill_key"):
         normalize_creator_skills([_skill("made_up_skill")])
-
-
-def test_background_coverage_helper_is_semantic_not_character_specific():
-    values = {
-        "background.origins": "A mountaineer trained in land navigation and first aid."
-    }
-    missing = missing_background_skill_coverage(values, [_skill("climbing")])
-    assert missing == {"navigation", "field_medicine"}
