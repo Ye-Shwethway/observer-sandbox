@@ -1,4 +1,7 @@
+import json
+
 from observer_sandbox.character_creation_policy import sanitize_creation_profile_values
+from observer_sandbox.creator_studio import CreatorStudioError, _explicit_requested_age, _validate_requested_age
 from observer_sandbox.db import connect, migrate
 from observer_sandbox.profile_schema import seed_profile_field_definitions
 from observer_sandbox.profile_schema_source_union import seed_source_union_extensions
@@ -67,3 +70,34 @@ def test_creation_profile_rejects_bad_ranges_and_invalid_date(tmp_path):
                 assert expected in str(exc)
             else:
                 raise AssertionError(f"Expected rejection for {values}")
+
+
+def test_explicit_age_parser_supports_creator_phrasing():
+    assert _explicit_requested_age("Create a male character who is 24 years old") == 24
+    assert _explicit_requested_age("Character age: 31, physically capable") == 31
+    assert _explicit_requested_age("No age specified") is None
+
+
+def test_requested_age_must_match_dob_on_universe_reference_date(tmp_path):
+    with _conn(tmp_path) as conn:
+        conn.execute(
+            "INSERT INTO runtime_state(key,value_json) VALUES('sim_time',?)",
+            (json.dumps("2025-05-14T09:11:00+00:00"),),
+        )
+        conn.commit()
+        _validate_requested_age(
+            conn,
+            "Create Adrian as a 24 years old man",
+            {"identity.date_of_birth": "2001-05-12"},
+        )
+        try:
+            _validate_requested_age(
+                conn,
+                "Create Adrian as a 24 years old man",
+                {"identity.date_of_birth": "1999-05-12"},
+            )
+        except CreatorStudioError as exc:
+            assert "requested 24" in str(exc)
+            assert "gives age 26" in str(exc)
+        else:
+            raise AssertionError("Expected Creator-requested age mismatch rejection")
