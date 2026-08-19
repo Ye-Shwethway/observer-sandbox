@@ -5,6 +5,7 @@ import json
 import sqlite3
 from typing import Any
 
+from .character_creation_policy import creation_field_keys, creation_field_rows, sanitize_creation_profile_values
 from .creation_sandbox import DEFAULT_SANDBOX_ID, activate_creation_proposal, ensure_sandbox
 from .creation_socket import build_creation_proposal, validate_creation_proposal
 from .creator_creation_ai import creator_creation_binding
@@ -33,9 +34,7 @@ def _loads(value: str) -> dict[str, Any]:
 
 
 def _profile_value_schema(conn: sqlite3.Connection) -> dict[str, Any]:
-    rows = conn.execute(
-        "SELECT field_key,data_type FROM profile_field_definitions ORDER BY field_key"
-    ).fetchall()
+    rows = creation_field_rows(conn)
     type_map: dict[str, Any] = {
         "integer": {"type": "integer"},
         "number": {"type": "number"},
@@ -181,27 +180,17 @@ def _canonical_reference(conn: sqlite3.Connection, prompt_text: str) -> dict[str
     if match is None:
         return None
     entity_id = str(match["id"])
+    allowed = creation_field_keys(conn)
     values = {
         str(row["field_key"]): json.loads(row["value_json"])
         for row in conn.execute(
             "SELECT field_key,value_json FROM character_profile_values WHERE entity_id=? ORDER BY field_key",
             (entity_id,),
         ).fetchall()
+        if str(row["field_key"]) in allowed
     }
     skills = [dict(row) for row in conn.execute(
         "SELECT skill_key,category,score,tier,experience FROM character_skills WHERE entity_id=? ORDER BY skill_key",
-        (entity_id,),
-    ).fetchall()]
-    preferences = [dict(row) for row in conn.execute(
-        "SELECT preference_type,subject,intensity FROM character_preferences WHERE entity_id=? ORDER BY preference_type,subject",
-        (entity_id,),
-    ).fetchall()]
-    hobbies = [dict(row) for row in conn.execute(
-        "SELECT name,proficiency,frequency,enjoyment FROM character_hobbies WHERE entity_id=? ORDER BY name",
-        (entity_id,),
-    ).fetchall()]
-    habits = [dict(row) for row in conn.execute(
-        "SELECT name,description,frequency,strength FROM character_habits WHERE entity_id=? ORDER BY name",
         (entity_id,),
     ).fetchall()]
     return {
@@ -209,25 +198,40 @@ def _canonical_reference(conn: sqlite3.Connection, prompt_text: str) -> dict[str
         "name": str(match["name"]),
         "values": values,
         "skills": skills,
-        "preferences": preferences,
-        "hobbies": hobbies,
-        "habits": habits,
     }
 
 
-def _validate_character_payload(conn: sqlite3.Connection, proposal: dict[str, Any]) -> None:
+def _dedupe_skills(skills: list[dict[str, Any]]) -> list[dict[str, Any]]:
+    result: list[dict[str, Any]] = []
+    seen: set[str] = set()
+    aliases = {"weapon_mastery": "weapons"}
+    for raw in skills:
+        key = str(raw.get("skill_key") or "").strip()
+        canonical = aliases.get(key, key)
+        if not canonical or canonical in seen:
+            continue
+        item = dict(raw)
+        item["skill_key"] = canonical
+        seen.add(canonical)
+        result.append(item)
+    return result
+
+
+def _validate_character_payload(conn: sqlite3.Connection, proposal: dict[str, Any], reference: dict[str, Any] | None = None) -> None:
     profile = proposal.get("properties", {}).get("character_profile")
     if not isinstance(profile, dict):
         raise CreatorStudioError("Character AI draft requires structured character_profile")
     values = profile.get("values")
     if not isinstance(values, dict):
         raise CreatorStudioError("Character AI draft profile values must be an object")
-    known = {str(row[0]) for row in conn.execute("SELECT field_key FROM profile_field_definitions")}
-    unknown = sorted(set(values) - known)
-    if unknown:
-        raise CreatorStudioError(f"Character AI draft used unknown profile fields: {', '.join(unknown)}")
-    if not str(values.get("identity.full_name") or "").strip():
-        values["identity.full_name"] = str(proposal.get("identity", {}).get("name") or "").strip()
+    profile["values"] = sanitize_creation_profile_values(conn, values)
+    if not str(profile["values"].get("identity.full_name") or "").strip():
+        profile["values"]["identity.full_name"] = str(proposal.get("identity", {}).get("name") or "").strip()
+    skills = _dedupe_skills([dict(item) for item in profile.get("skills") or [] if isinstance(item, dict)])
+    if reference and reference.get("skills"):
+        reference_keys = {str(item.get("skill_key") or "") for item in reference["skills"]}
+        skills = [item for item in skills if str(item.get("skill_key") or "") in reference_keys]
+    profile["skills"] = skills
 
 
 def _save_draft(
@@ -308,18 +312,21 @@ def ai_draft(
     reference_text = ""
     if reference:
         reference_text = (
-            " A canonical Character with the same explicit name exists. Use this read-only reference to preserve identity, "
-            "genetic/appearance continuity and established facts while following the Creator's requested developmental stage. "
-            "Do not mechanically scale mutable adult values and do not mutate the reference. Reference JSON: " + _json(reference)
+            " A canonical Character with the same explicit name exists. Use this read-only reference only for stable identity, "
+            "genetic/appearance continuity, established background and existing skill vocabulary while following the Creator's "
+            "requested developmental stage. Do not mechanically scale mutable adult values and do not mutate the reference. "
+            "Do not import live preferences, object associations, runtime state or current goals. Reference JSON: " + _json(reference)
         )
     character_rules = ""
     if creation_type == "character":
         character_rules = (
-            " For Character drafts, properties.character_profile is authoritative structured data. Populate relevant canonical "
-            "profile field keys from the supplied schema, plus structured preferences, hobbies, habits and skills. Omit profile "
-            "fields that cannot be inferred rather than inventing alternate prose keys. Do not put Age, Physical Description, "
-            "Personality or measurements into arbitrary properties keys when a canonical profile field exists. The proposal may "
-            "summarize behavior through canonical personality/background fields, but the structured profile is the source of truth."
+            " For Character drafts, properties.character_profile is authoritative creation-owned structured data. The supplied "
+            "schema intentionally excludes runtime-owned and derived fields. Populate only fields that are stable at creation or "
+            "believable baseline/developmental traits. Never invent current emotion, needs, nutrition, physiology, sleep, current "
+            "sexual state, current goals, narrative state, weekly counters, BMI, lean/fat mass or age-derived values. Preferences, "
+            "hobbies and habits must be intrinsic personal tendencies only: never copy named furniture, inventory objects, locations, "
+            "simulators, action-source labels or UI strings. Skills must use a clean non-duplicated taxonomy; do not emit both a "
+            "generic skill and synonymous mastery alias. Omit anything uncertain rather than filling every available field."
         )
     prompt = (
         f"Draft one fictional {creation_type} for the isolated Observer Sandbox Creation Sandbox. "
@@ -339,6 +346,8 @@ def ai_draft(
     )
     value.setdefault("provenance", {})["mode"] = "ai_generated"
     value["provenance"]["requested_by"] = f"telegram:{int(user_id)}"
+    if creation_type == "character":
+        _validate_character_payload(conn, value, reference=reference)
     return _save_draft(conn, user_id, value, draft_mode="ai_generated", prompt_text=prompt_text, sandbox_id=sandbox_id)
 
 
@@ -405,7 +414,7 @@ def approve_draft(
         character_profile = proposal.get("properties", {}).pop("character_profile", None)
     obj = activate_creation_proposal(conn, proposal, sandbox_id=sandbox_id)
     if character_profile:
-        values = dict(character_profile.get("values") or {})
+        values = sanitize_creation_profile_values(conn, dict(character_profile.get("values") or {}))
         if values:
             set_sandbox_profile_values(conn, obj["object_id"], values, source="creator-studio-ai-profile")
         replace_sandbox_preferences(conn, obj["object_id"], character_profile.get("preferences") or [])

@@ -3,6 +3,7 @@ from __future__ import annotations
 import sqlite3
 from pathlib import Path
 
+from .creator_draft_export import send_full_draft_document
 from .creator_studio import (
     CreatorStudioError,
     active_draft,
@@ -248,6 +249,7 @@ def draft_preview_view(conn: sqlite3.Connection, user_id: int, *, notice: str | 
     keyboard = []
     if profile is not None:
         keyboard.append([{"text": "👤 View Full Profile", "callback_data": "sw:cs:profile:0"}])
+    keyboard.append([{"text": "📄 Export Full Draft (.txt)", "callback_data": "sw:cs:export"}])
     if draft["draft_mode"] == "ai_generated":
         keyboard.append([{"text": "♻️ Reroll", "callback_data": "sw:cs:reroll"}])
     keyboard.extend([
@@ -286,6 +288,12 @@ def studio_callback_view(conn: sqlite3.Connection, user_id: int, callback_data: 
         return studio_home_view(conn, user_id)
     if callback_data == "sw:cs:preview":
         return draft_preview_view(conn, user_id)
+    if callback_data == "sw:cs:export":
+        try:
+            filename = send_full_draft_document(conn, user_id)
+        except Exception as exc:
+            return draft_preview_view(conn, user_id, notice=f"Export failed: {exc}")
+        return draft_preview_view(conn, user_id, notice=f"📄 Export sent: {filename}")
     if callback_data.startswith("sw:cs:profile:"):
         draft = active_draft(conn, user_id)
         if not draft or draft["creation_type"] != "character":
