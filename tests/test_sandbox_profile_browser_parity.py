@@ -44,7 +44,7 @@ def _character(conn):
             "raps_pa.strength": 82.0,
             "raps_pa.stamina": 85.0,
             "raps_ma.resilience": 80.0,
-            "background.summary": "Wilderness search-and-rescue professional.",
+            "background.origins": "Wilderness search-and-rescue professional.",
         },
     )
     replace_sandbox_skills(
