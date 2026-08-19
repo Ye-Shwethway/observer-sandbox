@@ -105,15 +105,19 @@ def _number(values: dict[str, Any], key: str) -> float | None:
     return float(value)
 
 
-def _validate_registered_types(conn: sqlite3.Connection, values: dict[str, Any]) -> None:
+def _registered_data_types(conn: sqlite3.Connection, values: dict[str, Any]) -> dict[str, str]:
     if not values:
-        return
+        return {}
     placeholders = ",".join("?" for _ in values)
     rows = conn.execute(
         f"SELECT field_key,data_type FROM profile_field_definitions WHERE field_key IN ({placeholders})",
         tuple(values),
     ).fetchall()
-    types = {str(row["field_key"]): str(row["data_type"]) for row in rows}
+    return {str(row["field_key"]): str(row["data_type"]) for row in rows}
+
+
+def _validate_registered_types(conn: sqlite3.Connection, values: dict[str, Any]) -> dict[str, str]:
+    types = _registered_data_types(conn, values)
     for key, value in values.items():
         data_type = types.get(key)
         if data_type is None:
@@ -132,18 +136,29 @@ def _validate_registered_types(conn: sqlite3.Connection, values: dict[str, Any])
                 date.fromisoformat(value)
             except ValueError as exc:
                 raise ValueError(f"Character profile field {key} must be ISO date YYYY-MM-DD") from exc
+    return types
 
 
 def validate_creation_profile_values(conn: sqlite3.Connection, values: dict[str, Any]) -> None:
-    """Validate provider-independent universal Character creation semantics."""
-    _validate_registered_types(conn, values)
+    """Validate provider-independent universal Character creation semantics.
+
+    Registry data_type is authoritative. Domain prefixes are never used to coerce
+    text/json compatibility fields into numeric fields.
+    """
+    types = _validate_registered_types(conn, values)
 
     for key in values:
-        if key.startswith(("raps_pa.", "raps_ma.", "raps_ia.", "raps_sa.", "raps_vc.")) and key != "raps_ia.iq":
+        if (
+            key.startswith(("raps_pa.", "raps_ma.", "raps_ia.", "raps_sa.", "raps_vc."))
+            and key != "raps_ia.iq"
+            and types.get(key) in {"number", "integer"}
+        ):
             value = _number(values, key)
             if value is not None and not 0 <= value <= 100:
                 raise ValueError(f"Character profile field {key} must be within 0..100")
     for key in ("social.charisma", "social.emotional_intelligence"):
+        if types.get(key) not in {"number", "integer"}:
+            continue
         value = _number(values, key)
         if value is not None and not 0 <= value <= 100:
             raise ValueError(f"Character profile field {key} must be within 0..100")
