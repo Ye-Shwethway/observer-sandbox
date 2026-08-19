@@ -110,7 +110,7 @@ def test_sandbox_profile_edit_preview_apply_and_pause_are_isolated(tmp_path):
         assert session["was_paused_before_edit"] is False
 
         _, keyboard = sandbox_section_edit_view(
-            conn, user_id=USER_ID, section_id="physical"
+            conn, user_id=USER_ID, section_id="attributes"
         )
         field_callbacks = [
             button["callback_data"]
@@ -191,7 +191,7 @@ def test_sandbox_profile_edit_restores_preexisting_pause_and_rejects_bad_value(t
         assert sandbox_runtime_status(conn, SANDBOX_ID)["paused"] is True
         canonical_before = _canonical_snapshot(conn)
         enter_sandbox_profile_edit(conn, user_id=USER_ID + 1, character_id=CHARACTER_ID)
-        sandbox_section_edit_view(conn, user_id=USER_ID + 1, section_id="physical")
+        sandbox_section_edit_view(conn, user_id=USER_ID + 1, section_id="attributes")
         session = get_sandbox_profile_edit_session(user_id=USER_ID + 1)
         strength_index = session["field_picker_keys"].index("raps_pa.strength")
         sandbox_field_prompt_view(conn, user_id=USER_ID + 1, index=strength_index)
