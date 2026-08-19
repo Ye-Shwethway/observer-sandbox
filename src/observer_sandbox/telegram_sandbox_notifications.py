@@ -1,7 +1,9 @@
 from __future__ import annotations
 
 import json
+import os
 import sqlite3
+import urllib.error
 from typing import Any, Callable
 
 from .creation_sandbox import DEFAULT_SANDBOX_ID, ensure_sandbox, get_sandbox_object
@@ -43,22 +45,31 @@ def _json(value: str | None) -> dict[str, Any]:
     return loaded if isinstance(loaded, dict) else {}
 
 
+def _current_event_id(conn: sqlite3.Connection, sandbox_id: str = DEFAULT_SANDBOX_ID) -> int:
+    row = conn.execute(
+        "SELECT COALESCE(MAX(id),0) AS event_id FROM creation_sandbox_events WHERE sandbox_id=?",
+        (sandbox_id,),
+    ).fetchone()
+    return int(row["event_id"] if row else 0)
+
+
 def _ensure_state(conn: sqlite3.Connection, user_id: int, sandbox_id: str = DEFAULT_SANDBOX_ID) -> dict[str, Any]:
     ensure_sandbox(conn, sandbox_id)
+    baseline = _current_event_id(conn, sandbox_id)
     conn.execute(
         """
         INSERT INTO creation_sandbox_notification_state(sandbox_id,user_id,enabled,last_event_id)
-        VALUES(?,?,1,0)
+        VALUES(?,?,0,?)
         ON CONFLICT(sandbox_id,user_id) DO NOTHING
         """,
-        (sandbox_id, int(user_id)),
+        (sandbox_id, int(user_id), baseline),
     )
     conn.commit()
     row = conn.execute(
         "SELECT sandbox_id,user_id,enabled,last_event_id,updated_at FROM creation_sandbox_notification_state WHERE sandbox_id=? AND user_id=?",
         (sandbox_id, int(user_id)),
     ).fetchone()
-    return dict(row) if row else {"enabled": 1, "last_event_id": 0}
+    return dict(row) if row else {"enabled": 0, "last_event_id": baseline}
 
 
 def sandbox_notifications_enabled(conn: sqlite3.Connection, user_id: int) -> bool:
@@ -66,10 +77,15 @@ def sandbox_notifications_enabled(conn: sqlite3.Connection, user_id: int) -> boo
 
 
 def set_sandbox_notifications(conn: sqlite3.Connection, user_id: int, enabled: bool) -> bool:
-    _ensure_state(conn, user_id)
+    current = _ensure_state(conn, user_id)
+    baseline = _current_event_id(conn) if enabled and not bool(current["enabled"]) else int(current["last_event_id"])
     conn.execute(
-        "UPDATE creation_sandbox_notification_state SET enabled=?,updated_at=CURRENT_TIMESTAMP WHERE sandbox_id=? AND user_id=?",
-        (int(bool(enabled)), DEFAULT_SANDBOX_ID, int(user_id)),
+        """
+        UPDATE creation_sandbox_notification_state
+        SET enabled=?,last_event_id=?,updated_at=CURRENT_TIMESTAMP
+        WHERE sandbox_id=? AND user_id=?
+        """,
+        (int(bool(enabled)), baseline, DEFAULT_SANDBOX_ID, int(user_id)),
     )
     conn.commit()
     return bool(enabled)
@@ -189,11 +205,7 @@ def sandbox_notification_callback_view(conn: sqlite3.Connection, user_id: int, c
         set_sandbox_notifications(conn, user_id, not sandbox_notifications_enabled(conn, user_id))
         return sandbox_notification_view(conn, user_id)
     if callback_data == "sw:notif:seen":
-        row = conn.execute(
-            "SELECT COALESCE(MAX(id),0) AS event_id FROM creation_sandbox_events WHERE sandbox_id=?",
-            (DEFAULT_SANDBOX_ID,),
-        ).fetchone()
-        mark_sandbox_events_seen(conn, user_id, int(row["event_id"] if row else 0))
+        mark_sandbox_events_seen(conn, user_id, _current_event_id(conn))
         return sandbox_notification_view(conn, user_id)
     raise KeyError(callback_data)
 
@@ -214,7 +226,26 @@ def dispatch_pending_sandbox_notifications(
     return len(events)
 
 
+def dispatch_owner_sandbox_notifications(conn: sqlite3.Connection) -> int:
+    """Transport adapter for the runtime service; event selection remains sandbox-owned."""
+    from .telegram_bot import _notifications_enabled, _owner_user_id, _send
+
+    token = os.environ.get("OBSERVER_TELEGRAM_BOT_TOKEN", "").strip()
+    owner_id = _owner_user_id()
+    if not token or owner_id is None or not _notifications_enabled(conn, owner_id):
+        return 0
+    try:
+        return dispatch_pending_sandbox_notifications(
+            conn,
+            owner_id,
+            send=lambda user_id, text: _send(token, user_id, text),
+        )
+    except (urllib.error.URLError, TimeoutError, RuntimeError, OSError, ValueError):
+        return 0
+
+
 __all__ = [
+    "dispatch_owner_sandbox_notifications",
     "dispatch_pending_sandbox_notifications",
     "format_sandbox_notification",
     "mark_sandbox_events_seen",
