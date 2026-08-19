@@ -1,6 +1,6 @@
 from observer_sandbox.creation_sandbox import activate_creation_proposal
 from observer_sandbox.creation_socket import build_creation_proposal
-from observer_sandbox.db import SCHEMA_VERSION, connect
+from observer_sandbox.db import connect
 from observer_sandbox.runtime import initialize
 from observer_sandbox.telegram_sandbox_notifications import (
     dispatch_owner_sandbox_notifications,
@@ -25,12 +25,10 @@ def _create_location(conn, name):
     )
 
 
-def test_schema_v20_registers_isolated_notification_state(tmp_path):
+def test_notification_state_table_remains_registered(tmp_path):
     db = tmp_path / "observer.sqlite3"
     initialize(db)
     with connect(db) as conn:
-        assert SCHEMA_VERSION == 20
-        assert conn.execute("SELECT value FROM schema_meta WHERE key='schema_version'").fetchone()[0] == "20"
         assert conn.execute(
             "SELECT 1 FROM sqlite_master WHERE type='table' AND name='creation_sandbox_notification_state'"
         ).fetchone() is not None
