@@ -1,7 +1,7 @@
 # Observer Sandbox — New Chat Bootstrap
 
 Status: **ACTIVE DEVELOPMENT**
-Last synchronized: 2026-08-17
+Last synchronized: 2026-08-19
 
 ## Startup / authority
 
@@ -20,182 +20,180 @@ Persistent branches are only `main` and `test`.
 Default workflow:
 `develop on test -> focused tests + final PR CI -> merge test into main -> automatic deploy when runtime-affecting -> production verification -> sync test to final main checkpoint`.
 
-After material repository or verified-runtime checkpoints, reconcile this file and `ROADMAP.md`. Never leave deployed work described as future work.
+Do not turn an expected automatic deploy into claimed production truth without run/runtime evidence.
 
-## Current canonical checkpoint
+## Current canonical repository checkpoint
 
-**Perception Foundation v1 is COMPLETE / DEPLOYED on top of the complete W0-W5 minimum world-input producer stack, A3.3 bounded route awareness, Character Memory, the Mind Foundation schema/contract, and Diagnostics v2.**
+**Creator Character Profile Editing & Grade Targeting v1 is implemented, CI-green and merged. Exact production deploy verification is pending.**
 
-Latest runtime evidence:
-- PR #269 — `Add minimum Perception Foundation v1`
-  - final tested head `fc33f01272773febe8431c82b29d62ca6e77d2af`
-  - **CI #1054 / run `32045634180`: SUCCESS**
-  - merge `ebe5bb923c90c77dd878bd6e485e20d7fc68dea7`
-  - **Deploy #289 / run `32045825836`: SUCCESS**
-- production health after Deploy #289:
-  - canonical `observer_sandbox.service` entrypoint active;
-  - runtime log ready;
-  - SQLite readable and `PRAGMA quick_check=ok`;
-  - schema remains **v15**; Perception Foundation required no migration;
-  - Gemini cognition binding preserved at `gemini-3.1-flash-lite`;
-  - cognition recovery probe `ok=true`, `mutated=false`, `validated=true`;
-  - Telegram API/owner/allowed-user configuration healthy.
+Repository evidence:
+- PR #271 — `Add Creator profile editing and grade targeting v1`
+- final head `36de367cfe89b5602088273342e2665617bb928d`
+- CI #1060 / run `32210592168`: **SUCCESS**
+- merge `da64a8278d44c94c2db4b7fcac2e086d9e034269`
+- no schema migration introduced; expected schema remains v15.
 
-## Perception Foundation v1 — DEPLOYED / MINIMUM COMPLETE
+Initial CI #1055 produced `770 passed / 1 failed`. The only failure was `sqlite3.OperationalError: no such column: updated_at` on the new skill-edit path. `character_skills` intentionally has no `updated_at`; the implementation was narrowed to the existing store and now records Creator re-anchor simulation time in `metadata_json`. Final CI #1060 is green.
 
-Canonical contract:
-- `docs/PERCEPTION_FOUNDATION_V1.md`
+The deploy workflow is configured for `main` changes under `src/**`, so PR #271 contains deploy-triggering changes. However, the available GitHub connector exposes PR-triggered workflow runs but no push-triggered run listing. **Do not invent a Deploy #290 number/status.** Until independent deploy/runtime evidence is available, the last verified production checkpoint remains Perception Foundation v1 / Deploy #289.
 
-Runtime / acceptance:
-- `src/observer_sandbox/perception.py`
-- `src/observer_sandbox/memory_aware_decision.py`
-- `tests/test_perception_foundation_v1.py`
+## Creator Character Profile Editing & Grade Targeting v1 — MERGED / DEPLOY VERIFICATION PENDING
 
-### Audit result
+Canonical docs:
+- `docs/CREATOR_PROFILE_EDITING_GRADE_TARGETING_V1.md`
+- `docs/CREATOR_PROFILE_EDITING_GRADE_TARGETING_ACCEPTANCE_V1.md`
 
-The pre-implementation audit proved a real gap rather than a naming mismatch:
-- W0 explicitly stopped at `character_exposures`;
-- the Intelligent Mind Engine contract already reserved a bounded `perception` input socket;
-- normal cognition did not read `character_exposures` and no equivalent perception bridge existed elsewhere in source/schema/tests/docs.
+Runtime:
+- `src/observer_sandbox/creator_profile_edit.py`
+- `src/observer_sandbox/telegram_profile_edit.py`
+- `src/observer_sandbox/telegram_runtime_bot.py`
 
-The minimum closure therefore uses a **deterministic bounded read projection** over existing W0 exposure truth instead of introducing a second external-input store.
+Tests:
+- `tests/test_creator_profile_editing_grade_targeting_v1.py`
+- `tests/test_telegram_creator_profile_edit_v1.py`
 
-Canonical chain:
-`world/event truth -> W0 stimulus -> actual character exposure -> actor-relative perception input -> later appraisal/Mind -> later selective memory/intention/plan -> action proposal -> deterministic action authority`.
+### Control semantics
 
-Preserve:
-`exposure != perception input != understanding != belief != appraisal != memory != thought != intention/plan != action authority`.
+Creator edits are explicit control authority, not ordinary character actions.
 
-### Runtime semantics
+Modes:
+- `canonical_correction` — replace a represented fact as canon without fabricating an in-world change experience;
+- `creator_override` — explicitly replace a represented current/progression value and re-anchor later engine progression from the new value.
 
-`recent_perception_context(...)`:
-- accepts only a represented character;
-- reads only that actor's `status='exposed'` rows;
-- excludes exposure later than the current simulation time;
-- excludes invalidated exposure;
-- joins authoritative W0 stimulus payload/provenance;
-- preserves stimulus/exposure IDs, routing type/channel, subject, source links, simulation time, external salience, optional producer-authored `attention_hint`, and provenance metadata;
-- defaults to the most recent 8 records and hard-bounds requested retrieval to 50;
-- returns mode `exposure_projection_v1`.
+Creator guards preserve data type, canonical numeric domains and existing cross-field invariants. They must not become arbitrary realism restrictions that prevent legitimate Creator editing.
 
-Normal autonomous cognition receives this projection through `MemoryAwareDecisionProvider` as:
-`state["perception"]`.
+### Raw values and grading
 
-This is an actor-relative external-input handoff, **not semantic comprehension**. It creates no Character Memory, Mental Cycle, Mental Episode, Mental Artifact, belief, appraisal, concern, relationship change, intention, plan, action option, or world mutation.
+Raw represented profile/skill values remain authoritative. Grades remain read-time derived through the existing grading framework.
 
-No schema migration was added because the minimum handoff creates no new durable truth.
+Monotonic 0..100 grades:
+- E 0..<20
+- D 20..<40
+- C 40..<60
+- B 60..<75
+- A 75..<90
+- S 90..100
 
-### Perception proof boundary
+Changing a raw gradeable value automatically changes its read-time grade and compatible aggregate. No grade state is persisted.
 
-Automated acceptance proves:
-- valid actor-owned exposure reaches the perception socket with world payload and provenance;
-- future exposure does not leak into an earlier decision time;
-- invalidated exposure is excluded;
-- the projection itself creates no events, Character Memory, Mental Cycles, Mental Episodes, or Mental Artifacts;
-- normal `MemoryAwareDecisionProvider` cognition context includes `perception` while preserving existing memory and action-option context;
-- full repository regression CI remains green.
+### Section grade targeting
 
-Deploy #289 proves the implementation is installed and production health remains green.
+Supported v1 inverse families:
+- RAPS/Attributes monotonic sections/groups;
+- Skills monotonic 0..100 groups.
 
-Do not fabricate a production stimulus merely to manufacture a non-empty post-deploy perception snapshot. Natural future W0 exposure will provide live content evidence. This observation is useful but is **not a gate before MIND-F2**, because the generic runtime handoff is already covered by focused acceptance + full CI + production deployment health.
+Example:
+`Physical Attributes -> Grade B -> preserve_shape`.
 
-## W5 communication path is now externally connected to Mind input
+The grade request is translated to proposed raw values, verified by the existing grading evaluator, previewed, and only then atomically applied.
 
-W5 remains minimum-complete through Deploy #288 and now has the intended external-to-Mind handoff:
+Modes:
+- `preserve_shape` default — preserve relative strengths/weaknesses as far as bounded constraints permit;
+- `normalize` — explicitly move compatible fields toward one representative target value.
 
-`utterance event truth -> recipient-scoped W0 communication stimulus -> represented heard exposure -> Perception Foundation projection -> later MIND-F6 social interpretation`.
+V1 representative target points are E=10, D=30, C=50, B=67.5, A=82.5, S=95.
 
-Preserve:
-`uttered/sent != delivered != heard/read != perception input != understood != believed != remembered != relationship change != response intention != response action`.
+Body uses ratio/reference/composite grading, so v1 supports individual body-input edit + automatic regrading but deliberately does not invent an arbitrary bulk inverse Body vector.
 
-No second production character and no fake production conversation were introduced.
+### Creator Telegram surface
 
-Canonical W5 docs:
-- `docs/COMMUNICATION_EXPOSURE_FOUNDATION_V1.md`
-- `docs/W5_IMPLEMENTATION_PLAN_V1.md`
-- `docs/W5_ACCEPTANCE_NOTES_V1.md`
+Owner-only:
+- `/profileedit <character_id> <field_key> <value>`
+- `/profilegrade <character_id> <group> <grade> [preserve|normalize]`
+- `/profileapply <preview_token>`
 
-## Completed minimum World Input + handoff stack
+The command flow is preview-first. Unapplied previews do not change character state. Apply tokens belong to their requester and stale proposals are rejected if the underlying value changed after preview.
 
-Foundation-complete at the current minimum scope:
-- W0 World Stimulus / Exposure Foundation
-- W1 Environment / Weather Foundation
-- W1.1 Historical Weather Provider
-- W2 Commitments / Obligations Foundation
-- W3 Money / Economy Foundation
-- W3.1 Universe Object Valuation & Creation Rules
-- W4 Information / Media Foundation
-- W4.1 Historical News Provider
-- first-class Media Console consumption / W0 exposure
-- W5 Communication Exposure Foundation v1
-- **Perception Foundation v1 — W0 exposure -> actor-relative Mind input handoff**
+Do not mutate Darian's production profile just to prove deployment.
 
-The preferred W0 W1-W5 minimum producer sequence and its minimum exposure-to-perception handoff are now closed sufficiently to begin Mind runtime activation.
+### Reconciliation
 
-## Exact next implementation checkpoint — MIND-F2 Mental Episode Runtime
+Apply performs targeted reconciliation:
+- scalar profile history through existing `character_profile_history` where appropriate;
+- Creator audit event `creator_profile_corrected`;
+- skill re-anchor provenance in existing skill metadata;
+- profile display/stat-notification baselines re-anchored so Creator edits are not later shown as earned progression;
+- no broad Character Memory wipe;
+- only active semantic self-knowledge explicitly tagged as deriving from corrected profile field(s) is retired;
+- unrelated semantic and episodic memories stay intact;
+- historical Cognition Context snapshots are never rewritten;
+- no Mental Cycle/Episode/Artifact is created in this slice.
 
-Read `docs/INTELLIGENT_MIND_ENGINE_FOUNDATION_V1.md` before implementation.
+When F2-F7 later exist, profile correction reconciliation must remain targeted: past episode records remain historical represented activity; only invalidated active artifacts are reevaluated/retired by their owning Mind modules.
 
-MIND-F2 should activate the already-reserved Mental Cycle / Mental Episode substrate at **meaningful bounded cognition boundaries**, not through continuous per-minute LLM thought polling.
+## Latest verified production checkpoint — Perception Foundation v1
 
-Minimum responsibilities:
-- character-owned Mental Episode creation at justified decision/cognition boundaries;
-- consume represented current state, the existing `perception` socket, recallable Character Memory and other authorized context;
-- preserve provenance/links to represented inputs where applicable;
-- make episodes inspectable/auditable without turning them into world truth;
-- keep action proposal and deterministic action authority separate;
-- avoid prematurely implementing F3 attention/appraisal, F4 intention, F5 planning, F6 social cognition, or F7 relationship adaptation except for typed sockets already reserved by the foundation.
+Verified production evidence remains:
+- PR #269
+- CI #1054 / `32045634180`: SUCCESS
+- merge `ebe5bb923c90c77dd878bd6e485e20d7fc68dea7`
+- Deploy #289 / `32045825836`: SUCCESS
+- canonical service active;
+- runtime log ready;
+- SQLite readable and `PRAGMA quick_check=ok`;
+- schema v15;
+- cognition recovery non-mutating/validated;
+- Telegram healthy.
 
-Do not let MIND-F2 read global W0 stimuli directly. External information must arrive through actor-owned exposure -> `perception`.
+Perception v1 closes:
+`W0 character exposure -> bounded actor-relative perception input`.
 
-Canonical continuation:
-`MIND-F2 Mental Episode Runtime -> MIND-F3 Attention/Appraisal/Active Concerns -> MIND-F4 Intention -> MIND-F5 Planning -> MIND-F6 Social Cognition/Communication -> MIND-F7 Relationship Adaptation -> Foundation Completion Review v2 -> next real character seed`.
+It does not imply understanding, belief, Memory, thought, intention, plan or action authority.
+
+## Completed minimum external-input foundation
+
+- W0 World Stimulus / Exposure
+- W1 / W1.1 Weather
+- W2 Commitments / Obligations
+- W3 / W3.1 Economy / Valuation
+- W4 / W4.1 Information / Media
+- W5 Communication Exposure
+- Perception Foundation v1
+
+The W0-W5 minimum producer sequence and exposure-to-perception bridge are complete.
+
+## Mind Engine continuation
+
+Canonical: `docs/INTELLIGENT_MIND_ENGINE_FOUNDATION_V1.md`.
+
+The Creator has approved the F2 design, but implementation waits only for the current merged profile-control slice's production deploy/health verification.
+
+### MIND-F2 Mental Episode Runtime — next development slice after verification
+
+Approved boundaries:
+- Cognition Context stays; it is raw model-input observability, not represented Mind state;
+- Cognition Context does not cause an extra LLM call;
+- generic context assembly manages structured input sockets universally for every character;
+- subsystems provide represented facts/state, not character-specific behavior instructions;
+- one bounded cognition call is the normal path;
+- the same call may return a small structured Mental Episode bundle plus the action proposal;
+- use the existing Mental Cycle/Episode substrate;
+- episodes are bounded represented summaries, not stored hidden chain-of-thought transcripts;
+- Mental Episodes do not automatically become Character Memory;
+- prospective thought does not automatically become intention/plan;
+- action proposal remains subject to deterministic action authority;
+- no continuous per-minute LLM thought polling;
+- no F3-F7 behavior is prebuilt inside F2.
+
+Continuation:
+`MIND-F2 -> F3 Attention/Appraisal/Active Concerns -> F4 Intention -> F5 Planning -> F6 Social Cognition/Communication -> F7 Relationship Adaptation -> Foundation Completion Review v2 -> next real character seed`.
 
 ## Second-character seed gate
 
-Do not seed the next real production character merely to exercise unfinished Mind/social foundations.
+No second real production character until:
+1. W0-W5 minimum external inputs complete — satisfied;
+2. Perception handoff complete — satisfied;
+3. Creator profile correction/reconciliation control production verification complete;
+4. MIND-F2..F7 minimum foundations complete;
+5. A3.3 interim planning scaffolding reconciled where appropriate;
+6. Foundation Completion Review v2 authorizes the seed.
 
-Current gate:
-1. W0-W5 minimum producers — **satisfied**;
-2. exposure-to-perception handoff — **satisfied by Perception Foundation v1**;
-3. MIND-F2..F7 minimum foundations;
-4. reconcile interim A3.3 planning scaffolding into canonical Mind intention/planning where appropriate;
-5. Foundation Completion Review v2;
-6. only then may the next real production character seed be proposed/authorized.
+The next real character is live multi-character acceptance, not a development test dummy.
 
-That character should become live multi-character acceptance evidence, not a development test dummy.
+## A3.3 observation
 
-## A3.3 — Bounded Multi-Step Destination Intent v1 — DEPLOYED / NATURAL OBSERVATION CONTINUES
-
-A3.3 remains production-green through Deploy #287 and independent of Mind progression.
-
-It provides actor-known bounded route-purpose awareness (max 4 hops) while exact executable movement remains deterministic current `action_options` authority. No full Mind plan exists yet.
-
-Natural production proof for the previously missing inside-to-outside initiation remains read-only observation. Do not force an outing. If the gap persists after ordinary opportunities, inspect evidence and make only generic corrections.
-
-When MIND-F4/F5 activate, reconcile A3.3/interim purpose scaffolding into typed Mind intention/plan flow and reduce/remove duplicate prompt-level planning guidance.
-
-## W4 / W5 continuity
-
-W4/W4.1 were implemented before A3.3 and remain deployed. W5 was deployed in PR #267 / Deploy #288. Publication, communication availability, delivery/exposure, perception, belief, Memory, Mind and action authority remain distinct layers.
-
-## Operational diagnostics — DEPLOYED
-
-- PR #258 — health-probe quoting fix / Deploy #283;
-- PR #259 — Diagnostics v1 / Deploy #284;
-- PR #260 — path-aware CI/acceptance triggers;
-- PR #261 — Diagnostics v2 / Deploy #285;
-- PR #262 — deploy-safe/production-truth correction / Deploy #286.
-
-Creator-only Telegram diagnostics remain:
-`/logs`, `/logs errors [lines]`, `/logs system [lines]`, `/logs runtime`, `/logs file [lines]`.
-
-The production `observer` user has persistent `systemd-journal` read access.
-
-## Estate / outside-world lock
-
-Estate-first scope remains active. Broader South Lake Tahoe traversal remains intentionally paused: no public-road edge from Main Security Gate, Tahoe-backcountry edge from Concealed Forest Passage, or water-travel edge from Hidden Dock is open.
+A3.3 remains independently deployed. Continue read-only natural observation of the inside-to-outside multi-hop behavior; do not force an outing. Reconcile temporary route-purpose scaffolding into F4/F5 when canonical intention/planning activates.
 
 ## Exact resume point
 
-**Perception Foundation v1 is production-green through PR #269 / CI #1054 / Deploy #289, with schema v15 unchanged. The previously missing W0 exposure -> actor-relative perception socket is now closed through a bounded provenance-preserving read projection and no Memory/Mind/action mutation. The exact next implementation slice is MIND-F2 Mental Episode Runtime. Continue F2 -> F3 -> F4 -> F5 -> F6 -> F7, then Foundation Completion Review v2 before any next real production character seed. A3.3 inside-to-outside natural observation continues independently and must not be forced.**
+**PR #271 is merged at `da64a8278d44c94c2db4b7fcac2e086d9e034269` after final CI #1060 SUCCESS. Creator Character Profile Editing & Grade Targeting v1 now exists in canonical repository source with preview-first owner controls, derived grading, section-grade inverse targeting, targeted Memory/progression reconciliation and no schema migration. Exact push-deploy evidence is not accessible through the current connector, so production deployment is not yet claimed. Verify deployment/runtime health read-only when evidence becomes available; then begin MIND-F2. Do not change Darian merely for acceptance and do not seed a second production character before the foundation gate.**
