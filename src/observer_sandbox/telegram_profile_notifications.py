@@ -84,13 +84,22 @@ def _cooldown_allows(
     *,
     now_wall: float,
 ) -> bool:
-    # Grade changes are rare/high-signal and bypass the ordinary anti-spam window.
     if any(bool(change.get("grade_changed")) for change in changes):
         return True
     last = runtime_value(conn, _cooldown_key(user_id, actor_id), None)
     if not isinstance(last, (int, float)):
         return True
     return now_wall - float(last) >= STAT_NOTIFICATION_COOLDOWN_SECONDS
+
+
+def _is_grade_only_recalibration(change: dict[str, Any]) -> bool:
+    """Observer grading changes are not character progression without raw state change."""
+    if not bool(change.get("grade_changed")):
+        return False
+    try:
+        return abs(float(change.get("after")) - float(change.get("before"))) <= 1e-12
+    except (TypeError, ValueError):
+        return False
 
 
 def dispatch_profile_change_notifications(
@@ -120,7 +129,7 @@ def dispatch_profile_change_notifications(
             continue
         if not stat_notifications_enabled(conn, user_id, actor_id):
             continue
-        changes = pending_stat_notification_changes(
+        raw_changes = pending_stat_notification_changes(
             conn,
             user_id,
             actor_id,
@@ -128,6 +137,12 @@ def dispatch_profile_change_notifications(
             current,
             sim_time=sim_time,
         )
+        grade_only = [change for change in raw_changes if _is_grade_only_recalibration(change)]
+        if grade_only:
+            # Consume the observer-only baseline drift so a grading-rule rollout
+            # does not repeatedly appear as pending character progression.
+            mark_stat_notification_sent(conn, user_id, actor_id, current, grade_only)
+        changes = [change for change in raw_changes if not _is_grade_only_recalibration(change)]
         if not changes or not _cooldown_allows(conn, user_id, actor_id, changes, now_wall=wall_time):
             continue
         message = format_profile_change_notification(actor_name, sim_time, changes)
