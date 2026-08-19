@@ -14,6 +14,7 @@ jobs:
   acceptance:
     if: ${{ vars.VPS_DEPLOY_ENABLED == 'true' }}
     runs-on: ubuntu-latest
+    timeout-minutes: 10
     steps:
       - uses: actions/checkout@v4
 
@@ -28,7 +29,7 @@ jobs:
           install -m 700 -d ~/.ssh
           printf '%s\n' "$VPS_SSH_KEY" > ~/.ssh/id_ed25519
           chmod 600 ~/.ssh/id_ed25519
-          ssh-keyscan -p "$VPS_PORT" -H "$VPS_HOST" >> ~/.ssh/known_hosts
+          timeout 15s ssh-keyscan -p "$VPS_PORT" -H "$VPS_HOST" >> ~/.ssh/known_hosts
 
       - name: Stage candidate source on VPS
         env:
@@ -36,8 +37,9 @@ jobs:
           VPS_USER: ${{ secrets.VPS_USER }}
           VPS_PORT: ${{ secrets.VPS_PORT || '22' }}
         run: |
-          ssh -p "$VPS_PORT" "$VPS_USER@$VPS_HOST" 'rm -rf /tmp/observer-p3-readiness-candidate && mkdir -p /tmp/observer-p3-readiness-candidate'
-          rsync -az -e "ssh -p $VPS_PORT" src/ "$VPS_USER@$VPS_HOST:/tmp/observer-p3-readiness-candidate/src/"
+          SSH_OPTS="-o ConnectTimeout=10 -o ServerAliveInterval=15 -o ServerAliveCountMax=3"
+          ssh $SSH_OPTS -p "$VPS_PORT" "$VPS_USER@$VPS_HOST" 'rm -rf /tmp/observer-p3-readiness-candidate && mkdir -p /tmp/observer-p3-readiness-candidate'
+          rsync -az -e "ssh $SSH_OPTS -p $VPS_PORT" src/ "$VPS_USER@$VPS_HOST:/tmp/observer-p3-readiness-candidate/src/"
 
       - name: Prove readiness modifier on disposable production copy
         env:
@@ -45,7 +47,8 @@ jobs:
           VPS_USER: ${{ secrets.VPS_USER }}
           VPS_PORT: ${{ secrets.VPS_PORT || '22' }}
         run: |
-          ssh -p "$VPS_PORT" "$VPS_USER@$VPS_HOST" '
+          SSH_OPTS="-o ConnectTimeout=10 -o ServerAliveInterval=15 -o ServerAliveCountMax=3"
+          timeout 8m ssh $SSH_OPTS -p "$VPS_PORT" "$VPS_USER@$VPS_HOST" '
             set -euo pipefail
             cd /opt/observer-sandbox
             TMP_DB=$(mktemp /tmp/observer-p3-readiness.XXXXXX.sqlite3)
