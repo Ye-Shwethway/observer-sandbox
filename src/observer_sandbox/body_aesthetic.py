@@ -190,26 +190,24 @@ def _display_context_items(values: Mapping[str, object], sex: str) -> list[dict[
 
 def evaluate_body(values: Mapping[str, object], sex: object) -> dict[str, Any]:
     profile = reference_profile(sex)
-    aesthetic_items: list[dict[str, Any]] = []
+    gradeable_items: list[dict[str, Any]] = []
     for metric in profile.metrics:
         item = evaluate_metric(metric, values)
         if item is not None:
-            aesthetic_items.append(item)
+            gradeable_items.append(item)
 
     health_items: list[dict[str, Any]] = []
     health = evaluate_metric(HEALTH_WAIST_HEIGHT, values)
     if health is not None:
         health_items.append(health)
 
-    context_items = _display_context_items(values, profile.sex)
-
-    available_weight = sum(float(item["weight"]) for item in aesthetic_items)
+    available_weight = sum(float(item["weight"]) for item in gradeable_items)
     weighted_score = None
     overall: GradeResult | None = None
     if available_weight > 0.0:
         weighted_score = sum(
             _GRADE_SCORES[str(item["grade_result"].grade)] * float(item["weight"])
-            for item in aesthetic_items
+            for item in gradeable_items
         ) / available_weight
         base = evaluate_raps_100(weighted_score)
         overall = GradeResult(
@@ -219,15 +217,19 @@ def evaluate_body(values: Mapping[str, object], sex: object) -> dict[str, Any]:
             value=weighted_score,
         )
 
+    # Keep the familiar inverse Chest / Waist display for readability and
+    # backwards-compatible observer output while Waist / Chest is the actual
+    # grade-driving metric. Context items never participate in the composite.
+    display_items = list(gradeable_items) + _display_context_items(values, profile.sex)
+
     return {
         "reference_profile": profile.profile_id,
         "sex": profile.sex,
-        "aesthetic_items": aesthetic_items,
+        "aesthetic_items": display_items,
         "health_items": health_items,
-        "context_items": context_items,
         "overall_grade": overall,
         "coverage": {
-            "active_metrics": len(aesthetic_items),
+            "active_metrics": len(gradeable_items),
             "eligible_metrics": len(profile.metrics),
             "active_weight": round(available_weight, 6),
             "weighted_score": None if weighted_score is None else round(weighted_score, 3),
