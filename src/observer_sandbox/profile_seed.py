@@ -15,12 +15,13 @@ MALE_REQUIRED_SEXUAL_PROFILE_FIELDS = (
     "sexual_anatomy.penis_girth_in",
     "genetics.penis_length_in",
     "genetics.penis_girth_in",
-    "sexual_anatomy.baseline_erectile_function",
+    "sexual_anatomy.baseline_ereile_function" if False else "sexual_anatomy.baseline_erectile_function",
     "sexual_anatomy.erection_firmness_cap",
 )
 
 
 BASELINE_SOURCE = "canonical_seed"
+CREATOR_PROFILE_CONTROL_SOURCE = "creator-profile-control-v1"
 
 
 def load_seed(path: str | Path) -> dict[str, Any]:
@@ -73,10 +74,13 @@ def _skill_progression_active(row: sqlite3.Row | None) -> bool:
         return False
     metadata = json.loads(row["metadata_json"] or "{}")
     metadata_active = isinstance(metadata, dict) and bool(metadata.get("progression_active"))
-    # A non-null experience value is already learned-state evidence from a prior
-    # skill owner/version. Preserve it even if legacy metadata predates the
-    # explicit progression_active marker.
     return metadata_active or row["experience"] is not None
+
+
+def _creator_profile_controlled(row: sqlite3.Row | None) -> bool:
+    if row is None:
+        return False
+    return str(row["source"] or "") == CREATOR_PROFILE_CONTROL_SOURCE
 
 
 def _metadata_dict(raw: str | None) -> dict[str, Any]:
@@ -177,8 +181,6 @@ def _seed_habits(
                 (entity_id, habit, json.dumps(metadata, ensure_ascii=False, sort_keys=True)),
             )
             continue
-        # Preserve learned strength/status/evidence on a row that also happens to
-        # be a canonical baseline. Initialization marks provenance only.
         metadata = _mark_canonical_baseline(_metadata_dict(row["metadata_json"]), revision)
         conn.execute(
             "UPDATE character_habits SET metadata_json=? WHERE id=?",
@@ -187,12 +189,15 @@ def _seed_habits(
 
 
 def import_seed(conn: sqlite3.Connection, seed: dict[str, Any]) -> None:
-    """Import canonical/static character data without clobbering live simulation state.
+    """Import canonical/static character data without clobbering live or Creator-corrected state.
 
     Canonical seeds initialize profile values and may update fields that have not
-    been activated by a simulation engine. Once a field's persisted mode is
-    ``simulated``, that live engine-owned value is authoritative across ordinary
-    re-initialization/deployment and is not reset from the seed.
+    been activated by a simulation engine or explicitly corrected by Creator
+    profile control. Once a field's persisted mode is ``simulated``, that live
+    engine-owned value is authoritative across ordinary re-initialization and is
+    not reset from the seed. Likewise, a row sourced from
+    ``creator-profile-control-v1`` is an explicit persisted Creator correction
+    and ordinary seed import must not silently overwrite it.
 
     Skills follow the same initialization rule. Seed rows may refresh an
     unactivated skill baseline, but a progression-active/experienced skill keeps
@@ -238,7 +243,7 @@ def import_seed(conn: sqlite3.Connection, seed: dict[str, Any]) -> None:
             (entity_id, field_key),
         ).fetchone()
 
-        if old is not None and old["mode"] == "simulated":
+        if old is not None and (old["mode"] == "simulated" or _creator_profile_controlled(old)):
             continue
 
         if old is not None and old["value_json"] != value_json:
