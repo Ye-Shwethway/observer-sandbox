@@ -50,6 +50,56 @@ CREATE TABLE IF NOT EXISTS creation_sandbox_events (
     payload_json TEXT NOT NULL DEFAULT '{}',
     created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
+
+CREATE TABLE IF NOT EXISTS creation_sandbox_runtime (
+    sandbox_id TEXT PRIMARY KEY REFERENCES creation_sandboxes(sandbox_id) ON DELETE CASCADE,
+    sim_time TEXT,
+    speed REAL NOT NULL DEFAULT 1.0 CHECK(speed > 0 AND speed <= 3600),
+    paused INTEGER NOT NULL DEFAULT 1 CHECK(paused IN (0,1)),
+    pause_started_wall_time REAL,
+    runtime_status TEXT NOT NULL DEFAULT 'stopped' CHECK(runtime_status IN ('stopped','ready','running')),
+    updated_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE TABLE IF NOT EXISTS creation_sandbox_actor_runtime (
+    object_id TEXT PRIMARY KEY REFERENCES creation_sandbox_objects(object_id) ON DELETE CASCADE,
+    sandbox_id TEXT NOT NULL REFERENCES creation_sandboxes(sandbox_id) ON DELETE CASCADE,
+    activation_status TEXT NOT NULL DEFAULT 'created' CHECK(activation_status IN ('created','configured','runtime_ready','running','stopped')),
+    current_location_object_id TEXT REFERENCES creation_sandbox_objects(object_id) ON DELETE SET NULL,
+    autonomy_enabled INTEGER NOT NULL DEFAULT 0 CHECK(autonomy_enabled IN (0,1)),
+    updated_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE INDEX IF NOT EXISTS idx_creation_sandbox_actor_runtime_scope
+ON creation_sandbox_actor_runtime(sandbox_id, activation_status);
+
+CREATE TABLE IF NOT EXISTS creation_sandbox_ai_bindings (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    sandbox_id TEXT NOT NULL REFERENCES creation_sandboxes(sandbox_id) ON DELETE CASCADE,
+    object_id TEXT NOT NULL REFERENCES creation_sandbox_objects(object_id) ON DELETE CASCADE,
+    role TEXT NOT NULL DEFAULT 'cognition',
+    provider_id TEXT NOT NULL REFERENCES ai_providers(id),
+    model_id TEXT NOT NULL,
+    parameters_json TEXT NOT NULL DEFAULT '{}',
+    enabled INTEGER NOT NULL DEFAULT 1 CHECK(enabled IN (0,1)),
+    created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    updated_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    UNIQUE(sandbox_id, object_id, role),
+    FOREIGN KEY(provider_id, model_id) REFERENCES ai_models(provider_id, model_id)
+);
+
+CREATE TABLE IF NOT EXISTS creation_sandbox_runtime_options (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    sandbox_id TEXT NOT NULL REFERENCES creation_sandboxes(sandbox_id) ON DELETE CASCADE,
+    character_object_id TEXT NOT NULL REFERENCES creation_sandbox_objects(object_id) ON DELETE CASCADE,
+    action_key TEXT NOT NULL,
+    source_object_id TEXT REFERENCES creation_sandbox_objects(object_id) ON DELETE CASCADE,
+    metadata_json TEXT NOT NULL DEFAULT '{}',
+    enabled INTEGER NOT NULL DEFAULT 1 CHECK(enabled IN (0,1)),
+    created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    updated_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    UNIQUE(sandbox_id, character_object_id, action_key, source_object_id)
+);
 """
 
 
