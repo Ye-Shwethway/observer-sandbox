@@ -348,7 +348,7 @@ def preview_body_grade_target(
     profile = reference_profile(sex)
     policy = load_body_shape_preservation_policy()
     return {
-        "proposal_version": 2,
+        "proposal_version": 1,
         "kind": "body_grade_target",
         "character_id": character_id,
         "mutation_class": "canonical_correction",
