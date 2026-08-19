@@ -15,7 +15,7 @@ def _conn(tmp_path):
     return conn
 
 
-def test_creation_profile_strips_runtime_fields_but_keeps_registered_source_union(tmp_path):
+def test_creation_profile_strips_runtime_fields_and_normalizes_source_union_alias(tmp_path):
     with _conn(tmp_path) as conn:
         value = sanitize_creation_profile_values(
             conn,
@@ -28,9 +28,26 @@ def test_creation_profile_strips_runtime_fields_but_keeps_registered_source_unio
                 "sleep.quality": 90,
             },
         )
-    assert value["raps_pa.practical_skill"] == 72
+    assert value["raps_pa.practical_skills"] == 72
+    assert "raps_pa.practical_skill" not in value
     assert "needs.energy" not in value
     assert "sleep.quality" not in value
+
+
+def test_creation_profile_rejects_conflicting_compatibility_aliases(tmp_path):
+    with _conn(tmp_path) as conn:
+        try:
+            sanitize_creation_profile_values(
+                conn,
+                {
+                    "raps_pa.practical_skill": 70,
+                    "raps_pa.practical_skills": 74,
+                },
+            )
+        except ValueError as exc:
+            assert "alias conflict" in str(exc)
+        else:
+            raise AssertionError("Expected conflicting alias rejection")
 
 
 def test_creation_profile_rejects_body_above_genetic_ceiling(tmp_path):
