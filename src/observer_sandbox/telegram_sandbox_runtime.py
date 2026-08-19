@@ -13,6 +13,7 @@ from .sandbox_runtime import (
     set_sandbox_paused,
     set_sandbox_speed,
 )
+from .simulation import runtime_value
 
 
 def _fmt_time(value: str | None) -> str:
@@ -45,12 +46,10 @@ def sandbox_runtime_view(
     keyboard: list[list[dict[str, str]]] = []
     if status["configured"]:
         keyboard.append(
-            [
-                {
-                    "text": "▶ Resume" if status["paused"] else "⏸ Pause",
-                    "callback_data": "sw:rt:resume" if status["paused"] else "sw:rt:pause",
-                }
-            ]
+            [{
+                "text": "▶ Resume" if status["paused"] else "⏸ Pause",
+                "callback_data": "sw:rt:resume" if status["paused"] else "sw:rt:pause",
+            }]
         )
         keyboard.append(
             [
@@ -60,13 +59,8 @@ def sandbox_runtime_view(
             ]
         )
     else:
-        lines.extend(
-            [
-                "",
-                "Clock must be configured before runtime readiness can pass.",
-                "Use /sandbox time <ISO-8601> for the minimum control surface.",
-            ]
-        )
+        lines.extend(["", "Clock must be configured before runtime readiness can pass."])
+        keyboard.append([{"text": "🕒 Initialize from Real World Time", "callback_data": "sw:rt:init"}])
     keyboard.append([{"text": "← Sandbox World", "callback_data": "nav:sandbox"}])
     return "\n".join(lines), keyboard
 
@@ -123,6 +117,12 @@ def sandbox_runtime_callback_view(
 ) -> tuple[str, list[list[dict[str, str]]]] | None:
     if callback_data == "sw:runtime":
         return sandbox_runtime_view(conn)
+    if callback_data == "sw:rt:init":
+        canonical_time = runtime_value(conn, "sim_time", None)
+        if not canonical_time:
+            raise SandboxRuntimeError("Real World clock is unavailable for initialization")
+        configure_sandbox_clock(conn, str(canonical_time))
+        return sandbox_runtime_view(conn)
     if callback_data == "sw:rt:pause":
         set_sandbox_paused(conn, True)
         return sandbox_runtime_view(conn)
@@ -141,10 +141,7 @@ def sandbox_runtime_callback_view(
     raise KeyError(callback_data)
 
 
-def handle_sandbox_command(
-    conn: sqlite3.Connection,
-    parts: list[str],
-) -> str:
+def handle_sandbox_command(conn: sqlite3.Connection, parts: list[str]) -> str:
     if len(parts) == 1 or parts[1].lower() == "status":
         return sandbox_runtime_view(conn)[0]
     action = parts[1].lower()
@@ -176,7 +173,6 @@ def handle_sandbox_command(
 
 
 def sandbox_runtime_view_after(conn: sqlite3.Connection, status: dict[str, Any]) -> str:
-    # Read back from storage so command and callback presentation share one source of truth.
     return sandbox_runtime_view(conn, sandbox_id=str(status["sandbox_id"]))[0]
 
 
