@@ -107,6 +107,7 @@ def sandbox_list_view(conn: sqlite3.Connection, creation_type: str) -> tuple[str
         lines.append("No active sandbox creations.")
     for value in values:
         name = str(value["identity"].get("name") or value["object_id"])
+        lines.append(f"• {name}")
         keyboard.append([{"text": f"{'👤' if creation_type == 'character' else '📍'} {name}", "callback_data": f"sw:o:{value['object_id']}"}])
     keyboard.append([{"text": "← Sandbox World", "callback_data": "nav:sandbox"}])
     return "\n".join(lines), keyboard
