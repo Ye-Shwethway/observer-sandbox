@@ -10,9 +10,17 @@ def _contains_callback(keyboard, callback_data: str) -> bool:
     return any(button.get("callback_data") == callback_data for row in keyboard for button in row)
 
 
-def test_home_exposes_universal_inventory_entry():
+def test_home_exposes_inventory_under_real_world(tmp_path, monkeypatch):
+    db = tmp_path / "observer.sqlite3"
+    initialize(db)
+    monkeypatch.setenv("OBSERVER_TELEGRAM_OWNER_ID", "100")
     keyboard = _home_keyboard()
-    assert _contains_callback(keyboard, "inv:home")
+    assert _contains_callback(keyboard, "nav:real")
+    assert not _contains_callback(keyboard, "inv:home")
+    with connect(db) as conn:
+        text, real_keyboard = _callback_view(conn, 100, "nav:real")
+        assert "REAL WORLD" in text
+        assert _contains_callback(real_keyboard, "inv:home")
 
 
 def test_inventory_home_is_universe_scoped(tmp_path, monkeypatch):

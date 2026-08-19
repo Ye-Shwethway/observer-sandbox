@@ -19,6 +19,7 @@ from .telegram_inventory import inventory_callback_view, inventory_command_view
 from .telegram_news import generate_news_view, news_view
 from .telegram_profile_browser import profile_callback_view
 from .telegram_universe import locations_view, region_view, regions_view, universe_view, weather_view
+from .telegram_world_layers import world_layer_callback_view
 
 _ORIGINAL_API = base._api
 _ORIGINAL_SEND = base._send
@@ -46,15 +47,22 @@ def _home_ttl_seconds() -> int:
 def _home_message(conn, user_id: int) -> str:
     ttl_minutes = _home_ttl_seconds() / 60.0
     ttl_text = f"{int(ttl_minutes)} min" if ttl_minutes.is_integer() else f"{ttl_minutes:g} min"
-    return _ORIGINAL_HOME_MESSAGE(conn, user_id) + f"\n\n🧹 Auto-close: {ttl_text}"
+    text = _ORIGINAL_HOME_MESSAGE(conn, user_id).replace(
+        "Choose what you want to observe:",
+        "Choose a world layer:",
+    )
+    return text + f"\n\n🧹 Auto-close: {ttl_text}"
 
 
 def _home_keyboard() -> list[list[dict[str, str]]]:
-    keyboard = [list(row) for row in _ORIGINAL_HOME_KEYBOARD()]
-    keyboard.append([{"text": "🎒 Inventory", "callback_data": "inv:home"}])
-    keyboard.append([{"text": "⚙️ Creator Settings", "callback_data": "ai:home"}])
-    keyboard.append([{"text": "✕ Close", "callback_data": "nav:close"}])
-    return keyboard
+    return [
+        [
+            {"text": "🌍 Real World", "callback_data": "nav:real"},
+            {"text": "🧪 Sandbox World", "callback_data": "nav:sandbox"},
+        ],
+        [{"text": "⚙️ Creator Settings", "callback_data": "ai:home"}],
+        [{"text": "✕ Close", "callback_data": "nav:close"}],
+    ]
 
 
 def _preserve_owner_context_order(keyboard: list[list[dict[str, str]]]) -> list[list[dict[str, str]]]:
@@ -84,8 +92,6 @@ def _character_keyboard_for_user(character_id: str, user_id: int) -> list[list[d
     keyboard = [list(row) for row in _ORIGINAL_CHARACTER_KEYBOARD_FOR_USER(character_id, user_id)]
     keyboard = _preserve_owner_context_order(keyboard)
     if base._user_role(user_id) != "unauthorized":
-        # The current value is rendered by _callback_view where a connection exists;
-        # this placeholder remains usable for older direct keyboard callers.
         keyboard.insert(
             _stat_control_index(keyboard),
             [{"text": "🔔 Stat Updates", "callback_data": f"pref:statnotify:{character_id}:toggle"}],
@@ -207,6 +213,15 @@ def _statnotify_status(conn, user_id: int) -> str:
 def _callback_view(conn, user_id: int, callback_data: str):
     if callback_data == "nav:close":
         return _DELETE_SENTINEL, None
+    if callback_data == "nav:real":
+        return world_layer_callback_view(conn, callback_data)
+    if callback_data == "nav:sandbox" or callback_data.startswith("sw:"):
+        if base._user_role(user_id) != "owner":
+            return (
+                "🔒 Creator authority required for the Creation Sandbox.",
+                [[{"text": "⌂ Observer Home", "callback_data": "nav:home"}]],
+            )
+        return world_layer_callback_view(conn, callback_data)
     if callback_data == "nav:universe":
         return universe_view(conn)
     if callback_data == "uni:weather":
