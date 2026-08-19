@@ -39,11 +39,11 @@ def _prepare_creator_character_contract(
 ) -> tuple[str, dict[str, Any]]:
     """Turn the existing Character profile registry into one exact AI fill template.
 
-    Creator Creation does not ask the model to choose which profile fields matter.
-    Every creation-owned canonical field exposed by Creator Studio is required once;
-    runtime/derived fields were already excluded upstream by character_creation_policy.
-    Skills use the same rule: every canonical key appears once, with 0 representing
-    no trained proficiency. The backend then validates the exact key sets.
+    Every creation-owned canonical profile field exposed by Creator Studio is
+    required exactly once. Runtime/derived fields are excluded upstream by the
+    Character creation policy. Skills are a separate sparse collection: generated
+    skills must use the shared canonical vocabulary, but a Character only needs rows
+    for skills they actually possess.
     """
     if schema_name != _CREATOR_CHARACTER_SCHEMA:
         return prompt, schema
@@ -64,10 +64,10 @@ def _prepare_creator_character_contract(
         skills_schema = profile["properties"]["skills"]
         skill_item = skills_schema["items"]
         skill_item["properties"]["skill_key"]["enum"] = list(canonical_skill_keys())
-        skill_item["properties"]["score"] = {"type": "number", "minimum": 0, "maximum": 100}
-        skill_item["properties"]["experience"] = {"type": "number", "minimum": 0}
-        skills_schema["minItems"] = len(canonical_skill_keys())
-        skills_schema["maxItems"] = len(canonical_skill_keys())
+        skill_item["properties"]["score"] = {"type": ["number", "null"], "minimum": 0, "maximum": 100}
+        skill_item["properties"]["experience"] = {"type": ["number", "null"], "minimum": 0}
+        skills_schema.pop("minItems", None)
+        skills_schema.pop("maxItems", None)
     except (KeyError, TypeError):
         return prompt, schema
 
@@ -76,10 +76,9 @@ def _prepare_creator_character_contract(
         + " Fill the supplied Character seed schema exactly. Do not select, omit, rename, or invent profile fields. "
           "Every key under properties.character_profile.values is required and must receive one value of the declared type. "
           "The schema is the Character profile contract; do not summarize it into prose and do not add compatibility aliases. "
-          "For properties.character_profile.skills, include every allowed skill_key exactly once. Use score=0 and experience=0 "
-          "when the Character has no trained proficiency in that skill; otherwise assign values consistent with the Creator intent "
-          "and background. Preferences, hobbies, and habits may be empty arrays when genuinely absent. Return only the completed "
-          "schema object."
+          "For properties.character_profile.skills, include only skills the Character actually has, using only the allowed "
+          "canonical skill_key values. Do not add zero-value placeholder skills merely to fill the vocabulary. Preferences, "
+          "hobbies, and habits may be empty arrays when genuinely absent. Return only the completed schema object."
     )
     return strengthened_prompt, tightened
 
@@ -118,21 +117,6 @@ def _validate_creator_character_contract(
         normalized = normalize_creator_skills(item for item in skills if isinstance(item, dict))
     except ValueError as exc:
         raise AIDecisionError(str(exc)) from exc
-
-    expected_skills = set(canonical_skill_keys())
-    actual_skills = {str(item.get("skill_key") or "") for item in normalized}
-    missing_skills = sorted(expected_skills - actual_skills)
-    extra_skills = sorted(actual_skills - expected_skills)
-    if len(normalized) != len(expected_skills) or missing_skills or extra_skills:
-        details: list[str] = []
-        if missing_skills:
-            details.append("missing=" + ", ".join(missing_skills))
-        if extra_skills:
-            details.append("extra=" + ", ".join(extra_skills))
-        if len(normalized) != len(expected_skills):
-            details.append(f"count={len(normalized)} expected={len(expected_skills)}")
-        raise AIDecisionError("Creator Character seed skill keys do not match the canonical template: " + "; ".join(details))
-
     profile["skills"] = normalized
 
 
