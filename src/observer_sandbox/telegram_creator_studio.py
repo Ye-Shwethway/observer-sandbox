@@ -12,6 +12,7 @@ from .creator_studio import (
     manual_draft,
     reroll_draft,
 )
+from .telegram_character_draft_profile import profile_page_view, profile_summary_lines
 
 _NEXT_INPUT_KEYBOARD: list[list[dict[str, str]]] | None = None
 _ROUTER_ORIGINAL_HANDLE = None
@@ -220,9 +221,20 @@ def draft_preview_view(conn: sqlite3.Connection, user_id: int, *, notice: str | 
         f"Revision: {draft['revision']}",
         f"Scope: {p['target_scope']}",
     ]
-    if p.get("properties"):
+    profile = None
+    if p["creation_type"] == "character":
+        candidate = p.get("properties", {}).get("character_profile")
+        if isinstance(candidate, dict):
+            profile = candidate
+            lines.extend(profile_summary_lines(profile))
+    visible_properties = {
+        key: value
+        for key, value in (p.get("properties") or {}).items()
+        if key != "character_profile"
+    }
+    if visible_properties:
         lines.extend(["", "Properties"])
-        for key, value in sorted(p["properties"].items()):
+        for key, value in sorted(visible_properties.items()):
             lines.append(f"• {key.replace('_', ' ').title()}: {value}")
     if p.get("capabilities"):
         lines.extend(["", "Capabilities", "• " + ", ".join(p["capabilities"])])
@@ -234,6 +246,8 @@ def draft_preview_view(conn: sqlite3.Connection, user_id: int, *, notice: str | 
     if notice:
         lines.extend(["", notice])
     keyboard = []
+    if profile is not None:
+        keyboard.append([{"text": "👤 View Full Profile", "callback_data": "sw:cs:profile:0"}])
     if draft["draft_mode"] == "ai_generated":
         keyboard.append([{"text": "♻️ Reroll", "callback_data": "sw:cs:reroll"}])
     keyboard.extend([
@@ -272,6 +286,18 @@ def studio_callback_view(conn: sqlite3.Connection, user_id: int, callback_data: 
         return studio_home_view(conn, user_id)
     if callback_data == "sw:cs:preview":
         return draft_preview_view(conn, user_id)
+    if callback_data.startswith("sw:cs:profile:"):
+        draft = active_draft(conn, user_id)
+        if not draft or draft["creation_type"] != "character":
+            return draft_preview_view(conn, user_id)
+        profile = draft["proposal"].get("properties", {}).get("character_profile")
+        if not isinstance(profile, dict):
+            return draft_preview_view(conn, user_id)
+        try:
+            page = int(callback_data.rsplit(":", 1)[-1])
+        except ValueError:
+            page = 0
+        return profile_page_view(profile, page)
     if callback_data == "sw:cs:reroll":
         try:
             reroll_draft(conn, user_id)
