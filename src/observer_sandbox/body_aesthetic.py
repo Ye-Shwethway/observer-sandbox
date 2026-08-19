@@ -165,6 +165,29 @@ def evaluate_metric(metric: BodyMetricDefinition, values: Mapping[str, object]) 
     }
 
 
+def _display_context_items(values: Mapping[str, object], sex: str) -> list[dict[str, Any]]:
+    items: list[dict[str, Any]] = []
+    if sex == "male":
+        chest = _number(values, "body.chest_in")
+        waist = _number(values, "body.waist_in")
+        if chest is not None and waist is not None:
+            items.append(
+                {
+                    "kind": "derived_context",
+                    "field_key": "body.chest_to_waist_ratio",
+                    "domain": "body",
+                    "label": "Chest / Waist",
+                    "value": round(chest / waist, 3),
+                    "data_type": "number",
+                    "unit": "ratio",
+                    "mode": "derived",
+                    "role": "display_context",
+                    "context": "Readable inverse of the grade-driving male Waist / Chest metric.",
+                }
+            )
+    return items
+
+
 def evaluate_body(values: Mapping[str, object], sex: object) -> dict[str, Any]:
     profile = reference_profile(sex)
     aesthetic_items: list[dict[str, Any]] = []
@@ -177,6 +200,8 @@ def evaluate_body(values: Mapping[str, object], sex: object) -> dict[str, Any]:
     health = evaluate_metric(HEALTH_WAIST_HEIGHT, values)
     if health is not None:
         health_items.append(health)
+
+    context_items = _display_context_items(values, profile.sex)
 
     available_weight = sum(float(item["weight"]) for item in aesthetic_items)
     weighted_score = None
@@ -199,6 +224,7 @@ def evaluate_body(values: Mapping[str, object], sex: object) -> dict[str, Any]:
         "sex": profile.sex,
         "aesthetic_items": aesthetic_items,
         "health_items": health_items,
+        "context_items": context_items,
         "overall_grade": overall,
         "coverage": {
             "active_metrics": len(aesthetic_items),
