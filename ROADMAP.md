@@ -11,50 +11,54 @@ Roadmap synchronized: 2026-08-19
 - Use minimum-runnable reversible slices; do not add another canonical character merely to test unfinished foundations.
 - Creator-approved live state outranks ordinary seed/default refresh.
 - Creator-created objects are staged first; Creation Sandbox approval and canonical transmigration are separate authority transitions.
-- **Created is not alive.** Character creation and runtime activation are separate lifecycle boundaries.
+- **Created is not alive.** Character creation, runtime readiness and runtime execution are separate lifecycle boundaries.
 - Real World and Creation Sandbox mutable runtime state must remain isolated.
 
 ## Current repository checkpoint
+
+### PR #286 — Sandbox Character + Location Vertical Proof I3
+
+Merged:
+`bf0ed6fbd508b66db026d3a4861b2237354e2691`
+
+Final head:
+`a84d9233f2e57d4401c738bc29619de5c55c35dc`
+
+Evidence:
+- CI #1078 — **SUCCESS**
+- Inventory Foundation v1 Acceptance #96 — **SUCCESS**
+- schema v18.
+
+Initial CI #1077 reached `808 passed / 1 failed`. The only failure was the prior I2.5 acceptance hard-coded to schema v17. All new I3 representation, containment and affordance tests passed on the first run. Narrow schema-expectation alignment produced final green CI #1078.
+
+I3 now provides:
+- sandbox-owned Character profile values using canonical `profile_field_definitions` as shared vocabulary;
+- sandbox-owned Character skill rows with canonical-equivalent record shape;
+- sandbox Location parent/containment with cycle rejection;
+- deterministic Character + current-Location capability projection into canonical action-name runtime options;
+- end-to-end proof that Location + represented options + cognition AI + sandbox clock can reach `runtime_ready` without canonical writes.
+
+Unknown Character profile fields fail closed. New concepts such as supernatural powers must use future dedicated creation sockets/system vocabulary rather than arbitrary Character profile fields.
+
+Canonical contract:
+`docs/SANDBOX_CHARACTER_LOCATION_VERTICAL_I3.md`.
 
 ### PR #284 — Sandbox Runtime Readiness Foundation v1
 
 Merged:
 `afedd4a3bc966b2cd09985ad26fda87adf0347ba`
 
-Final head:
-`eba84ad89b6690a18f3818a40ef972b699479ac1`
-
 Evidence:
-- CI #1076 — **SUCCESS**
-- Inventory Foundation v1 Acceptance #94 — **SUCCESS**
-- schema v17.
+- CI #1076 — SUCCESS;
+- Inventory Foundation v1 Acceptance #94 — SUCCESS;
+- schema v17 at that checkpoint.
 
-Initial CI #1075 reached `803 passed / 1 failed`. The only failure was an I2 test hard-coded to schema v16. It was aligned to v17 plus the new sandbox runtime tables; runtime implementation did not require redesign.
+I2.5 established sandbox-owned clock/speed/pause, Character readiness state, per-sandbox-Character cognition AI assignment, represented runtime options, lifecycle cleanup and Telegram Runtime/Readiness surfaces.
 
-I2.5 now provides sandbox-owned:
-- simulation clock;
-- speed and pause state;
-- Character activation/readiness state;
-- per-sandbox-Character cognition AI assignment using the shared provider/model catalog;
-- represented runtime/action options;
-- readiness evaluation and lifecycle cleanup;
-- Telegram Sandbox Runtime and Character Runtime Readiness surfaces.
+Canonical lifecycle:
+`created -> configured -> runtime_ready -> running -> stopped`.
 
-Canonical rule:
-
-`created -> configured -> runtime_ready -> running -> stopped`
-
-A sandbox Character may become `runtime_ready` only when all are true:
-1. active sandbox Character exists;
-2. active sandbox Location is assigned;
-3. at least one represented runtime/action option exists;
-4. explicit sandbox cognition AI binding exists;
-5. sandbox clock is configured.
-
-Full sandbox autonomous ticking is **not** implemented yet. `runtime_ready` must not be presented as `running`.
-
-Canonical contract:
-`docs/SANDBOX_RUNTIME_READINESS_FOUNDATION_V1.md`.
+Full sandbox autonomous ticking is still **not implemented**. `runtime_ready` must not be presented as `running`.
 
 ### PR #283 — Isolated Creation Sandbox state + world-layer navigation
 
@@ -62,20 +66,11 @@ Merged:
 `b8c92ba28f551533190d50f0ac8cb9be2fa75003`
 
 Evidence:
-- final CI #1074 — SUCCESS;
+- CI #1074 — SUCCESS;
 - Inventory Foundation #92 — SUCCESS;
-- Inventory Operations #52 — SUCCESS;
-- schema v16 at that checkpoint.
+- Inventory Operations #52 — SUCCESS.
 
-Creation Sandbox persistence is isolated from canonical `entities`, `relations`, runtime/autonomy membership and ordinary history. Sandbox objects use `sbx_*` IDs and support Character/Location activation, binding, inspection, archive/delete/reset. Acceptance proves canonical-state fingerprint stability across sandbox-only operations.
-
-Telegram `/start` now uses upper world layers:
-
-`Observer Home -> Real World | Sandbox World | Creator Settings`.
-
-Real World owns existing Universe / Characters / Runtime / History / Inventory surfaces.
-
-Sandbox World owns sandbox Universe / Characters / Locations / Runtime / History surfaces.
+Creation Sandbox persistence is isolated from canonical `entities`, `relations`, runtime/autonomy membership and ordinary history. Telegram `/start` uses `Observer Home -> Real World | Sandbox World | Creator Settings`.
 
 ### PR #281 — Creator Creation I0/I1 Foundation
 
@@ -86,23 +81,18 @@ Evidence:
 - CI #1071 — SUCCESS;
 - Skill Progression Foundation v1 Acceptance #109 — SUCCESS.
 
-I0 provides generic Creator-authority precedence:
-
+I0 provides generic Creator authority precedence:
 `Creator-approved live state > simulation-owned live state > ordinary seed/default`.
 
-I1 provides shared sandbox-only Character/Location proposal sockets and the Creator Settings -> AI Settings -> Character AI / News Generation AI / Creator Creation AI hierarchy.
+I1 provides shared sandbox-only Character/Location proposal sockets and the `Creator Settings -> AI Settings -> Character AI / News Generation AI / Creator Creation AI` hierarchy.
 
 ## AI model architecture
 
-Canonical Real World backend already supports character-scoped AI bindings through `ai_bindings` and `resolve_binding()` precedence. Character-specific backend infrastructure therefore does not need rebuilding.
+Canonical Real World backend already supports Character-scoped AI bindings through `ai_bindings` and `resolve_binding()` precedence. Do not rebuild that resolver.
 
-Current gap: Telegram Character AI settings do not yet fully expose an explicit per-Real-World-character assignment workflow. Treat this as a configuration UX follow-up, not a resolver redesign.
+Remaining Real World gap is Telegram/configuration UX for explicit per-character assignment.
 
-Creation Sandbox uses a separate assignment table. Do not write `sbx_*` Character IDs into canonical character bindings.
-
-Architecture:
-
-`shared provider/model catalog -> scope-owned Character binding -> scope-owned cognition runtime`.
+Creation Sandbox stores sandbox Character bindings separately while reusing the shared provider/model catalog. Never write `sbx_*` Character IDs into canonical Character bindings.
 
 ## Creator Staging & Transmigration architecture
 
@@ -121,7 +111,8 @@ Canonical docs:
 - `docs/CREATOR_STAGING_TRANSMIGRATION_ARCHITECTURE_V1.md`
 - `docs/CREATOR_CREATION_FULL_ROADMAP_V1.md`
 - `docs/CREATOR_CREATION_IMPLEMENTATION_PLAN_V1.md`
-- `docs/SANDBOX_RUNTIME_READINESS_FOUNDATION_V1.md`.
+- `docs/SANDBOX_RUNTIME_READINESS_FOUNDATION_V1.md`
+- `docs/SANDBOX_CHARACTER_LOCATION_VERTICAL_I3.md`.
 
 ## Creator Creation implementation route
 
@@ -129,42 +120,40 @@ Canonical docs:
 - I1 universal socket/proposal foundation — **COMPLETE / MERGED**;
 - I2 isolated Creation Sandbox persistence/lifecycle — **COMPLETE / MERGED**;
 - I2.5 sandbox runtime/time/AI/readiness ownership — **COMPLETE / MERGED**;
-- I3 Character + Location vertical representation proof — **NEXT**;
-- I4 Telegram Creator Studio: manual + AI draft + preview/edit/reroll + sandbox approval + configuration;
+- I3 Character + Location vertical representation proof — **COMPLETE / MERGED**;
+- I4 Telegram Creator Studio: manual + AI draft + preview/edit/reroll + sandbox approval + readiness configuration — **NEXT**;
 - I5 sandbox-specific notifications/observer flow;
 - I6 target-universe compatibility/transmigration planning boundary;
 - then return to MIND-F2.
 
-## I3 next-slice boundary
+## I4 next-slice boundary
 
-I3 should enrich Character and Location using existing ontology rather than inventing parallel ad-hoc data.
+Build the minimum owner-only Creator Studio using the already proven proposal and sandbox services.
 
-Character minimum:
-- canonical-equivalent identity/profile/body representation where reusable;
-- skills/preferences/capabilities only through existing definitions;
-- sandbox lifecycle and readiness presentation.
+Minimum UX:
+- Create;
+- Sandbox Creations;
+- Character / Location;
+- Build Manually | Generate with AI;
+- Preview / Edit / Reroll / Validate;
+- explicit Approve into Sandbox;
+- reset/delete/manage existing sandbox creations.
 
-Location minimum:
-- type/category;
-- parent/containment;
-- represented affordances/elements;
-- enough real local choices to derive sandbox runtime options.
+Manual and AI modes must converge on the same structured proposal schema and validation/apply boundary. AI has no direct DB or canonical-write authority.
 
-Do not hand-author fake runtime options solely to make readiness green. Options should be derived from represented location/elements/capabilities or explicitly approved universal actions.
+Character configuration should expose the existing readiness dependencies rather than pretending creation means activation: Location assignment, represented affordances/options, sandbox cognition AI assignment and sandbox clock configuration.
 
-I3 may prove `runtime_ready`; it must not start full autonomous sandbox execution until sandbox adapters can safely read/write sandbox-owned character/profile/location/state.
+Do not start full autonomous sandbox execution in I4 unless a separate safe sandbox execution adapter is explicitly authorized and implemented.
 
 ## Time/control ownership
 
-Real World canonical clock/speed/pause remain in canonical runtime state.
+Real World canonical clock/speed/pause remain in canonical runtime state. Creation Sandbox owns independent clock/speed/pause state.
 
-Creation Sandbox owns an independent clock/speed/pause namespace. Telegram Sandbox Runtime currently supports explicit button controls and initialization from Real World time as a one-time copy; changing sandbox controls must not mutate Real World time state.
-
-A `/sandbox ...` command helper exists internally but is not yet wired as a public Telegram command. Do not document the command as live until wiring is completed.
+Sandbox Runtime button controls are separate from Real World. An internal `/sandbox ...` command helper exists but is not yet wired as a public Telegram command; do not document it as live until wiring is completed.
 
 ## Second-character gate
 
-No second real production character may be activated/transmigrated into the current universe before:
+No second real production Character may be activated/transmigrated into the current universe before:
 1. W0-W5/perception foundations remain healthy;
 2. Creator profile/body controls remain stable;
 3. minimum Creator Creation staging threshold is complete;
@@ -185,16 +174,14 @@ Then:
 
 ## Existing completed foundations
 
-External-input stack remains W0-W5 plus Perception Foundation v1.
-
-Creator profile/body corrections remain protected by PR #278; Body Preserve Shape completeness remains merged through PR #279.
+External-input stack remains W0-W5 plus Perception Foundation v1. Creator profile/body corrections remain protected by PR #278; Body Preserve Shape completeness remains merged through PR #279.
 
 A3.3 Bounded Multi-Step Destination Intent remains deployed. Continue read-only natural observation; do not force Darian outside. Reconcile interim route-purpose scaffolding when F4/F5 become canonical.
 
 ## Production evidence boundary
 
-Latest independently recorded deploy checkpoint in continuity remains Perception Foundation v1 / Deploy #289. PRs #278-#284 are repository/CI verified as recorded above. Runtime-affecting merges trigger the canonical main-push deploy workflow, but do not claim a newer production deployment without independent deploy/runtime evidence or explicit live verification.
+Latest independently recorded deploy checkpoint in continuity remains Perception Foundation v1 / Deploy #289. PRs #278-#286 are repository/CI verified as recorded above. Runtime-affecting merges trigger the canonical main-push deploy workflow, but do not claim a newer production deployment without independent deploy/runtime evidence or explicit live verification.
 
 ## Exact resume point
 
-**PR #284 is merged at `afedd4a3bc966b2cd09985ad26fda87adf0347ba` after CI #1076 SUCCESS and Inventory Foundation Acceptance #94 SUCCESS. Schema is v17. Creation Sandbox now owns isolated clock/speed/pause, sandbox Character readiness state, sandbox-only cognition AI assignments, runtime options, and Telegram Runtime/Readiness surfaces. Character creation does not imply activation; full sandbox autonomy ticking is not implemented. Next authorized slice: I3 Character + Location vertical representation with real affordance-derived choices, stopping at `runtime_ready`. Do not add another canonical character.**
+**PR #286 is merged at `bf0ed6fbd508b66db026d3a4861b2237354e2691` after CI #1078 SUCCESS and Inventory Foundation Acceptance #96 SUCCESS. Schema is v18. Sandbox Character profile/skills now reuse canonical vocabulary in isolated storage; sandbox Locations support cycle-safe containment; represented Character/current-Location capabilities deterministically derive runtime options; the vertical can reach `runtime_ready` without canonical mutations. Full sandbox autonomy execution is not implemented. Next authorized slice: I4 — minimum Telegram Creator Studio and readiness configuration. Do not add another canonical Character.**
