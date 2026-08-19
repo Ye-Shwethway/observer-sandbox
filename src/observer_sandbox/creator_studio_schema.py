@@ -16,6 +16,20 @@ CREATE TABLE IF NOT EXISTS creation_sandbox_drafts (
     updated_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
     PRIMARY KEY(sandbox_id, user_id)
 );
+
+-- Pending Telegram input is presentation/session state, not a staged universe object.
+-- It therefore carries the target sandbox id as context without becoming a child
+-- of the sandbox lifecycle before a validated proposal exists.
+CREATE TABLE IF NOT EXISTS creation_sandbox_studio_sessions (
+    sandbox_id TEXT NOT NULL,
+    user_id INTEGER NOT NULL,
+    creation_type TEXT NOT NULL CHECK(creation_type IN ('character','location')),
+    input_mode TEXT NOT NULL CHECK(input_mode IN ('manual','ai_generated')),
+    expected_input TEXT NOT NULL CHECK(expected_input IN ('name','description')),
+    created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    updated_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    PRIMARY KEY(sandbox_id, user_id)
+);
 """
 
 

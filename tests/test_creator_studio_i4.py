@@ -5,15 +5,18 @@ from observer_sandbox.runtime import initialize
 from observer_sandbox.telegram_creator_bot import _callback_view, _command_keyboard, handle_command
 
 
-def test_schema_v19_registers_creator_studio_drafts(tmp_path):
+def _callbacks(keyboard):
+    return [button["callback_data"] for row in keyboard or [] for button in row]
+
+
+def test_schema_v19_registers_creator_studio_drafts_and_input_sessions(tmp_path):
     db = tmp_path / "observer.sqlite3"
     initialize(db)
     with connect(db) as conn:
         assert SCHEMA_VERSION == 19
         assert conn.execute("SELECT value FROM schema_meta WHERE key='schema_version'").fetchone()[0] == "19"
-        assert conn.execute(
-            "SELECT 1 FROM sqlite_master WHERE type='table' AND name='creation_sandbox_drafts'"
-        ).fetchone() is not None
+        tables = {row[0] for row in conn.execute("SELECT name FROM sqlite_master WHERE type='table'")}
+        assert {"creation_sandbox_drafts", "creation_sandbox_studio_sessions"} <= tables
 
 
 def test_manual_draft_is_not_object_until_approval(tmp_path):
@@ -68,36 +71,65 @@ def test_ai_draft_uses_creation_binding_and_remains_unapproved(tmp_path, monkeyp
         assert list_sandbox_objects(conn) == []
 
 
-def test_telegram_sandbox_world_exposes_creator_studio_and_owner_commands(tmp_path, monkeypatch):
+def test_telegram_creator_studio_guided_manual_flow_and_command_shortcut(tmp_path, monkeypatch):
     db = tmp_path / "observer.sqlite3"
     initialize(db)
     monkeypatch.setenv("OBSERVER_TELEGRAM_OWNER_ID", "111")
 
     with connect(db) as conn:
         text, keyboard = _callback_view(conn, 111, "nav:sandbox")
-        callbacks = {button["callback_data"] for row in keyboard for button in row}
         assert "SANDBOX WORLD" in text
-        assert "sw:studio" in callbacks
+        assert "sw:studio" in _callbacks(keyboard)
 
         studio_text, studio_keyboard = _callback_view(conn, 111, "sw:studio")
         assert "CREATOR STUDIO" in studio_text
-        assert any(
-            button["callback_data"] == "sw:cs:help:character"
-            for row in studio_keyboard for button in row
-        )
+        assert "sw:cs:create" in _callbacks(studio_keyboard)
 
-    result = handle_command(db, user_id=111, text="/create character Telegram Draft")
+        type_text, type_keyboard = _callback_view(conn, 111, "sw:cs:create")
+        assert "CREATE IN SANDBOX" in type_text
+        assert {"sw:cs:type:character", "sw:cs:type:location"} <= set(_callbacks(type_keyboard))
+
+        method_text, method_keyboard = _callback_view(conn, 111, "sw:cs:type:character")
+        assert "CREATE CHARACTER" in method_text
+        assert {"sw:cs:input:character:manual", "sw:cs:input:character:ai"} <= set(_callbacks(method_keyboard))
+
+        prompt_text, prompt_keyboard = _callback_view(conn, 111, "sw:cs:input:character:manual")
+        assert "Send the character name as your next message" in prompt_text
+        assert "sw:cs:input:cancel" in _callbacks(prompt_keyboard)
+        session = conn.execute(
+            "SELECT creation_type,input_mode,expected_input FROM creation_sandbox_studio_sessions WHERE user_id=111"
+        ).fetchone()
+        assert tuple(session) == ("character", "manual", "name")
+
+    # The Studio callback installs a bounded plain-text router into the polling adapter.
+    from observer_sandbox import telegram_bot as base
+    result = base.handle_command(db, user_id=111, text="Guided Character")
+    assert "CREATION SANDBOX DRAFT" in result
+    assert "Guided Character" in result
+    assert "sw:cs:approve" in _callbacks(base._command_keyboard("Guided"))
+    with connect(db) as conn:
+        assert conn.execute("SELECT 1 FROM creation_sandbox_studio_sessions WHERE user_id=111").fetchone() is None
+        assert active_draft(conn, 111)["proposal"]["identity"]["name"] == "Guided Character"
+        assert list_sandbox_objects(conn) == []
+
+    # Commands remain optional power-user shortcuts.
+    result = handle_command(db, user_id=111, text="/create location Telegram Draft")
     assert "CREATION SANDBOX DRAFT" in result
     assert "Telegram Draft" in result
-    assert any(
-        button["callback_data"] == "sw:cs:preview"
-        for row in _command_keyboard("/create") for button in row
-    )
+    assert "sw:cs:preview" in _callbacks(_command_keyboard("/create"))
 
 
-def test_non_owner_cannot_use_creator_studio_commands(tmp_path, monkeypatch):
+def test_guided_input_cancel_and_non_owner_isolation(tmp_path, monkeypatch):
     db = tmp_path / "observer.sqlite3"
     initialize(db)
     monkeypatch.setenv("OBSERVER_TELEGRAM_OWNER_ID", "111")
     monkeypatch.setenv("OBSERVER_TELEGRAM_ALLOWED_USER_IDS", "222")
+
+    with connect(db) as conn:
+        _callback_view(conn, 111, "sw:cs:input:location:manual")
+        cancelled, keyboard = _callback_view(conn, 111, "sw:cs:input:cancel")
+        assert "CREATOR STUDIO" in cancelled
+        assert "sw:cs:create" in _callbacks(keyboard)
+        assert conn.execute("SELECT 1 FROM creation_sandbox_studio_sessions WHERE user_id=111").fetchone() is None
+
     assert handle_command(db, user_id=222, text="/create location No") == "🔒 Creator authority required for Creator Studio."
