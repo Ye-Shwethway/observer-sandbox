@@ -31,13 +31,14 @@ def generate_structured(
     schema: dict[str, Any],
     schema_name: str,
     parameters: dict[str, Any] | None = None,
-    timeout: float = 45.0,
+    timeout: float = 120.0,
 ) -> dict[str, Any]:
     """Run one real structured inference through the existing provider registry.
 
     Candidate probes may call a currently disabled provider without enabling it;
-    activation remains an explicit later binding operation. Callers that legitimately
-    produce larger structured responses may request a bounded longer timeout.
+    activation remains an explicit later binding operation. Structured generation
+    can produce materially larger responses than ordinary autonomy decisions, so it
+    receives a separate bounded transport timeout.
     """
     model = conn.execute(
         "SELECT 1 FROM ai_models WHERE provider_id=? AND model_id=? AND active=1",
