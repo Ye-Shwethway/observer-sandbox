@@ -37,7 +37,7 @@ def test_allowed_user_is_separate_non_owner_role(tmp_path, monkeypatch):
     assert handle_command(db, user_id=444, text="/status").startswith("Not authorized")
 
 
-def test_authorized_mvp_commands_and_controls(tmp_path, monkeypatch):
+def test_authorized_mvp_observation_and_runtime_boundaries(tmp_path, monkeypatch):
     db = tmp_path / "observer.sqlite3"
     initialize(db)
     monkeypatch.setenv("OBSERVER_TELEGRAM_OWNER_ID", "111")
@@ -48,9 +48,11 @@ def test_authorized_mvp_commands_and_controls(tmp_path, monkeypatch):
     assert "Darian" in handle_command(db, user_id=12345, text="/darian")
     assert "Thorne Estate" in handle_command(db, user_id=12345, text="/home")
     assert "Recent Activity" in handle_command(db, user_id=12345, text="/history")
-    assert "Paused     Yes" in handle_command(db, user_id=12345, text="/pause")
-    assert "Paused     No" in handle_command(db, user_id=12345, text="/resume")
-    assert "Speed      60.0x" in handle_command(db, user_id=12345, text="/speed 60")
+    assert "World required" in handle_command(db, user_id=12345, text="/pause")
+    assert "World required" in handle_command(db, user_id=12345, text="/resume")
+    assert "World required" in handle_command(db, user_id=12345, text="/speed 60")
+    assert "Creator authority required" in handle_command(db, user_id=12345, text="/realpause")
+    assert "REAL WORLD RUNTIME" in handle_command(db, user_id=12345, text="/realstatus")
 
 
 def test_notifications_default_on_and_persist_per_user(tmp_path, monkeypatch):
