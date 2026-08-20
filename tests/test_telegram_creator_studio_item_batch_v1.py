@@ -3,8 +3,9 @@ from __future__ import annotations
 from copy import deepcopy
 
 import observer_sandbox.creator_studio_item_batch as batch_studio
+import observer_sandbox.telegram_creator_studio_base as studio_base
 from observer_sandbox.creation_sandbox import canonical_state_fingerprint
-from observer_sandbox.creator_studio import active_draft
+from observer_sandbox.creator_studio import CreatorStudioError, active_draft
 from observer_sandbox.creator_studio_item import manual_item_template
 from observer_sandbox.creator_studio_item_batch import ai_item_batch_draft, approve_item_batch_draft
 from observer_sandbox.db import connect
@@ -97,6 +98,24 @@ def test_item_method_menu_exposes_batch_ai_and_exact_json(tmp_path) -> None:
             "SELECT creation_type,input_mode,expected_input FROM creation_sandbox_studio_sessions WHERE user_id=1"
         ).fetchone()
         assert tuple(session) == ("item", "ai_generated", "item-batch-description")
+
+
+def test_batch_ai_rejection_preserves_batch_prompt_and_shows_error(tmp_path) -> None:
+    db = tmp_path / "observer.sqlite3"
+    initialize(db)
+    with connect(db) as conn:
+        studio_callback_view(conn, 3, "sw:cs:input:item:batch-ai")
+        text, keyboard = studio_base._manual_retry_view(
+            conn,
+            3,
+            "item-batch-description",
+            CreatorStudioError("Creation AI Item batch failed exact validation: test failure"),
+        )
+        assert "Item batch draft rejected" in text
+        assert "test failure" in text
+        assert "ITEM BATCH · AI DRAFT" in text
+        assert "ITEM · AI DRAFT" not in text.replace("ITEM BATCH · AI DRAFT", "")
+        assert "sw:cs:type:item" in _callbacks(keyboard)
 
 
 def test_ai_batch_preview_and_atomic_approval_reuse_i5_8(tmp_path, monkeypatch) -> None:
