@@ -291,6 +291,9 @@ def reset_sandbox(
     conn.execute("DELETE FROM creation_sandbox_relations WHERE sandbox_id=?", (sandbox_id,))
     conn.execute("DELETE FROM creation_sandbox_events WHERE sandbox_id=?", (sandbox_id,))
     conn.execute("DELETE FROM creation_sandbox_objects WHERE sandbox_id=?", (sandbox_id,))
+    # Item instances/economic profiles cascade from objects; shared definitions
+    # are Sandbox-owned but not object-owned, so reset must clear them explicitly.
+    conn.execute("DELETE FROM creation_sandbox_item_definitions WHERE sandbox_id=?", (sandbox_id,))
     conn.execute(
         "UPDATE creation_sandboxes SET status='active',revision=?,updated_at=CURRENT_TIMESTAMP WHERE sandbox_id=?",
         (next_revision, sandbox_id),
