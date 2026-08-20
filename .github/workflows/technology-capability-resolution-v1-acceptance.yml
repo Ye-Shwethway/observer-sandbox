@@ -7,7 +7,6 @@ on:
       - 'src/observer_sandbox/skill_capability.py'
       - 'src/observer_sandbox/skill_application_requirements.py'
       - 'src/observer_sandbox/skill_definitions.py'
-      - 'src/observer_sandbox/grading.py'
       - 'tests/test_skill_capability_resolution_v1.py'
       - '.github/workflows/technology-capability-resolution-v1-acceptance.yml'
   push:
@@ -17,7 +16,6 @@ on:
       - 'src/observer_sandbox/skill_capability.py'
       - 'src/observer_sandbox/skill_application_requirements.py'
       - 'src/observer_sandbox/skill_definitions.py'
-      - 'src/observer_sandbox/grading.py'
       - 'tests/test_skill_capability_resolution_v1.py'
       - '.github/workflows/technology-capability-resolution-v1-acceptance.yml'
 

@@ -2,25 +2,10 @@ name: Attribute Grading Batch 1 Acceptance
 
 on:
   workflow_dispatch:
-  pull_request:
-    branches: [main]
-    paths:
-      - '.github/workflows/attribute-grading-batch-1-acceptance.yml'
-      - 'config/profile_sections.v1.json'
-      - 'src/observer_sandbox/grading.py'
-      - 'src/observer_sandbox/profile_observer.py'
-      - 'src/observer_sandbox/telegram_profile_browser.py'
-      - 'tests/test_attribute_grading_batch_1.py'
-      - 'tests/test_universal_profile_grading_v1.py'
 
 jobs:
   acceptance:
-    if: >-
-      ${{
-        vars.VPS_DEPLOY_ENABLED == 'true' &&
-        (github.event_name != 'pull_request' ||
-         github.event.pull_request.head.repo.full_name == github.repository)
-      }}
+    if: ${{ vars.VPS_DEPLOY_ENABLED == 'true' }}
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
