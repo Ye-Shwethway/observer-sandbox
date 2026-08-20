@@ -4,7 +4,13 @@ from dataclasses import dataclass
 import re
 from typing import Any, Callable, Mapping
 
-from .grading import GradeProfile, GradeResult, build_grade_profile, evaluate_item_resistance_load
+from .grading import (
+    GradeProfile,
+    GradeResult,
+    build_grade_profile,
+    evaluate_item_resistance_load,
+    grade_rank,
+)
 from .physical_quantity import PhysicalQuantity
 
 
@@ -111,6 +117,11 @@ class GradingSocketRegistry:
         supported = tuple(str(value).strip().upper() for value in spec.supported_grades)
         if not supported:
             raise GradingSocketError("Evaluator must declare supported grades")
+        try:
+            for grade in supported:
+                grade_rank(grade)
+        except (KeyError, ValueError) as exc:
+            raise GradingSocketError(f"Evaluator {evaluator_id} declares an unknown grade") from exc
         self._evaluators[evaluator_id] = (
             EvaluatorSpec(evaluator_id, family, domain, supported),
             evaluator,
@@ -174,6 +185,12 @@ class GradingSocketRegistry:
         policy_id = _stable_id(policy.policy_id, label="policy_id")
         if policy_id in self._policies:
             raise GradingSocketError(f"Universe grading policy already registered: {policy_id}")
+        ceiling = None if policy.grade_ceiling is None else str(policy.grade_ceiling).strip().upper()
+        if ceiling is not None:
+            try:
+                grade_rank(ceiling)
+            except (KeyError, ValueError) as exc:
+                raise GradingSocketError(f"Unknown grade ceiling: {ceiling}") from exc
         self._policies[policy_id] = UniverseGradingPolicy(
             policy_id=policy_id,
             allowed_domains=None if policy.allowed_domains is None else frozenset(
@@ -189,7 +206,7 @@ class GradingSocketRegistry:
                 _stable_id(value, label="allowed reference profile")
                 for value in policy.allowed_reference_profiles
             ),
-            grade_ceiling=None if policy.grade_ceiling is None else str(policy.grade_ceiling).strip().upper(),
+            grade_ceiling=ceiling,
         )
 
     def evaluator_spec(self, evaluator_id: str) -> EvaluatorSpec:
@@ -278,9 +295,10 @@ class GradingSocketRegistry:
                 raise GradingSocketError(
                     f"Dimension {spec.dimension_id} belongs to {spec.domain}, not {plan.domain}"
                 )
-            evaluator_spec, evaluator = self._evaluators.get(row.evaluator_id, (None, None))
-            if evaluator_spec is None or evaluator is None:
+            evaluator_entry = self._evaluators.get(row.evaluator_id)
+            if evaluator_entry is None:
                 raise GradingSocketError(f"Unknown evaluator: {row.evaluator_id}")
+            evaluator_spec, evaluator = evaluator_entry
             if policy.allowed_dimensions is not None and row.dimension_id not in policy.allowed_dimensions:
                 raise GradingSocketError(
                     f"Universe grading policy {policy.policy_id} does not allow dimension {row.dimension_id}"
@@ -301,6 +319,10 @@ class GradingSocketRegistry:
                         f"Unknown reference profile: {row.reference_profile_id}"
                     ) from exc
             result = evaluator(evidence, reference)
+            if result.scheme_id != row.evaluator_id:
+                raise GradingSocketError(
+                    f"Evaluator {row.evaluator_id} returned mismatched scheme id {result.scheme_id}"
+                )
             if result.domain is not None and result.domain != plan.domain:
                 raise GradingSocketError(
                     f"Evaluator {row.evaluator_id} returned domain {result.domain}, expected {plan.domain}"
@@ -312,6 +334,11 @@ class GradingSocketRegistry:
             if result.grade not in evaluator_spec.supported_grades:
                 raise GradingSocketError(
                     f"Evaluator {row.evaluator_id} returned unsupported grade {result.grade}"
+                )
+            if policy.grade_ceiling is not None and grade_rank(result.grade) > grade_rank(policy.grade_ceiling):
+                raise GradingSocketError(
+                    f"Universe grading policy {policy.policy_id} caps grades at {policy.grade_ceiling}; "
+                    f"{row.dimension_id} evaluated to {result.grade}"
                 )
             results[row.dimension_id] = result
         if not results:
@@ -382,9 +409,9 @@ def build_default_grading_socket_registry() -> GradingSocketRegistry:
         UniverseGradingPolicy(
             policy_id=DEFAULT_UNIVERSE_GRADING_POLICY_ID,
             allowed_domains=frozenset({"item", "location", "character", "body"}),
-            allowed_dimensions=None,
-            allowed_evaluators=None,
-            allowed_reference_profiles=None,
+            allowed_dimensions=frozenset({"resistance_load"}),
+            allowed_evaluators=frozenset({"item-resistance-load-v1"}),
+            allowed_reference_profiles=frozenset(),
             grade_ceiling="S",
         )
     )
