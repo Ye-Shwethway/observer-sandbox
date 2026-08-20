@@ -1,19 +1,13 @@
 # Creator Creation Systems — Minimum Implementation Plan v1
 
-Status: **APPROVED IMPLEMENTATION PLAN — ACTIVE ITEM/LOCATION FOUNDATION**  
+Status: **APPROVED IMPLEMENTATION PLAN — ACTIVE ITEM EDIT WIP**  
 Date: 2026-08-20
 
 ## Objective
 
-Build Creator Creation through bounded, reusable contracts that can create realistic Sandbox content without mutating the canonical Real World.
+Build Creator Creation through bounded reusable contracts that create realistic Sandbox content without mutating canonical Real World state.
 
-Current dependency chain:
-
-`strict creation contracts -> quantity/measurement -> grading -> requirements/access -> Item schema -> Item creation/batch/operations -> Location schema -> Location creation/contents -> Character/Location binding -> runtime affordances -> vertical acceptance`
-
-Reuse existing inventory, valuation, grading, world-location and Sandbox lifecycle semantics. Do not build parallel Sandbox-only ontologies where the same concept already exists.
-
-Core operating rules:
+Core rules:
 - **Create anywhere safely; canon nowhere automatically.**
 - **Schema-valid does not imply universe-compatible.**
 - **Created is not alive.**
@@ -23,9 +17,25 @@ Core operating rules:
 
 ---
 
-## Completed prerequisites
+## Current repository boundary
 
-Already merged and not to be rebuilt:
+Merged `main`:
+`2af1ee7d5e2e3e9c0d1da8384d858880e993fb4b` — PR #347.
+
+Current unmerged Item Edit implementation started on `test` immediately before continuity sync:
+- `src/observer_sandbox/telegram_sandbox_item_edit.py`;
+- `src/observer_sandbox/telegram_world_layers_item_edit_extension.py`;
+- `src/observer_sandbox/telegram_world_layers.py`.
+
+At the start of this docs sync, `test` was `6e93c66bf627d90622f4ec4a599d7cb2c3bba886`, exactly 3 commits ahead of `main` and 0 behind.
+
+This Item Edit code is **WIP only**: no focused test run, PR CI, merge, deploy or live acceptance has occurred yet.
+
+---
+
+## Completed Creator foundation
+
+Do not rebuild:
 - I0 Creator authority hardening;
 - I1 universal creation proposal/socket core;
 - I2 isolated Creation Sandbox persistence/lifecycle;
@@ -34,369 +44,264 @@ Already merged and not to be rebuilt:
 - I4 Creator Studio proposal lifecycle;
 - I4.1 Sandbox Character configuration UX;
 - I5/I5.1 Sandbox Observer foundations;
-- exact Character AI schema generation and deterministic validation;
-- exact Manual Character creation parity;
+- exact Character Manual/AI parity;
 - Sandbox Character profile/edit/grade-target parity;
 - explicit Real/Sandbox runtime controls;
 - scoped Telegram command menu publication.
 
-Character remains the strictness exemplar: Manual and AI converge on one deterministic contract; runtime/derived state is not Creator seed ownership.
+Completed Item/Location backend:
+- **I5.2** reuse map;
+- **I5.3** universal quantity/measurement;
+- **I5.4** cross-domain grading;
+- **I5.5** requirements/access;
+- **I5.6** Universal Item Schema v1;
+- **I5.7** single Sandbox Item materialization;
+- **I5.8** atomic heterogeneous Item Batch;
+- **I5.9** Item/container operations, including `update_sandbox_item()`;
+- **I5.10** Universal Location Schema v1.
 
 ---
 
-# Completed Creator Item / Location foundation
+## Merged Creator Item Telegram line
 
-## I5.2 — Creation Contract Audit & Reuse Map — COMPLETE
+The Item Creator vertical now includes:
+- PR #334 — Single Item AI/Exact JSON creation UX;
+- #335 — atomic Item Batch AI/Exact JSON UX;
+- #336 — batch retry context, error path, typing/prompt cleanup;
+- #337 — locked full-schema Creator AI form-fill contract;
+- #338 — safe detailed diagnostics;
+- #339 — non-stackable unused stack-module normalization;
+- #340 — exact bare local `stored_in` ref -> `$ref` normalization;
+- #341 — exact legacy immaterial valuation-method placeholder normalization;
+- #342 — detailed Item review + txt export;
+- #343 — review-back navigation regression fix;
+- #344 — shared ordinary-realism/plausibility gate;
+- #345 — exactly one bounded AI self-correction regeneration after deterministic rejection;
+- #346 — human review wording + descriptive export filenames;
+- #347 — approved Item detail/economic presentation parity + improved default economic proposals for future Items.
 
-Contract:
-`docs/CREATION_CONTRACT_REUSE_MAP_V1.md`.
-
-Locked decisions:
-- keep generic Creation proposal envelope;
-- add exact type-specific schemas beneath it;
-- reuse Creation Sandbox lifecycle/isolation;
-- keep Item definition / concrete instance-or-stack / storage / ownership separate;
-- reuse world relation meanings;
-- reuse valuation/grading/access foundations through adapters;
-- later reconcile Sandbox prototype `located_in` to canonical dynamic `located_at` semantics.
-
-## I5.3 — Universal Quantity & Measurement Contract — COMPLETE
-
-PR #324 merge:
-`a4abcbbcb932711bcf164d20bb977314afad5550`
-
-Contract:
-`docs/UNIVERSAL_QUANTITY_MEASUREMENT_CONTRACT_V1.md`.
-
-Implementation:
-`src/observer_sandbox/physical_quantity.py`.
-
-Acceptance:
-- CI #1155 SUCCESS;
-- 22 targeted tests passed;
-- CLI init/status green;
-- schema 21 healthy.
-
-Provides normalized SI physical truth for mass/length/area/volume with deterministic conversion. Creator-facing default remains Imperial; display conversion does not mutate truth.
-
-## I5.4 — Universal Cross-Domain Grade Contract — COMPLETE
-
-PR #325 merge:
-`980a752160a48144ef91bf800c4f4ab8fc5bc98e`
-
-Contract:
-`docs/UNIVERSAL_CROSS_DOMAIN_GRADING_CONTRACT_V1.md`.
-
-Acceptance:
-- CI #1157 SUCCESS;
-- 189 targeted tests passed;
-- CLI init/status green;
-- schema 21 healthy.
-
-Shared grade order:
-`E < D < C < B < A < S < SS < SSS < X < XX`.
-
-Existing Character schemes remain compatible. Item resistance-load and Location completeness remain explicit separate domains/dimensions. Grade is derived interpretation, not source truth.
-
-## I5.5 — Universal Requirement & Access Contract — COMPLETE
-
-PR #326 merge:
-`2372a3a32f3b400a029317174fcf7260fee7f1f3`
-
-Contract:
-`docs/UNIVERSAL_REQUIREMENT_ACCESS_CONTRACT_V1.md`.
-
-Implementation:
-`src/observer_sandbox/requirements.py`.
-
-Acceptance:
-- CI #1158 SUCCESS;
-- 22 targeted tests passed;
-- CLI init/status green;
-- schema 21 healthy.
-
-Provides typed requirements with nested `all` / `any`, including grade/value/skill/Item/equipment/ownership/residency/authorization/state predicates. Location access policy remains separate from current operating state.
-
-Core lock:
-`Item Grade != interaction Requirement Grade != Location Access != Location operating state`.
-
-## I5.6 — Universal Item Schema v1 — COMPLETE
-
-PR #328 merge:
-`5820aad0f4abf5efb4b352071cbb67ee8056071b`
-
-Acceptance:
-- CI #1159 SUCCESS;
-- 74 passed / 11 selected files.
-
-Contract:
-`docs/UNIVERSAL_ITEM_SCHEMA_V1.md`
-
-Implementation:
-`src/observer_sandbox/item_creation_schema.py`
-
-Exact Item contract now distinguishes:
-- stable definition facts;
-- unique or stack concrete instance intent;
-- strict conditional modules;
-- normalized physical quantities;
-- economic policy;
-- explicit requirements;
-- relation intent.
-
-Bounded v1 modules:
-- physical;
-- stack;
-- nutrition;
-- container;
-- resistance training.
-
-Unknown fields/modules/capabilities fail closed.
-
-## I5.7 — Sandbox Item Creation v1: Single — COMPLETE
-
-PR #329 merge:
-`74d83bc6d50a61a76becb41bc53d6cc65b354257`
-
-Acceptance:
-- CI #1160 SUCCESS;
-- 89 passed / 17 selected files.
-
-Added isolated Sandbox Item definition, concrete instance/stack and economic-policy persistence plus atomic materialization. Relations validate active same-Sandbox targets. Canonical fingerprint remains unchanged.
-
-## I5.8 — Sandbox Item Batch Creation v1 — COMPLETE
-
-PR #330 merge:
-`716b56e64fa106f633c13c55de9211a7a67e5c8b`
-
-Acceptance:
-- CI #1161 SUCCESS;
-- 88 passed / 15 selected files.
-
-Single Item now uses the same batch-size-one service path. Batch creation supports write-free preview, forward `$ref` for batch-local `stored_in`, container validation, duplicate/unknown/self/cycle rejection, same-key semantic consistency and all-or-nothing apply.
-
-## I5.9 — Sandbox Item / Container Operations — COMPLETE
-
-PR #331 merge:
-`d4b60e5fdd18706cbd60da8cdde556226c826efe`
-
-Acceptance:
-- CI #1162 SUCCESS;
-- 99 passed / 18 selected files.
-
-Supports browse/inspect, validated edit, move/store/own/carry/equip, stack quantity, archive/delete and dependency reporting.
-
-Important locks:
-- one physical placement mode at a time;
-- ownership remains orthogonal to placement/storage;
-- shared definitions cannot be rewritten through one instance;
-- incoming dependencies require explicit detach before archive/delete;
-- dependent Items survive detach;
-- Sandbox reset clears Item definitions as well as object-owned Item state.
-
-## I5.10 — Universal Location Schema v1 — COMPLETE
-
-PR #332 merge:
-`d670ac8e7a1ee3beaa6001011d8b04383c39533c`
-
-Final PR head:
-`aaf17efb4e142a5b3691bbd1eba1c9502c39143b`
-
-Acceptance:
-- CI #1164 SUCCESS;
-- 126 passed / 22 selected files;
-- CLI init/status green;
-- fresh DB healthy;
-- schema 21.
-
-Contract:
-`docs/UNIVERSAL_LOCATION_SCHEMA_V1.md`
-
-Implementation:
-`src/observer_sandbox/location_creation_schema.py`
-
-Strict Location domains:
-- identity/kind;
-- structural parent + exposure;
-- optional normalized extent;
-- access policy + separate operating state;
-- explicit spatial interfaces/topology;
-- machine-readable facilities/resources/capabilities;
-- minimal represented environment;
-- optional economic policy;
-- provenance.
-
-Unknown spatial precision remains unknown/null. Structural parentage does not imply traversal. L0-L4 completeness and Location grade are derived interpretation only and do not grant authorization or runtime readiness.
+These are merged repo capabilities, not proof of current production deployment/live Telegram behavior.
 
 ---
 
-# Locked ontology
+## Universal Creator AI contract
 
-## Item ontology
+All deterministic creation types follow:
 
-`Item Definition -> concrete unique instance OR stack -> physical placement/storage -> ownership/carriage/equipment -> runtime state/history`
+`Creator intent -> complete canonical type schema/form -> AI fills form -> narrow explicitly-authorized structural canonicalization -> deterministic validation -> preview -> explicit approval -> Sandbox-only materialization`.
 
-Do not flatten these layers into one arbitrary properties bag.
+AI is not schema designer and not mutation authority.
 
-## Relation ontology
+Provider-form rules:
+- full stable schema is passed to structured generation;
+- unused arrays = `[]`;
+- unknown/unused nullable slots = `null`;
+- canonicalization may only remove/normalize exact contract-defined placeholders or exact structural aliases;
+- no fuzzy relation inference;
+- no invented missing facts;
+- no validator relaxation.
+
+Default Item realism:
+- ordinary real-world physics unless target-universe rules explicitly override;
+- avoid false numeric precision when null is allowed;
+- deterministic cross-field plausibility checks;
+- one model regeneration after first deterministic rejection using the safe rejection reason;
+- second failure surfaces to Creator.
+
+---
+
+## Locked ontology
+
+### Item
+
+`Item Definition -> concrete unique instance OR stack -> physical placement/storage -> ownership/carriage/equipment -> runtime state/history`.
+
+### Relations
 
 - `contains` = structural/static spatial containment;
-- `located_at` = current dynamic physical presence;
+- `located_at` = dynamic physical presence;
 - `stored_in` = inventory/container storage;
 - `owned_by` = ownership;
 - `carried_by` = carriage;
 - `equipped_by` = equipped state.
 
-Ownership never follows automatically from location/storage. Ordinary movable inventory must not use structural `contains` merely because it is inside a place/container.
+Ownership does not follow from physical presence/storage. Ordinary movable inventory does not use structural `contains` merely because it is physically inside a place.
 
-## Sandbox isolation
+### Sandbox isolation
 
-Creator Item/Location mutable state remains Sandbox-owned. Do not write Sandbox creation into canonical Real World entity/item/inventory/economic/runtime state.
-
-Continue using `canonical_state_fingerprint()` as a high-value zero-mutation acceptance proof.
+Creator Item/Location mutable state remains Sandbox-owned. Use `canonical_state_fingerprint()` as a high-value zero-canonical-mutation proof.
 
 ---
 
-# Active implementation slices
+# CURRENT IMPLEMENTATION SLICE
 
-## I5.11 — Sandbox Location Creation + Embedded Contents — NEXT
+## Sandbox Item Edit Telegram parity — WIP
+
+### Goal
+
+Allow the Creator to edit an already-approved active Sandbox Item through Telegram without creating a second Item persistence or validation path.
+
+### Existing authority to reuse
+
+`src/observer_sandbox/sandbox_item_operations.py::update_sandbox_item()` is the deterministic update authority.
+
+It already protects important semantics including:
+- immutable Item definition key;
+- immutable instance mode;
+- shared-definition protection;
+- exact Item schema validation;
+- relation target validation;
+- storage-cycle rejection;
+- existing relation/persistence synchronization.
+
+The Telegram editor must call this service rather than duplicate its persistence logic.
+
+### Intended WIP UX
+
+`Sandbox World -> Items -> approved Item detail -> ✏️ Edit Item`.
+
+On entry:
+- target must be an active Sandbox Item;
+- pause only that Sandbox runtime if it was running;
+- remember pre-edit pause state;
+- Real World is not paused or mutated.
+
+Editor sections:
+- Definition;
+- Instance;
+- Economic Value;
+- Modules;
+- Requirements;
+- Relationships.
+
+Locked fields:
+- `definition.key`;
+- `instance.mode`.
+
+Complex objects/arrays may use exact JSON rather than a new ad-hoc mini-schema.
+
+Per-field flow:
+`select -> send new value -> reconstruct complete Item payload -> deterministic Item validation -> Preview -> Apply`.
+
+Apply requirements:
+- compare current payload with preview baseline and reject stale proposal;
+- call existing `update_sandbox_item()`;
+- keep Sandbox paused while editor remains open;
+- Done Editing restores pre-edit Sandbox pause state.
+
+### Mandatory implementation verification
+
+Before PR:
+1. Inspect the three current WIP files for correctness.
+2. Verify Item detail button actually routes to the Item editor.
+3. Verify Telegram free-text input is routed to `handle_sandbox_item_edit_text()` while a field is pending.
+4. Verify callback ownership does not conflict with Character profile editors or Creator Studio input routing.
+5. Verify reconstruction from `get_sandbox_item()` produces an exact payload acceptable to `validate_item_payload()`.
+6. Verify valid scalar field editing.
+7. Verify stack quantity/unit editing for stack Items.
+8. Verify economic field editing, including integer minor-unit values and nullable fields.
+9. Verify module object/leaf editing.
+10. Verify requirements editing.
+11. Verify `located_at` / `stored_in` / `owned_by` / `carried_by` / `equipped_by` edits.
+12. Verify invalid relation/container/cycle edits fail without mutation.
+13. Verify immutable key/mode behavior.
+14. Verify shared definition edit protection.
+15. Verify stale Preview rejection.
+16. Verify Apply updates approved Item detail correctly.
+17. Verify editor handles both initially-running and already-paused Sandbox states.
+18. Verify Real World/canonical fingerprint unchanged.
+19. Add focused regression tests around all high-risk boundaries.
+20. Run focused verification; open PR; use final CI as repository checkpoint; merge only if green; exact-sync `test` to final `main` afterward.
+
+No live acceptance claim before real Telegram evidence.
+
+---
+
+# NEXT AFTER Item Edit acceptance
+
+## I5.11 — Sandbox Location Creation + Embedded Contents
 
 ### Objective
 
-Materialize the strict I5.10 Location contract into isolated Sandbox state, optionally with typed Item contents, while reusing the existing Item contracts rather than inventing a parallel Location-contents model.
+Materialize strict I5.10 Location into isolated Sandbox state, optionally with typed Item contents, while reusing the existing Item contracts instead of inventing a Location-only contents model.
 
 ### Empty Location path
 
-`Location payload -> I5.10 validation -> parent/topology/economic validation -> preview -> atomic Sandbox materialization`
+`Location payload -> I5.10 validation -> parent/topology/economic validation -> preview -> atomic Sandbox materialization`.
 
-### Furnished / populated Location path
+### Furnished/populated path
 
-`Location payload + typed contents manifest -> I5.10 validation + I5.6/I5.8 Item validation -> whole-graph preview -> one atomic apply`
+`Location payload + typed contents manifest -> I5.10 + I5.6/I5.8 validation -> whole graph preview -> one atomic apply`.
 
 ### Required semantics
 
-- resolved `parent_ref` must identify an active Location in the same Sandbox;
-- structural parent graph must remain acyclic;
-- structural parent relation uses `contains`, not `located_at`;
-- explicit interface destinations must validate active same-Sandbox Locations when resolved;
-- Location access/economic/topology/environment state persists only in Sandbox-owned storage;
-- embedded new Items must invoke I5.6/I5.8 Item contracts;
-- Location generation must not invent an arbitrary unvalidated `contents` properties bag;
-- ordinary movable/unique Items physically present in the Location use `located_at` unless their exact manifest instead establishes `stored_in` another typed container;
-- structural fixtures may use structural containment only when the composition contract explicitly classifies them that way;
-- Item definitions/instances/economics continue through the existing Sandbox Item services/storage;
-- validate the complete Location + contents graph before writes;
-- apply the complete graph transactionally: success as one graph or zero partial state;
-- creation does not automatically grant `runtime_ready`;
-- no autonomous Sandbox ticking is introduced;
-- no canonical Real World writes.
+- resolved parent must be an active same-Sandbox Location;
+- structural parent graph acyclic;
+- structural parent uses `contains`, not `located_at`;
+- explicit interface destination validates active same-Sandbox Location;
+- Location access/economic/topology/environment state Sandbox-owned only;
+- embedded Items invoke I5.6/I5.8 contracts;
+- no arbitrary unvalidated `contents` bag;
+- ordinary movable Items use `located_at` unless exact graph establishes `stored_in` another typed container;
+- structural fixtures use structural containment only when explicitly composition-marked;
+- validate complete Location + contents graph before writes;
+- whole apply succeeds atomically or leaves zero partial graph;
+- no automatic runtime readiness;
+- no autonomous ticking;
+- no canonical writes.
 
-### Minimum acceptance target
-
-Prove:
-- one empty strict Location;
-- one furnished Location with a unique Item plus stack/container relationship;
-- valid structural parent materialization;
-- parent-cycle rejection;
-- interface-target validation;
-- invalid embedded Item leaves zero new Location/Item graph;
-- economic/access/topology state remains Sandbox-only;
+Minimum acceptance:
+- empty strict Location;
+- furnished Location with unique Item + stack/container relation;
+- parent/interface validation;
+- cycle rejection;
+- invalid embedded Item -> zero graph;
+- Sandbox-only economic/access/topology state;
 - canonical fingerprint unchanged.
 
-Do not add broad Telegram Location authoring UX before this materialization/composition contract is deterministic.
+Then:
+- I5.12 Location Contents Operations;
+- I5.13 Character ↔ Location Binding & Runtime Readiness;
+- I5.14 Item / Location Runtime Affordance Bridge;
+- I5.15 Sandbox Vertical Acceptance.
 
 ---
 
-## I5.12 — Location Contents Operations
+## I6 — Transmigration boundary
 
-Support:
-- add existing Item;
-- create Item;
-- create Item batch;
-- remove/move Item;
-- create child Location.
+Not active.
 
-Preserve relation distinctions and explicit dependency handling.
-
----
-
-## I5.13 — Character ↔ Location Binding & Runtime Readiness
-
-Reconcile legacy Sandbox Character `located_in` toward canonical semantic `located_at` through Sandbox-owned adapters/persistence.
-
-A Location name alone is insufficient. Target readiness should require an active usable represented Location, conceptually at least L3 unless the implemented contract establishes a narrower justified rule, plus explicit runtime dependencies such as cognition AI binding and configured Sandbox clock.
-
-Missing dependencies fail closed with exact reasons.
-
----
-
-## I5.14 — Item / Location Runtime Affordance Bridge
-
-Derive executable legal options from represented machine-readable facts:
-- Item/fixture capabilities;
-- resources;
-- environment/terrain;
-- Location capabilities;
-- explicit access and requirements.
-
-Cognition may choose among legal options but may not invent missing equipment, resources, doors or actions from Location names or narrative plausibility.
-
----
-
-## I5.15 — Sandbox Vertical Acceptance
-
-Prove one complete isolated vertical:
-- exact Character;
-- exact usable Location;
-- typed Item contents;
-- correct relation semantics;
-- economic policies;
-- Character/Location binding;
-- runtime readiness gate;
-- deterministic legal options;
-- canonical fingerprint unchanged.
-
-Full autonomous Sandbox ticking remains a separate authorization boundary.
-
----
-
-## I6 — Transmigration planning boundary
-
-Not the active next slice.
-
-When resumed, keep planning/validation only unless Creator explicitly expands scope:
+Nothing transmigrates automatically. Keep I6 planning/validation only unless explicitly expanded:
 - freeze Sandbox revision;
-- select target-universe profile;
+- target-universe profile;
 - dependency closure;
 - compatibility checks;
 - proposed canonical mutations;
 - zero canonical writes on incompatibility.
 
-Nothing transmigrates automatically. Adrian Vale remains Sandbox-only. The second real Character gate remains closed.
+Adrian Vale remains Sandbox-only. Second Real World Character gate remains closed.
 
 ---
 
 ## Test / release policy
 
-During each slice:
-- run the smallest task-relevant tests while iterating;
-- use PR CI as the final repository checkpoint;
-- targeted CI is preferred when selectors prove scope;
-- use full fallback only for cross-cutting/unmapped risk;
-- use production-copy acceptance only when stateful/migration/runtime risk actually requires it;
-- do not infer production deployment from merge alone.
+- smallest task-relevant tests while iterating;
+- PR CI as final repository checkpoint;
+- full fallback only for cross-cutting/unmapped risk;
+- production-copy/runtime acceptance only when actually relevant;
+- do not infer production deployment/live behavior from merge alone.
 
-High-value continuing invariants:
+High-value invariants:
 - strict schema validation;
-- canonical/Sandbox isolation;
-- value/grade/requirement/access separation;
-- exact relation semantics;
+- Sandbox/canonical isolation;
+- exact relation meanings;
+- shared-definition protection;
 - atomic graph behavior;
-- runtime readiness gates;
-- zero canonical mutation on failed creation/compatibility paths.
+- runtime readiness boundary;
+- zero canonical mutation on rejected/failed paths.
 
 ---
 
 ## Exact resume point
 
-**Latest merged implementation is PR #332 at `d670ac8e7a1ee3beaa6001011d8b04383c39533c`. CI #1164 passed 126 tests across 22 selected files with CLI init/status green and schema 21 healthy. I5.2 through I5.10 are complete. Next: I5.11 Sandbox Location Creation + Embedded Contents. Materialize the strict I5.10 Location schema in isolated Sandbox state; reuse I5.6/I5.8 Item contracts for embedded contents; validate the full parent/topology/content graph before one atomic apply; preserve `contains` vs `located_at` vs `stored_in` vs ownership semantics; do not infer runtime readiness and do not mutate canonical Real World state.**
+**Finish the current Sandbox Item Edit WIP on `test` before I5.11. Merged `main` is PR #347 at `2af1ee7d5e2e3e9c0d1da8384d858880e993fb4b`. The WIP began as exactly 3 commits ahead ending at `6e93c66bf627d90622f4ec4a599d7cb2c3bba886` before continuity commits. Inspect and complete callback/text routing, deterministic `update_sandbox_item()` reuse, immutable/shared-definition/relation safeguards, Preview/stale Apply flow, Sandbox pause restoration and zero canonical mutation; add focused tests; PR/CI; merge only on green evidence. After Item Edit acceptance, resume I5.11 Location Creation + Embedded Contents.**
