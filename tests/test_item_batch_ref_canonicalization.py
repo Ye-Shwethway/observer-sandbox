@@ -40,13 +40,13 @@ def test_human_readable_batch_refs_are_canonicalized_with_local_relationships(tm
 
     assert [entry["ref"] for entry in candidate["items"]] == [
         "led_camping_flashlight",
-        "30_l_hiking_backpack",
+        "item_30_l_hiking_backpack",
         "portable_power_bank",
         "adjustable_dumbbell",
         "waterproof_dry_bag",
     ]
-    assert candidate["items"][0]["payload"]["relationships"]["stored_in"] == "$30_l_hiking_backpack"
-    assert candidate["items"][2]["payload"]["relationships"]["stored_in"] == "$30_l_hiking_backpack"
+    assert candidate["items"][0]["payload"]["relationships"]["stored_in"] == "$item_30_l_hiking_backpack"
+    assert candidate["items"][2]["payload"]["relationships"]["stored_in"] == "$item_30_l_hiking_backpack"
 
     db = tmp_path / "observer.sqlite3"
     initialize(db)
