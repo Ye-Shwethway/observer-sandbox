@@ -202,6 +202,8 @@ def _canonical_batch_ref(value: Any) -> str:
     token = str(value or "").strip().lower()
     token = _REF_TOKEN_RE.sub("_", token)
     token = re.sub(r"_+", "_", token).strip("_-")
+    if token and not token[0].isalpha():
+        token = f"item_{token}"
     return token
 
 
