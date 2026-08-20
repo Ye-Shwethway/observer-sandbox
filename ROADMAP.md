@@ -5,135 +5,125 @@ Roadmap synchronized: **2026-08-20**
 
 ## Operating principles
 
-- Current Creator instruction, live repo contracts/config/schema, verified runtime/DB and current CI/deploy evidence outrank remembered chat context.
-- AI proposes structured facts; deterministic contracts validate, derive and mutate.
+- Current Creator instruction, live repo/schema, verified runtime/DB and current CI/deploy evidence outrank remembered chat context.
+- AI proposes structured facts; deterministic contracts validate and mutate.
 - Telegram is observer/control, never simulation authority.
 - **Create anywhere safely; canon nowhere automatically.**
 - **Schema-valid does not imply universe-compatible.**
 - **Created is not alive.** `runtime_ready != running`.
 - Real World and Creation Sandbox mutable state remain isolated.
-- Reuse established semantics through adapters instead of cloning ontologies.
-- Grades are derived interpretation, not persisted competing truth.
+- Reuse established semantics instead of cloning ontologies.
+- `canonical_state_fingerprint()` remains a high-value zero-canonical-mutation invariant.
 
 ---
 
 ## Current repository checkpoint
 
-PR **#348 — Add Sandbox Item edit Telegram routing parity** is merged.
+### Item Edit live hardening — PR #350
 
-Merge commit: `cee6337e9dc479988f2d3a4c78e52b70ef1b7b84`.
+Merged: `b0083c6155006ba7103878056bceecc95413e4a3`.
+CI #1189 ✅.
 
-Final acceptance head: `b980c52447d84bb072764e5f29cf99d8abd933d9`.
+Live Creator evidence after the diagnostic improvement identified the failing approved Item as legacy-schema data:
+`modules.physical.mass has unknown field(s): ['kind']`.
 
-Acceptance evidence:
-- CI #1188 (`32369393983`) ✅;
-- 68 selected affected test files ✅;
-- CLI init/status smoke ✅;
-- Public Readiness Security Audit #197 (`32369394081`) ✅.
+Current Item Edit entry behavior:
+- validates persisted Item payload before pausing Sandbox;
+- no edit session or pause-state mutation if preflight fails;
+- rollback if editor home rendering fails after pause;
+- owner-facing bounded `Error` + `Reason` details;
+- no Item/canonical mutation on entry failure.
 
-The accepted slice includes:
-- strict `telegram_sandbox_item_edit.py` editor/session with Preview/Apply, stale guard, immutable `definition.key` / `instance.mode`, Sandbox pause/restore and `update_sandbox_item()` reuse;
-- `telegram_world_layers_item_edit_extension.py` wrapping the actual `sandbox_object_view`, adding `✏️ Edit Item`, and routing canonical `sw:iedit:enter:<object_id>` / `sw:iedit:*` callbacks;
-- `telegram_sandbox_item_edit_adapter.py` routing pending Item-field free text through the legacy polling contract while preserving slash commands and the returned editor keyboard;
-- focused routing regression coverage.
+### Sandbox Character + Item Batch Delete — PR #351
 
-Repository acceptance is complete. Deployment/live Telegram acceptance remains evidence-gated until the merge-triggered deploy/runtime result is verified.
+Merged: `f9131857fcc861a5dc3b747595fc22352cd737ff`.
+CI #1190 ✅ targeted tests + CLI smoke.
 
----
-
-## Backend Creator Creation foundation
-
-Completed and retained:
-- **I5.2** Creation Contract Reuse Map.
-- **I5.3** Universal Quantity / Measurement.
-- **I5.4** Cross-Domain Grading.
-- **I5.5** Requirements / Access.
-- **I5.6** Universal Item Schema v1.
-- **I5.7** Single Sandbox Item materialization.
-- **I5.8** Atomic heterogeneous Item Batch.
-- **I5.9** Item / Container Operations, including validated `update_sandbox_item()`.
-- **I5.10** Universal Location Schema v1.
+Accepted cleanup behavior:
+- `Sandbox World -> 🗑 Batch Delete`;
+- select Characters and Items together;
+- per-object toggle, Select All, Clear;
+- review screen + explicit final confirmation;
+- Locations excluded;
+- active/same-Sandbox/type validation before mutation;
+- atomic deletion;
+- existing FK cascades remove dependent Sandbox runtime/item rows;
+- touched Item definitions are removed only when orphaned;
+- delete audit events retained;
+- canonical fingerprint checked in-transaction; mismatch => rollback.
 
 ---
 
-## Creator AI architecture lock
+## Completed Creator foundation
 
-`Creator intent -> full canonical type form/schema -> structured AI fill -> narrow explicitly-defined canonicalization -> deterministic validation -> preview -> explicit approval -> Sandbox-only materialization`.
+Retained complete:
+- I5.2 Creation Contract Reuse Map;
+- I5.3 Universal Quantity / Measurement;
+- I5.4 Cross-Domain Grading;
+- I5.5 Requirements / Access;
+- I5.6 Universal Item Schema v1;
+- I5.7 Single Sandbox Item materialization;
+- I5.8 Atomic heterogeneous Item Batch;
+- I5.9 Item / Container Operations;
+- I5.10 Universal Location Schema v1.
 
-AI does not design schemas, repair arbitrary contradictions, weaken validators or directly mutate state.
-
-Default Item generation remains ordinary real-world physics unless a future target-universe contract explicitly overrides it. Unknown nullable numeric facts remain null instead of false precision. One bounded AI regeneration is allowed after a deterministic rejection; a second failure is surfaced.
+Item Creator Studio/Telegram line now includes current-schema Single/Batch creation, full-schema AI fill, validation diagnostics, review/export, realism/self-correction policy, approved Item details/economics, Item Edit parity, live Item Edit diagnostics, and Sandbox batch cleanup.
 
 ---
 
 ## Locked Item ontology
 
-`Definition -> unique instance OR stack -> physical placement/storage -> ownership/carriage/equipment -> runtime state/history`.
+`Definition -> unique instance OR stack -> placement/storage -> ownership/carriage/equipment -> runtime state/history`.
 
 Relations:
-- `contains` — structural/static containment;
-- `located_at` — dynamic physical presence;
-- `stored_in` — inventory/container storage;
-- `owned_by` — ownership;
-- `carried_by` — carriage;
-- `equipped_by` — equipped state.
+- `contains` structural/static containment;
+- `located_at` dynamic physical presence;
+- `stored_in` storage/container;
+- `owned_by` ownership;
+- `carried_by` carriage;
+- `equipped_by` equipped state.
 
-Ownership never follows automatically from location/storage. Ordinary movable inventory does not use structural `contains` merely because it is inside a place.
-
-Sandbox isolation remains mandatory; keep `canonical_state_fingerprint()` as a high-value zero-canonical-mutation acceptance invariant.
+Ownership never follows automatically from location/storage.
 
 ---
 
-## COMPLETED — Sandbox Item Edit Telegram parity
+## CURRENT ACCEPTANCE — clean legacy Sandbox data and retest fresh Item Edit
 
-Repository acceptance: ✅ PR #348.
+Reason: live Item Edit failed on an older approved Item batch carrying obsolete `modules.physical.mass.kind`. Do not weaken the current schema validator to accommodate obsolete test data.
 
-Behavior:
-- approved active Sandbox Item detail exposes `✏️ Edit Item`;
-- `sw:iedit:*` callbacks enter/navigate the editor using the configured Creator owner identity;
-- selected field value is consumed as the next free-text Telegram message;
-- slash commands remain on the normal command path;
-- Sandbox runtime alone auto-pauses and restores its previous pause state on exit;
-- Real World stays untouched;
-- current Item payload is reconstructed through the existing Item contract;
-- `definition.key` and `instance.mode` remain immutable;
-- definition, instance, economic policy, modules, requirements and relationships are editable where contract permits;
-- complex values use exact JSON;
-- candidate changes pass `validate_item_payload()` before Preview;
-- Apply rejects stale previews and reuses `update_sandbox_item()`;
-- backend shared-definition, relation, cycle and physical-placement safeguards remain authoritative.
+Acceptance sequence:
+1. verify PR #351 deploy/live Telegram availability;
+2. Creator selects/deletes obsolete Sandbox Character seeds and legacy Items via `🗑 Batch Delete`;
+3. create fresh current-schema Item(s)/Item Batch;
+4. open fresh approved Item -> `✏️ Edit Item`;
+5. edit a representative scalar field and a structured/module field where practical;
+6. Preview -> Apply -> Done Editing;
+7. verify pre-edit Sandbox pause state restores;
+8. verify Real World/canonical state unchanged.
 
-Deployment boundary:
-- `.github/workflows/deploy.yml` applies to `main` `src/**` pushes when `VPS_DEPLOY_ENABLED == 'true'`;
-- merge-triggered deployment/runtime evidence is not yet verified at this roadmap checkpoint;
-- do not claim live Telegram acceptance until verified.
+If current-schema live Item Edit still fails, fix the concrete current-data/runtime issue; do not silently canonicalize persisted legacy data unless explicitly designed as a migration slice.
 
 ---
 
-## NEXT — I5.11 Sandbox Location Creation + Embedded Contents
+## NEXT AFTER fresh Item Edit acceptance
 
-Start only after closing the deploy/runtime evidence check for PR #348.
-
-Objective: materialize strict I5.10 Locations in isolated Sandbox state, optionally with typed Item contents, without creating a parallel Item model.
+### I5.11 — Sandbox Location Creation + Embedded Contents
 
 Required semantics:
+- strict I5.10 Location materialization;
 - active same-Sandbox parent validation;
 - acyclic structural parent graph;
-- structural parent uses `contains`, not `located_at`;
+- structural parent uses `contains`;
 - interface destinations validate active same-Sandbox Locations;
-- embedded Items reuse I5.6/I5.8 contracts/services/storage;
-- movable Items normally use `located_at`, unless exact graph says `stored_in` a typed container;
-- validate the complete Location + contents graph before writes;
+- embedded Items reuse I5.6/I5.8 contracts;
+- ordinary movable Items use `located_at`, or exact `stored_in` typed containers;
+- validate whole Location + contents graph before writes;
 - one atomic apply/rollback;
 - no automatic runtime readiness;
 - no autonomous execution;
 - no canonical writes.
 
-Then:
-- **I5.12** Location Contents Operations;
-- **I5.13** Character ↔ Location Binding & Runtime Readiness;
-- **I5.14** Item / Location Runtime Affordance Bridge;
-- **I5.15** Sandbox Vertical Acceptance.
+Then I5.12 Location Contents Operations -> I5.13 Character/Location Binding & Runtime Readiness -> I5.14 Runtime Affordance Bridge -> I5.15 Sandbox Vertical Acceptance.
 
 Full Sandbox autonomous ticking remains separately unauthorized.
 
@@ -141,18 +131,10 @@ Full Sandbox autonomous ticking remains separately unauthorized.
 
 ## Transmigration / Character locks
 
-Nothing transmigrates automatically. I6 remains planning/validation only unless Creator expands scope.
-
-Adrian Vale remains Sandbox-only. Second Real World Character gate remains closed. Existing Character Manual/AI parity and Sandbox profile/edit/grade-target behavior must not be weakened by Item/Location work.
-
----
-
-## Runtime / deploy evidence boundary
-
-Repository mutation proves only repository mutation. PR/CI proves repository acceptance only. Merge does not itself prove deployment or live Telegram acceptance.
+Nothing transmigrates automatically. I6 stays planning/validation only unless Creator expands scope. Adrian Vale remains Sandbox-only. Second Real World Character gate remains closed. Existing Character Manual/AI parity and Sandbox profile/edit/grade-target behavior stay locked.
 
 ---
 
 ## Exact resume point
 
-**PR #348 is merged at `cee6337e9dc479988f2d3a4c78e52b70ef1b7b84`; CI #1188 and Security Audit #197 are green. Item Edit callback/free-text parity is repository-accepted. Verify the applicable merge-triggered deployment/runtime result next, then finish continuity/main-test exact sync. After that, begin I5.11 Location Creation + Embedded Contents.**
+**PR #351 is merged at `f9131857fcc861a5dc3b747595fc22352cd737ff` after CI #1190 passed. Mixed Character+Item Sandbox batch delete is repository-accepted. Live Item Edit root cause on the old batch is confirmed as obsolete `modules.physical.mass.kind`. Next verify deployment, clean the selected legacy Sandbox data, create fresh current-schema Items, and complete live Item Edit acceptance. I5.11 starts only after that gate closes.**
