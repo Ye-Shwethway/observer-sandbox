@@ -22,25 +22,31 @@ Roadmap synchronized: **2026-08-20**
 Accepted recent Item-side fixes:
 - **PR #350** — Item Edit preflight/rollback and bounded failure diagnostics;
 - **PR #351** — atomic Sandbox Character+Item batch delete;
-- **PR #353/#354** — scoped cleanup controls and real `sw:list:item` callback-composition fix;
-- **PR #356** — human-friendly Item draft economic presentation.
+- **PR #353/#354** — scoped cleanup controls + real `sw:list:item` callback-composition fix;
+- **PR #356** — human-friendly Item draft economic presentation;
+- **PR #358** — current physical-quantity normalization made re-validatable for fresh Item Edit.
 
-PR #356 merge commit: `4e27e2045c6fee198e97d7c0b95c9eee18789a30`.
-CI **#1193** ✅ targeted tests + CLI smoke.
+Latest runtime-affecting merge: PR #358 at `9c93739655fc6981a8c5bfd31a7c83a4cce16f62`.
+CI **#1194** ✅ targeted tests + CLI smoke.
 
-### Item draft review presentation contract
+### Corrected `mass.kind` finding
 
-Fresh current-schema batch data proved the economic values themselves were realistic; confusion came from exposing internal minor-unit integers directly in Telegram. For example, USD `market_value_minor = 3000` means `$30.00`, not `$3,000`.
+A fresh current-schema batch proved that `modules.physical.mass.kind` is not merely obsolete legacy data.
 
-Repository-accepted behavior now:
-- reuse `telegram_economy.format_money_minor()` in Item draft detail;
-- `Market value: $30.00` rather than `Market value (minor units): 3000`;
-- `Replacement value: $35.00` rather than raw `3500`;
-- consumables may show `Unit value: $1.50 / bar`;
-- Creator-facing detail uses simpler `Value type` / `Net worth` labels and hides redundant USD/minor-unit implementation detail;
-- technical `.txt` export remains raw canonical JSON with `*_minor` fields unchanged.
+Current Item validation accepts authoring quantity input `{value, unit}` but normalizes it through `PhysicalQuantity.as_dict()` into `{kind, value, unit}`. Current materialization persists that normalized output. Item Edit then reconstructs the persisted payload and re-runs the same validator. Before PR #358, `_quantity()` accepted only `{value, unit}`, causing the validator to reject its own normalized persisted form.
 
-No Item schema, valuation data, economics semantics, persistence or validation was changed by PR #356.
+PR #358 closes that idempotence gap without broad schema relaxation:
+- authoring `{value, unit}` remains accepted;
+- normalized `{kind, value, unit}` is accepted only when `kind` equals the expected physical dimension;
+- unknown extras remain rejected;
+- wrong dimension kinds remain rejected;
+- regression covers fresh materialization followed by real Item Edit entry.
+
+The already-approved fresh batch should therefore remain usable after deployment; it does not need recreation merely because current normalization persisted `kind`.
+
+### Human-facing review contract retained
+
+PR #356 remains accepted: Telegram review formats canonical money as human currency while `.txt` export keeps raw `*_minor` fields.
 
 ---
 
@@ -57,7 +63,7 @@ Retained complete:
 - I5.9 Item / Container Operations;
 - I5.10 Universal Location Schema v1.
 
-Item Creator Studio/Telegram line includes current-schema Single/Batch creation, full-schema AI fill, validation diagnostics, human review + raw export, realism/self-correction policy, approved Item details/economics, Item Edit parity/diagnostics, and Sandbox Character/Item cleanup.
+Item Creator Studio/Telegram line includes current-schema Single/Batch creation, full-schema AI fill, deterministic validation, realism/self-correction, human review + raw export, approved Item details/economics, Item Edit parity/diagnostics, and Character/Item cleanup.
 
 ---
 
@@ -77,20 +83,17 @@ Ownership never follows automatically from location/storage.
 
 ---
 
-## CURRENT ACCEPTANCE — fresh current-schema Item Edit
-
-Legacy cleanup is now usable live and a fresh current-schema batch has been generated. Do **not** weaken current Item validation to accommodate obsolete test objects.
+## CURRENT ACCEPTANCE — deployed fresh Item Edit/Save
 
 Required live sequence:
-1. verify production checkpoint includes PR #356 or later;
-2. verify Item draft value presentation uses formatted currency and no longer exposes raw minor-unit integers as user-facing prices;
-3. approve/use a fresh current-schema Item from the recreated batch;
-4. open it -> `✏️ Edit Item`;
-5. edit representative fields -> Preview -> Apply -> Done Editing;
-6. verify pre-edit Sandbox pause state restores;
-7. verify Real World/canonical state unchanged.
+1. verify production/runtime checkpoint includes PR #358 or later;
+2. reopen an already-approved fresh current-schema Item;
+3. enter `✏️ Edit Item` and confirm the prior `modules.physical.mass.kind` error is gone;
+4. edit representative fields -> Preview -> Apply -> Done Editing;
+5. verify pre-edit Sandbox pause state restores;
+6. verify Real World/canonical state remains unchanged.
 
-If a fresh current-schema Item still fails, repair the concrete current-data/runtime issue and preserve strict current schemas.
+Do not delete/recreate the current fresh batch solely because normalized quantity `kind` exists. If another fresh Item failure appears, repair the concrete current-contract/runtime issue rather than weakening unrelated validation.
 
 ---
 
@@ -127,14 +130,14 @@ Nothing transmigrates automatically. I6 stays planning/validation only unless Cr
 ## Test / release policy
 
 - smallest relevant tests while iterating;
-- regression tests cover actual extension/callback composition paths where layering matters;
-- Creator-facing previews should use human-readable presentation while technical exports may preserve canonical/raw representation;
-- PR CI is the repository acceptance gate;
+- regression tests must reproduce the actual persistence/re-entry boundary when bugs occur there;
+- Creator-facing previews use human-readable presentation while technical exports may preserve canonical/raw representation;
+- PR CI is repository acceptance gate;
 - deploy/live behavior is verified separately from merge;
-- continuity docs are updated after material work and persistent branches exact-synced after acceptance.
+- continuity docs update after material work and persistent branches exact-sync after acceptance.
 
 ---
 
 ## Exact resume point
 
-**PR #356 is merged at `4e27e2045c6fee198e97d7c0b95c9eee18789a30`; CI #1193 is green. Item draft review now formats canonical minor-unit values as human currency using the shared formatter while raw `.txt` export remains canonical. Verify this presentation live, then complete fresh Item Edit/Preview/Apply/Done acceptance. I5.11 begins only after that gate closes.**
+**PR #358 is merged at `9c93739655fc6981a8c5bfd31a7c83a4cce16f62`; CI #1194 is green. The fresh Item Edit failure was a validator-idempotence bug: current validation persisted normalized physical quantities as `{kind,value,unit}` but previously re-accepted only `{value,unit}`. The bounded fix accepts its own normalized representation only with the correct dimension and keeps other unknown fields invalid. Verify deployment, reopen the existing fresh batch, finish Edit/Preview/Apply/Done acceptance, then start I5.11.**
