@@ -1,10 +1,203 @@
 from __future__ import annotations
 
 import sqlite3
+from typing import Any
 
 from .creation_sandbox import DEFAULT_SANDBOX_ID, ensure_sandbox, get_sandbox_object, list_sandbox_objects
+from .economic_value import derive_stock_value_minor, format_money_minor
 from .sandbox_item_creation import get_sandbox_item
 from .sandbox_runtime import sandbox_runtime_status
+
+
+def _fmt_number(value: Any) -> str:
+    if isinstance(value, float):
+        return f"{value:g}"
+    return str(value)
+
+
+def _qty(value: Any) -> str:
+    if not isinstance(value, dict):
+        return "—"
+    raw = value.get("value")
+    unit = value.get("unit")
+    if raw is None or unit is None:
+        return "—"
+    return f"{_fmt_number(raw)} {unit}"
+
+
+def _target_name(conn: sqlite3.Connection, target_id: str) -> str:
+    try:
+        target = get_sandbox_object(conn, target_id)
+    except Exception:
+        return str(target_id)
+    return str(target.get("identity", {}).get("name") or target_id)
+
+
+def _relations_by_type(conn: sqlite3.Connection, value: dict[str, Any]) -> dict[str, str]:
+    result: dict[str, str] = {}
+    for relation in value.get("resolved_relations") or []:
+        relation_type = str(relation.get("relation_type") or "")
+        target_id = str(relation.get("target_object_id") or "")
+        if relation_type and target_id:
+            result[relation_type] = _target_name(conn, target_id)
+    return result
+
+
+def _economic_lines(item: dict[str, Any]) -> list[str]:
+    economic = item.get("economic_policy") or {}
+    classification = str(economic.get("classification") or "")
+    treatment = str(economic.get("net_worth_treatment") or "")
+    currency = economic.get("currency_code")
+    instance = item.get("instance") or {}
+    lines = ["", "💰 ECONOMIC VALUE"]
+
+    if classification == "standalone_asset":
+        market = economic.get("market_value_minor")
+        replacement = economic.get("replacement_value_minor")
+        if market is not None and currency:
+            lines.append(f"💵 Market value      {format_money_minor(market, currency)}")
+        if replacement is not None and currency:
+            lines.append(f"♻️ Replacement value {format_money_minor(replacement, currency)}")
+        if len(lines) == 2:
+            lines.append("⚠️ Value not assigned to this approved Sandbox Item.")
+        return lines
+
+    if classification == "consumable_stock":
+        unit_value = economic.get("unit_value_minor")
+        unit_quantity = economic.get("unit_quantity")
+        unit_label = economic.get("unit_label")
+        quantity = instance.get("quantity")
+        if (
+            unit_value is not None
+            and unit_quantity is not None
+            and quantity is not None
+            and currency
+        ):
+            stock = derive_stock_value_minor(unit_value, unit_quantity, quantity)
+            lines.append(f"💵 Current stock  {format_money_minor(stock, currency)}")
+            lines.append(
+                f"🏷 Unit value     {format_money_minor(unit_value, currency)} / "
+                f"{_fmt_number(unit_quantity)} {unit_label or instance.get('unit') or 'unit'}"
+            )
+        else:
+            lines.append("⚠️ Value not assigned to this approved Sandbox Item.")
+        return lines
+
+    if classification == "component" and treatment == "included_in_parent":
+        lines.append("🧩 Value treatment  Included in parent value")
+        return lines
+    if classification == "resource_proxy":
+        lines.append("ℹ️ Value treatment  Resource proxy; no independent monetary value")
+        return lines
+
+    # Existing approved drafts may legitimately carry the older explicit
+    # economically-immaterial policy. Keep their persisted truth unchanged but
+    # present the absence of valuation in Creator-facing language.
+    lines.append("⚠️ Value not assigned to this approved Sandbox Item.")
+    return lines
+
+
+def _nutrition_lines(modules: dict[str, Any]) -> list[str]:
+    nutrition = modules.get("nutrition")
+    if not isinstance(nutrition, dict):
+        return []
+    basis = nutrition.get("basis_quantity")
+    unit = nutrition.get("unit") or "unit"
+    return [
+        "",
+        "🥗 NUTRIENT FACTS · DEFAULT PORTION",
+        f"🍽 Serving     {_fmt_number(basis)} {unit}" if basis is not None else f"🍽 Serving     —",
+        f"🔥 Energy      {_fmt_number(nutrition.get('energy_kcal'))} kcal" if nutrition.get("energy_kcal") is not None else "🔥 Energy      —",
+        f"🥩 Protein     {_fmt_number(nutrition.get('protein_g'))} g" if nutrition.get("protein_g") is not None else "🥩 Protein     —",
+        f"🌾 Carbs       {_fmt_number(nutrition.get('carbohydrate_g'))} g" if nutrition.get("carbohydrate_g") is not None else "🌾 Carbs       —",
+        f"🥑 Fat         {_fmt_number(nutrition.get('fat_g'))} g" if nutrition.get("fat_g") is not None else "🥑 Fat         —",
+        f"📐 Basis       {_fmt_number(basis)} {unit}" if basis is not None else "📐 Basis       —",
+    ]
+
+
+def _physical_lines(modules: dict[str, Any]) -> list[str]:
+    physical = modules.get("physical")
+    if not isinstance(physical, dict):
+        return []
+    lines = ["", "📐 PHYSICAL"]
+    mass = physical.get("mass")
+    if isinstance(mass, dict):
+        lines.append(f"⚖️ Mass        {_qty(mass)}")
+    dimensions = [physical.get("length"), physical.get("width"), physical.get("height")]
+    if all(isinstance(value, dict) for value in dimensions):
+        units = [str(value.get("unit")) for value in dimensions]
+        if len(set(units)) == 1:
+            values = " × ".join(_fmt_number(value.get("value")) for value in dimensions)
+            lines.append(f"📏 Size        {values} {units[0]}")
+        else:
+            lines.append(
+                "📏 Size        " + " × ".join(_qty(value) for value in dimensions)
+            )
+    else:
+        for label, value in zip(("Length", "Width", "Height"), dimensions):
+            if isinstance(value, dict):
+                lines.append(f"📏 {label:<10} {_qty(value)}")
+    return lines if len(lines) > 2 else []
+
+
+def _special_module_lines(modules: dict[str, Any]) -> list[str]:
+    lines: list[str] = []
+    container = modules.get("container")
+    if isinstance(container, dict) and isinstance(container.get("capacity_volume"), dict):
+        lines.extend(["", "📦 STORAGE", f"🫙 Capacity     {_qty(container['capacity_volume'])}"])
+    resistance = modules.get("resistance_training")
+    if isinstance(resistance, dict) and isinstance(resistance.get("resistance_load"), dict):
+        lines.extend(["", "🏋️ TRAINING", f"⚖️ Resistance   {_qty(resistance['resistance_load'])}"])
+    return lines
+
+
+def approved_item_detail_text(conn: sqlite3.Connection, value: dict[str, Any]) -> str:
+    item = value["item"]
+    definition = item["definition"]
+    instance = item["instance"]
+    modules = definition.get("modules") or {}
+    relations = _relations_by_type(conn, value)
+    quantity = (
+        f"{_fmt_number(instance.get('quantity'))} {instance.get('unit')}"
+        if instance.get("mode") == "stack" and instance.get("quantity") is not None
+        else "1 item"
+    )
+    kind = str(definition.get("kind") or "item").replace("_", " ").title()
+    lifecycle = str(value.get("lifecycle_status") or "active").title()
+
+    lines = [
+        f"📦 {definition.get('name', value.get('object_id', 'Item'))}",
+        "━━━━━━━━━━━━━━━━━━",
+        f"🧪 Creation Sandbox · {lifecycle}",
+        "",
+        f"📏 Quantity    {quantity}",
+        f"🧬 Definition  {definition.get('key', '—')}",
+    ]
+    if relations.get("stored_in"):
+        lines.append(f"📦 Container   {relations['stored_in']}")
+    if relations.get("owned_by"):
+        lines.append(f"🏷 Owner       {relations['owned_by']}")
+    lines.extend([
+        f"🧭 Mobility    {str(definition.get('mobility', '—')).replace('_', ' ').title()}",
+        f"🗂 Kind        {kind}",
+    ])
+    if relations.get("located_at"):
+        lines.append(f"📍 Location    {relations['located_at']}")
+    if relations.get("carried_by"):
+        lines.append(f"🎒 Carried by  {relations['carried_by']}")
+    if relations.get("equipped_by"):
+        lines.append(f"🧷 Equipped by {relations['equipped_by']}")
+
+    description = str(definition.get("description") or "").strip()
+    if description:
+        lines.extend(["", description])
+
+    lines.extend(_economic_lines(item))
+    lines.extend(_nutrition_lines(modules))
+    lines.extend(_physical_lines(modules))
+    lines.extend(_special_module_lines(modules))
+    lines.extend(["", "🧪 Sandbox-only item · canonical universe unchanged."])
+    return "\n".join(lines)
 
 
 def install_item_world_layers_extension(base) -> None:
@@ -89,38 +282,7 @@ def install_item_world_layers_extension(base) -> None:
         if basic["creation_type"] != "item":
             return original_object_view(conn, object_id)
         value = get_sandbox_item(conn, object_id)
-        item = value["item"]
-        definition = item["definition"]
-        instance = item["instance"]
-        economic = item.get("economic_policy") or {}
-        modules = definition.get("modules") or {}
-        capabilities = definition.get("capabilities") or []
-        lines = [
-            f"📦 {definition.get('name', object_id)}",
-            "━━━━━━━━━━━━━━━━━━",
-            "🧪 Creation Sandbox",
-            f"Lifecycle: {str(value.get('lifecycle_status', 'active')).title()}",
-            f"ID: {object_id}",
-            "",
-            f"Kind: {str(definition.get('kind', '—')).replace('_', ' ').title()}",
-            f"Mobility: {str(definition.get('mobility', '—')).title()}",
-            f"Definition: {definition.get('key', '—')}",
-            str(definition.get("description") or "No description."),
-            "",
-            f"Instance: {instance.get('mode', '—')}" + (
-                f" · {instance.get('quantity'):g} {instance.get('unit')}" if instance.get("mode") == "stack" and isinstance(instance.get("quantity"), (int, float)) else ""
-            ),
-            f"Capabilities: {', '.join(str(v) for v in capabilities) if capabilities else '—'}",
-            f"Modules: {', '.join(sorted(str(v) for v in modules)) if modules else '—'}",
-            f"Economics: {str(economic.get('classification', '—')).replace('_', ' ')} / {str(economic.get('net_worth_treatment', '—')).replace('_', ' ')}",
-        ]
-        relations = value.get("resolved_relations") or []
-        if relations:
-            lines.extend(["", "Sandbox relations"])
-            for relation in relations:
-                lines.append(f"• {str(relation['relation_type']).replace('_', ' ').title()} → {relation['target_object_id']}")
-        lines.extend(["", "Canonical universe: unchanged."])
-        return "\n".join(lines), [
+        return approved_item_detail_text(conn, value), [
             [{"text": "← Items", "callback_data": "sw:list:item"}],
             [{"text": "🛠 Creator Studio", "callback_data": "sw:studio"}],
             [{"text": "⌂ Sandbox World", "callback_data": "nav:sandbox"}],
@@ -140,3 +302,6 @@ def install_item_world_layers_extension(base) -> None:
     base.sandbox_list_view = sandbox_list_view
     base.sandbox_object_view = sandbox_object_view
     base.world_layer_callback_view = world_layer_callback_view
+
+
+__all__ = ["approved_item_detail_text", "install_item_world_layers_extension"]
