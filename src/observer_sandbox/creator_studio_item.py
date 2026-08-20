@@ -91,10 +91,10 @@ def manual_item_draft(
     if not isinstance(candidate, dict):
         raise CreatorStudioError("Item draft must be one JSON object")
     try:
-        normalized = validate_item_payload(candidate)
+        validate_item_payload(candidate)
     except (ValueError, TypeError, KeyError) as exc:
         raise CreatorStudioError(f"Item contract rejected the draft: {exc}") from exc
-    proposal = _wrap_item_proposal(normalized, mode="manual", user_id=user_id)
+    proposal = _wrap_item_proposal(candidate, mode="manual", user_id=user_id)
     return _save_draft(
         conn,
         user_id,
@@ -126,8 +126,10 @@ def ai_item_draft(
         "Allowed capabilities: inspect,eat,store,train,use,equip,wear. Allowed modules only: physical,stack,nutrition,container,resistance_training. "
         "Use only modules actually needed. Do not author grades; grades are derived. Do not invent unknown fields. "
         "instance is {'mode':'unique'} for non-stackable items, or {'mode':'stack','quantity':number,'unit':token} for stackable items. "
-        "economic_policy must use the registered classification/treatment contract. If monetary facts were not requested or cannot be grounded, "
-        "use classification='economically_immaterial', net_worth_treatment='excluded', null monetary fields, and valuation_method='creator_explicit'. "
+        "economic_policy classifications are standalone_asset, component, consumable_stock, resource_proxy, economically_immaterial; "
+        "net_worth_treatment is independent, included_in_parent, derived_stock, or excluded. "
+        "If monetary facts were not requested or cannot be grounded, use classification='economically_immaterial', "
+        "net_worth_treatment='excluded', null monetary fields, and valuation_method='creator_explicit'. "
         "requirements has exactly {'use': null-or-typed-requirement}. relationships has exactly located_at,stored_in,owned_by,carried_by,equipped_by. "
         "Leave relationship values null unless the Creator explicitly supplied a real Sandbox object id. Only one physical placement mode may be non-null. "
         "For physical quantities use supported units and preserve plausible measurements. This is a proposal only; never claim canonical existence. "
@@ -145,10 +147,10 @@ def ai_item_draft(
     if not isinstance(candidate, dict):
         raise CreatorStudioError("Creation AI returned an invalid Item object")
     try:
-        normalized = validate_item_payload(candidate)
+        validate_item_payload(candidate)
     except (ValueError, TypeError, KeyError) as exc:
         raise CreatorStudioError(f"Creation AI Item failed exact validation: {exc}") from exc
-    proposal = _wrap_item_proposal(normalized, mode="ai_generated", user_id=user_id)
+    proposal = _wrap_item_proposal(candidate, mode="ai_generated", user_id=user_id)
     return _save_draft(
         conn,
         user_id,
@@ -189,12 +191,12 @@ def approve_item_draft(
     if not isinstance(stored, dict):
         raise CreatorStudioError("Stored Item draft payload is missing")
     try:
-        normalized = validate_item_payload(stored)
+        validate_item_payload(stored)
     except (ValueError, TypeError, KeyError) as exc:
         raise CreatorStudioError(f"Item approval failed exact validation: {exc}") from exc
     obj = create_sandbox_item(
         conn,
-        _source_payload(normalized),
+        copy.deepcopy(stored),
         sandbox_id=sandbox_id,
         provenance_mode=str(draft.get("draft_mode") or "manual"),
         requested_by=f"telegram:{int(user_id)}",
