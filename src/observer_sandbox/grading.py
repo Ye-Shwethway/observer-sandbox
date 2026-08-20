@@ -4,6 +4,8 @@ from dataclasses import dataclass
 from statistics import fmean
 from typing import Iterable, Mapping
 
+from .physical_quantity import PhysicalQuantity
+
 
 @dataclass(frozen=True)
 class GradeBand:
@@ -18,6 +20,8 @@ class GradeResult:
     grade: str
     label: str
     value: float
+    domain: str | None = None
+    dimension: str | None = None
 
 
 @dataclass(frozen=True)
@@ -25,6 +29,16 @@ class GradeScheme:
     scheme_id: str
     family: str
     description: str
+    domain: str | None = None
+    dimension: str | None = None
+    supported_grades: tuple[str, ...] = ()
+
+
+@dataclass(frozen=True)
+class GradeProfile:
+    domain: str
+    dimensions: Mapping[str, GradeResult]
+    overall: GradeResult | None = None
 
 
 @dataclass(frozen=True)
@@ -49,38 +63,75 @@ GRADE_VOCABULARY: tuple[tuple[str, str], ...] = (
     ("XX", "Transcendent"),
 )
 GRADE_LABELS = dict(GRADE_VOCABULARY)
+GRADE_ORDER: Mapping[str, int] = {
+    grade: index for index, (grade, _label) in enumerate(GRADE_VOCABULARY)
+}
+STANDARD_E_TO_S_GRADES = ("E", "D", "C", "B", "A", "S")
 
 RAPS_100_PROOF_SCHEME_ID = "raps-100-proof-v1"
 SKILL_PROFICIENCY_100_SCHEME_ID = "skill-proficiency-100-v1"
 BODY_AESTHETIC_PROPORTION_SCHEME_ID = "body-aesthetic-proportion-v1"
 BODY_CENTRAL_ADIPOSITY_SCHEME_ID = "body-central-adiposity-v1"
 BODY_PHYSIQUE_COMPOSITE_SCHEME_ID = "body-physique-composite-v1"
+ITEM_RESISTANCE_LOAD_SCHEME_ID = "item-resistance-load-v1"
+LOCATION_COMPLETENESS_SCHEME_ID = "location-completeness-v1"
 
 SCHEME_REGISTRY: Mapping[str, GradeScheme] = {
     RAPS_100_PROOF_SCHEME_ID: GradeScheme(
         RAPS_100_PROOF_SCHEME_ID,
         "monotonic",
         "Explicit 0..100 RAPS attribute proficiency/capability interpretation.",
+        domain="character",
+        dimension="attribute_capability",
+        supported_grades=STANDARD_E_TO_S_GRADES,
     ),
     SKILL_PROFICIENCY_100_SCHEME_ID: GradeScheme(
         SKILL_PROFICIENCY_100_SCHEME_ID,
         "monotonic",
         "Explicit 0..100 learned-skill proficiency interpretation.",
+        domain="character",
+        dimension="skill_proficiency",
+        supported_grades=STANDARD_E_TO_S_GRADES,
     ),
     BODY_AESTHETIC_PROPORTION_SCHEME_ID: GradeScheme(
         BODY_AESTHETIC_PROPORTION_SCHEME_ID,
         "target_range",
         "Reference-band interpretation of represented adult male torso proportions; not a universal beauty law.",
+        domain="body",
+        dimension="aesthetic_proportion",
+        supported_grades=STANDARD_E_TO_S_GRADES,
     ),
     BODY_CENTRAL_ADIPOSITY_SCHEME_ID: GradeScheme(
         BODY_CENTRAL_ADIPOSITY_SCHEME_ID,
         "target_range",
         "Health-oriented waist-to-height central-adiposity reference interpretation.",
+        domain="body",
+        dimension="central_adiposity",
+        supported_grades=STANDARD_E_TO_S_GRADES,
     ),
     BODY_PHYSIQUE_COMPOSITE_SCHEME_ID: GradeScheme(
         BODY_PHYSIQUE_COMPOSITE_SCHEME_ID,
         "composite",
         "Read-time composite across compatible body proportion/reference metrics.",
+        domain="body",
+        dimension="physique_composite",
+        supported_grades=STANDARD_E_TO_S_GRADES,
+    ),
+    ITEM_RESISTANCE_LOAD_SCHEME_ID: GradeScheme(
+        ITEM_RESISTANCE_LOAD_SCHEME_ID,
+        "monotonic",
+        "Project-defined classification of represented resistance-training item load; this describes the item and is not a Character strength requirement.",
+        domain="item",
+        dimension="resistance_load",
+        supported_grades=STANDARD_E_TO_S_GRADES,
+    ),
+    LOCATION_COMPLETENESS_SCHEME_ID: GradeScheme(
+        LOCATION_COMPLETENESS_SCHEME_ID,
+        "ordinal",
+        "Derived interpretation of the existing Location L0-L4 completeness contract; it is not access authorization or prestige.",
+        domain="location",
+        dimension="completeness",
+        supported_grades=("E", "D", "C", "B", "A"),
     ),
 }
 
@@ -92,6 +143,26 @@ RAPS_100_PROOF_BANDS: tuple[GradeBand, ...] = (
     GradeBand(20.0, "D", GRADE_LABELS["D"]),
     GradeBand(0.0, "E", GRADE_LABELS["E"]),
 )
+
+# Thresholds are a simulation classification of the resistance load carried by
+# one represented training item. They are intentionally not a statement about
+# the actor capability required for any exercise or movement involving it.
+ITEM_RESISTANCE_LOAD_BANDS_KG: tuple[GradeBand, ...] = (
+    GradeBand(50.0 * 0.45359237, "S", GRADE_LABELS["S"]),
+    GradeBand(35.0 * 0.45359237, "A", GRADE_LABELS["A"]),
+    GradeBand(20.0 * 0.45359237, "B", GRADE_LABELS["B"]),
+    GradeBand(10.0 * 0.45359237, "C", GRADE_LABELS["C"]),
+    GradeBand(5.0 * 0.45359237, "D", GRADE_LABELS["D"]),
+    GradeBand(0.0, "E", GRADE_LABELS["E"]),
+)
+
+LOCATION_COMPLETENESS_GRADES: Mapping[int, str] = {
+    0: "E",
+    1: "D",
+    2: "C",
+    3: "B",
+    4: "A",
+}
 
 ATTRIBUTE_RAPS_100_FIELDS: frozenset[str] = frozenset(
     {
@@ -170,10 +241,68 @@ def grading_scheme(scheme_id: str) -> GradeScheme:
         raise KeyError(f"Unknown grading scheme: {scheme_id}") from exc
 
 
+def grade_rank(grade: str) -> int:
+    try:
+        return GRADE_ORDER[str(grade)]
+    except KeyError as exc:
+        raise ValueError(f"Unknown grade: {grade!r}") from exc
+
+
+def compare_grades(left: str, right: str) -> int:
+    left_rank = grade_rank(left)
+    right_rank = grade_rank(right)
+    return (left_rank > right_rank) - (left_rank < right_rank)
+
+
+def meets_minimum_grade(actual: str, minimum: str) -> bool:
+    return grade_rank(actual) >= grade_rank(minimum)
+
+
+def build_grade_profile(
+    domain: str,
+    dimensions: Mapping[str, GradeResult],
+    *,
+    overall: GradeResult | None = None,
+) -> GradeProfile:
+    normalized_domain = str(domain or "").strip().lower()
+    if not normalized_domain:
+        raise ValueError("Grade profile domain is required")
+    normalized_dimensions = dict(dimensions)
+    if not normalized_dimensions:
+        raise ValueError("Grade profile requires at least one dimension")
+    for key, result in normalized_dimensions.items():
+        if not isinstance(key, str) or not key.strip():
+            raise ValueError("Grade profile dimension keys must be non-empty strings")
+        if not isinstance(result, GradeResult):
+            raise TypeError("Grade profile dimensions must contain GradeResult values")
+        scheme = grading_scheme(result.scheme_id)
+        if scheme.domain is not None and scheme.domain != normalized_domain:
+            raise ValueError(
+                f"Grade scheme {scheme.scheme_id} belongs to {scheme.domain}, not {normalized_domain}"
+            )
+    if overall is not None:
+        scheme = grading_scheme(overall.scheme_id)
+        if scheme.family != "composite":
+            raise ValueError("Grade profile overall result requires an explicit composite scheme")
+        if scheme.domain is not None and scheme.domain != normalized_domain:
+            raise ValueError(
+                f"Overall grade scheme {scheme.scheme_id} belongs to {scheme.domain}, not {normalized_domain}"
+            )
+    return GradeProfile(normalized_domain, normalized_dimensions, overall)
+
+
 def _evaluate_bands(value: float, *, scheme_id: str, bands: tuple[GradeBand, ...]) -> GradeResult:
+    scheme = grading_scheme(scheme_id)
     for band in bands:
         if value >= band.minimum:
-            return GradeResult(scheme_id=scheme_id, grade=band.grade, label=band.label, value=value)
+            return GradeResult(
+                scheme_id=scheme_id,
+                grade=band.grade,
+                label=band.label,
+                value=value,
+                domain=scheme.domain,
+                dimension=scheme.dimension,
+            )
     raise AssertionError("grading bands do not cover the configured range")
 
 
@@ -189,6 +318,43 @@ def evaluate_skill_score(value: float | int) -> GradeResult:
     if numeric < 0.0 or numeric > 100.0:
         raise ValueError("skill-proficiency-100-v1 expects a value in the inclusive range 0..100")
     return _evaluate_bands(numeric, scheme_id=SKILL_PROFICIENCY_100_SCHEME_ID, bands=RAPS_100_PROOF_BANDS)
+
+
+def evaluate_item_resistance_load(quantity: PhysicalQuantity) -> GradeResult:
+    if not isinstance(quantity, PhysicalQuantity) or quantity.kind != "mass":
+        raise ValueError("item-resistance-load-v1 requires a normalized mass quantity")
+    return _evaluate_bands(
+        quantity.base_value,
+        scheme_id=ITEM_RESISTANCE_LOAD_SCHEME_ID,
+        bands=ITEM_RESISTANCE_LOAD_BANDS_KG,
+    )
+
+
+def evaluate_location_completeness(level: int | str) -> GradeResult:
+    if isinstance(level, bool):
+        raise ValueError("location-completeness-v1 expects L0..L4")
+    if isinstance(level, str):
+        normalized = level.strip().upper()
+        if not normalized.startswith("L") or not normalized[1:].isdigit():
+            raise ValueError("location-completeness-v1 expects L0..L4")
+        numeric = int(normalized[1:])
+    elif isinstance(level, int):
+        numeric = level
+    else:
+        raise ValueError("location-completeness-v1 expects L0..L4")
+    try:
+        grade = LOCATION_COMPLETENESS_GRADES[numeric]
+    except KeyError as exc:
+        raise ValueError("location-completeness-v1 expects L0..L4") from exc
+    scheme = grading_scheme(LOCATION_COMPLETENESS_SCHEME_ID)
+    return GradeResult(
+        scheme_id=scheme.scheme_id,
+        grade=grade,
+        label=GRADE_LABELS[grade],
+        value=float(numeric),
+        domain=scheme.domain,
+        dimension=scheme.dimension,
+    )
 
 
 def evaluate_attribute_field(field_key: str, value: object) -> GradeResult | None:
@@ -239,7 +405,15 @@ def evaluate_target_range(value: float | int, target: TargetRange, *, scheme_id:
         grade = "D"
     else:
         grade = "E"
-    return GradeResult(scheme_id=scheme_id, grade=grade, label=GRADE_LABELS[grade], value=numeric)
+    scheme = grading_scheme(scheme_id)
+    return GradeResult(
+        scheme_id=scheme_id,
+        grade=grade,
+        label=GRADE_LABELS[grade],
+        value=numeric,
+        domain=scheme.domain,
+        dimension=scheme.dimension,
+    )
 
 
 def _number(values: Mapping[str, object], key: str) -> float | None:
@@ -319,4 +493,6 @@ def aggregate_body_grades(items: Iterable[dict[str, object]]) -> GradeResult | N
         grade=base.grade,
         label=base.label,
         value=numeric,
+        domain=base.domain,
+        dimension=base.dimension,
     )
