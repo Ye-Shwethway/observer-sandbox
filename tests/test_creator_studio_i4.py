@@ -43,7 +43,7 @@ def _manual_value(key: str, data_type: str):
         "sexual_anatomy.penis_girth_in": 5,
         "genetics.penis_length_in": 6,
         "genetics.penis_girth_in": 5,
-        "training.training_age_years": 5,
+        "training.training_age_years": 0,
         "raps_ia.iq": 120,
     }
     if key in specials:
