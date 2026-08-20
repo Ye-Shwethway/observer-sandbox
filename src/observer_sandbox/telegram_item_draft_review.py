@@ -7,6 +7,7 @@ import urllib.request
 from typing import Any
 
 from .item_grading import item_grading_lines
+from .item_metric_ui import item_metric_lines
 from .telegram_economy import format_money_minor
 
 
@@ -89,6 +90,8 @@ def _module_lines(modules: dict[str, Any]) -> list[str]:
     }
     lines: list[str] = []
     for module_name in sorted(modules):
+        if module_name == "metrics":
+            continue
         module = modules[module_name]
         lines.append(f"• {labels.get(module_name, module_name.replace('_', ' ').title())}")
         if isinstance(module, dict):
@@ -178,6 +181,7 @@ def item_detail_view(draft: dict[str, Any], index: int) -> tuple[str, list[list[
         quantity = _fmt(instance.get("quantity"))
         unit = _fmt(instance.get("unit"))
         lines.append(f"• Quantity: {quantity} {unit}".rstrip())
+    metric_lines = item_metric_lines(modules)
     lines.extend([
         "",
         "CAPABILITIES & TAGS",
@@ -186,6 +190,10 @@ def item_detail_view(draft: dict[str, Any], index: int) -> tuple[str, list[list[
         "",
         "PHYSICAL & FUNCTIONAL DETAILS",
         *_module_lines(modules),
+    ])
+    if metric_lines:
+        lines.extend(["", *metric_lines])
+    lines.extend([
         "",
         *item_grading_lines(payload),
         "",
