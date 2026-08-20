@@ -6,10 +6,10 @@ from typing import Any, Mapping
 from .grading_socket import (
     DEFAULT_GRADING_SOCKET_REGISTRY,
     DEFAULT_UNIVERSE_GRADING_POLICY_ID,
-    GradePlan,
+    GradingSocketError,
     GradingSocketRegistry,
 )
-from .item_creation_schema import validate_item_payload
+from .item_creation_schema import ItemSchemaError, validate_item_payload
 
 
 def _grading_source(value: Mapping[str, Any]) -> dict[str, Any]:
@@ -50,12 +50,17 @@ def item_grading_lines(
     universe_policy_id: str = DEFAULT_UNIVERSE_GRADING_POLICY_ID,
     registry: GradingSocketRegistry = DEFAULT_GRADING_SOCKET_REGISTRY,
 ) -> list[str]:
-    plan, profile = resolve_item_grading(
-        value,
-        universe_policy_id=universe_policy_id,
-        registry=registry,
-    )
     lines = [heading]
+    try:
+        plan, profile = resolve_item_grading(
+            value,
+            universe_policy_id=universe_policy_id,
+            registry=registry,
+        )
+    except (ItemSchemaError, GradingSocketError, TypeError, ValueError):
+        lines.append("• Grading unavailable for this payload under the current registered contract.")
+        return lines
+
     if profile is None:
         lines.append("• No registered grading dimensions apply to this Item yet.")
         return lines
