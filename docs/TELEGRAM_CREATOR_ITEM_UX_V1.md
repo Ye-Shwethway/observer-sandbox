@@ -12,30 +12,39 @@ Expose the already-established I5.6-I5.9 Item creation foundation as a usable Cr
 
 Creation methods:
 
-- `Generate with AI` — natural-language Item intent is converted into the exact `item-v1` contract, then deterministic validation runs before a draft is saved.
-- `Exact Item JSON` — advanced/manual path accepts one complete `item-v1` object and validates it identically.
+- `Single Item · AI` — natural-language Item intent is converted into one exact `item-v1` contract.
+- `Item Batch · AI` — one natural-language request becomes a heterogeneous batch graph.
+- `Single Item · Exact JSON` — advanced/manual path for one complete `item-v1` object.
+- `Batch · Exact JSON` — advanced/manual path using `{"items":[{"ref":"...","payload":{...item-v1...}}]}`.
 
-Both methods converge on the same draft preview and approval boundary.
+All methods converge on deterministic preview and approval boundaries.
 
-## Approval authority
+## Single Item approval authority
 
-Item approval MUST NOT use generic creation activation.
+Single Item approval MUST NOT use generic creation activation.
 
-The approved Item draft is revalidated and materialized through the existing I5.7 Item service (`create_sandbox_item`, batch-size-one path), preserving:
+The approved draft is revalidated and materialized through the existing I5.7 Item service (`create_sandbox_item`, batch-size-one path), preserving Item definition/instance/economic/relation separation and Sandbox-only persistence.
 
-- Item definition vs concrete instance/stack separation;
-- economic policy separation;
-- explicit Item relation semantics;
-- Sandbox-only persistence;
-- canonical Real World zero-mutation behavior.
+## Batch approval authority
+
+Batch creation reuses the existing I5.8 services directly:
+
+- `preview_sandbox_item_batch` validates the complete graph without Item writes;
+- batch-local forward refs may be used for `stored_in` container relationships;
+- duplicate/self/cyclic/invalid refs fail closed;
+- `create_sandbox_item_batch` applies the whole batch atomically;
+- one invalid member means zero new batch Items;
+- canonical Real World state remains unchanged.
+
+The Telegram batch preview shows member count, compact member summaries and represented batch-local storage relationships before one approval action.
 
 ## Observer surfaces
 
 After approval the Creator can:
 
-- open the Item immediately;
-- browse `Sandbox Items`;
-- inspect Item definition/instance/economic/relation summary;
+- open a single Item immediately;
+- browse `Sandbox Items` after single or batch creation;
+- inspect Item definition/instance/economic/relation summaries;
 - return to Creator Studio or Sandbox World.
 
 Sandbox World and Sandbox Universe summaries include Item counts/presence.
