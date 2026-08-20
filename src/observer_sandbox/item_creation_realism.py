@@ -3,6 +3,7 @@ from __future__ import annotations
 import re
 from typing import Any, Mapping
 
+from .item_metrics import DEFAULT_ITEM_METRIC_REGISTRY, ItemMetricError
 from .physical_quantity import PhysicalQuantityError, normalize_physical_quantity
 
 
@@ -34,20 +35,15 @@ def _quantity_base(raw: Any, *, kind: str, label: str) -> float | None:
         raise ItemRealismError(f"{label} could not be normalized: {exc}") from exc
 
 
-def _metric_value(metrics: Mapping[str, Any], key: str, *, expected_unit: str) -> float | None:
+def _metric_value(metrics: Mapping[str, Any], key: str) -> float | None:
     raw = metrics.get(key)
     if raw is None:
         return None
-    if not isinstance(raw, Mapping) or set(raw) != {"value", "unit"}:
-        raise ItemRealismError(f"modules.metrics.{key} must contain exactly value and unit")
-    if str(raw.get("unit")) != expected_unit:
-        raise ItemRealismError(
-            f"modules.metrics.{key}.unit must be canonical unit {expected_unit!r} before realism validation"
-        )
-    value = raw.get("value")
-    if isinstance(value, bool) or not isinstance(value, (int, float)):
-        raise ItemRealismError(f"modules.metrics.{key}.value must be numeric")
-    return float(value)
+    try:
+        normalized = DEFAULT_ITEM_METRIC_REGISTRY.normalize(key, raw)
+    except (ItemMetricError, TypeError, ValueError) as exc:
+        raise ItemRealismError(f"modules.metrics.{key} could not be normalized: {exc}") from exc
+    return float(normalized["value"])
 
 
 def _text_evidence(definition: Mapping[str, Any]) -> str:
@@ -78,16 +74,16 @@ def _validate_metric_coherence(definition: Mapping[str, Any], modules: Mapping[s
     if not isinstance(metrics, Mapping):
         return
 
-    depth = _metric_value(metrics, "water_resistance_depth", expected_unit="m")
+    depth = _metric_value(metrics, "water_resistance_depth")
     if depth is not None and not _has_explicit_immersion_evidence(definition):
         raise ItemRealismError(
             "water_resistance_depth requires explicit waterproof/submersible/immersion evidence; "
             "generic water-resistant or outdoor wording does not justify a numeric immersion depth"
         )
 
-    power_w = _metric_value(metrics, "power", expected_unit="W")
-    runtime_h = _metric_value(metrics, "runtime", expected_unit="h")
-    energy_wh = _metric_value(metrics, "energy_capacity", expected_unit="Wh")
+    power_w = _metric_value(metrics, "power")
+    runtime_h = _metric_value(metrics, "runtime")
+    energy_wh = _metric_value(metrics, "energy_capacity")
     if power_w is not None and runtime_h is not None and energy_wh is not None:
         nominal_need_wh = power_w * runtime_h
         # `power` may be rated/peak rather than average draw. Only reject a
