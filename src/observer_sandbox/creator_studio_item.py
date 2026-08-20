@@ -9,6 +9,7 @@ from .creation_sandbox import DEFAULT_SANDBOX_ID
 from .creation_socket import build_creation_proposal
 from .creator_creation_ai import creator_creation_binding
 from .creator_studio import CreatorStudioError, _save_draft, active_draft, cancel_draft
+from .item_ai_authoring import DEFAULT_ITEM_AI_AUTHORING_INSTRUCTION
 from .item_ai_contract import canonicalize_ai_item_fill, item_ai_fill_schema
 from .item_ai_self_correction import generate_validated_item_candidate
 from .item_creation_economics import DEFAULT_ITEM_ECONOMIC_INSTRUCTION
@@ -129,12 +130,11 @@ def ai_item_draft(
     prompt = (
         "Fill the supplied complete item-v1 schema for exactly one Item in the isolated Creation Sandbox. "
         "Use [] for unused arrays, null for unknown/unused nullable fields, and null for unused module slots. "
-        "Do not omit, rename or invent schema fields. Populate only facts supported by the Creator intent or conservative ordinary inference. "
-        "For definition.modules.metrics, map represented measurable specifications into the matching registered metric slots (for example luminous output, runtime, power, energy capacity, range, speed, data throughput, digital storage, beam distance, water-resistance depth, charge time or payload capacity). Leave unknown or inapplicable metric slots null. Do not duplicate container capacity or resistance load into metrics because those already have authoritative modules. "
+        "Do not omit, rename or invent schema fields. "
+        + DEFAULT_ITEM_AI_AUTHORING_INSTRUCTION
         + DEFAULT_ITEM_REALISM_INSTRUCTION
         + DEFAULT_ITEM_ECONOMIC_INSTRUCTION
-        + "Do not author derived grades, grading thresholds, evaluator ids or reference profiles. "
-        "This is proposal-only and does not create canonical state. "
+        + "This is proposal-only and does not create canonical state. "
         f"Creator intent: {intent}"
     )
     try:
