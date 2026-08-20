@@ -8,6 +8,7 @@ from observer_sandbox.manual_character_creation import (
     ManualCharacterCreationError,
     manual_character_baseline_status,
     manual_character_draft,
+    manual_character_required_field_keys,
     update_manual_character_collection,
     update_manual_character_field,
 )
@@ -20,20 +21,66 @@ def _conn(tmp_path):
     return connect(db)
 
 
-def _fill_required_baseline(conn, user_id=42):
-    values = {
+def _manual_value(key: str, data_type: str):
+    specials = {
+        "identity.full_name": "Rowan Hale",
         "identity.date_of_birth": "2001-05-12",
         "identity.sex": "male",
         "identity.gender": "man",
-        "body.height_in": "74",
-        "body.weight_lb": "190",
-        "body.body_fat_pct": "12",
-        "personality.primary_motivation": "Protect the people he cares about",
-        "personality.primary_traits": '["calm","disciplined","curious"]',
-        "background.origins": "Raised in a small mountain town.",
+        "body.height_in": 74,
+        "genetics.height_max_in": 76,
+        "body.weight_lb": 190,
+        "body.body_fat_pct": 12,
+        "genetics.weight_lean_min_lb": 150,
+        "genetics.weight_lean_max_lb": 220,
+        "genetics.body_fat_floor_pct": 6,
+        "body.neck_in": 16,
+        "body.shoulders_in": 48,
+        "body.chest_in": 42,
+        "body.waist_in": 32,
+        "body.hips_in": 38,
+        "body.biceps_relaxed_in": 15,
+        "body.biceps_flexed_in": 16,
+        "body.triceps_in": 14,
+        "body.forearms_in": 13,
+        "body.thighs_in": 23,
+        "body.calves_in": 16,
+        "genetics.waist_target_in": 32,
+        "sexual_anatomy.penis_length_in": 6,
+        "sexual_anatomy.penis_girth_in": 5,
+        "genetics.penis_length_in": 6,
+        "genetics.penis_girth_in": 5,
+        "training.training_age_years": 5,
+        "raps_ia.iq": 120,
     }
-    for key, raw in values.items():
-        update_manual_character_field(conn, user_id, key, raw)
+    if key in specials:
+        value = specials[key]
+    elif key.startswith("genetics.") and data_type in {"number", "integer"}:
+        value = 60
+    elif data_type == "number":
+        value = 50
+    elif data_type == "integer":
+        value = 1
+    elif data_type == "boolean":
+        value = True
+    elif data_type == "date":
+        value = "2001-05-12"
+    elif data_type == "datetime":
+        value = "2025-05-01T07:00:00+00:00"
+    elif data_type == "json":
+        value = []
+    else:
+        value = "manual value"
+    return json.dumps(value) if data_type == "json" else str(value).lower() if isinstance(value, bool) else str(value)
+
+
+def _fill_exact_seed(conn, user_id=42):
+    for key in manual_character_required_field_keys(conn):
+        row = conn.execute(
+            "SELECT data_type FROM profile_field_definitions WHERE field_key=?", (key,)
+        ).fetchone()
+        assert row is not None
+        update_manual_character_field(conn, user_id, key, _manual_value(key, str(row["data_type"])))
 
 
 def test_manual_character_starts_as_structured_profile_not_name_only_shell(tmp_path):
@@ -48,9 +95,20 @@ def test_manual_character_starts_as_structured_profile_not_name_only_shell(tmp_p
         assert profile["skills"] == []
         assert draft["proposal"]["properties"]["compatibility_tags"] == []
 
+        required = set(manual_character_required_field_keys(conn))
         status = manual_character_baseline_status(conn, 42)
         assert status["ready"] is False
-        assert "identity.date_of_birth" in status["missing"]
+        assert status["total"] == len(required)
+        assert set(status["missing"]) == required - {"identity.full_name"}
+
+
+def test_manual_required_field_set_matches_ai_exact_seed_contract(tmp_path):
+    with _conn(tmp_path) as conn:
+        expected = set(manual_character_required_field_keys(conn))
+        assert "raps_pa.practical_skills" in expected
+        assert "raps_pa.practical_skill" not in expected
+        assert "identity.age_years" not in expected
+        assert "needs.energy" not in expected
 
 
 def test_name_only_manual_character_cannot_be_approved(tmp_path):
@@ -66,12 +124,14 @@ def test_name_only_manual_character_cannot_be_approved(tmp_path):
         assert manual_character_draft(conn, 42)["proposal"]["identity"]["name"] == "Rowan Hale"
 
 
-def test_manual_fields_use_shared_creation_registry_and_validation(tmp_path):
+def test_manual_fields_use_same_canonical_creation_registry_and_validation(tmp_path):
     with _conn(tmp_path) as conn:
         manual_draft(conn, 42, "character", "Rowan Hale")
 
-        with pytest.raises(ManualCharacterCreationError, match="not creation-owned"):
+        with pytest.raises(ManualCharacterCreationError, match="not a canonical creation-owned field"):
             update_manual_character_field(conn, 42, "identity.age_years", "24")
+        with pytest.raises(ManualCharacterCreationError, match="not a canonical creation-owned field"):
+            update_manual_character_field(conn, 42, "raps_pa.practical_skill", "legacy")
 
         with pytest.raises(ManualCharacterCreationError, match="plausible human creation range"):
             update_manual_character_field(conn, 42, "body.body_fat_pct", "1")
@@ -82,11 +142,10 @@ def test_manual_fields_use_shared_creation_registry_and_validation(tmp_path):
         assert draft["proposal"]["properties"]["character_profile"]["values"]["identity.full_name"] == "Rowan Mercer"
 
 
-def test_complete_manual_character_approves_into_same_sandbox_profile_storage(tmp_path):
+def test_complete_exact_manual_character_approves_into_same_sandbox_profile_storage(tmp_path):
     with _conn(tmp_path) as conn:
         manual_draft(conn, 42, "character", "Rowan Hale")
-        _fill_required_baseline(conn)
-        update_manual_character_field(conn, 42, "raps_pa.strength", "78")
+        _fill_exact_seed(conn)
         update_manual_character_collection(
             conn,
             42,
@@ -102,6 +161,8 @@ def test_complete_manual_character_approves_into_same_sandbox_profile_storage(tm
 
         status = manual_character_baseline_status(conn, 42)
         assert status["ready"] is True
+        draft_values = draft = manual_character_draft(conn, 42)["proposal"]["properties"]["character_profile"]["values"]
+        assert set(draft_values) == set(manual_character_required_field_keys(conn))
 
         obj = approve_draft(conn, 42)
         assert obj["creation_type"] == "character"
@@ -112,9 +173,9 @@ def test_complete_manual_character_approves_into_same_sandbox_profile_storage(tm
             (obj["object_id"],),
         ).fetchall()
         values = {row["field_key"]: json.loads(row["value_json"]) for row in profile_rows}
+        assert set(values) == set(manual_character_required_field_keys(conn))
         assert values["identity.date_of_birth"] == "2001-05-12"
         assert values["body.height_in"] == 74.0
-        assert values["raps_pa.strength"] == 78.0
         assert all(row["source"] == "creator-studio-manual-profile" for row in profile_rows)
 
         preferences = conn.execute(
@@ -132,7 +193,7 @@ def test_complete_manual_character_approves_into_same_sandbox_profile_storage(tm
 def test_trained_manual_background_requires_structured_skills_before_approval(tmp_path):
     with _conn(tmp_path) as conn:
         manual_draft(conn, 42, "character", "Rowan Hale")
-        _fill_required_baseline(conn)
+        _fill_exact_seed(conn)
         update_manual_character_field(
             conn,
             42,
