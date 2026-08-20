@@ -10,6 +10,7 @@ from .creation_socket import build_creation_proposal
 from .creator_creation_ai import creator_creation_binding
 from .creator_studio import CreatorStudioError, _save_draft, active_draft, cancel_draft
 from .item_ai_contract import canonicalize_ai_item_fill, item_ai_fill_schema
+from .item_creation_realism import DEFAULT_ITEM_REALISM_INSTRUCTION, validate_item_default_realism
 from .item_creation_schema import validate_item_payload
 from .sandbox_item_creation import create_sandbox_item
 from .structured_ai import generate_structured
@@ -78,9 +79,14 @@ def manual_item_template() -> dict[str, Any]:
     }
 
 
+def _validate_item_creation_payload(candidate: dict[str, Any]) -> None:
+    validate_item_payload(candidate)
+    validate_item_default_realism(candidate)
+
+
 def manual_item_draft(
     conn: sqlite3.Connection,
-    user_id: int,
+    user_id,
     raw_json: str,
     *,
     sandbox_id: str = DEFAULT_SANDBOX_ID,
@@ -92,7 +98,7 @@ def manual_item_draft(
     if not isinstance(candidate, dict):
         raise CreatorStudioError("Item draft must be one JSON object")
     try:
-        validate_item_payload(candidate)
+        _validate_item_creation_payload(candidate)
     except (ValueError, TypeError, KeyError) as exc:
         raise CreatorStudioError(f"Item contract rejected the draft: {exc}") from exc
     proposal = _wrap_item_proposal(candidate, mode="manual", user_id=user_id)
@@ -123,6 +129,7 @@ def ai_item_draft(
         "Fill the supplied complete item-v1 schema for exactly one Item in the isolated Creation Sandbox. "
         "Use [] for unused arrays, null for unknown/unused nullable fields, and null for unused module slots. "
         "Do not omit, rename or invent schema fields. Populate only facts supported by the Creator intent or conservative ordinary inference. "
+        + DEFAULT_ITEM_REALISM_INSTRUCTION +
         "Do not author derived grades. If monetary facts are not explicitly grounded, use economically_immaterial/excluded with null monetary values. "
         "This is proposal-only and does not create canonical state. "
         f"Creator intent: {intent}"
@@ -140,7 +147,7 @@ def ai_item_draft(
         raise CreatorStudioError("Creation AI returned an invalid Item object")
     candidate = canonicalize_ai_item_fill(candidate)
     try:
-        validate_item_payload(candidate)
+        _validate_item_creation_payload(candidate)
     except (ValueError, TypeError, KeyError) as exc:
         raise CreatorStudioError(f"Creation AI Item failed exact validation: {exc}") from exc
     proposal = _wrap_item_proposal(candidate, mode="ai_generated", user_id=user_id)
@@ -184,7 +191,7 @@ def approve_item_draft(
     if not isinstance(stored, dict):
         raise CreatorStudioError("Stored Item draft payload is missing")
     try:
-        validate_item_payload(stored)
+        _validate_item_creation_payload(stored)
     except (ValueError, TypeError, KeyError) as exc:
         raise CreatorStudioError(f"Item approval failed exact validation: {exc}") from exc
     obj = create_sandbox_item(
