@@ -1,25 +1,39 @@
+"""Item-edit launcher and callback routing for Telegram world-layer views."""
+
 from __future__ import annotations
 
-import sqlite3
+from typing import Any
 
-from .creation_sandbox import get_sandbox_object
+from .telegram_sandbox_item_edit import sandbox_item_edit_callback_view
 
 
-def install_item_edit_world_layers_extension(base) -> None:
-    """Add the Creator Item editor entry without changing generic world-layer routing."""
+def install_world_layer_item_edit_extension(base_module: Any) -> None:
+    """Install Item edit launch UI and route ``sw:iedit:*`` callbacks."""
+    if getattr(base_module, "_item_edit_extension_installed", False):
+        return
 
-    original_object_view = base.sandbox_object_view
+    original_item_detail_view = base_module.sandbox_item_detail_view
+    original_world_layer_callback_view = base_module.world_layer_callback_view
 
-    def sandbox_object_view(conn: sqlite3.Connection, object_id: str):
-        text, keyboard = original_object_view(conn, object_id)
-        value = get_sandbox_object(conn, object_id)
-        if value["creation_type"] != "item" or value["lifecycle_status"] != "active":
-            return text, keyboard
-        rows = list(keyboard or [])
-        rows.insert(0, [{"text": "✏️ Edit Item", "callback_data": f"sw:iedit:enter:{object_id}"}])
+    def sandbox_item_detail_view(conn, item_id: int):
+        text, keyboard = original_item_detail_view(conn, item_id)
+        rows = [list(row) for row in keyboard]
+        insert_at = max(0, len(rows) - 1)
+        rows.insert(
+            insert_at,
+            [{"text": "✏️ Edit Item", "callback_data": f"sw:iedit:open:{int(item_id)}"}],
+        )
         return text, rows
 
-    base.sandbox_object_view = sandbox_object_view
+    def world_layer_callback_view(conn, callback_data: str):
+        if callback_data.startswith("sw:iedit:"):
+            return sandbox_item_edit_callback_view(
+                conn,
+                callback_data,
+                user_id=base_module._notification_user_id(),
+            )
+        return original_world_layer_callback_view(conn, callback_data)
 
-
-__all__ = ["install_item_edit_world_layers_extension"]
+    base_module.sandbox_item_detail_view = sandbox_item_detail_view
+    base_module.world_layer_callback_view = world_layer_callback_view
+    base_module._item_edit_extension_installed = True
