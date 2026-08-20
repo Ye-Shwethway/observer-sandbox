@@ -1,0 +1,1 @@
+Live acceptance note: AI-produced human-readable batch refs are normalized at the batch canonicalization boundary before validation; batch-local stored_in targets are rewritten through the same alias map; duplicate canonical refs remain invalid.
