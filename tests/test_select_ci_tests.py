@@ -1,6 +1,13 @@
+import importlib.util
 from pathlib import Path
 
-from scripts.select_ci_tests import select_tests
+
+_SELECTOR_PATH = Path(__file__).resolve().parents[1] / "scripts" / "select_ci_tests.py"
+_SPEC = importlib.util.spec_from_file_location("select_ci_tests", _SELECTOR_PATH)
+assert _SPEC is not None and _SPEC.loader is not None
+_MODULE = importlib.util.module_from_spec(_SPEC)
+_SPEC.loader.exec_module(_MODULE)
+select_tests = _MODULE.select_tests
 
 
 def _touch(root: Path, *paths: str) -> None:
