@@ -14,6 +14,8 @@ DEFAULT_ITEM_REALISM_INSTRUCTION = (
     "that external envelope and therefore must never exceed the outer bounding volume. Keep mass, dimensions, capacity, "
     "nutrition and other numeric facts mutually plausible for the described object. Do not invent false precision: when "
     "a numeric fact cannot be conservatively supported, use null for the nullable slot instead of guessing. "
+    "For stack-based nutrition, basis_quantity is a count of nutrition.unit, not a copy of physical mass or serving weight, "
+    "and it must not exceed the represented initial stack quantity. "
     "Numeric immersion depth requires explicit waterproof/submersible/immersion evidence; generic water-resistant wording "
     "does not justify a depth rating. When power, runtime and stored energy are all represented, reject grossly impossible "
     "energy budgets instead of treating the metrics as independent guesses. "
@@ -69,6 +71,31 @@ def _has_explicit_immersion_evidence(definition: Mapping[str, Any]) -> bool:
     return any(re.search(pattern, text) for pattern in evidence_patterns)
 
 
+def _validate_nutrition_coherence(modules: Mapping[str, Any]) -> None:
+    stack = modules.get("stack")
+    nutrition = modules.get("nutrition")
+    if not isinstance(stack, Mapping) or not isinstance(nutrition, Mapping):
+        return
+
+    stack_unit = stack.get("canonical_unit")
+    nutrition_unit = nutrition.get("unit")
+    if not isinstance(stack_unit, str) or not isinstance(nutrition_unit, str) or stack_unit != nutrition_unit:
+        return
+
+    initial_quantity = stack.get("initial_quantity")
+    basis_quantity = nutrition.get("basis_quantity")
+    if isinstance(initial_quantity, bool) or isinstance(basis_quantity, bool):
+        return
+    if not isinstance(initial_quantity, (int, float)) or not isinstance(basis_quantity, (int, float)):
+        return
+    if float(basis_quantity) > float(initial_quantity) + 1e-9:
+        raise ItemRealismError(
+            "nutrition basis_quantity exceeds the represented initial stack quantity "
+            f"({float(basis_quantity):g} {nutrition_unit} > {float(initial_quantity):g} {stack_unit}); "
+            "basis_quantity counts nutrition.unit and must not copy a physical mass or serving-weight number"
+        )
+
+
 def _validate_metric_coherence(definition: Mapping[str, Any], modules: Mapping[str, Any]) -> None:
     metrics = modules.get("metrics")
     if not isinstance(metrics, Mapping):
@@ -116,6 +143,7 @@ def validate_item_default_realism(payload: Mapping[str, Any]) -> None:
     if not isinstance(modules, Mapping):
         return
 
+    _validate_nutrition_coherence(modules)
     _validate_metric_coherence(definition, modules)
 
     physical = modules.get("physical")
