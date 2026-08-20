@@ -51,16 +51,17 @@ def test_item_batch_preview_exposes_detail_and_txt_review_actions(tmp_path, monk
         detail, detail_keyboard = studio_callback_view(conn, 91, "sw:cs:item-detail:0")
         assert "ITEM DRAFT PROFILE" in detail
         assert "Camping Backpack" in detail
-        assert "Definition key: camping_backpack" in detail
-        assert "Container" in detail
-        assert "capacity volume: 30 l" in detail.lower()
+        assert "Definition key" not in detail
+        assert "Type: Container" in detail
+        assert "Capacity: 30 l" in detail
+        assert "Value tracking: Not included" in detail
         assert "Next Item →" in {button["text"] for row in detail_keyboard for button in row}
 
         detail2, _ = studio_callback_view(conn, 91, "sw:cs:item-detail:1")
         assert "Camping Flashlight" in detail2
-        assert "stored in → $camping_backpack" in detail2
+        assert "Stored in: Camping Backpack" in detail2
+        assert "$camping_backpack" not in detail2
 
-        # Returning from Item detail must keep the enhanced review actions.
         back_text, back_keyboard = studio_callback_view(conn, 91, "sw:cs:preview")
         back_callbacks = _callbacks(back_keyboard)
         assert "ITEM BATCH SANDBOX DRAFT" in back_text
@@ -70,8 +71,9 @@ def test_item_batch_preview_exposes_detail_and_txt_review_actions(tmp_path, monk
         assert "sw:cs:approve" in back_callbacks
 
         filename, exported = render_item_draft_text(draft)
-        assert filename.endswith(f"r{draft['revision']}.txt")
+        assert filename == f"creator-studio-item-batch-camping-backpack-plus-1-r{draft['revision']}.txt"
         assert "Camping Backpack" in exported
         assert "Camping Flashlight" in exported
         assert '"stored_in": "$camping_backpack"' in exported
+        assert "Internal batch ref: camping_backpack" in exported
         assert "Creation Sandbox draft only" in exported

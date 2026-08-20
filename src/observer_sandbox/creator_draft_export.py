@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import json
 import os
+import re
 import urllib.request
 from typing import Any
 
@@ -14,14 +15,20 @@ def _display(value: Any) -> str:
     return str(value)
 
 
+def _slug(value: str) -> str:
+    text = re.sub(r"[^a-z0-9]+", "-", str(value or "").lower()).strip("-")
+    return text or "draft"
+
+
 def render_full_draft_text(conn, user_id: int) -> tuple[str, str]:
     draft = active_draft(conn, user_id)
     if not draft:
         raise ValueError("No active Creator Studio draft")
     proposal = draft["proposal"]
     name = str(proposal.get("identity", {}).get("name") or "unnamed")
-    safe_name = "".join(ch.lower() if ch.isalnum() else "-" for ch in name).strip("-") or "draft"
-    filename = f"creator-studio-{safe_name}-r{draft['revision']}.txt"
+    creation_type = _slug(str(proposal.get("creation_type") or "draft"))
+    safe_name = _slug(name)
+    filename = f"creator-studio-{creation_type}-{safe_name}-r{draft['revision']}.txt"
 
     lines = [
         "CREATION SANDBOX DRAFT",
