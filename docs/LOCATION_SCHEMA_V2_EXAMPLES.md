@@ -35,7 +35,7 @@ They are contract examples, not canonical Real World content and not materializa
     "bounds": null
   },
   "spatial": {
-    "area": {"value": 12.0, "unit": "acre"},
+    "area": {"value": 522720.0, "unit": "ft2"},
     "length": null,
     "width": null,
     "height": null,
@@ -50,14 +50,7 @@ They are contract examples, not canonical Real World content and not materializa
     "notes": "The represented property has a physical perimeter in some areas and conceptual/open boundary segments elsewhere."
   },
   "access": {
-    "policy": {
-      "all": [
-        {
-          "type": "authorization",
-          "subject": "owner_or_resident"
-        }
-      ]
-    }
+    "policy": {"mode": "owner_or_resident"}
   },
   "operations": {
     "initial_state": "open"
@@ -115,7 +108,8 @@ They are contract examples, not canonical Real World content and not materializa
 - boundary, access and topology remain separate;
 - facilities/resources are machine-readable evidence rather than name-derived affordances;
 - economic classification can exist without inventing a market value;
-- scale grading may use represented area only when a compatible property reference profile exists.
+- scale grading may use represented area only when a compatible property reference profile exists;
+- physical quantities use the current shared unit vocabulary rather than inventing a Location-only unit.
 
 ---
 
@@ -160,9 +154,7 @@ They are contract examples, not canonical Real World content and not materializa
     "notes": null
   },
   "access": {
-    "policy": {
-      "all": []
-    }
+    "policy": {"mode": "public"}
   },
   "operations": {
     "initial_state": "open"
@@ -264,9 +256,7 @@ They are contract examples, not canonical Real World content and not materializa
     "notes": "The clearing boundary is conceptual rather than walled."
   },
   "access": {
-    "policy": {
-      "all": []
-    }
+    "policy": {"mode": "public"}
   },
   "operations": {
     "initial_state": "open"
