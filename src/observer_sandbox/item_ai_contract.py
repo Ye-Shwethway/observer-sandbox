@@ -181,30 +181,6 @@ def _canonicalize_token_list(values: Any) -> Any:
     return result
 
 
-def _canonicalize_ai_economic_policy(payload: dict[str, Any]) -> None:
-    economic = payload.get("economic_policy")
-    if not isinstance(economic, dict):
-        return
-
-    currency = economic.get("currency_code")
-    if isinstance(currency, str):
-        economic["currency_code"] = currency.strip().upper() or None
-
-    unit_label = economic.get("unit_label")
-    if isinstance(unit_label, str):
-        economic["unit_label"] = _canonical_token(unit_label, prefix="unit") or None
-
-    valuation_method = _canonical_token(economic.get("valuation_method"), prefix="valuation")
-    economic["valuation_method"] = valuation_method or _AI_VALUATION_METHOD
-
-    classification = economic.get("classification")
-    treatment = economic.get("net_worth_treatment")
-    monetary_keys = ("market_value_minor", "replacement_value_minor", "unit_value_minor")
-    has_monetary_value = any(economic.get(key) is not None for key in monetary_keys)
-    if classification == "economically_immaterial" and treatment == "excluded" and not has_monetary_value:
-        economic["valuation_method"] = economic.get("valuation_method") or _IMMATERIAL_VALUATION_METHOD
-
-
 def _canonicalize_modules_and_instance(payload: dict[str, Any], definition: dict[str, Any]) -> None:
     modules = definition.get("modules")
     if not isinstance(modules, dict):
@@ -219,32 +195,26 @@ def _canonicalize_modules_and_instance(payload: dict[str, Any], definition: dict
         metrics = {key: metric for key, metric in metrics.items() if metric is not None}
         modules["metrics"] = metrics or None
 
-    stack = modules.get("stack")
     instance = payload.get("instance")
     if not isinstance(instance, dict):
         instance = {}
         payload["instance"] = instance
 
+    stack = modules.get("stack")
     if isinstance(stack, dict):
         unit = _canonical_token(stack.get("canonical_unit"), prefix="unit")
         if unit:
             stack["canonical_unit"] = unit
             definition["stackable"] = True
             instance.clear()
-            instance.update({
-                "mode": "stack",
-                "quantity": stack.get("initial_quantity"),
-                "unit": unit,
-            })
+            instance.update({"mode": "stack", "quantity": stack.get("initial_quantity"), "unit": unit})
     elif instance.get("mode") == "stack" and instance.get("quantity") is not None and instance.get("unit") is not None:
         unit = _canonical_token(instance.get("unit"), prefix="unit")
         if unit:
-            modules["stack"] = {
-                "canonical_unit": unit,
-                "initial_quantity": instance.get("quantity"),
-            }
+            modules["stack"] = {"canonical_unit": unit, "initial_quantity": instance.get("quantity")}
             definition["stackable"] = True
-            instance["unit"] = unit
+            instance.clear()
+            instance.update({"mode": "stack", "quantity": modules["stack"]["initial_quantity"], "unit": unit})
     else:
         definition["stackable"] = False
         modules["stack"] = None
@@ -252,14 +222,11 @@ def _canonicalize_modules_and_instance(payload: dict[str, Any], definition: dict
         instance["mode"] = "unique"
 
     stack = modules.get("stack")
-    nutrition = modules.get("nutrition")
-    if isinstance(stack, dict) and isinstance(nutrition, dict):
+    if isinstance(stack, dict):
         stack_unit = stack.get("canonical_unit")
-        nutrition_unit = _canonical_token(nutrition.get("unit"), prefix="unit")
-        if nutrition_unit:
-            nutrition["unit"] = nutrition_unit
-        if stack_unit and nutrition.get("unit") == stack_unit:
-            pass
+        nutrition = modules.get("nutrition")
+        if isinstance(nutrition, dict) and stack_unit:
+            nutrition["unit"] = stack_unit
 
     modules = {key: item for key, item in modules.items() if item is not None}
     definition["modules"] = modules
@@ -282,6 +249,36 @@ def _canonicalize_modules_and_instance(payload: dict[str, Any], definition: dict
                     capabilities.append(capability)
             elif capability in capabilities:
                 capabilities.remove(capability)
+
+
+def _canonicalize_ai_economic_policy(payload: dict[str, Any]) -> None:
+    economic = payload.get("economic_policy")
+    if not isinstance(economic, dict):
+        return
+
+    currency = economic.get("currency_code")
+    if isinstance(currency, str):
+        economic["currency_code"] = currency.strip().upper() or None
+
+    classification = economic.get("classification")
+    treatment = economic.get("net_worth_treatment")
+    monetary_keys = ("market_value_minor", "replacement_value_minor", "unit_value_minor")
+    has_monetary_value = any(economic.get(key) is not None for key in monetary_keys)
+
+    raw_method = economic.get("valuation_method")
+    method = _canonical_token(raw_method, prefix="valuation")
+    if classification == "economically_immaterial" and treatment == "excluded" and not has_monetary_value and not method:
+        economic["valuation_method"] = _IMMATERIAL_VALUATION_METHOD
+    else:
+        economic["valuation_method"] = method or _AI_VALUATION_METHOD
+
+    stack = payload.get("definition", {}).get("modules", {}).get("stack") if isinstance(payload.get("definition"), dict) else None
+    stack_unit = stack.get("canonical_unit") if isinstance(stack, dict) else None
+    unit_label = economic.get("unit_label")
+    if classification == "consumable_stock" and stack_unit:
+        economic["unit_label"] = stack_unit
+    elif isinstance(unit_label, str):
+        economic["unit_label"] = _canonical_token(unit_label, prefix="unit") or None
 
 
 def canonicalize_ai_item_fill(value: dict[str, Any]) -> dict[str, Any]:
