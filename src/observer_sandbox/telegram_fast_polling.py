@@ -8,6 +8,7 @@ from pathlib import Path
 
 from . import telegram_bot as base
 from .telegram_command_menu import sync_bot_commands
+from .telegram_error_diagnostics import safe_exception_diagnostic
 
 
 def _deliver_message_reply(
@@ -187,7 +188,7 @@ def run_polling(db_path: str | Path = base.DEFAULT_DB) -> None:
                 try:
                     reply = base.handle_command(db_path, user_id=user_id, text=text)
                 except Exception as exc:
-                    reply = f"Observer command failed safely: {type(exc).__name__}"
+                    reply = "Observer command failed safely:\n" + safe_exception_diagnostic(exc)
                 command = text.strip().split()[0].split("@", 1)[0].lower() if text.strip() else ""
                 keyboard = base._command_keyboard(command)
                 _deliver_message_reply(token, chat_id, reply, keyboard)
