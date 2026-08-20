@@ -35,6 +35,12 @@ def install_item_review_extension(base) -> None:
     def studio_callback_view(conn, user_id: int, callback_data: str):
         draft = active_draft(conn, user_id)
         if _item_draft(draft):
+            # Keep Item review navigation on the enhanced renderer. The older
+            # Item extension owns an internal preview closure, so delegating
+            # sw:cs:preview there would return the pre-review keyboard and make
+            # detail/export actions disappear after leaving the detail view.
+            if callback_data == "sw:cs:preview":
+                return draft_preview_view(conn, user_id)
             if callback_data.startswith("sw:cs:item-detail:"):
                 try:
                     index = int(callback_data.rsplit(":", 1)[-1])
