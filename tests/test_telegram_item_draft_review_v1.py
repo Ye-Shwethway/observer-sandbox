@@ -60,6 +60,15 @@ def test_item_batch_preview_exposes_detail_and_txt_review_actions(tmp_path, monk
         assert "Camping Flashlight" in detail2
         assert "stored in → $camping_backpack" in detail2
 
+        # Returning from Item detail must keep the enhanced review actions.
+        back_text, back_keyboard = studio_callback_view(conn, 91, "sw:cs:preview")
+        back_callbacks = _callbacks(back_keyboard)
+        assert "ITEM BATCH SANDBOX DRAFT" in back_text
+        assert "sw:cs:item-detail:0" in back_callbacks
+        assert "sw:cs:item-export" in back_callbacks
+        assert "sw:cs:reroll" in back_callbacks
+        assert "sw:cs:approve" in back_callbacks
+
         filename, exported = render_item_draft_text(draft)
         assert filename.endswith(f"r{draft['revision']}.txt")
         assert "Camping Backpack" in exported
