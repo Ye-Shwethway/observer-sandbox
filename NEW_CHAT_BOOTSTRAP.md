@@ -9,8 +9,9 @@ Read and reconcile in this order:
 1. `AGENTS.md`
 2. this file
 3. `ROADMAP.md`
-4. task-relevant canonical docs/source
-5. verified production/runtime evidence before live claims.
+4. `docs/CREATOR_CREATION_IMPLEMENTATION_PLAN_V1.md`
+5. task-relevant canonical docs/source
+6. verified production/runtime evidence before live claims.
 
 Authority order:
 `current Creator instruction > current repo contracts/config/schema > verified live runtime/DB > CI/deploy evidence > bootstrap > remembered chat`.
@@ -24,270 +25,290 @@ Do not claim production deployment from a merge alone.
 
 ---
 
-## Current repository checkpoint
+## Current implementation checkpoint
 
-Latest merged implementation checkpoint before this continuity update:
+Latest merged implementation checkpoint before this docs update:
 
-### PR #309 — World-qualified runtime/time controls
+### PR #322 — Auto-sync scoped Telegram command menus
 
-Merged main checkpoint:
-`f74ef6395c9bd2f27b705c8c41f2a8cfadfc13c8`
-
-Evidence:
-- CI #1120 — **SUCCESS**;
-- Inventory Operations v1 Acceptance #56 — **SUCCESS**;
-- no schema migration;
-- `main == test` at the merge checkpoint before this docs-only continuity update.
-
-Canonical command surface is now explicitly world-qualified:
-
-Real World:
-- `/realstatus`
-- `/realpause`
-- `/realresume`
-- `/realspeed <value>`
-- `/realtime <ISO-8601>`
-
-Sandbox World:
-- `/sandboxstatus`
-- `/sandboxpause`
-- `/sandboxresume`
-- `/sandboxspeed <value>`
-- `/sandboxtime <ISO-8601>`
-
-Legacy ambiguous `/pause`, `/resume`, `/speed`, `/time` are non-mutating redirects that require the Creator/user to choose a world explicitly.
-
-Real World and Sandbox runtime state remain isolated. Real World uses canonical runtime/autonomy state. Sandbox uses `creation_sandbox_runtime` and `sw:rt:*` controls.
-
-Manual time-edit semantics:
-- manual time edits auto-pause the selected world;
-- the selected world remains paused afterward until explicitly resumed;
-- `/realtime` cancels stale Real World pending autonomous actions tied to the old timeline, resets them for reevaluation, writes the new canonical time and records Creator audit evidence;
-- `/sandboxtime` changes only the isolated Sandbox clock;
-- changing one world must not mutate the other world.
-
-Real World runtime UI now mirrors Sandbox runtime UX where practical: Pause/Resume plus 1x/60x/3600x controls with separate callback namespaces (`rw:rt:*` vs `sw:rt:*`).
-
----
-
-## Creator Character generation checkpoint
-
-### PR #304 — exact Character seed/profile schema fill
-
-Merged:
-`81698bf5b06b20f5153300b59048a923ff4b9395`
-
-Creator Character AI generation moved from heuristic incremental filling to:
-`existing creation-owned Character field registry -> exact required profile template -> AI fills values -> deterministic validation -> save-ready draft`.
-
-Profile values are an **exact schema-fill contract**. Missing or extra creation-owned profile keys are rejected. Runtime/derived-only fields remain excluded from Creator seed ownership.
-
-### PR #305 — sparse relevant-only skills
-
-Merged:
-`683eab88e658203273bc1958667110299a1fac63`
-
-PR #304 initially overconstrained skills by requiring every canonical skill key. That was corrected.
-
-Current rule:
-- profile fields remain exact-required;
-- skills are a sparse repeating collection;
-- only relevant skills need to exist;
-- skill keys must come from canonical vocabulary;
-- unknown/duplicate/invalid skill rows are rejected;
-- unrelated skills are not inserted as zero placeholders.
-
-### PR #306 — registry data types are authoritative
-
-Merged:
-`96c38ef9469057e0a259ad507a044bdbfd851e28`
-
-RAPS-prefixed compatibility fields are not automatically numeric. Validation follows `profile_field_definitions.data_type`. Numeric/integer RAPS values retain range validation; text/json fields keep their declared types.
-
-### PR #307 — current-age parsing fix
-
-Merged:
-`e9adb35c20e1f28309316690916071a2717496df`
-
-Current-age parsing accepts explicit current-age phrases such as:
-- `24 years old`
-- `24-year-old`
-- `age: 24`
-- `aged 24`
-
-Biography/history phrases such as `at age 20 he joined...` must not be interpreted as the Character's current requested age.
-
-### Character skill vocabulary
-
-PR #303 established the reusable canonical vocabulary:
-`hand_to_hand_combat, weapons, firearms, bladed_weapons, survival, navigation, climbing, emergency_response, field_medicine, tactical_planning, technology`.
-
-Aliases/categories normalize into that vocabulary. The Creator generation path no longer relies on background keyword heuristics to force exact skill coverage.
-
----
-
-## Adrian Vale — current Sandbox fixture
-
-Creator generated Adrian Vale successfully after the #304–#307 fixes, using MiniMax-M3 for the successful fast structured draft, and explicitly approved him into the isolated Creation Sandbox.
-
-Important authority boundary:
-- Adrian is **Sandbox-approved / Sandbox-active content**;
-- Adrian is **not a canonical Real World Character**;
-- this does **not** open or bypass the second-character transmigration gate.
-
-The approved Adrian profile is useful as the current live Sandbox Character fixture for profile/config/runtime UX development.
-
-Creator live verification on 2026-08-20 confirmed the Sandbox Profile browser works correctly after PR #308.
-
----
-
-## PR #308 — Sandbox Character Profile Browser Parity
-
-Merged:
-`35f3bdaad73ef6d1cbaa49c0509107b3b27d933f`
+Merge commit:
+`366f07b4a9e1cfd0670d768132e9500f10c51b44`
 
 Evidence:
-- CI #1118 — **SUCCESS**;
-- no schema migration;
+- CI #1154 targeted mode — **96 passed**;
+- main/test synchronized at merge;
+- startup publishes role-scoped Telegram command menus from the final `/help` contract and removes stale chat scopes;
+- ambiguous legacy `/pause`, `/resume`, `/speed`, `/time` remain non-mutating redirects and are not advertised.
+
+Production deployment/live command-menu behavior for #322 is not independently verified from repository evidence. Do not infer live state from merge alone.
+
+### PR #321 — Manual Character field-editing UX closure
+
+Merge commit:
+`6c568711e67b63f0412daf84189187834e9e71dd`
+
+Evidence:
+- CI #1153 targeted mode — **135 passed**;
+- successful manual field saves remain in the same section/page;
+- consumed input prompt cards are deleted; invalid input edits the existing prompt into retry state;
 - Creator live Telegram verification — **PASS**.
 
-Sandbox Character cards now expose `📖 Profile` before configuration/readiness controls.
+### PR #319 — Manual Character Creation Exact Parity
 
-Reuse-first architecture is locked:
-- same `profile_field_definitions` semantic registry;
-- same `profile_sections.v1.json` section configuration;
-- same Real World Telegram profile formatters/presentation where data semantics match;
-- Sandbox-specific data reader/storage adapter;
-- Sandbox callback/navigation namespace remains isolated;
-- do not fabricate Real World runtime/recovery data that Sandbox does not yet represent.
+Merge commit:
+`6838c9503fee9d9bd2bd8b4786e10cc907ba5c2`
 
-Goal: Real World and Sandbox Character profile UX should remain as similar as possible while preserving storage/runtime isolation.
+Manual and AI Character creation now converge on the exact creation-owned Character profile contract, with typed structured fields/collections, deterministic validation, revisioned drafts and isolated Sandbox approval/materialization.
+
+Character creation is sufficiently closed for the next dependency family.
 
 ---
 
-## Existing Creator Profile Edit flow to reuse
+## Creator Creation architecture now locked
 
-Do **not** invent a new profile-edit workflow for Sandbox.
+Creator explicitly selected the next direction:
 
-Real World already has the desired Creator flow:
-`Profile -> Edit Profile -> auto-pause universe if needed -> choose section/field -> enter new value -> Preview -> Apply -> continue editing -> Done Editing -> restore pre-edit pause state`.
+**Item Creation first, then complete Location Creation, then bind Character + Location + Items into runtime readiness/affordances.**
 
-Existing reusable semantics include:
-- registry-backed type coercion/validation;
-- derived-field protection;
-- old -> new proposal preview;
-- explicit Apply boundary;
-- Creator override/canonical-correction mutation classes;
-- Creator progression re-anchor so old training/action evidence does not immediately snap an edited value back;
-- universe pause state remembered and restored on Done Editing.
+Reason:
+- a Character alone is not meaningfully runnable;
+- a usable Location is required;
+- a Location is a **spatial container** and can contain Items/fixtures/resources/child locations/occupants;
+- Creator must be able to create a Location with initial Items or add/remove/move Items afterward;
+- therefore Item creation/instance semantics must be robust before Location contents become a strict creation contract.
 
-Sandbox implementation should reuse the same **interaction contract and presentation** with a Sandbox storage/runtime adapter. Draft editing, Sandbox-active Character editing and Real World live-profile editing are different mutation targets, but should share UX and validation components where possible.
-
-For an already-approved Sandbox Character such as Adrian:
-`Sandbox Character -> Edit Profile -> Sandbox runtime auto-pause if needed -> edit/preview/apply -> Done Editing -> restore prior Sandbox pause state`.
-
-Do not call Real World `set_autonomy_paused()` from Sandbox editing.
+Do not build a parallel Sandbox inventory/world ontology. Reuse existing universal world foundations through Sandbox-owned adapters/state.
 
 ---
 
-## Immediate next authorized slice
+## Strict schema / AI rule
 
-**NEXT: Sandbox Profile Edit Parity / Existing Creator Profile Edit reuse.**
+Every Creation type must have a complete explicit versioned schema.
 
-Minimum scope:
-1. add Edit Profile access from Sandbox Character Profile/Character surfaces;
-2. reuse the existing section -> field -> value -> preview -> apply UX and formatters;
-3. use the shared field registry and existing validation semantics;
-4. apply only to isolated Sandbox profile/facet/skill storage;
-5. auto-pause only the Sandbox runtime while editing an active Sandbox Character;
-6. restore the pre-edit Sandbox pause state on Done Editing;
-7. never mutate canonical Real World profile/runtime tables;
-8. preserve revision/audit evidence for Sandbox edits;
-9. prove Real World state fingerprint remains unchanged.
+Canonical pipeline:
 
-Keep this slice narrow. Do not combine it with I6 transmigration apply or full sandbox autonomous ticking.
+`Creator intent -> exact registered JSON-like schema -> AI fills permitted fields only -> deterministic validation -> draft/preview -> explicit approval -> Sandbox apply`.
 
----
+AI must not guess or deviate:
+- no unknown/extra keys;
+- no missing required core fields;
+- no arbitrary conditional-module structures;
+- no runtime/derived fields supplied as source truth;
+- no direct DB/runtime write;
+- no bypass of units/enums/value policies/references.
 
-## Creator Creation route status
+Preferred architecture:
 
-Completed:
-- I0 Creator authority
-- I1 universal proposal/socket core
-- I2 isolated Creation Sandbox persistence/lifecycle
-- I2.5 isolated Sandbox runtime/time/AI/readiness
-- I3 Character + Location representation proof
-- I4 Creator Studio proposal lifecycle
-- guided dual-pattern Creator Studio UX
-- I4.1 Sandbox Character configuration UX
-- I5 Sandbox Observer foundation
-- I5.1 proactive Sandbox Observer delivery
-- exact Character seed/profile schema-fill hardening (#302–#307)
-- Sandbox Character Profile browser parity (#308)
-- explicit Real/Sandbox runtime/time command split (#309)
+`strict core + strict conditional modules`.
 
-Current local route:
-`Sandbox Profile Edit parity -> Creator review -> then decide whether to resume I6 transmigration planning or another bounded Sandbox runtime/UX prerequisite`.
-
-I6 is therefore **not the immediate next slice anymore**. When resumed, I6 remains planning/validation only unless the Creator explicitly changes that boundary.
+Manual and AI input modes must converge on the same validator/apply boundary.
 
 ---
 
-## Creator Staging & Transmigration locks
+## Measurement direction
 
-> **Create anywhere safely; canon nowhere automatically.**
+Imperial is the default Creator-facing system.
 
-> **schema-valid does not imply universe-compatible.**
+Use pounds (`lb`) for Item weight/load presentation. Use appropriate Imperial length/area/volume units by domain.
 
-Lifecycle/authority concept:
-`Draft -> Sandbox Approved -> Sandbox Active -> Tested/Revised -> Ready for Transmigration -> Canonical Approved -> Canonical Active`.
+Future display switching to Metric must not rewrite physical truth.
 
-Sandbox and canonical storage/runtime remain isolated. Nothing transmigrates automatically.
+Invariant:
 
-Future transmigration must validate target-universe compatibility and dependencies, be atomic, and produce zero canonical writes on failure.
+`normalized physical quantity -> presentation conversion -> Imperial(default) | Metric`.
 
-Supernatural/impossible concepts may be valid in a Sandbox or future universe but incompatible with the current realistic Real World.
-
-The second canonical Character gate remains closed. Adrian's Sandbox existence does not violate that gate.
+Grades, requirements and simulation consume normalized quantities, not formatted strings.
 
 ---
 
-## Second-character gate
+## Universal grading direction
 
-Do not activate/transmigrate a second real production Character until all required gates remain satisfied, including:
-1. W0-W5/perception foundations healthy;
-2. Creator profile/body controls stable;
-3. minimum Creator Creation staging threshold complete;
-4. MIND-F2..F7 minimum foundations complete;
-5. Relationship Adaptation foundation complete;
-6. A3.3 interim planning scaffolding reconciled;
-7. Foundation Completion Review v2 passes;
-8. Creator explicitly approves canonical transmigration.
+The existing shared vocabulary remains:
+
+`E < D < C < B < A < S < SS < SSS < X < XX`.
+
+The proven profile grading architecture is the base:
+
+`authoritative raw state + explicit named grading scheme -> derived grade`.
+
+Extend it cross-domain; do not replace it.
+
+Important rules:
+- shared vocabulary, domain-specific evaluators;
+- Character Strength S, Item Durability S and Location Prestige S do not share one raw scale;
+- grades are normally derived from raw facts/state rather than AI-authored truth;
+- optional overall grades require an explicit composite scheme;
+- current RAPS/Skill 0..100 grading remains unchanged and legitimately uses E..S only;
+- realistic universe profiles may restrict grade/capability ceilings; future Sandbox/supernatural universes may represent higher/impossible ranges.
+
+Core interaction distinction:
+
+> **Item Grade describes the item. Requirement Grade describes the interaction.**
+
+A 55 lb dumbbell may have S load grade, but required Character Strength depends on the actual action/exercise/workload. Do not blindly map Item grade to Character requirement.
 
 ---
 
-## Existing runtime locks
+## Universal requirements and Location access
 
-W0-W5 plus Perception Foundation v1 remain the completed external-input foundation.
+Use one typed/composable requirement contract across future Items, Locations, Quests and Actions where possible.
 
-PR #278 protects Creator-edited progression/profile values from canonical seed/evidence snap-back.
+Potential predicates include grade thresholds, raw capability, required skill/equipment, authorization/ownership/residency, quest/state and operating/time state.
 
-PR #279 provides Body Preserve Shape completeness.
+**Grade is not authorization.**
 
-A3.3 remains read-only/natural-observation territory. Do not force Darian outside merely to produce evidence.
+Location access policy is separate and may be:
+- public/access-to-all;
+- private;
+- owner/resident;
+- authorized-only;
+- grade-gated;
+- quest/state-gated;
+- composite.
 
-Full Sandbox autonomous ticking is still **not implemented**. `runtime_ready != running` remains a hard distinction.
+A high-grade public place can still admit a low-grade Character. A high-grade private estate can reject a high-grade stranger.
+
+Operating/open state is separate again from access policy.
+
+---
+
+## Item architecture direction
+
+Reuse `docs/INVENTORY_ITEM_ARCHITECTURE.md`:
+
+`universal definition -> concrete instance/stack -> physical container/location -> ownership -> action/evidence -> quantity/state transition`.
+
+Universal Item Schema v1 must support strict core facts such as:
+- identity/family/spec variant/classification;
+- stackable/unique;
+- consumable/non-consumable;
+- movable/carriable/fixed;
+- physical mass, dimensions, occupied space/volume where meaningful;
+- materials/composition;
+- durability/condition where meaningful;
+- capabilities/affordances;
+- container/storage compatibility;
+- economic-value policy and price/value inputs;
+- registered modifier/effect references where applicable;
+- derived grade profile;
+- strict conditional-module selection/version.
+
+Candidate strict conditional modules include container, consumable, food/nutrition, wearable/equipment, tool, powered device, resistance-training equipment and later justified families.
+
+Items should expose intrinsic facts/capabilities rather than unconditional Character stat bonuses.
+
+Dumbbell exemplar:
+- 2 lb and 55 lb versions share a definition family/spec logic;
+- exact load differs;
+- runtime training effect derives from Item spec × actor × exercise/action × workload × state/context;
+- 2 lb can be trivial for elite strength work but useful for rehab/warm-up/endurance.
+
+Item Creation must support both **single Item** and **strict batch Item** creation.
+
+---
+
+## Economic-value integration
+
+Reuse existing valuation/economy contracts.
+
+Core distinction remains:
+
+`has economic value != contributes independent net worth`.
+
+New Items/Locations must carry an explicit applicable economic-value policy rather than accidental defaults. Replacement value, market value, purchase price and independent net-worth contribution remain distinct.
+
+Sandbox valuation data must not alter canonical Real World net worth/economy before a future authorized transmigration/apply boundary.
+
+---
+
+## Location architecture direction
+
+Authoritative semantic definition:
+
+> **Location = an identifiable spatial container with extent, contents, boundary/interface semantics, local state and explicit relationships to surrounding space.**
+
+Location schema must eventually support identity/kind, parent containment, known extent/exposure, interfaces/topology, access, operating state, ownership/control, environment, facilities/affordances, child Locations, structural fixtures, mutable Items/resources, occupancy, value/asset policy, grading and provenance.
+
+Do not overload relations:
+- `contains` = authored structural containment;
+- `stored_in` = mutable inventory containment;
+- `located_at` = dynamic presence;
+- `owned_by` = ownership;
+- `carried_by` / `equipped_by` separate.
+
+Containment does not imply traversal. Connection does not imply current permission. Unknown geometry remains unknown rather than fabricated.
+
+Location creation can include a new validated Item batch atomically, or reference already active Sandbox Items. Embedded contents are never free-form unvalidated prose.
+
+---
+
+## Active implementation sequence
+
+Detailed plan: `docs/CREATOR_CREATION_IMPLEMENTATION_PLAN_V1.md`.
+
+1. **I5.2 — Creation Contract Audit & Reuse Map**
+2. **I5.3 — Universal Quantity & Measurement Contract**
+3. **I5.4 — Universal Cross-Domain Grade Contract**
+4. **I5.5 — Universal Requirement & Access Contract**
+5. **I5.6 — Universal Item Schema v1**
+6. **I5.7 — Item Creation v1: Single**
+7. **I5.8 — Item Batch Creation v1**
+8. **I5.9 — Sandbox Item / Container Operations**
+9. **I5.10 — Universal Location Schema v1**
+10. **I5.11 — Location Creation + Embedded Contents**
+11. **I5.12 — Location Contents Editing / Operations**
+12. **I5.13 — Character ↔ Location Binding & Runtime Readiness**
+13. **I5.14 — Item / Location Runtime Affordance Bridge**
+14. **I5.15 — Sandbox Vertical Acceptance**
+
+Active next slice is **I5.2**.
+
+Do not skip directly to broad Location AI generation before Item/quantity/grade/requirement contracts are settled.
+
+---
+
+## Runtime and isolation locks
+
+- Full Sandbox autonomous ticking is still **not implemented**.
+- `runtime_ready != running` remains hard-locked.
+- Adrian Vale remains Creation Sandbox-only and is not canonical.
+- Do not mutate canonical Thorne Estate/world topology while building Sandbox creation foundations.
+- Do not activate/transmigrate a second Real World Character.
+- Creation Sandbox reset/delete must clean Sandbox dependencies without touching canonical entities/world/economy.
+
+Target pre-autonomy chain:
+
+`strict Character + strict Location + strict Items -> active Sandbox objects -> contents/binding -> runtime readiness -> deterministic represented options`.
+
+After I5.15, stop for Creator review before defining any autonomous Sandbox execution slice.
+
+---
+
+## Transmigration boundary
+
+I6 remains deferred and planning/validation-only unless Creator explicitly changes scope.
+
+Future requirements:
+- freeze source revision;
+- compute dependency closure;
+- select target-universe profile;
+- validate grade/capability/system compatibility;
+- produce structured result + deterministic proposed mutations;
+- failure/incompatibility = zero target-universe writes;
+- no automatic canonical apply.
+
+Sandbox-valid supernatural/impossible content may be rejected by the current realistic Real World and remain valid for another future universe profile.
 
 ---
 
 ## Production evidence boundary
 
-Repository/CI evidence is current through PR #309. Creator also directly verified the Sandbox Profile browser after #308 in Telegram.
+Repository implementation evidence is current through PR #322. PR #321 manual Character editing is Creator live-verified. PR #322 production deployment/live menu state is not independently verified here.
 
-Do not infer that PR #309 is live in production solely from merge/CI. A new chat should verify current boot/deploy/runtime evidence before making live-runtime claims or running production-sensitive acceptance.
+This continuity/roadmap update is documentation-only and does not imply a runtime deployment.
 
 ---
 
 ## Exact resume point
 
-**Repository checkpoint before continuity-doc commit: PR #309 merged at `f74ef6395c9bd2f27b705c8c41f2a8cfadfc13c8`; CI #1120 SUCCESS; Inventory Operations Acceptance #56 SUCCESS. Real World and Sandbox runtime/time controls are now explicitly world-qualified. Legacy `/pause|resume|speed|time` no longer mutate a default world. Manual time edits auto-pause only the selected world, and Real World time rewrites invalidate stale pending autonomous actions. PR #308 merged at `35f3bdaad73ef6d1cbaa49c0509107b3b27d933f`; Creator live-tested Sandbox Character Profile browsing successfully. Adrian Vale has been explicitly approved into the isolated Creation Sandbox and is not canonical. Next authorized implementation slice: reuse the existing Real World Creator Profile Edit flow for Sandbox Profile Edit parity, with Sandbox-only pause/storage adapters and Real World zero-mutation proof. Do not invent a new editor. Do not transmigrate Adrian or add a second canonical Character.**
+**Start from I5.2 — Creation Contract Audit & Reuse Map. Reconcile existing Item/inventory, valuation/economy, grading, Location/spatial-container and Creation Sandbox models before adding runtime schema. Then implement I5.3 Quantity/Measurement with Imperial default, I5.4 cross-domain derived grading, I5.5 universal requirements/access, and only then the strict Universal Item Schema. AI is exact-schema-only; no guessing/deviation. Item Grade is separate from interaction Requirement Grade; Grade is separate from Location authorization/access. Build single Item creation before batch creation, Item/container operations before full Location contents, then strict Location creation, contents operations, Character↔Location binding, property-driven runtime affordances and vertical acceptance. Preserve Real/Sandbox isolation and do not start full Sandbox autonomy or transmigration.**
