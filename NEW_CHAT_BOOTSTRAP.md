@@ -19,7 +19,7 @@ Authority:
 Persistent branches: `main`, `test` only.
 
 Workflow:
-`test implementation -> focused verification -> PR/final CI -> merge main -> runtime deploy only when applicable -> verify evidence -> continuity sync -> main/test exact sync`.
+`test implementation -> focused verification -> PR/final CI -> merge main -> deploy/runtime verification when applicable -> continuity sync -> main/test exact sync`.
 
 Do not infer production deployment or Telegram live acceptance from merge alone.
 
@@ -27,41 +27,47 @@ Do not infer production deployment or Telegram live acceptance from merge alone.
 
 ## Repository checkpoint
 
-### Latest merged `main`
+### Latest accepted repository slice
 
-`main` = `2af1ee7d5e2e3e9c0d1da8384d858880e993fb4b`
+PR **#348 — Add Sandbox Item edit Telegram routing parity** merged to `main`.
 
-This is PR **#347 — Align Sandbox Item details and future economic values**.
+Merge commit: `cee6337e9dc479988f2d3a4c78e52b70ef1b7b84`.
 
-Merged Item Telegram refinement line is #334–#347, including Single/Batch Item Creator Studio UX, full-schema AI fill, diagnostics, strict narrow canonicalization, detailed review/export, ordinary-realism validation, one bounded self-correction retry and approved Item economic/detail presentation.
+Final PR head before merge: `b980c52447d84bb072764e5f29cf99d8abd933d9`.
 
-### Current `test` / active PR
+Acceptance evidence:
+- CI **#1188** / run `32369393983`: **success**;
+- selected affected scope: **68 test files**;
+- targeted PR tests: **success**;
+- CLI smoke init/status: **success**;
+- Public Readiness Security Audit **#197** / run `32369394081`: **success**;
+- PR mergeability confirmed before merge.
 
-Sandbox Item Edit parity is now repo-mutated and under PR review.
+The concrete integration defects found during CI were fixed before acceptance:
+1. world-layer installer API compatibility;
+2. Item edit launcher aligned to actual `sandbox_object_view`;
+3. launcher aligned to canonical `sw:iedit:enter:<object_id>` callback contract.
 
-Confirmed commits in the routing completion line include:
-- `bee72400503e6021ccea3d24e1c4fb4776858e65` — free-text compatibility adapter added;
-- `8689b8e0c1f394b5c050f01ac7ceceaa0b38f9eb` — adapter installed before Creator bot hook capture;
-- `cfcda161f15737ca0db5528ee65b7e28a881db94` — `sw:iedit:*` callback routing installed;
-- `3cb186c19b240ba87eba7b2a8cbaf1c8e9845418` — focused routing tests added;
-- later continuity commits update current repo truth.
+### Item Edit behavior now repository-accepted
 
-PR **#348 — Add Sandbox Item edit Telegram routing parity** is open from `test` to `main`.
-
-Current implementation now has:
-- Item detail `✏️ Edit Item` launcher;
-- deterministic `sw:iedit:*` callback routing;
-- active Item field free-text routing through the existing polling loop;
-- slash commands preserved during field edit;
+- approved active Sandbox Item detail exposes `✏️ Edit Item`;
+- `sw:iedit:*` callbacks route into the existing Item editor with configured Creator owner identity;
+- pending field input consumes the next free-text Telegram message;
+- slash commands remain on the normal command path;
+- returned Item-editor keyboard survives the legacy polling text/keyboard split;
 - field-by-field Preview/Apply;
 - strict `item-v1` validation;
 - stale-preview protection;
-- `definition.key` and `instance.mode` immutable;
-- existing `update_sandbox_item()` persistence authority reused;
-- Sandbox-only runtime pause/restore semantics;
-- focused callback/text/keyboard/delegation regression tests.
+- immutable `definition.key` and `instance.mode`;
+- existing `update_sandbox_item()` remains persistence authority;
+- shared-definition / relation / cycle / physical-mode safeguards remain backend-authoritative;
+- Sandbox-only pause/restore semantics; Real World remains untouched.
 
-**Current evidence boundary:** repository mutation + PR creation are confirmed. CI, merge, deployment and live Telegram acceptance are not yet confirmed at this checkpoint. Do not claim them until current GitHub/runtime evidence says so.
+### Deployment boundary
+
+`.github/workflows/deploy.yml` is configured to trigger on `main` pushes touching `src/**`, including PR #348's merge, when `VPS_DEPLOY_ENABLED == 'true'`.
+
+At this synchronization point, **the merge-triggered deployment/runtime result has not yet been verified**. Repository acceptance is green; production/live Telegram acceptance remains a separate evidence claim until deploy/runtime evidence is checked.
 
 ---
 
@@ -82,14 +88,10 @@ I5.2 through I5.10 remain complete:
 
 ## Core semantic locks
 
-### Creator AI
-
+Creator AI:
 `Creator intent -> complete canonical type schema/form -> AI fills form -> narrow explicitly-approved structural canonicalization -> deterministic validation -> preview -> explicit approval -> Sandbox-only materialization`.
 
-AI is proposal/form-fill, not schema designer, validator bypass or mutation authority.
-
-### Item ontology
-
+Item ontology:
 `Item Definition -> concrete unique instance OR stack -> placement/storage -> ownership/carriage/equipment -> runtime state/history`.
 
 Relations:
@@ -102,15 +104,9 @@ Relations:
 
 Do not infer ownership from location/storage. Do not use `contains` for ordinary movable inventory merely because it is inside a place.
 
-### Creation / runtime
-
 **Created is not alive.** `runtime_ready != running`.
 
-### Isolation
-
 Creation Sandbox mutable state must not mutate canonical Real World entity/item/inventory/economic/runtime state. Keep `canonical_state_fingerprint()` as a high-value acceptance invariant.
-
-### Transmigration
 
 Nothing transmigrates automatically. **Create anywhere safely; canon nowhere automatically.** **Schema-valid does not imply universe-compatible.**
 
@@ -118,23 +114,7 @@ I6 remains planning/validation only unless explicitly expanded. Adrian Vale rema
 
 ---
 
-## Exact current work — finish PR #348
-
-Do not jump to I5.11 until Item Edit acceptance closes unless the Creator explicitly redirects.
-
-Next actions:
-1. Inspect PR #348 Actions/CI for the current head.
-2. Fix only concrete failures; do not redesign already-working Item contracts.
-3. Ensure focused routing tests and affected Telegram/Item regression suites are green.
-4. Preserve Item editor invariants: strict validation, stale-preview guard, backend shared-definition/relation/cycle/physical-mode safeguards, Sandbox pause restoration and zero canonical mutation.
-5. Merge PR #348 only on green evidence.
-6. If deploy workflow applies, verify deploy/runtime separately; do not infer live Telegram acceptance from merge.
-7. Update `NEW_CHAT_BOOTSTRAP.md`, `ROADMAP.md`, and `docs/CREATOR_CREATION_IMPLEMENTATION_PLAN_V1.md` with final merge/deploy evidence.
-8. Exact-sync `test` to final `main`.
-
----
-
-## After Item Edit acceptance
+## Next implementation slice after deployment verification
 
 Resume **I5.11 — Sandbox Location Creation + Embedded Contents**:
 - strict I5.10 Location materialization;
@@ -156,4 +136,4 @@ Full autonomous Sandbox ticking remains separately unauthorized.
 
 ## Exact resume sentence
 
-**Repository truth at handoff: `main` remains `2af1ee7d5e2e3e9c0d1da8384d858880e993fb4b` (PR #347). `test` contains the routed Sandbox Item Edit implementation and focused routing regression tests; PR #348 is open to `main`. The earlier missing `sw:iedit:*` callback wire and active field free-text wire have now been implemented repo-side. CI/merge/deploy/live acceptance remain evidence-gated. First inspect PR #348 Actions, repair only concrete failures, merge on green, verify deployment separately if applicable, update all continuity docs with final evidence, then exact-sync `test`. After acceptance, resume I5.11 Location Creation + Embedded Contents.**
+**PR #348 is merged at `cee6337e9dc479988f2d3a4c78e52b70ef1b7b84` after CI #1188 and Security Audit #197 passed. Sandbox Item Edit Telegram routing parity is repository-accepted. The deploy workflow is applicable to this `src/**` merge, but deployment/live Telegram evidence has not yet been verified at this checkpoint. First verify the merge-triggered deploy/runtime result, then finalize continuity and exact-sync `test` with `main`. Once that boundary is green, resume I5.11 Location Creation + Embedded Contents.**
