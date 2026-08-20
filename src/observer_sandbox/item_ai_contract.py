@@ -201,25 +201,22 @@ def _canonicalize_modules_and_instance(payload: dict[str, Any], definition: dict
         payload["instance"] = instance
 
     stack = modules.get("stack")
-    if isinstance(stack, dict):
+    if definition.get("stackable") is False:
+        modules["stack"] = None
+        instance.clear()
+        instance["mode"] = "unique"
+    elif isinstance(stack, dict):
         unit = _canonical_token(stack.get("canonical_unit"), prefix="unit")
         if unit:
             stack["canonical_unit"] = unit
-            definition["stackable"] = True
             instance.clear()
             instance.update({"mode": "stack", "quantity": stack.get("initial_quantity"), "unit": unit})
     elif instance.get("mode") == "stack" and instance.get("quantity") is not None and instance.get("unit") is not None:
         unit = _canonical_token(instance.get("unit"), prefix="unit")
         if unit:
             modules["stack"] = {"canonical_unit": unit, "initial_quantity": instance.get("quantity")}
-            definition["stackable"] = True
             instance.clear()
             instance.update({"mode": "stack", "quantity": modules["stack"]["initial_quantity"], "unit": unit})
-    else:
-        definition["stackable"] = False
-        modules["stack"] = None
-        instance.clear()
-        instance["mode"] = "unique"
 
     stack = modules.get("stack")
     if isinstance(stack, dict):
