@@ -11,6 +11,7 @@ from .character_creation_policy import creation_field_keys, creation_field_rows,
 from .creation_sandbox import DEFAULT_SANDBOX_ID, activate_creation_proposal, ensure_sandbox
 from .creation_socket import build_creation_proposal, validate_creation_proposal
 from .creator_creation_ai import creator_creation_binding
+from .manual_character_creation import empty_manual_character_profile, manual_character_missing_fields
 from .sandbox_character_facets import (
     replace_sandbox_habits,
     replace_sandbox_hobbies,
@@ -291,10 +292,10 @@ def _validate_character_payload(
 ) -> None:
     profile = proposal.get("properties", {}).get("character_profile")
     if not isinstance(profile, dict):
-        raise CreatorStudioError("Character AI draft requires structured character_profile")
+        raise CreatorStudioError("Character draft requires structured character_profile")
     values = profile.get("values")
     if not isinstance(values, dict):
-        raise CreatorStudioError("Character AI draft profile values must be an object")
+        raise CreatorStudioError("Character draft profile values must be an object")
     profile["values"] = sanitize_creation_profile_values(conn, values)
     if not str(profile["values"].get("identity.full_name") or "").strip():
         profile["values"]["identity.full_name"] = str(proposal.get("identity", {}).get("name") or "").strip()
@@ -358,9 +359,16 @@ def manual_draft(
     clean_name = str(name or "").strip()
     if not clean_name:
         raise CreatorStudioError("Creation name is required")
+    properties = None
+    if creation_type == "character":
+        properties = {
+            "character_profile": empty_manual_character_profile(clean_name),
+            "compatibility_tags": [],
+        }
     proposal = build_creation_proposal(
         creation_type,
         identity={"name": clean_name},
+        properties=properties,
         provenance_mode="manual",
         requested_by=f"telegram:{int(user_id)}",
     )
@@ -506,12 +514,28 @@ def approve_draft(
     proposal = copy.deepcopy(draft["proposal"])
     character_profile = None
     if proposal["creation_type"] == "character":
+        if draft["draft_mode"] == "manual":
+            missing = manual_character_missing_fields(conn, user_id, sandbox_id=sandbox_id)
+            if missing:
+                raise CreatorStudioError(
+                    "Manual Character draft baseline is incomplete: " + ", ".join(missing)
+                )
+        _validate_character_payload(
+            conn,
+            proposal,
+            prompt_text=str(draft.get("prompt_text") or "") or None,
+        )
         character_profile = proposal.get("properties", {}).pop("character_profile", None)
     obj = activate_creation_proposal(conn, proposal, sandbox_id=sandbox_id)
     if character_profile:
         values = sanitize_creation_profile_values(conn, dict(character_profile.get("values") or {}))
         if values:
-            set_sandbox_profile_values(conn, obj["object_id"], values, source="creator-studio-ai-profile")
+            source = (
+                "creator-studio-manual-profile"
+                if draft["draft_mode"] == "manual"
+                else "creator-studio-ai-profile"
+            )
+            set_sandbox_profile_values(conn, obj["object_id"], values, source=source)
         replace_sandbox_preferences(conn, obj["object_id"], character_profile.get("preferences") or [])
         replace_sandbox_hobbies(conn, obj["object_id"], character_profile.get("hobbies") or [])
         replace_sandbox_habits(conn, obj["object_id"], character_profile.get("habits") or [])
