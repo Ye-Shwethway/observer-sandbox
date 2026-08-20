@@ -9,6 +9,7 @@ from observer_sandbox.manual_character_creation import (
 )
 from observer_sandbox.runtime import initialize
 from observer_sandbox.telegram_creator_studio import (
+    _manual_fields,
     draft_preview_view,
     manual_character_builder_view,
     studio_callback_view,
@@ -131,6 +132,10 @@ def test_manual_draft_preview_locks_approval_until_exact_field_set_is_complete(t
 def test_manual_character_section_uses_exact_ai_field_set_and_opens_typed_input(tmp_path):
     with _conn(tmp_path) as conn:
         manual_draft(conn, 42, "character", "Rowan Hale")
+        attribute_keys = {str(item["field_key"]) for item in _manual_fields(conn, "attributes")}
+        assert "raps_pa.practical_skills" in attribute_keys
+        assert "raps_pa.practical_skill" not in attribute_keys
+
         text, keyboard = studio_callback_view(conn, 42, "sw:cs:manual:s:identity:0")
         assert "MANUAL CHARACTER · IDENTITY" in text
         field_callbacks = [value for value in _button_callbacks(keyboard) if value.startswith("sw:cs:manual:f:identity:")]
@@ -140,20 +145,6 @@ def test_manual_character_section_uses_exact_ai_field_set_and_opens_typed_input(
         assert "MANUAL CHARACTER FIELD" in text
         assert "Expected:" in text
         assert "sw:cs:manual:cancelinput" in _button_callbacks(keyboard)
-
-        # The legacy compatibility alias exists in the wider creation registry,
-        # but AI exact-seed generation removes it. Manual UI must do the same.
-        page = 0
-        seen_text = []
-        while True:
-            section_text, section_keyboard = studio_callback_view(conn, 42, f"sw:cs:manual:s:attributes:{page}")
-            seen_text.append(section_text)
-            callbacks = _button_callbacks(section_keyboard)
-            next_callbacks = [value for value in callbacks if value == f"sw:cs:manual:s:attributes:{page + 1}"]
-            if not next_callbacks:
-                break
-            page += 1
-        assert "Practical Skill" not in "\n".join(seen_text)
 
 
 def test_manual_approval_confirmation_still_uses_revision_lock(tmp_path):
