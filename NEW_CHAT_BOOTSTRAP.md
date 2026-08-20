@@ -5,130 +5,86 @@ Last synchronized: **2026-08-20**
 
 ## Startup / authority
 
-Read and reconcile in this order:
-1. `AGENTS.md`
-2. this file
-3. `ROADMAP.md`
-4. `docs/CREATOR_CREATION_IMPLEMENTATION_PLAN_V1.md`
-5. task-relevant canonical contracts/source
-6. current branch/PR/CI/runtime evidence before completion or live claims.
+Read in order: `AGENTS.md` -> this file -> `ROADMAP.md` -> `docs/CREATOR_CREATION_IMPLEMENTATION_PLAN_V1.md` -> task-relevant source/contracts -> current branch/PR/CI/runtime evidence.
 
-Authority:
-`current Creator instruction > live repo contracts/config/schema > verified runtime/DB > CI/deploy evidence > continuity docs > remembered chat`.
+Authority: `current Creator instruction > live repo contracts/schema > verified runtime/DB > CI/deploy evidence > continuity docs > remembered chat`.
 
-Persistent branches: `main`, `test` only.
+Persistent branches: `main`, `test` only. Normal flow: `test -> focused verification -> PR/CI -> main -> deploy/runtime verification when applicable -> continuity sync -> main/test exact sync`.
 
-Workflow:
-`test implementation -> focused verification -> PR/final CI -> merge main -> deploy/runtime verification when applicable -> continuity sync -> main/test exact sync`.
-
-Do not infer production deployment or Telegram live acceptance from merge alone.
+Do not infer live Telegram acceptance from repository merge alone.
 
 ---
 
-## Repository checkpoint
+## Current repository checkpoint
 
-### Latest accepted repository slice
+### PR #350 — live Item Edit entry hardening
 
-PR **#348 — Add Sandbox Item edit Telegram routing parity** merged to `main`.
+Merged commit: `b0083c6155006ba7103878056bceecc95413e4a3`.
 
-Merge commit: `cee6337e9dc479988f2d3a4c78e52b70ef1b7b84`.
+CI **#1189** passed targeted tests + CLI smoke.
 
-Final PR head before merge: `b980c52447d84bb072764e5f29cf99d8abd933d9`.
+Live Creator evidence exposed a real legacy-data incompatibility:
+`modules.physical.mass has unknown field(s): ['kind']`.
 
-Acceptance evidence:
-- CI **#1188** / run `32369393983`: **success**;
-- selected affected scope: **68 test files**;
-- targeted PR tests: **success**;
-- CLI smoke init/status: **success**;
-- Public Readiness Security Audit **#197** / run `32369394081`: **success**;
-- PR mergeability confirmed before merge.
+This came from an older approved Item batch whose persisted payload predates the current strict `item-v1` shape. Item Edit now:
+- preflights the current payload before pausing Sandbox runtime;
+- rolls back session/runtime state if editor entry fails;
+- surfaces bounded `Error` + `Reason` diagnostics instead of only `Observer action failed safely`;
+- preserves zero Item mutation / zero canonical mutation on failure.
 
-The concrete integration defects found during CI were fixed before acceptance:
-1. world-layer installer API compatibility;
-2. Item edit launcher aligned to actual `sandbox_object_view`;
-3. launcher aligned to canonical `sw:iedit:enter:<object_id>` callback contract.
+### PR #351 — Sandbox Character + Item Batch Delete
 
-### Item Edit behavior now repository-accepted
+Merged commit: `f9131857fcc861a5dc3b747595fc22352cd737ff`.
 
-- approved active Sandbox Item detail exposes `✏️ Edit Item`;
-- `sw:iedit:*` callbacks route into the existing Item editor with configured Creator owner identity;
-- pending field input consumes the next free-text Telegram message;
-- slash commands remain on the normal command path;
-- returned Item-editor keyboard survives the legacy polling text/keyboard split;
-- field-by-field Preview/Apply;
-- strict `item-v1` validation;
-- stale-preview protection;
-- immutable `definition.key` and `instance.mode`;
-- existing `update_sandbox_item()` remains persistence authority;
-- shared-definition / relation / cycle / physical-mode safeguards remain backend-authoritative;
-- Sandbox-only pause/restore semantics; Real World remains untouched.
+CI **#1190** passed targeted regression + CLI smoke.
 
-### Deployment boundary
+Repository-accepted behavior:
+- Sandbox World exposes `🗑 Batch Delete` when active Characters or Items exist;
+- mixed Character + Item selection in one cleanup session;
+- per-object toggles plus `Select All` / `Clear`;
+- explicit review + final confirmation before mutation;
+- Locations intentionally excluded from this cleanup slice;
+- all selected targets revalidated as active, same-Sandbox Character/Item objects;
+- one atomic delete transaction;
+- dependent Sandbox rows cascade through existing FKs;
+- touched Item definitions are deleted only if no surviving Item instance still references them;
+- canonical state fingerprint is checked inside the transaction and any mismatch rolls the operation back;
+- delete audit events remain in Sandbox history;
+- Real World/canonical state remains untouched.
 
-`.github/workflows/deploy.yml` is configured to trigger on `main` pushes touching `src/**`, including PR #348's merge, when `VPS_DEPLOY_ENABLED == 'true'`.
-
-At this synchronization point, **the merge-triggered deployment/runtime result has not yet been verified**. Repository acceptance is green; production/live Telegram acceptance remains a separate evidence claim until deploy/runtime evidence is checked.
-
----
-
-## Backend foundation retained
-
-I5.2 through I5.10 remain complete:
-- I5.2 creation reuse map;
-- I5.3 universal quantity/measurement;
-- I5.4 cross-domain grading;
-- I5.5 universal requirements/access;
-- I5.6 Universal Item Schema v1;
-- I5.7 single Sandbox Item materialization;
-- I5.8 atomic heterogeneous Item Batch;
-- I5.9 Item/container operations, including `update_sandbox_item()`;
-- I5.10 Universal Location Schema v1.
+Current `main` after PR #351: `f9131857fcc861a5dc3b747595fc22352cd737ff`.
 
 ---
 
 ## Core semantic locks
 
-Creator AI:
-`Creator intent -> complete canonical type schema/form -> AI fills form -> narrow explicitly-approved structural canonicalization -> deterministic validation -> preview -> explicit approval -> Sandbox-only materialization`.
+- **Create anywhere safely; canon nowhere automatically.**
+- **Schema-valid does not imply universe-compatible.**
+- **Created is not alive.** `runtime_ready != running`.
+- Sandbox mutable state never mutates canonical Real World state.
+- AI fills canonical structured forms; deterministic contracts validate and mutate.
+- Item ontology: `Definition -> unique instance OR stack -> placement/storage -> ownership/carriage/equipment -> runtime state/history`.
+- Relations: `contains` structural; `located_at` physical presence; `stored_in` storage; `owned_by` ownership; `carried_by` carriage; `equipped_by` equipped state.
+- Ownership is never inferred from location/storage.
+- Existing Character Manual/AI parity and Sandbox Profile/Edit/grade-target behavior must not be weakened.
+- Nothing transmigrates automatically; I6 remains planning/validation only.
+- Adrian Vale remains Sandbox-only; second Real World Character gate remains closed.
 
-Item ontology:
-`Item Definition -> concrete unique instance OR stack -> placement/storage -> ownership/carriage/equipment -> runtime state/history`.
-
-Relations:
-- `contains` = structural/static containment;
-- `located_at` = dynamic physical presence;
-- `stored_in` = inventory/container storage;
-- `owned_by` = ownership;
-- `carried_by` = carriage;
-- `equipped_by` = equipped state.
-
-Do not infer ownership from location/storage. Do not use `contains` for ordinary movable inventory merely because it is inside a place.
-
-**Created is not alive.** `runtime_ready != running`.
-
-Creation Sandbox mutable state must not mutate canonical Real World entity/item/inventory/economic/runtime state. Keep `canonical_state_fingerprint()` as a high-value acceptance invariant.
-
-Nothing transmigrates automatically. **Create anywhere safely; canon nowhere automatically.** **Schema-valid does not imply universe-compatible.**
-
-I6 remains planning/validation only unless explicitly expanded. Adrian Vale remains Sandbox-only. Second Real World Character gate remains closed.
+Backend foundation I5.2–I5.10 remains complete, including Universal Item Schema v1, Item Batch, Item operations, and Universal Location Schema v1.
 
 ---
 
-## Next implementation slice after deployment verification
+## Exact next acceptance sequence
 
-Resume **I5.11 — Sandbox Location Creation + Embedded Contents**:
-- strict I5.10 Location materialization;
-- optional typed embedded Item contents via existing I5.6/I5.8 contracts;
-- same-Sandbox active parent validation;
-- acyclic structural parent graph;
-- structural parent uses `contains`;
-- interface destinations validate active same-Sandbox Locations;
-- movable Items normally use `located_at`, or exact `stored_in` typed containers;
-- whole graph validate-before-write;
-- one atomic apply/rollback;
-- no automatic runtime readiness, autonomous execution or canonical writes.
+Do **not** jump directly to I5.11 yet.
 
-Then I5.12 contents operations -> I5.13 Character/Location binding/readiness -> I5.14 runtime affordance bridge -> I5.15 vertical acceptance.
+1. Verify PR #351 deployment/runtime reaches Telegram.
+2. In Sandbox World, use `🗑 Batch Delete` to remove the old Character seeds and legacy pre-current-schema Items selected by Creator.
+3. Create a **fresh Item / Item Batch** through the current Creator Studio schema.
+4. Open an approved fresh Item and re-run `✏️ Edit Item` end-to-end: entry -> field edit -> preview -> apply/save -> done/restore runtime state.
+5. Confirm canonical fingerprint/Real World remains unchanged.
+6. If fresh current-schema Item Edit passes live, close Item cleanup/edit acceptance.
+7. Then resume **I5.11 — Sandbox Location Creation + Embedded Contents**.
 
 Full autonomous Sandbox ticking remains separately unauthorized.
 
@@ -136,4 +92,4 @@ Full autonomous Sandbox ticking remains separately unauthorized.
 
 ## Exact resume sentence
 
-**PR #348 is merged at `cee6337e9dc479988f2d3a4c78e52b70ef1b7b84` after CI #1188 and Security Audit #197 passed. Sandbox Item Edit Telegram routing parity is repository-accepted. The deploy workflow is applicable to this `src/**` merge, but deployment/live Telegram evidence has not yet been verified at this checkpoint. First verify the merge-triggered deploy/runtime result, then finalize continuity and exact-sync `test` with `main`. Once that boundary is green, resume I5.11 Location Creation + Embedded Contents.**
+**Repository truth: PR #350 merged at `b0083c6155006ba7103878056bceecc95413e4a3` and made Item Edit entry diagnostics/rollback safe. Live evidence then proved the failing Item was legacy-schema data (`modules.physical.mass.kind`). PR #351 merged at `f9131857fcc861a5dc3b747595fc22352cd737ff` after CI #1190 passed, adding atomic mixed Character+Item Sandbox batch delete with explicit confirmation and canonical fingerprint protection. Next: verify deployment, delete the selected legacy Sandbox seeds/items, create fresh current-schema Items, and re-run live Item Edit acceptance. Only after that passes should I5.11 Location Creation + Embedded Contents resume.**
