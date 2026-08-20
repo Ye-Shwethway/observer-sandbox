@@ -1,6 +1,7 @@
 from observer_sandbox.creator_studio import manual_draft
-from observer_sandbox.db import connect, migrate
+from observer_sandbox.db import connect
 from observer_sandbox.manual_character_creation import update_manual_character_field
+from observer_sandbox.runtime import initialize
 from observer_sandbox.telegram_creator_studio import (
     draft_preview_view,
     manual_character_builder_view,
@@ -9,9 +10,9 @@ from observer_sandbox.telegram_creator_studio import (
 
 
 def _conn(tmp_path):
-    conn = connect(tmp_path / "manual-character-ui.sqlite3")
-    migrate(conn)
-    return conn
+    db = tmp_path / "manual-character-ui.sqlite3"
+    initialize(db)
+    return connect(db)
 
 
 def _button_callbacks(keyboard):
