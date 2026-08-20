@@ -23,30 +23,46 @@ Core rules:
 Merged commit: `b0083c6155006ba7103878056bceecc95413e4a3`.
 CI #1189 passed.
 
-Item Edit now preflights the persisted Item before Sandbox pause/session creation, rolls back pause/session state on entry-render failure, and surfaces bounded owner-facing error type/reason details.
+Item Edit preflights persisted Items before pause/session creation, restores pause/session state on entry-render failure, and surfaces bounded owner-facing error type/reason details.
 
-Live evidence then identified the obsolete approved batch payload field:
-`modules.physical.mass.kind`.
+Live evidence identified obsolete approved batch data at `modules.physical.mass.kind`.
 
-Policy: do not weaken current `item-v1` validation just to admit obsolete test data. Clean old Sandbox test objects and retest with fresh current-schema creation first.
+Policy: do not weaken current `item-v1` validation to admit obsolete Sandbox test data. Clean old test objects and retest fresh current-schema creation first.
 
 ### PR #351 — Sandbox Character + Item Batch Delete
 
 Merged commit: `f9131857fcc861a5dc3b747595fc22352cd737ff`.
-CI #1190 passed targeted regression and CLI smoke.
+CI #1190 passed.
 
-Implemented contract:
-- entry from Sandbox World via `🗑 Batch Delete`;
-- mixed Character + Item selection;
-- Select All / Clear / per-object toggles;
-- review screen and explicit destructive confirmation;
-- Locations deliberately outside this slice;
-- all targets must be active, same-Sandbox, Character/Item objects;
+Backend cleanup contract:
+- Character + Item targets only;
+- active/same-Sandbox/type validation before mutation;
 - one atomic delete operation;
 - FK-dependent Sandbox rows cascade;
-- Item definitions touched by deletion are removed only when no surviving instance references them;
+- touched Item definitions removed only when no surviving instance references them;
 - Sandbox delete audit events retained;
-- canonical fingerprint checked before transaction release; mismatch rolls deletion back.
+- canonical fingerprint checked before transaction release; mismatch rolls deletion back;
+- Locations deliberately outside this cleanup slice.
+
+### PR #353 / #354 — Telegram cleanup list wiring
+
+PR #353 added scoped delete controls to Character/Item list surfaces, but live Telegram proved only Characters showed the control.
+
+Root cause: the Item world-layer extension had captured a local Item-list closure in `sw:list:item`. A later wrapper around `base.sandbox_list_view` therefore could not decorate the live Item callback path.
+
+PR **#354** fixes the composition boundary by decorating `sw:list:item` and `sw:list:character` callback results as well as direct list-view calls.
+
+PR #354 merge commit: `0309ff4a0ba0ebeb814556acb58056e5b76fcf9f`.
+CI **#1192** passed targeted regression + CLI smoke.
+
+The regression test explicitly reproduces the captured Item callback bypass that caused the live screenshot mismatch.
+
+Expected live navigation:
+- `📦 Items -> 🗑 Select Items to Delete`;
+- `👥 Characters -> 🗑 Select Characters to Delete`;
+- Sandbox World root -> mixed `🗑 Batch Delete`;
+- scoped Select All never crosses type boundaries;
+- Cancel returns to the originating list with cleanup action still present.
 
 ---
 
@@ -73,11 +89,12 @@ Implemented contract:
 - I5.9 Item/container operations and `update_sandbox_item()`;
 - I5.10 Universal Location Schema v1;
 - Item Creator Studio Single/Batch UX and current full-schema AI fill;
-- Item review/export, ordinary-realism validation, bounded one-retry self-correction;
+- Item review/export, realism validation, bounded self-correction;
 - approved Item detail/economic presentation;
 - Sandbox Item field edit/save parity;
 - safe Item Edit entry diagnostics/rollback;
-- mixed Character+Item Sandbox batch cleanup.
+- atomic Character+Item Sandbox cleanup;
+- scoped Telegram cleanup controls including the real Item callback-composition path.
 
 ---
 
@@ -109,31 +126,23 @@ Ownership does not follow from physical presence/storage. Sandbox-only mutable s
 
 ## Legacy cleanup -> fresh current-schema Item -> live Edit/Save proof
 
-### Why this gate exists
+Required live sequence:
+1. Confirm production checkpoint includes PR #354 or later.
+2. Open `📦 Items` and verify `🗑 Select Items to Delete` is present.
+3. Select/delete obsolete legacy Items; clean test Character seeds as desired from Characters or mixed root cleanup.
+4. Verify selected objects disappear and Locations remain untouched.
+5. Create fresh current-schema Item(s) or Item Batch through Creator Studio.
+6. Open a fresh approved Item -> `✏️ Edit Item`.
+7. Exercise field input, Preview, Apply/Save, and Done Editing.
+8. Verify Sandbox pre-edit pause state restores correctly.
+9. Verify Real World/canonical state remains unchanged.
 
-The observed Item Edit failure is not evidence that the current editor contract should accept `modules.physical.mass.kind`; it is evidence that an older test Item batch was persisted under an obsolete shape. The fastest clean acceptance path is to remove obsolete Sandbox test data and exercise the full current creation/edit pipeline from a fresh object.
-
-### Required live sequence
-
-1. Confirm the PR #351 deployment is present in Telegram.
-2. Open Sandbox World -> `🗑 Batch Delete`.
-3. Select the obsolete Character seeds and legacy Items requested by Creator.
-4. Review the list; confirm deletion.
-5. Verify selected objects disappear while Locations remain untouched.
-6. Create a fresh current-schema Item or Item Batch through Creator Studio.
-7. Open a fresh approved Item -> `✏️ Edit Item`.
-8. Exercise edit entry, field input, Preview, Apply, and Done Editing.
-9. Verify Sandbox pre-edit pause state restores correctly.
-10. Verify Real World/canonical state remains unchanged.
-
-### Failure policy
-
-If the fresh current-schema Item still fails:
+Failure policy:
 - surface exact error/reason;
-- repair the concrete current-schema/runtime defect;
-- do not add broad legacy canonicalization or validator relaxation as an incidental fix.
+- repair concrete current-schema/runtime defects;
+- do not add broad legacy canonicalization or validator relaxation incidentally.
 
-A dedicated legacy migration path may be designed later only if old Sandbox content is worth preserving. The present Creator direction is cleanup and fresh recreation.
+A dedicated legacy migration path may be designed later only if preserving old Sandbox content becomes valuable. Current Creator direction is cleanup and fresh recreation.
 
 ---
 
@@ -169,6 +178,7 @@ Transmigration remains inactive/planning-only. Nothing transmigrates automatical
 ## Test / release policy
 
 - smallest relevant tests while iterating;
+- regression tests must cover actual extension/callback composition paths, not only direct wrappers;
 - PR CI as repository acceptance gate;
 - full fallback only for cross-cutting/unmapped risk;
 - deploy/live behavior verified separately from merge;
@@ -178,4 +188,4 @@ Transmigration remains inactive/planning-only. Nothing transmigrates automatical
 
 ## Exact resume point
 
-**PR #351 merged at `f9131857fcc861a5dc3b747595fc22352cd737ff` after CI #1190 passed. Sandbox mixed Character+Item batch delete is repository-accepted. The old Item Edit failure is confirmed as obsolete `modules.physical.mass.kind` data. Next verify the deployed delete UI, clean selected legacy seeds/items, create fresh current-schema Item(s), and complete live Item Edit/Save acceptance. I5.11 Location Creation + Embedded Contents follows only after that proof is green.**
+**PR #354 merged at `0309ff4a0ba0ebeb814556acb58056e5b76fcf9f` after CI #1192 passed. The live Item cleanup control was missing because `sw:list:item` used an earlier captured local Item-list closure and bypassed the later list wrapper. Callback-boundary decoration plus an exact regression now closes that path. Verify deployed `📦 Items -> 🗑 Select Items to Delete`, clean obsolete Sandbox Items/seeds, create fresh current-schema Items, and complete live Item Edit/Save acceptance. I5.11 follows only after that proof is green.**
