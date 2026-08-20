@@ -2,8 +2,10 @@ from __future__ import annotations
 
 from . import telegram_creator_studio_base as _base
 from .telegram_creator_studio_item_extension import install_item_creator_studio_extension
+from .telegram_creator_studio_item_retry_extension import install_item_retry_extension
 
 install_item_creator_studio_extension(_base)
+install_item_retry_extension(_base)
 
 for _name in _base.__all__:
     globals()[_name] = getattr(_base, _name)
