@@ -10,10 +10,10 @@ from .creation_socket import build_creation_proposal
 from .creator_creation_ai import creator_creation_binding
 from .creator_studio import CreatorStudioError, _save_draft, active_draft, cancel_draft
 from .item_ai_contract import canonicalize_ai_item_fill, item_ai_fill_schema
+from .item_ai_self_correction import generate_validated_item_candidate
 from .item_creation_realism import DEFAULT_ITEM_REALISM_INSTRUCTION, validate_item_default_realism
 from .item_creation_schema import validate_item_payload
 from .sandbox_item_creation import create_sandbox_item
-from .structured_ai import generate_structured
 
 
 def _source_payload(value: dict[str, Any]) -> dict[str, Any]:
@@ -84,13 +84,7 @@ def _validate_item_creation_payload(candidate: dict[str, Any]) -> None:
     validate_item_default_realism(candidate)
 
 
-def manual_item_draft(
-    conn: sqlite3.Connection,
-    user_id,
-    raw_json: str,
-    *,
-    sandbox_id: str = DEFAULT_SANDBOX_ID,
-) -> dict[str, Any]:
+def manual_item_draft(conn: sqlite3.Connection, user_id, raw_json: str, *, sandbox_id: str = DEFAULT_SANDBOX_ID) -> dict[str, Any]:
     try:
         candidate = json.loads(str(raw_json or ""))
     except json.JSONDecodeError as exc:
@@ -101,24 +95,10 @@ def manual_item_draft(
         _validate_item_creation_payload(candidate)
     except (ValueError, TypeError, KeyError) as exc:
         raise CreatorStudioError(f"Item contract rejected the draft: {exc}") from exc
-    proposal = _wrap_item_proposal(candidate, mode="manual", user_id=user_id)
-    return _save_draft(
-        conn,
-        user_id,
-        proposal,
-        draft_mode="manual",
-        prompt_text=None,
-        sandbox_id=sandbox_id,
-    )
+    return _save_draft(conn, user_id, _wrap_item_proposal(candidate, mode="manual", user_id=user_id), draft_mode="manual", prompt_text=None, sandbox_id=sandbox_id)
 
 
-def ai_item_draft(
-    conn: sqlite3.Connection,
-    user_id: int,
-    prompt_text: str,
-    *,
-    sandbox_id: str = DEFAULT_SANDBOX_ID,
-) -> dict[str, Any]:
+def ai_item_draft(conn: sqlite3.Connection, user_id: int, prompt_text: str, *, sandbox_id: str = DEFAULT_SANDBOX_ID) -> dict[str, Any]:
     intent = str(prompt_text or "").strip()
     if not intent:
         raise CreatorStudioError("AI Item creation prompt is required")
@@ -129,44 +109,27 @@ def ai_item_draft(
         "Fill the supplied complete item-v1 schema for exactly one Item in the isolated Creation Sandbox. "
         "Use [] for unused arrays, null for unknown/unused nullable fields, and null for unused module slots. "
         "Do not omit, rename or invent schema fields. Populate only facts supported by the Creator intent or conservative ordinary inference. "
-        + DEFAULT_ITEM_REALISM_INSTRUCTION +
-        "Do not author derived grades. If monetary facts are not explicitly grounded, use economically_immaterial/excluded with null monetary values. "
+        + DEFAULT_ITEM_REALISM_INSTRUCTION
+        + "Do not author derived grades. If monetary facts are not explicitly grounded, use economically_immaterial/excluded with null monetary values. "
         "This is proposal-only and does not create canonical state. "
         f"Creator intent: {intent}"
     )
-    candidate = generate_structured(
-        conn,
-        provider_id=str(binding["provider_id"]),
-        model_id=str(binding["model_id"]),
-        prompt=prompt,
-        schema=item_ai_fill_schema(),
-        schema_name="observer_creator_studio_item_v1",
-        parameters=dict(binding.get("parameters") or {}),
-    )
-    if not isinstance(candidate, dict):
-        raise CreatorStudioError("Creation AI returned an invalid Item object")
-    candidate = canonicalize_ai_item_fill(candidate)
     try:
-        _validate_item_creation_payload(candidate)
+        candidate = generate_validated_item_candidate(
+            conn,
+            binding=binding,
+            prompt=prompt,
+            schema=item_ai_fill_schema(),
+            schema_name="observer_creator_studio_item_v1",
+            canonicalize=canonicalize_ai_item_fill,
+            validate=_validate_item_creation_payload,
+        )
     except (ValueError, TypeError, KeyError) as exc:
-        raise CreatorStudioError(f"Creation AI Item failed exact validation: {exc}") from exc
-    proposal = _wrap_item_proposal(candidate, mode="ai_generated", user_id=user_id)
-    return _save_draft(
-        conn,
-        user_id,
-        proposal,
-        draft_mode="ai_generated",
-        prompt_text=intent,
-        sandbox_id=sandbox_id,
-    )
+        raise CreatorStudioError(f"Creation AI Item failed exact validation after self-correction: {exc}") from exc
+    return _save_draft(conn, user_id, _wrap_item_proposal(candidate, mode="ai_generated", user_id=user_id), draft_mode="ai_generated", prompt_text=intent, sandbox_id=sandbox_id)
 
 
-def reroll_item_draft(
-    conn: sqlite3.Connection,
-    user_id: int,
-    *,
-    sandbox_id: str = DEFAULT_SANDBOX_ID,
-) -> dict[str, Any]:
+def reroll_item_draft(conn: sqlite3.Connection, user_id: int, *, sandbox_id: str = DEFAULT_SANDBOX_ID) -> dict[str, Any]:
     draft = active_draft(conn, user_id, sandbox_id=sandbox_id)
     if not draft or draft.get("creation_type") != "item":
         raise CreatorStudioError("No Item draft to reroll")
@@ -175,13 +138,7 @@ def reroll_item_draft(
     return ai_item_draft(conn, user_id, str(draft["prompt_text"]), sandbox_id=sandbox_id)
 
 
-def approve_item_draft(
-    conn: sqlite3.Connection,
-    user_id: int,
-    expected_revision: int,
-    *,
-    sandbox_id: str = DEFAULT_SANDBOX_ID,
-) -> dict[str, Any]:
+def approve_item_draft(conn: sqlite3.Connection, user_id: int, expected_revision: int, *, sandbox_id: str = DEFAULT_SANDBOX_ID) -> dict[str, Any]:
     draft = active_draft(conn, user_id, sandbox_id=sandbox_id)
     if not draft or draft.get("creation_type") != "item":
         raise CreatorStudioError("No Item draft to approve")
@@ -194,21 +151,9 @@ def approve_item_draft(
         _validate_item_creation_payload(stored)
     except (ValueError, TypeError, KeyError) as exc:
         raise CreatorStudioError(f"Item approval failed exact validation: {exc}") from exc
-    obj = create_sandbox_item(
-        conn,
-        copy.deepcopy(stored),
-        sandbox_id=sandbox_id,
-        provenance_mode=str(draft.get("draft_mode") or "manual"),
-        requested_by=f"telegram:{int(user_id)}",
-    )
+    obj = create_sandbox_item(conn, copy.deepcopy(stored), sandbox_id=sandbox_id, provenance_mode=str(draft.get("draft_mode") or "manual"), requested_by=f"telegram:{int(user_id)}")
     cancel_draft(conn, user_id, sandbox_id=sandbox_id)
     return obj
 
 
-__all__ = [
-    "ai_item_draft",
-    "approve_item_draft",
-    "manual_item_draft",
-    "manual_item_template",
-    "reroll_item_draft",
-]
+__all__ = ["ai_item_draft", "approve_item_draft", "manual_item_draft", "manual_item_template", "reroll_item_draft"]
