@@ -12,12 +12,29 @@ Expose the already-established I5.6-I5.9 Item creation foundation as a usable Cr
 
 Creation methods:
 
-- `Single Item · AI` — natural-language Item intent is converted into one exact `item-v1` contract.
-- `Item Batch · AI` — one natural-language request becomes a heterogeneous batch graph.
+- `Single Item · AI` — natural-language Item intent fills the complete provider-facing `item-v1` schema/form.
+- `Item Batch · AI` — one natural-language request becomes a heterogeneous batch graph; every `items[].payload` uses that same complete `item-v1` schema/form.
 - `Single Item · Exact JSON` — advanced/manual path for one complete `item-v1` object.
 - `Batch · Exact JSON` — advanced/manual path using `{"items":[{"ref":"...","payload":{...item-v1...}}]}`.
 
 All methods converge on deterministic preview and approval boundaries.
+
+## Creator AI schema-fill invariant
+
+Item AI follows `docs/CREATOR_AI_SCHEMA_FILL_CONTRACT_V1.md` and the strict Character creation exemplar.
+
+The structured-output API receives the actual full Item schema. The prompt does not substitute prose instructions for missing schema structure.
+
+Provider-facing full form rules:
+- every stable Item field/slot is represented in the schema;
+- unused arrays are `[]`;
+- unknown/unused nullable values are `null`;
+- all registered conditional module slots are present in the AI form and unused modules are `null`;
+- AI cannot invent, rename or omit canonical fields;
+- a small adapter strips only schema-defined nullable module placeholders before the authoritative sparse `item-v1` validator runs;
+- Manual and AI still converge on the same deterministic I5.6 validation/materialization contracts.
+
+Batch is orchestration only; it must never replace member Item payloads with a generic object schema.
 
 ## Single Item approval authority
 
