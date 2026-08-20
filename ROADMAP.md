@@ -19,38 +19,27 @@ Roadmap synchronized: **2026-08-20**
 
 ## Current repository checkpoint
 
-### Item Edit live hardening — PR #350
+Live acceptance work exposed two independent Item-side issues:
 
-Merged: `b0083c6155006ba7103878056bceecc95413e4a3`.
-CI #1189 ✅.
+1. Older approved Item batches can fail current Item Edit because persisted legacy payloads contain obsolete fields such as `modules.physical.mass.kind`.
+2. Initial batch-delete list wiring worked for Characters but not Items because the Item world-layer extension captured its own `sw:list:item` callback and therefore bypassed a later `base.sandbox_list_view` wrapper.
 
-Live Creator evidence after the diagnostic improvement identified the failing approved Item as legacy-schema data:
-`modules.physical.mass has unknown field(s): ['kind']`.
+Accepted repository fixes:
+- **PR #350** — Item Edit preflight/rollback and bounded failure diagnostics;
+- **PR #351** — atomic Sandbox Character+Item batch delete;
+- **PR #353** — scoped Character/Item list delete controls;
+- **PR #354** — callback-boundary composition fix for the real `sw:list:item` path.
 
-Current Item Edit entry behavior:
-- validates persisted Item payload before pausing Sandbox;
-- no edit session or pause-state mutation if preflight fails;
-- rollback if editor home rendering fails after pause;
-- owner-facing bounded `Error` + `Reason` details;
-- no Item/canonical mutation on entry failure.
+PR #354 merge commit: `0309ff4a0ba0ebeb814556acb58056e5b76fcf9f`.
+CI **#1192** ✅ targeted tests + CLI smoke.
 
-### Sandbox Character + Item Batch Delete — PR #351
+The #354 regression explicitly reproduces the extension-capture pattern where `sw:list:item` returns an earlier local Item-list closure without invoking the later base list wrapper. The batch-delete extension now decorates both list-view and callback boundaries.
 
-Merged: `f9131857fcc861a5dc3b747595fc22352cd737ff`.
-CI #1190 ✅ targeted tests + CLI smoke.
-
-Accepted cleanup behavior:
-- `Sandbox World -> 🗑 Batch Delete`;
-- select Characters and Items together;
-- per-object toggle, Select All, Clear;
-- review screen + explicit final confirmation;
-- Locations excluded;
-- active/same-Sandbox/type validation before mutation;
-- atomic deletion;
-- existing FK cascades remove dependent Sandbox runtime/item rows;
-- touched Item definitions are removed only when orphaned;
-- delete audit events retained;
-- canonical fingerprint checked in-transaction; mismatch => rollback.
+Expected deployed UX:
+- `📦 SANDBOX ITEMS -> 🗑 Select Items to Delete`;
+- `👥 SANDBOX CHARACTERS -> 🗑 Select Characters to Delete`;
+- Sandbox World root retains mixed Character+Item batch cleanup;
+- Locations remain excluded from this cleanup slice.
 
 ---
 
@@ -67,7 +56,7 @@ Retained complete:
 - I5.9 Item / Container Operations;
 - I5.10 Universal Location Schema v1.
 
-Item Creator Studio/Telegram line now includes current-schema Single/Batch creation, full-schema AI fill, validation diagnostics, review/export, realism/self-correction policy, approved Item details/economics, Item Edit parity, live Item Edit diagnostics, and Sandbox batch cleanup.
+Item Creator Studio/Telegram line includes current-schema Single/Batch creation, full-schema AI fill, validation diagnostics, review/export, realism/self-correction policy, approved Item details/economics, Item Edit parity, live Item Edit diagnostics, and Sandbox Character/Item cleanup.
 
 ---
 
@@ -87,21 +76,21 @@ Ownership never follows automatically from location/storage.
 
 ---
 
-## CURRENT ACCEPTANCE — clean legacy Sandbox data and retest fresh Item Edit
+## CURRENT ACCEPTANCE — cleanup legacy data and retest fresh Item Edit
 
-Reason: live Item Edit failed on an older approved Item batch carrying obsolete `modules.physical.mass.kind`. Do not weaken the current schema validator to accommodate obsolete test data.
+Do **not** weaken current Item validation to accommodate obsolete test objects.
 
-Acceptance sequence:
-1. verify PR #351 deploy/live Telegram availability;
-2. Creator selects/deletes obsolete Sandbox Character seeds and legacy Items via `🗑 Batch Delete`;
-3. create fresh current-schema Item(s)/Item Batch;
-4. open fresh approved Item -> `✏️ Edit Item`;
-5. edit a representative scalar field and a structured/module field where practical;
-6. Preview -> Apply -> Done Editing;
+Required live sequence:
+1. verify production checkpoint includes PR #354 or later;
+2. open `📦 Items` and verify `🗑 Select Items to Delete` appears;
+3. remove obsolete Sandbox Items and test Character seeds as desired;
+4. create fresh current-schema Item(s)/Batch through Creator Studio;
+5. open a fresh approved Item -> `✏️ Edit Item`;
+6. edit representative fields -> Preview -> Apply -> Done Editing;
 7. verify pre-edit Sandbox pause state restores;
 8. verify Real World/canonical state unchanged.
 
-If current-schema live Item Edit still fails, fix the concrete current-data/runtime issue; do not silently canonicalize persisted legacy data unless explicitly designed as a migration slice.
+If a fresh current-schema Item still fails, repair the concrete current-data/runtime issue and preserve strict current schemas.
 
 ---
 
@@ -137,4 +126,4 @@ Nothing transmigrates automatically. I6 stays planning/validation only unless Cr
 
 ## Exact resume point
 
-**PR #351 is merged at `f9131857fcc861a5dc3b747595fc22352cd737ff` after CI #1190 passed. Mixed Character+Item Sandbox batch delete is repository-accepted. Live Item Edit root cause on the old batch is confirmed as obsolete `modules.physical.mass.kind`. Next verify deployment, clean the selected legacy Sandbox data, create fresh current-schema Items, and complete live Item Edit acceptance. I5.11 starts only after that gate closes.**
+**PR #354 is merged at `0309ff4a0ba0ebeb814556acb58056e5b76fcf9f` after CI #1192 passed. The missing Item delete control was a callback-composition bug: the Item extension's captured `sw:list:item` path bypassed the later list wrapper. The real callback path is now regression-covered and decorated. Verify live `📦 Items -> 🗑 Select Items to Delete`, clean legacy Sandbox test data, then create fresh current-schema Items and complete live Item Edit/Save acceptance. I5.11 begins only after that gate closes.**
