@@ -3,7 +3,6 @@ from __future__ import annotations
 import sqlite3
 from pathlib import Path
 
-from .character_creation_policy import creation_field_keys
 from .creator_draft_export import send_full_draft_document
 from .creator_studio import (
     CreatorStudioError,
@@ -18,6 +17,7 @@ from .manual_character_creation import (
     ManualCharacterCreationError,
     manual_character_baseline_status,
     manual_character_draft,
+    manual_character_required_field_keys,
     update_manual_character_collection,
     update_manual_character_field,
 )
@@ -138,7 +138,7 @@ def _manual_fields(conn: sqlite3.Connection, section_id: str) -> list[dict[str, 
     if section is None:
         raise CreatorStudioError("Unknown manual Character section")
     domains = set(section[3])
-    allowed = creation_field_keys(conn)
+    allowed = set(manual_character_required_field_keys(conn))
     rows = conn.execute(
         """
         SELECT field_key,domain,label,data_type,unit
@@ -177,11 +177,11 @@ def manual_character_builder_view(
         "━━━━━━━━━━━━━━━━━━",
         f"Character: {p['identity'].get('name', 'Unnamed')}",
         f"Draft revision: {draft['revision']}",
-        f"Required baseline: {status['complete']}/{status['total']}",
+        f"Exact seed fields: {status['complete']}/{status['total']}",
         f"Profile values represented: {len(values)}",
         "",
-        "This uses the same creation-owned field registry and final Character profile structure as AI creation.",
-        "Nothing is approved into Sandbox until the required baseline and shared validators pass.",
+        "Manual and AI creation use the same exact creation-owned Character seed field set.",
+        "Nothing is approved into Sandbox until every seed field and the shared validators pass.",
     ]
     if status["missing"]:
         labels = []
@@ -191,7 +191,7 @@ def manual_character_builder_view(
         suffix = " …" if len(status["missing"]) > 5 else ""
         lines.extend(["", "Still required: " + ", ".join(labels) + suffix])
     else:
-        lines.extend(["", "✅ Required manual baseline complete. Review the draft before approval."])
+        lines.extend(["", "✅ Exact Character seed complete. Review the draft before approval."])
     if notice:
         lines.extend(["", notice])
 
@@ -236,7 +236,7 @@ def _manual_section_view(conn: sqlite3.Connection, user_id: int, section_id: str
         f"{section[1]} MANUAL CHARACTER · {section[2].upper()}",
         "━━━━━━━━━━━━━━━━━━",
         f"Page {page + 1}/{total_pages}",
-        "Select a creation-owned field. Existing values can be revised before approval.",
+        "Select a canonical creation-owned seed field. Existing values can be revised before approval.",
     ]
     keyboard: list[list[dict[str, str]]] = []
     for offset, field in enumerate(chunk):
@@ -526,8 +526,8 @@ def draft_preview_view(conn: sqlite3.Connection, user_id: int, *, notice: str | 
             manual_ready = bool(status["ready"])
             lines.extend([
                 "",
-                f"Manual required baseline: {status['complete']}/{status['total']}",
-                "✅ Ready for final validation" if manual_ready else f"⚠️ {len(status['missing'])} required field(s) still missing",
+                f"Manual exact seed fields: {status['complete']}/{status['total']}",
+                "✅ Ready for final validation" if manual_ready else f"⚠️ {len(status['missing'])} seed field(s) still missing",
             ])
     visible_properties = {
         key: value
@@ -558,7 +558,7 @@ def draft_preview_view(conn: sqlite3.Connection, user_id: int, *, notice: str | 
     if manual_ready:
         keyboard.append([{"text": "✅ Approve into Sandbox", "callback_data": "sw:cs:approve"}])
     else:
-        keyboard.append([{"text": "⚠️ Complete Required Baseline", "callback_data": "sw:cs:manual:home"}])
+        keyboard.append([{"text": "⚠️ Complete Exact Seed", "callback_data": "sw:cs:manual:home"}])
     keyboard.extend([
         [{"text": "✕ Cancel Draft", "callback_data": "sw:cs:cancel"}],
         [{"text": "← Creator Studio", "callback_data": "sw:studio"}],
@@ -576,7 +576,7 @@ def _approval_confirmation_view(conn: sqlite3.Connection, user_id: int):
             return manual_character_builder_view(
                 conn,
                 user_id,
-                notice="⚠️ Approval is locked until the required manual baseline is complete.",
+                notice="⚠️ Approval is locked until the exact manual Character seed is complete.",
             )
     proposal = draft["proposal"]
     name = proposal["identity"].get("name", "Unnamed")
