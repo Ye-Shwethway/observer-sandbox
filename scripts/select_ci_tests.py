@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 import argparse
-import fnmatch
 import glob
 import subprocess
 from pathlib import Path
@@ -30,7 +29,18 @@ FULL_SUITE_PREFIXES = (
 # automatically picked up without editing this file.
 DOMAIN_RULES: tuple[tuple[tuple[str, ...], tuple[str, ...]], ...] = (
     (
-        ("body", "physique", "profile_edit", "profile_observer", "grading"),
+        ("grading",),
+        (
+            "tests/test_*grading*.py",
+            "tests/test_*grade_target*.py",
+            "tests/test_*skill*.py",
+            "tests/test_body_*.py",
+            "tests/test_telegram_*profile*.py",
+            "tests/test_universal_profile_grading_v1.py",
+        ),
+    ),
+    (
+        ("body", "physique", "profile_edit", "profile_observer"),
         (
             "tests/test_body_*.py",
             "tests/test_*profile*grading*.py",
@@ -39,10 +49,7 @@ DOMAIN_RULES: tuple[tuple[tuple[str, ...], tuple[str, ...]], ...] = (
             "tests/test_*grade_target*.py",
         ),
     ),
-    (
-        ("telegram_",),
-        ("tests/test_telegram_*.py",),
-    ),
+    (("telegram_",), ("tests/test_telegram_*.py",)),
     (
         ("creation_sandbox", "sandbox_"),
         (
@@ -110,7 +117,6 @@ def select_tests(paths: Iterable[str], *, root: Path = Path(".")) -> tuple[str, 
             stem = Path(path).stem.lower()
             matched = False
 
-            # Exact and prefix-convention tests are cheap, deterministic wins.
             selected |= _expand((f"tests/test_{stem}.py", f"tests/test_{stem}_*.py"), root=root)
 
             for source_needles, test_patterns in DOMAIN_RULES:
@@ -118,8 +124,6 @@ def select_tests(paths: Iterable[str], *, root: Path = Path(".")) -> tuple[str, 
                     matched = True
                     selected |= _expand(test_patterns, root=root)
 
-            # Name-token fallback catches narrowly named modules/tests without
-            # making a weak guess for generic shared modules.
             tokens = _source_tokens(path)
             token_hits = set()
             for test_path in (root / "tests").glob("test_*.py"):
@@ -148,8 +152,6 @@ def select_tests(paths: Iterable[str], *, root: Path = Path(".")) -> tuple[str, 
             continue
 
         if path.startswith("scripts/") or path.startswith(".github/workflows/"):
-            # Non-core helper/workflow changes are validated by their directly
-            # changed tests if supplied; otherwise they do not widen runtime.
             continue
 
     if unmapped_runtime:
