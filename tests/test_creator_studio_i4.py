@@ -1,9 +1,11 @@
+import json
+
 import pytest
 
 from observer_sandbox.creation_sandbox import canonical_state_fingerprint, list_sandbox_objects
 from observer_sandbox.creator_studio import CreatorStudioError, active_draft, ai_draft, approve_draft, manual_draft
 from observer_sandbox.db import connect
-from observer_sandbox.manual_character_creation import update_manual_character_field
+from observer_sandbox.manual_character_creation import manual_character_required_field_keys, update_manual_character_field
 from observer_sandbox.runtime import initialize
 from observer_sandbox.telegram_creator_bot import _callback_view, _command_keyboard, handle_command
 
@@ -12,20 +14,64 @@ def _callbacks(keyboard):
     return [button["callback_data"] for row in keyboard or [] for button in row]
 
 
-def _fill_manual_baseline(conn, user_id=111):
-    values = {
+def _manual_value(key: str, data_type: str):
+    specials = {
+        "identity.full_name": "Draft Person",
         "identity.date_of_birth": "2001-05-12",
         "identity.sex": "male",
         "identity.gender": "man",
-        "body.height_in": "74",
-        "body.weight_lb": "190",
-        "body.body_fat_pct": "12",
-        "personality.primary_motivation": "Build a meaningful life",
-        "personality.primary_traits": '["calm","curious"]',
-        "background.origins": "Raised in a mountain town.",
+        "body.height_in": 74,
+        "genetics.height_max_in": 76,
+        "body.weight_lb": 190,
+        "body.body_fat_pct": 12,
+        "genetics.weight_lean_min_lb": 150,
+        "genetics.weight_lean_max_lb": 220,
+        "genetics.body_fat_floor_pct": 6,
+        "body.neck_in": 16,
+        "body.shoulders_in": 48,
+        "body.chest_in": 42,
+        "body.waist_in": 32,
+        "body.hips_in": 38,
+        "body.biceps_relaxed_in": 15,
+        "body.biceps_flexed_in": 16,
+        "body.triceps_in": 14,
+        "body.forearms_in": 13,
+        "body.thighs_in": 23,
+        "body.calves_in": 16,
+        "genetics.waist_target_in": 32,
+        "sexual_anatomy.penis_length_in": 6,
+        "sexual_anatomy.penis_girth_in": 5,
+        "genetics.penis_length_in": 6,
+        "genetics.penis_girth_in": 5,
+        "training.training_age_years": 5,
+        "raps_ia.iq": 120,
     }
-    for key, raw in values.items():
-        update_manual_character_field(conn, user_id, key, raw)
+    if key in specials:
+        value = specials[key]
+    elif key.startswith("genetics.") and data_type in {"number", "integer"}:
+        value = 60
+    elif data_type == "number":
+        value = 50
+    elif data_type == "integer":
+        value = 1
+    elif data_type == "boolean":
+        value = True
+    elif data_type == "date":
+        value = "2001-05-12"
+    elif data_type == "datetime":
+        value = "2025-05-01T07:00:00+00:00"
+    elif data_type == "json":
+        value = []
+    else:
+        value = "manual value"
+    return json.dumps(value) if data_type == "json" else str(value).lower() if isinstance(value, bool) else str(value)
+
+
+def _fill_manual_exact_seed(conn, user_id=111):
+    for key in manual_character_required_field_keys(conn):
+        row = conn.execute("SELECT data_type FROM profile_field_definitions WHERE field_key=?", (key,)).fetchone()
+        assert row is not None
+        update_manual_character_field(conn, user_id, key, _manual_value(key, str(row["data_type"])))
 
 
 def test_creator_studio_registers_drafts_and_input_sessions(tmp_path):
@@ -52,7 +98,7 @@ def test_manual_draft_is_not_object_until_approval(tmp_path):
         assert list_sandbox_objects(conn) == []
         assert canonical_state_fingerprint(conn) == before
 
-        _fill_manual_baseline(conn)
+        _fill_manual_exact_seed(conn)
         obj = approve_draft(conn, 111)
         assert obj["creation_type"] == "character"
         assert obj["identity"]["name"] == "Draft Person"
