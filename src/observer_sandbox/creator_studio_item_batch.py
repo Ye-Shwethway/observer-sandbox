@@ -10,6 +10,7 @@ from .creation_socket import build_creation_proposal
 from .creator_creation_ai import creator_creation_binding
 from .creator_studio import CreatorStudioError, _save_draft, active_draft, cancel_draft
 from .item_ai_contract import canonicalize_ai_item_batch_fill, item_batch_ai_fill_schema
+from .item_creation_realism import DEFAULT_ITEM_REALISM_INSTRUCTION, validate_item_default_realism
 from .sandbox_item_creation import create_sandbox_item_batch, preview_sandbox_item_batch
 from .structured_ai import generate_structured
 
@@ -25,6 +26,10 @@ def _validate_entries(conn: sqlite3.Connection, entries: Any, *, sandbox_id: str
         raise CreatorStudioError("Every Item batch entry must be an object")
     try:
         preview_sandbox_item_batch(conn, entries, sandbox_id=sandbox_id)
+        for entry in entries:
+            payload = entry.get("payload") if isinstance(entry, dict) else None
+            if isinstance(payload, dict):
+                validate_item_default_realism(payload)
     except (ValueError, TypeError, KeyError) as exc:
         raise CreatorStudioError(f"Item batch contract rejected the draft: {exc}") from exc
     return _copy_entries(entries)
@@ -43,7 +48,7 @@ def _wrap_batch_proposal(entries: list[dict[str, Any]], *, mode: str, user_id: i
 
 def manual_item_batch_draft(
     conn: sqlite3.Connection,
-    user_id: int,
+    user_id,
     raw_json: str,
     *,
     sandbox_id: str = DEFAULT_SANDBOX_ID,
@@ -83,6 +88,7 @@ def ai_item_batch_draft(
         "Create one batch entry per distinct requested Item type. Use stable unique lowercase refs. "
         "For every Item payload, fill the full item-v1 form: use [] for unused arrays, null for unknown/unused nullable fields, and null for unused module slots. "
         "Do not omit, rename or invent schema fields. Preserve requested stack quantities. "
+        + DEFAULT_ITEM_REALISM_INSTRUCTION +
         "STACK INVARIANT: ordinary single objects are definition.stackable=false, instance.mode='unique', instance.quantity=null, instance.unit=null, and modules.stack=null. "
         "Only fungible/countable grouped goods are stackable: definition.stackable=true, instance.mode='stack', modules.stack must be non-null, and instance quantity/unit must agree with modules.stack.initial_quantity/canonical_unit. "
         "Never populate modules.stack for a non-stackable Item. "
