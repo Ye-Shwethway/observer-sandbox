@@ -4,6 +4,19 @@
 
 Before material work, read `NEW_CHAT_BOOTSTRAP.md` and the directly relevant canonical docs. Newer repository and verified runtime evidence override remembered chat context.
 
+### Mandatory Creator Creation implementation standard
+
+**Before planning, coding, reviewing, extending, or debugging any Creator Creation section/domain, read `docs/CREATION_SECTION_IMPLEMENTATION_STANDARD_V1.md` first.** This applies to Character, Item, Location, Skill, Quest, System/rule-module, Organization, Service, Event/action-template, world-element creation, and future registered Creation sockets.
+
+Hard gates:
+- if the domain does not yet have a canonical versioned creation schema, **build and approve the schema first** before AI/UI/materialization work;
+- reuse the shared Creation Sandbox/socket/proposal/preview/approval/edit/diagnostic patterns instead of creating a bespoke parallel CRUD pipeline;
+- Manual and AI paths must converge on the same authoritative domain validator/materializer;
+- AI creation must receive the complete provider-facing fill schema/form and use a strong system-side authoring contract; the Creator should not need technical schema prompts;
+- new extensible concepts should use registry/socket patterns rather than family/name-specific switch logic;
+- structural/schema/isolation invariants may block creation; fine-grained realism or subjective quality must **not** become a blocking gate unless an explicit domain contract and Creator authorization require it;
+- any deliberate deviation from the Creation Implementation Standard must be documented. A deviation that changes locked safety, isolation, approval, pause/resume, or authority semantics requires explicit Creator approval.
+
 ## Authority order
 
 1. Explicit current Creator instruction.

@@ -10,10 +10,20 @@ Read and reconcile in this order:
 2. this file
 3. `ROADMAP.md`
 4. `docs/CREATOR_CREATION_IMPLEMENTATION_PLAN_V1.md`
-5. `docs/UNIVERSAL_GRADING_SOCKET_ARCHITECTURE_V1.md`
-6. `docs/ITEM_GRADING_COVERAGE_FOUNDATION_V1.md`
-7. task-relevant canonical contracts/source
-8. current branch/PR/CI/runtime evidence before completion or live claims.
+5. task-relevant canonical contracts/source
+6. current branch/PR/CI/runtime evidence before completion or live claims.
+
+### Mandatory Creation task gate
+
+For **any** Creator Creation work — planning, coding, review, extension or debugging — read:
+
+`docs/CREATION_SECTION_IMPLEMENTATION_STANDARD_V1.md`
+
+**before material Creation work begins.** `AGENTS.md` carries the repository-level hard lock.
+
+The standard was written after detailed review of the completed Character Creation and Item Creation verticals. It captures the required schema-first, socket/reuse, Manual/AI parity, full structured AI fill, canonicalization/validator compatibility, reusable Telegram UX, typing indicator, human review, raw `.txt` export, Cancel, explicit approval, atomic Sandbox apply, Edit Preview/Apply/Done, pause-state restoration, diagnostics, delete/cleanup and release/live-acceptance patterns.
+
+If a new Creation domain has no canonical versioned schema, **build the schema first**. Do not begin its AI/UI/materialization path until that schema exists.
 
 Authority:
 `current Creator instruction > live repo contracts/config/schema > verified runtime/DB > CI/deploy evidence > continuity docs > remembered chat`.
@@ -21,6 +31,45 @@ Authority:
 Persistent branches: `main`, `test` only.
 Workflow: `test -> focused verification -> PR/CI -> merge main -> deploy/runtime verification when applicable -> continuity sync -> exact main/test sync`.
 Do not infer production deployment from merge alone.
+
+---
+
+## Creation Implementation Standard v1 — new canonical meta-contract
+
+Canonical doc:
+
+`docs/CREATION_SECTION_IMPLEMENTATION_STANDARD_V1.md`
+
+Core pipeline:
+
+`versioned domain schema -> registered Creation socket/reuse map -> Manual full-schema form + AI full-schema structured fill -> safe deterministic canonicalization -> strict structural/domain validation -> dependency/graph validation -> write-free human preview + technical .txt export -> explicit Creator approval -> atomic Sandbox-only materialization -> approved detail -> Edit lifecycle -> delete/archive/cleanup`
+
+Important locks:
+- schema before AI/UI;
+- one shared Creation pipeline, many type sockets;
+- registry/socket expansion instead of family/name-specific switchboards;
+- Manual and AI converge on the same domain validator/materializer;
+- Single and Batch reuse the same member schema; Batch is orchestration only;
+- AI is a form filler, not a schema designer;
+- complete provider-facing fill form/schema is passed to structured generation;
+- Creator prompts stay short/natural; technical rules are system-side;
+- provider schema, canonicalizer and validator are compatibility-tested as one boundary;
+- canonicalization repairs only safe mechanical representation differences, not missing semantic facts;
+- validator must accept its own normalized/read-back representation;
+- one bounded AI self-correction may recover a deterministic proposal error, but retries must not become the normal path;
+- AI generation uses Telegram `typing` feedback when it can take noticeable time;
+- normal review is human-facing; raw `.txt` remains the auditable technical artifact;
+- Cancel before approval causes no materialized domain state;
+- explicit approval is required and applies atomically to Sandbox state only;
+- `canonical_state_fingerprint()` remains a core isolation proof;
+- `Created != running`; approval does not start autonomy/runtime or transmigrate;
+- Edit reuses the authoritative creation schema/validator, uses Preview before Apply, stale guards and audit;
+- Edit preflights before pause mutation and restores the exact prior pause state on Done/session close;
+- error diagnostics are bounded/actionable and secret-safe;
+- repeated validation failures require whole invariant-family audit, not one-error-at-a-time patching;
+- fine-grained realism/subjective quality is **non-blocking by default** unless an explicit domain contract + Creator authorization makes it authoritative.
+
+This standard must be reread at the start of I5.11 and all later Creation domains.
 
 ---
 
@@ -96,7 +145,9 @@ Relations remain distinct: `contains`, `located_at`, `stored_in`, `owned_by`, `c
 3. Judge primarily on structural usability, schema validity, sensible module/metric capture and successful preview/approval flow — **not microscopic realism optimization**.
 4. If structurally acceptable, approve the batch and verify approved Item details.
 5. Exercise one metric-bearing Item through Edit -> Preview -> Apply -> Done and confirm pre-edit pause restoration + canonical Real World isolation.
-6. Then close the representative Item acceptance gate and proceed to **I5.11 — Sandbox Location Creation + Embedded Contents**.
+6. Close the representative Item acceptance gate.
+7. Before starting **I5.11 — Sandbox Location Creation + Embedded Contents**, reread `docs/CREATION_SECTION_IMPLEMENTATION_STANDARD_V1.md` and apply its kickoff checklist.
+8. I5.11 already has `docs/UNIVERSAL_LOCATION_SCHEMA_V1.md`; do not invent another Location schema. Map the existing schema into the shared Creation pipeline and reuse exact Item Batch semantics for embedded contents.
 
 Do not mass-regenerate old Items before this representative acceptance pass.
 
@@ -117,4 +168,4 @@ Do not mass-regenerate old Items before this representative acceptance pass.
 
 ## Exact resume sentence
 
-**Creator deliberately rolled Item Creation back to the `b59e632aa8e3` behavior because later fine-grained realism tightening caused repeated rejection loops and blocked progress. Rollback PR #372 restored that exact tree and merged as `6fe07ec4fde0375b29477c026e4ace991f8834ce`. Do not re-tighten Item realism without explicit authorization. Verify that rollback commit (or later) is live, run one short natural-language representative Item Batch, accept it based mainly on structural/schema usability rather than microscopic realism, approve + verify one Item Edit/Apply/Done pass, then proceed to I5.11 Sandbox Location Creation + Embedded Contents.**
+**Creation Implementation Standard v1 is now the mandatory meta-contract for every future Creator Creation section: read `docs/CREATION_SECTION_IMPLEMENTATION_STANDARD_V1.md` before any Creation planning/coding/debugging, build the canonical schema first if missing, then use the shared schema-driven/socket-based Manual+AI -> canonicalize -> validate -> preview/export -> explicit atomic Sandbox approval -> Edit/pause-resume lifecycle. Creator deliberately rolled Item Creation back to the `b59e632aa8e3` behavior because later fine-grained realism tightening blocked progress; do not re-tighten realism without explicit authorization. Verify rollback merge `6fe07ec4fde0...` or later is live, run one short natural-language representative Item Batch, approve + verify one Item Edit/Apply/Done pass, then reread the Creation Standard and proceed to I5.11 using the existing Universal Location Schema v1.**
