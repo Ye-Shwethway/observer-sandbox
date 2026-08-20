@@ -105,6 +105,14 @@ def enter_sandbox_item_edit(
     if existing is not None:
         exit_sandbox_item_edit(conn, user_id=user_id)
 
+    # Preflight the exact persisted Item against the current canonical Item
+    # contract before changing runtime state. Legacy/incompatible approved Items
+    # must fail visibly without leaving the Sandbox paused or opening a session.
+    try:
+        _item_payload(conn, object_id)
+    except Exception as exc:
+        raise SandboxItemEditError(f"Current approved Item cannot enter edit mode: {exc}") from exc
+
     runtime = sandbox_runtime_status(conn, sandbox_id)
     was_paused = bool(runtime["paused"])
     if not was_paused:
@@ -124,7 +132,14 @@ def enter_sandbox_item_edit(
             "pending_proposal": None,
         },
     )
-    return item_edit_home_view(conn, user_id=user_id)
+    try:
+        return item_edit_home_view(conn, user_id=user_id)
+    except Exception:
+        _save_session(user_id, None)
+        current = sandbox_runtime_status(conn, sandbox_id)
+        if not was_paused and bool(current["paused"]):
+            set_sandbox_paused(conn, False, sandbox_id=sandbox_id)
+        raise
 
 
 def exit_sandbox_item_edit(
@@ -180,42 +195,11 @@ def item_edit_home_view(
         "All updates are previewed and revalidated before Apply.",
     ]
     keyboard = [
-        [
-            {"text": "🧬 Definition", "callback_data": "sw:iedit:s:definition"},
-            {"text": "📏 Instance", "callback_data": "sw:iedit:s:instance"},
-        ],
-        [
-            {"text": "💰 Economic Value", "callback_data": "sw:iedit:s:economic_policy"},
-            {"text": "🧩 Modules", "callback_data": "sw:iedit:s:modules"},
-        ],
-        [
-            {"text": "🪪 Requirements", "callback_data": "sw:iedit:s:requirements"},
-            {"text": "🔗 Relationships", "callback_data": "sw:iedit:s:relationships"},
-        ],
-        [{"text": "✅ Done Editing", "callback_data": "sw:iedit:done"}],
+        [{"text": label, "callback_data": f"sw:iedit:s:{section}"}]
+        for section, label in _SECTION_LABELS.items()
     ]
+    keyboard.append([{"text": "✅ Done Editing", "callback_data": "sw:iedit:done"}])
     return "\n".join(lines), keyboard
-
-
-def _get_path(payload: dict[str, Any], path: str) -> Any:
-    value: Any = payload
-    for part in path.split("."):
-        if not isinstance(value, dict) or part not in value:
-            raise SandboxItemEditError(f"Item field is not represented: {path}")
-        value = value[part]
-    return deepcopy(value)
-
-
-def _set_path(payload: dict[str, Any], path: str, value: Any) -> None:
-    parts = path.split(".")
-    target: Any = payload
-    for part in parts[:-1]:
-        if not isinstance(target, dict) or part not in target:
-            raise SandboxItemEditError(f"Item field is not represented: {path}")
-        target = target[part]
-    if not isinstance(target, dict):
-        raise SandboxItemEditError(f"Item field is not writable: {path}")
-    target[parts[-1]] = deepcopy(value)
 
 
 def _display(value: Any) -> str:
@@ -224,54 +208,118 @@ def _display(value: Any) -> str:
     if isinstance(value, bool):
         return "true" if value else "false"
     if isinstance(value, (dict, list)):
-        return json.dumps(value, ensure_ascii=False, separators=(",", ":"))
+        return json.dumps(value, ensure_ascii=False, sort_keys=True)
     return str(value)
 
 
-def _label(path: str) -> str:
-    return path.split(".")[-1].replace("_", " ").title()
+def _get_path(payload: dict[str, Any], path: str) -> Any:
+    current: Any = payload
+    for part in path.split("."):
+        if not isinstance(current, dict):
+            raise SandboxItemEditError(f"{path} is not editable as a field")
+        current = current.get(part)
+    return current
 
 
-def _section_paths(payload: dict[str, Any], section: str) -> list[str]:
-    if section == "definition":
-        return [
-            "definition.key",
-            "definition.name",
-            "definition.kind",
-            "definition.description",
-            "definition.stackable",
-            "definition.mobility",
-            "definition.capabilities",
-            "definition.tags",
-        ]
-    if section == "instance":
-        paths = ["instance.mode"]
-        if payload["instance"]["mode"] == "stack":
-            paths.extend(["instance.quantity", "instance.unit"])
-        return paths
-    if section == "economic_policy":
-        return [f"economic_policy.{key}" for key in payload["economic_policy"]]
-    if section == "requirements":
-        return ["requirements.use"]
-    if section == "relationships":
-        return [f"relationships.{key}" for key in sorted(ITEM_RELATION_TYPES)]
+def _set_path(payload: dict[str, Any], path: str, value: Any) -> None:
+    parts = path.split(".")
+    current: Any = payload
+    for part in parts[:-1]:
+        if not isinstance(current, dict):
+            raise SandboxItemEditError(f"{path} is not editable as a field")
+        child = current.get(part)
+        if child is None:
+            child = {}
+            current[part] = child
+        if not isinstance(child, dict):
+            raise SandboxItemEditError(f"{path} parent is not an object")
+        current = child
+    current[parts[-1]] = value
+
+
+def _field_paths(value: Any, prefix: str) -> list[str]:
+    if prefix in _PATH_TYPES or not isinstance(value, dict):
+        return [prefix]
+    paths: list[str] = []
+    for key in sorted(value):
+        child_prefix = f"{prefix}.{key}" if prefix else str(key)
+        child = value[key]
+        if isinstance(child, dict) and child:
+            paths.extend(_field_paths(child, child_prefix))
+        else:
+            paths.append(child_prefix)
+    return paths
+
+
+def _parse_value(raw: str, current: Any, path: str) -> Any:
+    text = raw.strip()
+    explicit = _PATH_TYPES.get(path)
+    if explicit:
+        if text.lower() in {"null", "none", "clear"} and explicit.endswith("_or_null"):
+            return None
+        if explicit.startswith("string"):
+            return text
+        if explicit.startswith("integer"):
+            try:
+                return int(text)
+            except ValueError as exc:
+                raise SandboxItemEditError("Send a whole-number minor-unit value, or null") from exc
+        if explicit.startswith("number"):
+            try:
+                return float(text)
+            except ValueError as exc:
+                raise SandboxItemEditError("Send a numeric value, or null") from exc
+    if current is None:
+        if text.lower() in {"null", "none", "clear"}:
+            return None
+        try:
+            return json.loads(text)
+        except json.JSONDecodeError:
+            return text
+    if isinstance(current, bool):
+        lowered = text.lower()
+        if lowered in {"true", "yes", "on", "1"}:
+            return True
+        if lowered in {"false", "no", "off", "0"}:
+            return False
+        raise SandboxItemEditError("Send true/false")
+    if isinstance(current, int) and not isinstance(current, bool):
+        try:
+            return int(text)
+        except ValueError as exc:
+            raise SandboxItemEditError("Send a whole number") from exc
+    if isinstance(current, float):
+        try:
+            return float(text)
+        except ValueError as exc:
+            raise SandboxItemEditError("Send a number") from exc
+    if isinstance(current, (dict, list)):
+        try:
+            value = json.loads(text)
+        except json.JSONDecodeError as exc:
+            raise SandboxItemEditError("Send valid JSON for this structured field") from exc
+        if isinstance(current, dict) and not isinstance(value, dict):
+            raise SandboxItemEditError("This field requires a JSON object")
+        if isinstance(current, list) and not isinstance(value, list):
+            raise SandboxItemEditError("This field requires a JSON array")
+        return value
+    return text
+
+
+def _section_root(payload: dict[str, Any], section: str) -> Any:
     if section == "modules":
-        # Whole-module JSON buttons permit adding/removing conditional modules;
-        # represented module leaves are also exposed for quick detailed edits.
-        paths = ["definition.modules"]
-        modules = payload["definition"]["modules"]
-        for module_name, module in modules.items():
-            module_path = f"definition.modules.{module_name}"
-            paths.append(module_path)
-            if isinstance(module, dict):
-                for key, value in module.items():
-                    child = f"{module_path}.{key}"
-                    paths.append(child)
-                    if isinstance(value, dict):
-                        for leaf in value:
-                            paths.append(f"{child}.{leaf}")
-        return paths
-    raise SandboxItemEditError("Unknown Item edit section")
+        return payload["definition"].get("modules") or {}
+    if section == "requirements":
+        return payload["definition"].get("requirements") or {}
+    if section == "relationships":
+        return payload.get("relationships") or {}
+    return payload.get(section) or {}
+
+
+def _section_prefix(section: str) -> str:
+    if section in {"modules", "requirements"}:
+        return f"definition.{section}"
+    return section
 
 
 def item_section_edit_view(
@@ -280,11 +328,15 @@ def item_section_edit_view(
     user_id: int,
     section: str,
 ) -> tuple[str, list[list[dict[str, str]]]]:
+    if section not in _SECTION_LABELS:
+        raise SandboxItemEditError("Unknown Item edit section")
     session = get_sandbox_item_edit_session(user_id=user_id)
     if session is None:
         raise SandboxItemEditError("Sandbox Item edit session expired")
     payload = _item_payload(conn, str(session["object_id"]))
-    paths = _section_paths(payload, section)
+    root = _section_root(payload, section)
+    prefix = _section_prefix(section)
+    paths = _field_paths(root, prefix)
     session["section"] = section
     session["field_paths"] = paths
     session["pending_path"] = None
@@ -292,43 +344,28 @@ def item_section_edit_view(
     _save_session(user_id, session)
 
     lines = _pause_banner() + [
-        f"{_SECTION_LABELS[section]} · ITEM EDIT",
-        "Select a field. Complex values use exact JSON.",
+        f"{_SECTION_LABELS[section]} · {session['item_name']}",
+        "Choose a field to edit.",
     ]
     keyboard: list[list[dict[str, str]]] = []
     for index, path in enumerate(paths):
         value = _get_path(payload, path)
         locked = path in _LOCKED_PATHS
-        prefix = "🔒" if locked else "✏️"
-        text = f"{prefix} {_label(path)}: {_display(value)}"
+        label = path.split(".")[-1].replace("_", " ").title()
+        shown = _display(value)
+        if len(shown) > 26:
+            shown = shown[:23] + "..."
         keyboard.append([
             {
-                "text": text[:60],
-                "callback_data": f"sw:iedit:locked" if locked else f"sw:iedit:f:{index}",
+                "text": f"{'🔒' if locked else '✏️'} {label}: {shown}"[:64],
+                "callback_data": "sw:iedit:locked" if locked else f"sw:iedit:f:{index}",
             }
         ])
-    keyboard.append([{"text": "← Edit Item", "callback_data": "sw:iedit:home"}])
-    keyboard.append([{"text": "✅ Done Editing", "callback_data": "sw:iedit:done"}])
+    keyboard.extend([
+        [{"text": "← Item Edit", "callback_data": "sw:iedit:home"}],
+        [{"text": "✅ Done Editing", "callback_data": "sw:iedit:done"}],
+    ])
     return "\n".join(lines), keyboard
-
-
-def _expected_type(path: str, current: Any) -> str:
-    explicit = _PATH_TYPES.get(path)
-    if explicit:
-        return explicit
-    if isinstance(current, bool):
-        return "boolean"
-    if isinstance(current, int):
-        return "integer"
-    if isinstance(current, float):
-        return "number"
-    if isinstance(current, dict):
-        return "json_object"
-    if isinstance(current, list):
-        return "json_array"
-    if current is None:
-        return "json_or_null"
-    return "string"
 
 
 def item_field_prompt_view(
@@ -342,68 +379,31 @@ def item_field_prompt_view(
         raise SandboxItemEditError("Sandbox Item edit session expired")
     paths = list(session.get("field_paths") or [])
     if index < 0 or index >= len(paths):
-        raise SandboxItemEditError("Unknown Item field selection")
+        raise SandboxItemEditError("Unknown Item edit field")
     path = str(paths[index])
     if path in _LOCKED_PATHS:
-        raise SandboxItemEditError(f"{path} is immutable after Item creation")
+        raise SandboxItemEditError("That Item field is immutable after creation")
     payload = _item_payload(conn, str(session["object_id"]))
     current = _get_path(payload, path)
     session["pending_path"] = path
-    session["pending_label"] = _label(path)
+    session["pending_label"] = path.split(".")[-1].replace("_", " ").title()
     session["pending_proposal"] = None
     _save_session(user_id, session)
-    lines = _pause_banner() + [
-        f"✏️ EDIT {_label(path).upper()}",
-        f"Field: {path}",
-        f"Current: {_display(current)}",
-        f"Expected: {_expected_type(path, current)}",
-        "",
-        "Send the new value as your next Telegram message.",
-        "Use exact JSON for objects/lists; send null for nullable fields.",
-        "Monetary *_minor fields use integer minor currency units (for example USD 12.50 = 1250).",
-        "Nothing changes until Preview → Apply.",
-    ]
-    return "\n".join(lines), [
-        [{"text": "✕ Cancel Field Edit", "callback_data": "sw:iedit:cancelinput"}],
-        [{"text": "✅ Done Editing", "callback_data": "sw:iedit:done"}],
-    ]
-
-
-def _coerce(path: str, current: Any, raw: str) -> Any:
-    text = raw.strip()
-    kind = _expected_type(path, current)
-    nullable = kind.endswith("_or_null") or kind == "json_or_null"
-    if text.lower() == "null":
-        if nullable:
-            return None
-        raise SandboxItemEditError(f"{path} is not nullable")
-    if kind in {"json_object", "json_array", "json_or_null"}:
-        try:
-            value = json.loads(text)
-        except json.JSONDecodeError as exc:
-            raise SandboxItemEditError(f"{path} requires valid JSON") from exc
-        if kind == "json_object" and not isinstance(value, dict):
-            raise SandboxItemEditError(f"{path} requires a JSON object")
-        if kind == "json_array" and not isinstance(value, list):
-            raise SandboxItemEditError(f"{path} requires a JSON array")
-        return value
-    if kind == "boolean":
-        if text.lower() in {"true", "yes", "1", "on"}:
-            return True
-        if text.lower() in {"false", "no", "0", "off"}:
-            return False
-        raise SandboxItemEditError(f"{path} requires true or false")
-    if kind in {"integer", "integer_or_null"}:
-        try:
-            return int(text)
-        except ValueError as exc:
-            raise SandboxItemEditError(f"{path} requires an integer") from exc
-    if kind in {"number", "number_or_null"}:
-        try:
-            return float(text)
-        except ValueError as exc:
-            raise SandboxItemEditError(f"{path} requires a number") from exc
-    return text
+    hint = "Send the new value."
+    if isinstance(current, (dict, list)):
+        hint = "Send the complete replacement as valid JSON."
+    elif current is None or _PATH_TYPES.get(path, "").endswith("_or_null"):
+        hint = "Send the new value, or `null` to clear it."
+    return (
+        "\n".join(_pause_banner() + [
+            f"✏️ EDIT {session['pending_label'].upper()}",
+            f"Path: {path}",
+            f"Current: {_display(current)}",
+            "",
+            hint,
+        ]),
+        [[{"text": "Cancel Field Edit", "callback_data": "sw:iedit:cancelinput"}]],
+    )
 
 
 def handle_sandbox_item_edit_text(
@@ -411,48 +411,43 @@ def handle_sandbox_item_edit_text(
     *,
     user_id: int,
     text: str,
-) -> tuple[str, list[list[dict[str, str]]]] | None:
+) -> tuple[str, list[list[dict[str, str]]]]:
     session = get_sandbox_item_edit_session(user_id=user_id)
     if session is None or not session.get("pending_path"):
-        return None
-    object_id = str(session["object_id"])
+        raise SandboxItemEditError("No Sandbox Item field is waiting for a value")
     path = str(session["pending_path"])
-    before = _item_payload(conn, object_id)
-    old_value = _get_path(before, path)
-    new_value = _coerce(path, old_value, text)
+    before = _item_payload(conn, str(session["object_id"]))
+    current = _get_path(before, path)
+    proposed_value = _parse_value(text, current, path)
     candidate = deepcopy(before)
-    _set_path(candidate, path, new_value)
+    _set_path(candidate, path, proposed_value)
     try:
-        normalized = validate_item_payload(candidate)
+        candidate = validate_item_payload(candidate)
     except Exception as exc:
-        raise SandboxItemEditError(f"Item contract rejected {path}: {exc}") from exc
-
-    proposal = {
-        "object_id": object_id,
+        raise SandboxItemEditError(str(exc)) from exc
+    session["pending_proposal"] = {
         "path": path,
-        "label": _label(path),
-        "old_value": old_value,
-        "new_value": _get_path(normalized, path),
+        "old_value": current,
+        "new_value": proposed_value,
         "before_payload": before,
-        "candidate_payload": normalized,
+        "candidate_payload": candidate,
     }
-    session["pending_path"] = None
-    session["pending_label"] = None
-    session["pending_proposal"] = proposal
     _save_session(user_id, session)
-    lines = _pause_banner() + [
-        "🔎 SANDBOX ITEM CHANGE PREVIEW",
-        f"Item: {session.get('item_name') or object_id}",
-        f"• {path}",
-        f"  {_display(old_value)} → {_display(proposal['new_value'])}",
-        "",
-        "Apply updates Sandbox state only through the strict Item update contract.",
-    ]
-    return "\n".join(lines), [
-        [{"text": "✅ Apply Change", "callback_data": "sw:iedit:apply"}],
-        [{"text": "✕ Cancel Preview", "callback_data": "sw:iedit:home"}],
-        [{"text": "✅ Done Editing", "callback_data": "sw:iedit:done"}],
-    ]
+    return (
+        "\n".join(_pause_banner() + [
+            "🔎 PREVIEW ITEM CHANGE",
+            f"Item: {session['item_name']}",
+            f"Field: {path}",
+            f"Before: {_display(current)}",
+            f"After: {_display(proposed_value)}",
+            "",
+            "No mutation has occurred yet.",
+        ]),
+        [
+            [{"text": "✅ Apply Change", "callback_data": "sw:iedit:apply"}],
+            [{"text": "Cancel", "callback_data": "sw:iedit:cancelinput"}],
+        ],
+    )
 
 
 def _apply_proposal(
@@ -461,12 +456,10 @@ def _apply_proposal(
     user_id: int,
 ) -> tuple[str, list[list[dict[str, str]]]]:
     session = get_sandbox_item_edit_session(user_id=user_id)
-    if session is None:
-        raise SandboxItemEditError("Sandbox Item edit session expired")
-    proposal = session.get("pending_proposal")
-    if not isinstance(proposal, dict):
-        raise SandboxItemEditError("No Item change is awaiting Apply")
-    object_id = str(proposal["object_id"])
+    if session is None or not session.get("pending_proposal"):
+        raise SandboxItemEditError("No previewed Item change is ready to apply")
+    proposal = deepcopy(session["pending_proposal"])
+    object_id = str(session["object_id"])
     current = _item_payload(conn, object_id)
     if current != proposal["before_payload"]:
         raise SandboxItemEditError("Item changed after preview; reopen the field and preview again")

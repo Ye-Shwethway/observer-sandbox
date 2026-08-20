@@ -5,6 +5,7 @@ from types import SimpleNamespace
 
 import observer_sandbox.telegram_sandbox_item_edit_adapter as text_adapter
 import observer_sandbox.telegram_world_layers_item_edit_extension as world_extension
+from observer_sandbox.telegram_sandbox_item_edit import SandboxItemEditError
 
 
 def test_world_layer_routes_item_edit_callbacks_with_owner_identity(monkeypatch):
@@ -49,6 +50,30 @@ def test_world_layer_routes_item_edit_callbacks_with_owner_identity(monkeypatch)
         for row in keyboard
         for button in row
     )
+
+
+def test_world_layer_surfaces_item_edit_failure_reason(monkeypatch):
+    base = SimpleNamespace(
+        sandbox_object_view=lambda conn, object_id: ("item", []),
+        world_layer_callback_view=lambda conn, callback_data: ("legacy", None),
+        _notification_user_id=lambda: 4242,
+    )
+    monkeypatch.setattr(
+        world_extension,
+        "sandbox_item_edit_callback_view",
+        lambda conn, *, user_id, callback_data: (_ for _ in ()).throw(
+            SandboxItemEditError("Current approved Item cannot enter edit mode: schema mismatch")
+        ),
+    )
+
+    world_extension.install_item_edit_world_layers_extension(base)
+    text, keyboard = base.world_layer_callback_view(object(), "sw:iedit:enter:item_12")
+
+    assert "SANDBOX ITEM EDIT FAILED" in text
+    assert "SandboxItemEditError" in text
+    assert "schema mismatch" in text
+    assert "No Item mutation was applied" in text
+    assert keyboard[0][0]["callback_data"] == "sw:o:item_12"
 
 
 def test_world_layer_does_not_add_edit_action_to_non_item(monkeypatch):
