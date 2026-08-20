@@ -1,0 +1,7 @@
+from observer_sandbox.creator_studio_item import manual_item_template
+from observer_sandbox.item_ai_contract import canonicalize_ai_item_fill
+from observer_sandbox.item_creation_schema import validate_item_payload
+
+
+def test_item_ai_canonicalizer_output_validates():
+    validate_item_payload(canonicalize_ai_item_fill(manual_item_template()))

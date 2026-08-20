@@ -15,6 +15,7 @@ _VOLUME_UNITS = ["m3", "l", "ml", "in3", "ft3", "floz_us", "cup_us", "pt_us", "q
 _GRADES = ["E", "D", "C", "B", "A", "S", "SS", "SSS", "X", "XX"]
 _OPERATORS = ["lt", "lte", "gt", "gte", "eq", "ne"]
 _IMMATERIAL_VALUATION_METHOD = "creator_explicit"
+_AI_VALUATION_METHOD = "ai_estimate"
 _REF_TOKEN_RE = re.compile(r"[^a-z0-9_-]+")
 
 
@@ -160,61 +161,140 @@ def item_batch_ai_fill_schema() -> dict[str, Any]:
     })
 
 
+def _canonical_token(value: Any, *, prefix: str = "item") -> str:
+    token = str(value or "").strip().lower()
+    token = _REF_TOKEN_RE.sub("_", token)
+    token = re.sub(r"_+", "_", token).strip("_-")
+    if token and not token[0].isalpha():
+        token = f"{prefix}_{token}"
+    return token
+
+
+def _canonicalize_token_list(values: Any) -> Any:
+    if not isinstance(values, list):
+        return values
+    result: list[Any] = []
+    for value in values:
+        token = _canonical_token(value, prefix="tag")
+        if token and token not in result:
+            result.append(token)
+    return result
+
+
+def _canonicalize_modules_and_instance(payload: dict[str, Any], definition: dict[str, Any]) -> None:
+    modules = definition.get("modules")
+    if not isinstance(modules, dict):
+        return
+
+    physical = modules.get("physical")
+    if isinstance(physical, dict) and not any(value is not None for value in physical.values()):
+        modules["physical"] = None
+
+    metrics = modules.get("metrics")
+    if isinstance(metrics, dict):
+        metrics = {key: metric for key, metric in metrics.items() if metric is not None}
+        modules["metrics"] = metrics or None
+
+    instance = payload.get("instance")
+    if not isinstance(instance, dict):
+        instance = {}
+        payload["instance"] = instance
+
+    stack = modules.get("stack")
+    if definition.get("stackable") is False:
+        modules["stack"] = None
+        instance.clear()
+        instance["mode"] = "unique"
+    elif isinstance(stack, dict):
+        unit = _canonical_token(stack.get("canonical_unit"), prefix="unit")
+        if unit:
+            stack["canonical_unit"] = unit
+            instance.clear()
+            instance.update({"mode": "stack", "quantity": stack.get("initial_quantity"), "unit": unit})
+    elif instance.get("mode") == "stack" and instance.get("quantity") is not None and instance.get("unit") is not None:
+        unit = _canonical_token(instance.get("unit"), prefix="unit")
+        if unit:
+            modules["stack"] = {"canonical_unit": unit, "initial_quantity": instance.get("quantity")}
+            instance.clear()
+            instance.update({"mode": "stack", "quantity": modules["stack"]["initial_quantity"], "unit": unit})
+
+    stack = modules.get("stack")
+    if isinstance(stack, dict):
+        stack_unit = stack.get("canonical_unit")
+        nutrition = modules.get("nutrition")
+        if isinstance(nutrition, dict) and stack_unit:
+            nutrition["unit"] = stack_unit
+
+    modules = {key: item for key, item in modules.items() if item is not None}
+    definition["modules"] = modules
+
+    capabilities = definition.get("capabilities")
+    if isinstance(capabilities, list):
+        normalized_capabilities: list[str] = []
+        for value in capabilities:
+            token = str(value or "").strip().lower()
+            if token and token not in normalized_capabilities:
+                normalized_capabilities.append(token)
+        capabilities[:] = normalized_capabilities
+        for module_name, capability in (
+            ("nutrition", "eat"),
+            ("container", "store"),
+            ("resistance_training", "train"),
+        ):
+            if module_name in modules:
+                if capability not in capabilities:
+                    capabilities.append(capability)
+            elif capability in capabilities:
+                capabilities.remove(capability)
+
+
 def _canonicalize_ai_economic_policy(payload: dict[str, Any]) -> None:
     economic = payload.get("economic_policy")
     if not isinstance(economic, dict):
         return
+
+    currency = economic.get("currency_code")
+    if isinstance(currency, str):
+        economic["currency_code"] = currency.strip().upper() or None
+
     classification = economic.get("classification")
     treatment = economic.get("net_worth_treatment")
     monetary_keys = ("market_value_minor", "replacement_value_minor", "unit_value_minor")
     has_monetary_value = any(economic.get(key) is not None for key in monetary_keys)
-    if (
-        classification == "economically_immaterial"
-        and treatment == "excluded"
-        and not has_monetary_value
-        and not str(economic.get("valuation_method") or "").strip()
-    ):
+
+    raw_method = economic.get("valuation_method")
+    method = _canonical_token(raw_method, prefix="valuation")
+    if classification == "economically_immaterial" and treatment == "excluded" and not has_monetary_value and not method:
         economic["valuation_method"] = _IMMATERIAL_VALUATION_METHOD
+    else:
+        economic["valuation_method"] = method or _AI_VALUATION_METHOD
+
+    stack = payload.get("definition", {}).get("modules", {}).get("stack") if isinstance(payload.get("definition"), dict) else None
+    stack_unit = stack.get("canonical_unit") if isinstance(stack, dict) else None
+    unit_label = economic.get("unit_label")
+    if classification == "consumable_stock" and stack_unit:
+        economic["unit_label"] = stack_unit
+    elif isinstance(unit_label, str):
+        economic["unit_label"] = _canonical_token(unit_label, prefix="unit") or None
 
 
 def canonicalize_ai_item_fill(value: dict[str, Any]) -> dict[str, Any]:
     payload = copy.deepcopy(value)
     definition = payload.get("definition")
     if isinstance(definition, dict):
-        modules = definition.get("modules")
-        if isinstance(modules, dict):
-            if definition.get("stackable") is False:
-                modules["stack"] = None
-            metrics = modules.get("metrics")
-            if isinstance(metrics, dict):
-                metrics = {key: metric for key, metric in metrics.items() if metric is not None}
-                modules["metrics"] = metrics or None
-            modules = {key: item for key, item in modules.items() if item is not None}
-            definition["modules"] = modules
-            capabilities = definition.get("capabilities")
-            if isinstance(capabilities, list):
-                for module_name, capability in (
-                    ("nutrition", "eat"),
-                    ("container", "store"),
-                    ("resistance_training", "train"),
-                ):
-                    if module_name in modules and capability not in capabilities:
-                        capabilities.append(capability)
-    instance = payload.get("instance")
-    if isinstance(instance, dict) and instance.get("mode") == "unique":
-        instance.pop("quantity", None)
-        instance.pop("unit", None)
+        key = _canonical_token(definition.get("key"), prefix="item")
+        if not key:
+            key = _canonical_token(definition.get("name"), prefix="item")
+        if key:
+            definition["key"] = key
+        definition["tags"] = _canonicalize_token_list(definition.get("tags"))
+        _canonicalize_modules_and_instance(payload, definition)
     _canonicalize_ai_economic_policy(payload)
     return payload
 
 
 def _canonical_batch_ref(value: Any) -> str:
-    token = str(value or "").strip().lower()
-    token = _REF_TOKEN_RE.sub("_", token)
-    token = re.sub(r"_+", "_", token).strip("_-")
-    if token and not token[0].isalpha():
-        token = f"item_{token}"
-    return token
+    return _canonical_token(value, prefix="item")
 
 
 def canonicalize_ai_item_batch_fill(value: dict[str, Any]) -> dict[str, Any]:
@@ -241,11 +321,19 @@ def canonicalize_ai_item_batch_fill(value: dict[str, Any]) -> dict[str, Any]:
                 stored_in = relationships.get("stored_in")
                 if isinstance(stored_in, str):
                     raw_target = stored_in.strip()
-                    prefixed = raw_target.startswith("$")
-                    bare_target = raw_target[1:] if prefixed else raw_target
+                    bare_target = raw_target[1:] if raw_target.startswith("$") else raw_target
                     canonical_target = aliases.get(bare_target.lower())
                     if canonical_target:
                         relationships["stored_in"] = f"${canonical_target}"
+            economic = payload.get("economic_policy")
+            if isinstance(economic, dict):
+                parent_ref = economic.get("included_in_parent_ref")
+                if isinstance(parent_ref, str):
+                    raw_target = parent_ref.strip()
+                    bare_target = raw_target[1:] if raw_target.startswith("$") else raw_target
+                    canonical_target = aliases.get(bare_target.lower())
+                    if canonical_target:
+                        economic["included_in_parent_ref"] = f"${canonical_target}"
             entry["payload"] = payload
     return candidate
 
