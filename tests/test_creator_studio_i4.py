@@ -3,6 +3,7 @@ import json
 import pytest
 
 from observer_sandbox.creation_sandbox import canonical_state_fingerprint, list_sandbox_objects
+from observer_sandbox.creation_socket import CreationProposalError
 from observer_sandbox.creator_studio import CreatorStudioError, active_draft, ai_draft, approve_draft, manual_draft
 from observer_sandbox.db import connect
 from observer_sandbox.manual_character_creation import manual_character_required_field_keys, update_manual_character_field
@@ -107,7 +108,7 @@ def test_manual_draft_is_not_object_until_approval(tmp_path):
         assert canonical_state_fingerprint(conn) == before
 
 
-def test_ai_draft_uses_creation_binding_and_remains_unapproved(tmp_path, monkeypatch):
+def test_legacy_location_ai_draft_fails_closed_until_location_v2_ai_slice(tmp_path, monkeypatch):
     db = tmp_path / "observer.sqlite3"
     initialize(db)
     with connect(db) as conn:
@@ -135,9 +136,9 @@ def test_ai_draft_uses_creation_binding_and_remains_unapproved(tmp_path, monkeyp
             }
 
         monkeypatch.setattr("observer_sandbox.creator_studio.generate_structured", fake_generate)
-        draft = ai_draft(conn, 111, "location", "A quiet room")
-        assert draft["draft_mode"] == "ai_generated"
-        assert draft["proposal"]["provenance"]["requested_by"] == "telegram:111"
+        with pytest.raises(CreationProposalError, match="schema version mismatch for location"):
+            ai_draft(conn, 111, "location", "A quiet room")
+        assert active_draft(conn, 111) is None
         assert list_sandbox_objects(conn) == []
 
 
