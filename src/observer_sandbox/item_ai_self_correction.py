@@ -2,8 +2,6 @@ from __future__ import annotations
 
 from typing import Any, Callable
 
-from .structured_ai import generate_structured
-
 
 MAX_ITEM_AI_ATTEMPTS = 2
 
@@ -11,6 +9,7 @@ MAX_ITEM_AI_ATTEMPTS = 2
 def generate_validated_item_candidate(
     conn,
     *,
+    generator: Callable[..., dict[str, Any]],
     binding: dict[str, Any],
     prompt: str,
     schema: dict[str, Any],
@@ -18,18 +17,12 @@ def generate_validated_item_candidate(
     canonicalize: Callable[[dict[str, Any]], dict[str, Any]],
     validate: Callable[[dict[str, Any]], None],
 ) -> dict[str, Any]:
-    """Generate once, then allow one bounded schema-preserving correction pass.
-
-    Validation remains authoritative. The helper never mutates or repairs facts
-    itself; on the first deterministic rejection it gives the exact validation
-    reason back to the same structured-output model and asks for a fresh complete
-    candidate under the same schema and Creator intent.
-    """
+    """Generate once, then allow one bounded schema-preserving correction pass."""
 
     current_prompt = prompt
     last_error: Exception | None = None
     for attempt in range(MAX_ITEM_AI_ATTEMPTS):
-        candidate = generate_structured(
+        candidate = generator(
             conn,
             provider_id=str(binding["provider_id"]),
             model_id=str(binding["model_id"]),
