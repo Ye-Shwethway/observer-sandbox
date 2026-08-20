@@ -5,6 +5,7 @@ from typing import Any
 
 from .creation_sandbox import DEFAULT_SANDBOX_ID, ensure_sandbox, get_sandbox_object, list_sandbox_objects
 from .item_grading import item_grading_lines
+from .item_metric_ui import item_metric_lines
 from .sandbox_item_creation import get_sandbox_item
 from .sandbox_runtime import sandbox_runtime_status
 from .telegram_economy import format_money_minor
@@ -192,6 +193,9 @@ def approved_item_detail_text(conn: sqlite3.Connection, value: dict[str, Any]) -
     lines.extend(_nutrition_lines(modules))
     lines.extend(_physical_lines(modules))
     lines.extend(_special_module_lines(modules))
+    metrics = item_metric_lines(modules, heading="⚙️ PERFORMANCE METRICS")
+    if metrics:
+        lines.extend(["", *metrics])
     lines.extend(["", *item_grading_lines(item, heading="🏅 GRADING")])
     lines.extend(["", "🧪 Sandbox-only item · canonical universe unchanged."])
     return "\n".join(lines)
