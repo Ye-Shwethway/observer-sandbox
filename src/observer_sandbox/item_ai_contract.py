@@ -189,12 +189,38 @@ def canonicalize_ai_item_fill(value: dict[str, Any]) -> dict[str, Any]:
 
 
 def canonicalize_ai_item_batch_fill(value: dict[str, Any]) -> dict[str, Any]:
+    """Normalize provider batch fill slots while preserving exact batch semantics.
+
+    Models sometimes echo a batch member ref directly in ``stored_in`` instead of
+    using the explicit ``$ref`` syntax. When the bare value exactly matches one of
+    this batch's declared refs, that is not an inference: it is an unambiguous local
+    graph reference, so normalize it to ``$ref`` before the strict I5.8 batch
+    validator runs. Values that do not exactly match a local ref are left untouched
+    and remain subject to normal existing-Sandbox target validation.
+    """
+
     candidate = copy.deepcopy(value)
     items = candidate.get("items")
-    if isinstance(items, list):
-        for entry in items:
-            if isinstance(entry, dict) and isinstance(entry.get("payload"), dict):
-                entry["payload"] = canonicalize_ai_item_fill(entry["payload"])
+    if not isinstance(items, list):
+        return candidate
+
+    refs = {
+        str(entry.get("ref")).strip()
+        for entry in items
+        if isinstance(entry, dict) and isinstance(entry.get("ref"), str) and str(entry.get("ref")).strip()
+    }
+    for entry in items:
+        if not isinstance(entry, dict) or not isinstance(entry.get("payload"), dict):
+            continue
+        payload = canonicalize_ai_item_fill(entry["payload"])
+        relationships = payload.get("relationships")
+        if isinstance(relationships, dict):
+            stored_in = relationships.get("stored_in")
+            if isinstance(stored_in, str):
+                target = stored_in.strip()
+                if target in refs:
+                    relationships["stored_in"] = f"${target}"
+        entry["payload"] = payload
     return candidate
 
 
