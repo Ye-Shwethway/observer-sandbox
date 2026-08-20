@@ -17,6 +17,18 @@ def test_creator_input_prompt_lifecycle_auto_closes_after_consumed_input():
     assert ux._take_prompt_delete(111) is None
 
 
+def test_item_and_batch_prompt_cards_are_tracked_for_cleanup():
+    ux._PROMPT_MESSAGES.clear()
+    ux._DELETE_AFTER_INPUT.clear()
+
+    for index, title in enumerate(("📦 ITEM · AI DRAFT", "📦 ITEM BATCH · AI DRAFT"), start=1):
+        ux._record_prompt_edit(111, 700 + index, f"{title}\n━━━━━━━━━━━━━━━━━━\nDescribe it")
+        assert ux._PROMPT_MESSAGES[111] == 700 + index
+
+    ux._mark_studio_input_consumed(111)
+    assert ux._take_prompt_delete(111) == 702
+
+
 def test_navigating_away_clears_tracked_prompt_message():
     ux._PROMPT_MESSAGES.clear()
     ux._DELETE_AFTER_INPUT.clear()
