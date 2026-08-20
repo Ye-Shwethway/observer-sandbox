@@ -57,13 +57,17 @@ def test_batch_ai_uses_creator_creation_binding_and_full_item_schema(tmp_path, m
     assert metrics["additionalProperties"] is False
 
     # The Creator supplies only natural intent; technical shaping belongs to the system prompt/contracts.
-    assert f"Creator intent: {creator_intent}" in captured["prompt"]
-    assert "Use stable unique lowercase refs" in captured["prompt"]
-    assert "definition.modules.metrics" in captured["prompt"]
-    assert "Leave unknown or inapplicable slots null" in captured["prompt"]
-    assert "Do not duplicate container capacity or resistance load into metrics" in captured["prompt"]
-    assert "STACK INVARIANT" in captured["prompt"]
-    assert "Never populate modules.stack for a non-stackable Item" in captured["prompt"]
-    assert "For requested batch-local storage, use stored_in='$ref'" in captured["prompt"]
-    assert "Do not author derived grades, grading thresholds, evaluator ids or reference profiles" in captured["prompt"]
-    assert "Module exact shapes" not in captured["prompt"]
+    prompt = captured["prompt"]
+    assert f"Creator intent: {creator_intent}" in prompt
+    assert "produce a validator-ready proposal on the first attempt" in prompt
+    assert "schema as available structure, not a checklist of facts to invent" in prompt
+    assert "Use stable lowercase machine tokens" in prompt
+    assert "nutrition requires a genuinely stackable consumable" in prompt
+    assert "container requires capability 'store'" in prompt
+    assert "resistance_training requires capability 'train'" in prompt
+    assert "do not fill every available metric slot" in prompt
+    assert "water-resistant" in prompt and "do not justify a depth value" in prompt
+    assert "power, runtime and energy_capacity must be mutually plausible" in prompt
+    assert "Prefer fewer defensible facts over many speculative ones" in prompt
+    assert "stored_in='$ref'" in prompt
+    assert "Do not author derived grades" in prompt
