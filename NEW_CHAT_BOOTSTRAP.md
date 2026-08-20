@@ -19,296 +19,306 @@ Authority order:
 Persistent branches: `main`, `test` only.
 
 Workflow:
-`develop on test -> focused tests -> PR/final CI -> merge to main -> runtime deploy if applicable -> production verification -> continuity sync -> main/test synchronization`.
+`develop on test -> focused tests -> PR/final CI -> merge to main -> runtime deploy if applicable -> verify production evidence -> sync continuity -> main/test exact synchronization`.
 
-Do not claim production deployment from a merge alone.
+Do not claim production deployment from merge alone.
 
 ---
 
 ## Current implementation checkpoint
 
-Latest merged implementation checkpoint before this docs update:
+Latest merged runtime/source checkpoint:
 
-### PR #322 — Auto-sync scoped Telegram command menus
+### PR #326 — Universal Requirement & Access Foundation
 
-Merge commit:
-`366f07b4a9e1cfd0670d768132e9500f10c51b44`
-
-Evidence:
-- CI #1154 targeted mode — **96 passed**;
-- main/test synchronized at merge;
-- startup publishes role-scoped Telegram command menus from the final `/help` contract and removes stale chat scopes;
-- ambiguous legacy `/pause`, `/resume`, `/speed`, `/time` remain non-mutating redirects and are not advertised.
-
-Production deployment/live command-menu behavior for #322 is not independently verified from repository evidence. Do not infer live state from merge alone.
-
-### PR #321 — Manual Character field-editing UX closure
-
-Merge commit:
-`6c568711e67b63f0412daf84189187834e9e71dd`
+Merged:
+`2372a3a32f3b400a029317174fcf7260fee7f1f3`
 
 Evidence:
-- CI #1153 targeted mode — **135 passed**;
-- successful manual field saves remain in the same section/page;
-- consumed input prompt cards are deleted; invalid input edits the existing prompt into retry state;
-- Creator live Telegram verification — **PASS**.
+- CI #1158 — **SUCCESS**;
+- targeted 2 test files;
+- **22 passed**;
+- CLI init/status — **SUCCESS**;
+- fresh DB healthy;
+- schema version 21;
+- no DB migration;
+- no canonical world mutation.
 
-### PR #319 — Manual Character Creation Exact Parity
-
-Merge commit:
-`6838c9503fee9d9bd2bd8b4786e10cc907ba5c2`
-
-Manual and AI Character creation now converge on the exact creation-owned Character profile contract, with typed structured fields/collections, deterministic validation, revisioned drafts and isolated Sandbox approval/materialization.
-
-Character creation is sufficiently closed for the next dependency family.
+`main` and `test` were synchronized to this merge before this docs-only continuity update.
 
 ---
 
-## Creator Creation architecture now locked
+## Newly completed Creator Item/Location foundation slices
 
-Creator explicitly selected the next direction:
+### I5.2 — Creation Contract Audit & Reuse Map
 
-**Item Creation first, then complete Location Creation, then bind Character + Location + Items into runtime readiness/affordances.**
+Complete.
 
-Reason:
-- a Character alone is not meaningfully runnable;
-- a usable Location is required;
-- a Location is a **spatial container** and can contain Items/fixtures/resources/child locations/occupants;
-- Creator must be able to create a Location with initial Items or add/remove/move Items afterward;
-- therefore Item creation/instance semantics must be robust before Location contents become a strict creation contract.
+Contract:
+`docs/CREATION_CONTRACT_REUSE_MAP_V1.md`.
 
-Do not build a parallel Sandbox inventory/world ontology. Reuse existing universal world foundations through Sandbox-owned adapters/state.
+Locked reuse decisions:
+- generic Creation proposal envelope remains;
+- Item/Location get strict type-specific validators beneath it;
+- Creation Sandbox lifecycle/isolation remains;
+- Item definition, concrete instance/stack, placement/storage and ownership remain separate concepts;
+- existing inventory/value/grading/world-location semantics are reused through adapters;
+- current Sandbox Character→Location `located_in` is prototype compatibility semantics, not the future universal relation; I5.13 must reconcile toward canonical `located_at` through Sandbox-owned persistence/adapters.
 
----
+### I5.3 — Universal Quantity & Measurement Contract
 
-## Strict schema / AI rule
+PR #324 merged:
+`a4abcbbcb932711bcf164d20bb977314afad5550`
 
-Every Creation type must have a complete explicit versioned schema.
+Evidence:
+- CI #1155 SUCCESS;
+- 22 targeted tests passed;
+- CLI init/status green;
+- schema 21 healthy.
 
-Canonical pipeline:
+Contract:
+`docs/UNIVERSAL_QUANTITY_MEASUREMENT_CONTRACT_V1.md`.
 
-`Creator intent -> exact registered JSON-like schema -> AI fills permitted fields only -> deterministic validation -> draft/preview -> explicit approval -> Sandbox apply`.
+Implementation:
+`src/observer_sandbox/physical_quantity.py`.
 
-AI must not guess or deviate:
-- no unknown/extra keys;
-- no missing required core fields;
-- no arbitrary conditional-module structures;
-- no runtime/derived fields supplied as source truth;
-- no direct DB/runtime write;
-- no bypass of units/enums/value policies/references.
+Provides presentation-independent normalized mass/length/area/volume truth with deterministic conversion.
 
-Preferred architecture:
+Creator-facing default remains Imperial:
+- lb;
+- in;
+- ft²;
+- US gal.
 
-`strict core + strict conditional modules`.
+Metric display is supported without changing physical truth.
 
-Manual and AI input modes must converge on the same validator/apply boundary.
+Existing Character body/profile measurements and inventory stack persistence were not rewritten.
 
----
+### I5.4 — Universal Cross-Domain Grade Contract
 
-## Measurement direction
+PR #325 merged:
+`980a752160a48144ef91bf800c4f4ab8fc5bc98e`
 
-Imperial is the default Creator-facing system.
+Evidence:
+- CI #1157 SUCCESS;
+- **189 targeted tests passed**;
+- existing Character/Profile grading regressions green;
+- CLI init/status green;
+- schema 21 healthy.
 
-Use pounds (`lb`) for Item weight/load presentation. Use appropriate Imperial length/area/volume units by domain.
+Contract:
+`docs/UNIVERSAL_CROSS_DOMAIN_GRADING_CONTRACT_V1.md`.
 
-Future display switching to Metric must not rewrite physical truth.
-
-Invariant:
-
-`normalized physical quantity -> presentation conversion -> Imperial(default) | Metric`.
-
-Grades, requirements and simulation consume normalized quantities, not formatted strings.
-
----
-
-## Universal grading direction
-
-The existing shared vocabulary remains:
-
+Shared ordering:
 `E < D < C < B < A < S < SS < SSS < X < XX`.
 
-The proven profile grading architecture is the base:
+Existing Character RAPS/Skill/Body scheme ids and thresholds remain.
 
-`authoritative raw state + explicit named grading scheme -> derived grade`.
+New cross-domain infrastructure:
+- deterministic grade comparison;
+- scheme domain/dimension metadata;
+- optional read-time GradeProfile;
+- explicit composite-only overall grade;
+- Item resistance-load exemplar from normalized physical mass;
+- Location completeness exemplar reusing L0-L4 spatial completeness.
 
-Extend it cross-domain; do not replace it.
+Important:
+- 55 lb can derive S Item resistance-load grade;
+- that is not automatically a Character strength requirement;
+- Location completeness grade is not authorization.
 
-Important rules:
-- shared vocabulary, domain-specific evaluators;
-- Character Strength S, Item Durability S and Location Prestige S do not share one raw scale;
-- grades are normally derived from raw facts/state rather than AI-authored truth;
-- optional overall grades require an explicit composite scheme;
-- current RAPS/Skill 0..100 grading remains unchanged and legitimately uses E..S only;
-- realistic universe profiles may restrict grade/capability ceilings; future Sandbox/supernatural universes may represent higher/impossible ranges.
+### I5.5 — Universal Requirement & Access Contract
 
-Core interaction distinction:
+Complete in PR #326.
 
-> **Item Grade describes the item. Requirement Grade describes the interaction.**
+Contract:
+`docs/UNIVERSAL_REQUIREMENT_ACCESS_CONTRACT_V1.md`.
 
-A 55 lb dumbbell may have S load grade, but required Character Strength depends on the actual action/exercise/workload. Do not blindly map Item grade to Character requirement.
+Implementation:
+`src/observer_sandbox/requirements.py`.
 
----
+Typed requirement leaves currently include:
+- minimum grade by explicit domain/dimension;
+- raw value compare;
+- skill;
+- Item presence;
+- equipped Item;
+- ownership;
+- residency;
+- authorization;
+- state compare.
 
-## Universal requirements and Location access
+Composition:
+- one leaf;
+- nested `all`;
+- nested `any`.
 
-Use one typed/composable requirement contract across future Items, Locations, Quests and Actions where possible.
+Access modes:
+- public;
+- owner_or_resident;
+- authorized;
+- restricted;
+- explicit requirements.
 
-Potential predicates include grade thresholds, raw capability, required skill/equipment, authorization/ownership/residency, quest/state and operating/time state.
+Operating state is evaluated separately:
+- open;
+- closed;
+- locked;
+- blocked.
 
-**Grade is not authorization.**
+Core lock:
 
-Location access policy is separate and may be:
-- public/access-to-all;
-- private;
-- owner/resident;
-- authorized-only;
-- grade-gated;
-- quest/state-gated;
-- composite.
+`Item Grade != interaction Requirement Grade != Location Access != Location operating state`.
 
-A high-grade public place can still admit a low-grade Character. A high-grade private estate can reject a high-grade stranger.
-
-Operating/open state is separate again from access policy.
-
----
-
-## Item architecture direction
-
-Reuse `docs/INVENTORY_ITEM_ARCHITECTURE.md`:
-
-`universal definition -> concrete instance/stack -> physical container/location -> ownership -> action/evidence -> quantity/state transition`.
-
-Universal Item Schema v1 must support strict core facts such as:
-- identity/family/spec variant/classification;
-- stackable/unique;
-- consumable/non-consumable;
-- movable/carriable/fixed;
-- physical mass, dimensions, occupied space/volume where meaningful;
-- materials/composition;
-- durability/condition where meaningful;
-- capabilities/affordances;
-- container/storage compatibility;
-- economic-value policy and price/value inputs;
-- registered modifier/effect references where applicable;
-- derived grade profile;
-- strict conditional-module selection/version.
-
-Candidate strict conditional modules include container, consumable, food/nutrition, wearable/equipment, tool, powered device, resistance-training equipment and later justified families.
-
-Items should expose intrinsic facts/capabilities rather than unconditional Character stat bonuses.
-
-Dumbbell exemplar:
-- 2 lb and 55 lb versions share a definition family/spec logic;
-- exact load differs;
-- runtime training effect derives from Item spec × actor × exercise/action × workload × state/context;
-- 2 lb can be trivial for elite strength work but useful for rehab/warm-up/endurance.
-
-Item Creation must support both **single Item** and **strict batch Item** creation.
+Missing evidence and malformed contracts fail closed with structured reasons.
 
 ---
 
-## Economic-value integration
+## Exact next implementation slice
 
-Reuse existing valuation/economy contracts.
+**I5.6 — Universal Item Schema v1.**
 
-Core distinction remains:
+Do this before Item Telegram creation UI.
 
-`has economic value != contributes independent net worth`.
+Goal:
+create one exact type-specific Item contract shared by Manual/AI, single/batch and later Location embedded-content creation.
 
-New Items/Locations must carry an explicit applicable economic-value policy rather than accidental defaults. Replacement value, market value, purchase price and independent net-worth contribution remain distinct.
+Reuse:
+- `docs/INVENTORY_ITEM_ARCHITECTURE.md`;
+- `src/observer_sandbox/inventory.py` semantic split;
+- `src/observer_sandbox/physical_quantity.py`;
+- cross-domain grading in `grading.py`;
+- `requirements.py`;
+- `economic_value.py` policy semantics;
+- generic creation envelope;
+- Creation Sandbox isolation/lifecycle.
 
-Sandbox valuation data must not alter canonical Real World net worth/economy before a future authorized transmigration/apply boundary.
+Canonical Item conceptual chain:
 
----
+`universal definition -> concrete unique instance OR stack -> placement/storage -> ownership/carriage/equipment -> runtime state/history`.
 
-## Location architecture direction
+Do not collapse these into one arbitrary properties bag.
 
-Authoritative semantic definition:
+### I5.6 schema rules
 
-> **Location = an identifiable spatial container with extent, contents, boundary/interface semantics, local state and explicit relationships to surrounding space.**
+Use:
+`strict core + strict conditional modules`.
 
-Location schema must eventually support identity/kind, parent containment, known extent/exposure, interfaces/topology, access, operating state, ownership/control, environment, facilities/affordances, child Locations, structural fixtures, mutable Items/resources, occupancy, value/asset policy, grading and provenance.
+Required direction:
+- exact registered core fields;
+- module selection determines exact legal module fields;
+- unknown AI-created fields reject;
+- unique/stackable semantics explicit;
+- physical quantities normalize through I5.3;
+- Item grade derives only from registered I5.4 schemes;
+- use/action requirements use I5.5 explicitly;
+- economic policy uses existing classification/treatment semantics;
+- placement/storage/ownership are relation facts, not reusable definition identity;
+- Sandbox staging does not write canonical Item/inventory/economy tables.
 
-Do not overload relations:
-- `contains` = authored structural containment;
-- `stored_in` = mutable inventory containment;
-- `located_at` = dynamic presence;
-- `owned_by` = ownership;
-- `carried_by` / `equipped_by` separate.
-
-Containment does not imply traversal. Connection does not imply current permission. Unknown geometry remains unknown rather than fabricated.
-
-Location creation can include a new validated Item batch atomically, or reference already active Sandbox Items. Embedded contents are never free-form unvalidated prose.
-
----
-
-## Active implementation sequence
-
-Detailed plan: `docs/CREATOR_CREATION_IMPLEMENTATION_PLAN_V1.md`.
-
-1. **I5.2 — Creation Contract Audit & Reuse Map**
-2. **I5.3 — Universal Quantity & Measurement Contract**
-3. **I5.4 — Universal Cross-Domain Grade Contract**
-4. **I5.5 — Universal Requirement & Access Contract**
-5. **I5.6 — Universal Item Schema v1**
-6. **I5.7 — Item Creation v1: Single**
-7. **I5.8 — Item Batch Creation v1**
-8. **I5.9 — Sandbox Item / Container Operations**
-9. **I5.10 — Universal Location Schema v1**
-10. **I5.11 — Location Creation + Embedded Contents**
-11. **I5.12 — Location Contents Editing / Operations**
-12. **I5.13 — Character ↔ Location Binding & Runtime Readiness**
-13. **I5.14 — Item / Location Runtime Affordance Bridge**
-14. **I5.15 — Sandbox Vertical Acceptance**
-
-Active next slice is **I5.2**.
-
-Do not skip directly to broad Location AI generation before Item/quantity/grade/requirement contracts are settled.
+Do not include broad future fields without a concrete represented use.
 
 ---
 
-## Runtime and isolation locks
+## Subsequent authorized route
 
-- Full Sandbox autonomous ticking is still **not implemented**.
-- `runtime_ready != running` remains hard-locked.
-- Adrian Vale remains Creation Sandbox-only and is not canonical.
-- Do not mutate canonical Thorne Estate/world topology while building Sandbox creation foundations.
-- Do not activate/transmigrate a second Real World Character.
-- Creation Sandbox reset/delete must clean Sandbox dependencies without touching canonical entities/world/economy.
+After I5.6:
 
-Target pre-autonomy chain:
+### I5.7 — Single Item Creation
+`Manual/AI -> exact Item validator -> preview -> approve -> isolated Sandbox materialization`.
 
-`strict Character + strict Location + strict Items -> active Sandbox objects -> contents/binding -> runtime readiness -> deterministic represented options`.
+Single Item should use the same service boundary as batch size 1.
 
-After I5.15, stop for Creator review before defining any autonomous Sandbox execution slice.
+### I5.8 — Item Batch Creation
+Heterogeneous exact Item proposals, internal references, whole-batch validation and atomic all-or-nothing apply.
+
+### I5.9 — Sandbox Item / Container Operations
+Browse/inspect/edit/move/store/own/carry/equip/quantity/archive/delete with explicit dependency handling.
+
+### I5.10 — Universal Location Schema v1
+Replace name-only arbitrary-properties Location prototype with strict spatial-container contract.
+
+### I5.11 — Location Creation + Embedded Contents
+Empty or furnished Location. Embedded new Items invoke the exact Item/batch contracts.
+
+### I5.12 — Location Contents Operations
+Add existing/new/batch Items, remove/move Items, create child Location. Preserve relation distinctions.
+
+### I5.13 — Character ↔ Location Binding & Runtime Readiness
+Reconcile Sandbox dynamic presence to canonical `located_at` semantics; require a usable place rather than a name-only Location.
+
+### I5.14 — Item / Location Runtime Affordance Bridge
+Legal options derive from represented fixtures/items/resources/environment/capabilities/access/requirements rather than Location labels or model invention.
+
+### I5.15 — Sandbox Vertical Acceptance
+Prove strict Character + usable Location + typed Items + correct relations + economics + binding/readiness/options with canonical fingerprint unchanged.
+
+Full Sandbox autonomous ticking remains separately unauthorized.
 
 ---
 
-## Transmigration boundary
+## Existing Character creation locks
 
-I6 remains deferred and planning/validation-only unless Creator explicitly changes scope.
+Character creation remains the strictness exemplar:
+- AI fills exact creation-owned schema;
+- registered data types are authoritative;
+- runtime/derived fields excluded;
+- skills are sparse relevant canonical rows;
+- Manual and AI exact field-set parity;
+- section editing remains in current section after accepted input;
+- consumed prompt cards are removed;
+- Sandbox profile browser/edit/grade-target parity exists;
+- Real/Sandbox runtime controls remain isolated.
 
-Future requirements:
-- freeze source revision;
-- compute dependency closure;
-- select target-universe profile;
-- validate grade/capability/system compatibility;
-- produce structured result + deterministic proposed mutations;
-- failure/incompatibility = zero target-universe writes;
-- no automatic canonical apply.
-
-Sandbox-valid supernatural/impossible content may be rejected by the current realistic Real World and remain valid for another future universe profile.
+Do not loosen Character exactness for Item/Location convenience.
 
 ---
 
-## Production evidence boundary
+## Sandbox / canonical isolation
 
-Repository implementation evidence is current through PR #322. PR #321 manual Character editing is Creator live-verified. PR #322 production deployment/live menu state is not independently verified here.
+Creation Sandbox objects do not count as canonical Real World entities.
 
-This continuity/roadmap update is documentation-only and does not imply a runtime deployment.
+Do not write Sandbox Item/Location creation into canonical:
+- `entity_definitions`;
+- `entities`;
+- `inventory_stacks`;
+- ordinary canonical relations;
+- economic value/asset/account/net-worth tables;
+- Real World scheduler/runtime state.
+
+Sandbox may reuse the same semantic contracts through Sandbox-owned adapters/storage.
+
+`canonical_state_fingerprint()` remains the important zero-mutation acceptance tool.
+
+---
+
+## Staging/transmigration locks
+
+Lifecycle:
+`Draft -> Sandbox Approved -> Sandbox Active -> Tested/Revised -> Ready for Transmigration -> Canonical Approved -> Canonical Active`.
+
+Nothing transmigrates automatically.
+
+I6 remains planning/validation only unless the Creator explicitly changes scope.
+
+Adrian Vale remains Sandbox-only and must not be transmigrated as a side effect of this work.
+
+The second real Character gate remains closed.
+
+---
+
+## Runtime status
+
+Real World and Sandbox clocks/speed/pause are separate.
+
+`runtime_ready != running` remains locked.
+
+Full Sandbox autonomous ticking is still not implemented.
+
+The current I5.3-I5.5 changes are foundation source changes; do not infer production deployment from merge/CI alone. Verify push/deploy/boot evidence separately before any live-runtime claim.
 
 ---
 
 ## Exact resume point
 
-**Start from I5.2 — Creation Contract Audit & Reuse Map. Reconcile existing Item/inventory, valuation/economy, grading, Location/spatial-container and Creation Sandbox models before adding runtime schema. Then implement I5.3 Quantity/Measurement with Imperial default, I5.4 cross-domain derived grading, I5.5 universal requirements/access, and only then the strict Universal Item Schema. AI is exact-schema-only; no guessing/deviation. Item Grade is separate from interaction Requirement Grade; Grade is separate from Location authorization/access. Build single Item creation before batch creation, Item/container operations before full Location contents, then strict Location creation, contents operations, Character↔Location binding, property-driven runtime affordances and vertical acceptance. Preserve Real/Sandbox isolation and do not start full Sandbox autonomy or transmigration.**
+**Latest merged implementation is PR #326 at `2372a3a32f3b400a029317174fcf7260fee7f1f3`; CI #1158 passed 22 targeted tests, CLI init/status green and schema 21 healthy. I5.2 Creation Reuse Map, I5.3 Quantity/Measurement, I5.4 Cross-Domain Grading and I5.5 Requirements/Access are complete. Next: I5.6 Universal Item Schema v1. Implement the exact schema/validator first; do not build Item Telegram creation UI yet; preserve definition/instance/stack/relation/economic separation and zero canonical mutation.**
