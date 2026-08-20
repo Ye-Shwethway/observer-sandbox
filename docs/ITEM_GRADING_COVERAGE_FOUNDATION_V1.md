@@ -1,140 +1,149 @@
 # Item Grading Coverage Foundation v1
 
-Status: **APPROVED IMPLEMENTATION CONTRACT — FOUNDATION COMPLETION BEFORE FRESH MASS GENERATION**  
+Status: **REPOSITORY-ACCEPTED — LIVE REPRESENTATIVE ACCEPTANCE PENDING**  
 Date: 2026-08-20
 
 ## Decision
 
-Do not mass-generate fresh Items until the grading evidence foundation is broad enough that common Item capabilities can be represented and graded without later schema churn.
+Do **not** mass-generate fresh Items yet. The broad grading/evidence foundation is repository-accepted, but production deployment and one representative fresh multi-class generation pass should be verified before large-scale Item creation resumes.
 
 This contract extends `UNIVERSAL_GRADING_SOCKET_ARCHITECTURE_V1.md`.
 
-## Core problem
+Repository acceptance:
+- PR **#362 — Complete broad Item grading coverage foundation**
+- merged at `b2b2d0b058bd9835cd311b78586b4ee3b09534ef`
+- CI **#1198** ✅ after 112 selected test files + CLI smoke
+- first CI #1196 found only two stale exact-schema expectations; after updating those contracts, #1198 passed
+- no DB migration
+- no canonical Real World mutation
 
-The grading socket can only grade represented facts. Current `item-v1` structured modules cover physical dimensions, stack/nutrition, container volume and resistance training. Common capability facts such as flashlight luminous output/runtime, battery energy capacity, device power, operating range, speed or digital throughput otherwise live only in prose descriptions and cannot participate in deterministic grading.
+---
 
-## Foundation rule
+## Core architecture
 
-Add a generic **Item Metrics socket** rather than one schema module per Item family.
+The grading socket can only grade represented facts. Broad Item creation therefore now has a generic **Item Metrics socket** rather than one schema module per Item family.
 
 Canonical flow:
 
-`Creator intent -> registered metric facts -> strict normalization -> registered grading dimensions/reference profiles -> deterministic grade results`
+`Creator intent -> registered raw metric facts -> strict normalization -> registered grading dimensions/reference profiles -> deterministic grade results`
 
 No `if backpack / flashlight / sword / battery` grading switchboard is permitted.
 
-## Item Metrics module
+### `definition.modules.metrics`
 
-`definition.modules.metrics` is a sparse mapping from registered metric id to one exact numeric measurement.
+A sparse mapping from registered metric id to one exact numeric measurement.
 
-Each metric registration defines:
+Each metric registration supplies:
 - stable metric id;
 - human label;
 - canonical unit;
-- accepted input units and deterministic conversions;
+- accepted input units + deterministic conversion;
 - numeric constraints;
-- whether the metric is safe for AI ordinary inference;
-- optional grading dimension/reference binding.
+- provider-form slot generation.
 
-Unknown metric ids fail closed. Adding a new registered metric must not require changing the Item validator core or provider schema structure.
+Unknown metric ids and unsupported units fail closed. Null AI slots are removed during canonicalization. Normalized persisted metrics revalidate idempotently for Item Edit/re-entry.
 
-Initial broad metric catalog should cover common universal quantitative capabilities:
-- `luminous_flux` (lm);
-- `runtime` (h);
-- `power` (W);
-- `energy_capacity` (Wh);
-- `range` (m);
-- `speed` (m/s);
-- `data_rate` (Mbps);
-- `digital_storage` (GB);
-- `beam_distance` (m);
-- `water_resistance_depth` (m);
-- `charge_time` (h);
-- `payload_capacity` (kg).
+Initial registered metric catalog:
+- `luminous_flux` — lm
+- `runtime` — h
+- `power` — W
+- `energy_capacity` — Wh
+- `range` — m
+- `speed` — m/s
+- `data_rate` — Mbps
+- `digital_storage` — GB
+- `beam_distance` — m
+- `water_resistance_depth` — m
+- `charge_time` — h
+- `payload_capacity` — kg
 
-Container volume remains authoritative in the existing `container.capacity_volume` module and should be graded directly from that raw field rather than duplicated as a metric.
+Container volume remains authoritative in existing `container.capacity_volume`; resistance load remains authoritative in existing `resistance_training.resistance_load`. They are not duplicated into metrics.
 
-## Grading semantics
+---
 
-V1 coverage grades named **capability magnitude**, not vague overall quality.
+## Initial realistic Item grading coverage
 
-Examples:
-- Luminous Flux grade describes represented light-output magnitude.
-- Runtime grade describes represented operating-duration magnitude.
-- Storage Capacity grade describes represented physical container-volume magnitude.
-- Energy Capacity grade describes represented stored-energy magnitude.
-- Range grade describes represented operating/reach range magnitude.
+Grades in this foundation describe named **capability magnitude**, not vague overall Item quality.
 
-A high grade does not imply the Item is generally better, safer, more efficient or more appropriate.
+Current registered dimensions:
+- `resistance_load`
+- `storage_capacity`
+- `luminous_flux`
+- `runtime`
+- `power`
+- `energy_capacity`
+- `range`
+- `speed`
+- `data_rate`
+- `digital_storage`
+- `beam_distance`
+- `water_resistance_depth`
+- `payload_capacity`
 
-## Generic reference-band evaluator
+The expanded Item registry uses reusable versioned reference-band evaluators/profiles and the realistic Item coverage universe policy. Current magnitude dimensions use E–S within that policy.
 
-Add one reusable deterministic evaluator family for monotonic numeric dimensions whose registered reference profile supplies explicit grade-band minima.
+`charge_time` is represented as raw evidence but intentionally ungraded in v1 because lower is normally preferable; it must not be forced into a monotonic-high evaluator.
 
-A reference profile contains:
-- dimension binding;
-- canonical unit;
-- ascending grade minima;
-- universe-policy compatibility;
-- semantic note stating what the grade measures.
+A high capability-magnitude grade does **not** imply the Item is generally better, safer, more efficient, more durable or more appropriate.
 
-Reference bands are versioned registry data. AI does not invent or modify bands at Item-generation time.
+Overall Item Grade remains absent unless a later explicit defensible composite contract is accepted.
 
-## Initial realistic-universe coverage
+---
 
-The default realistic grading policy may allow registered magnitude dimensions for ordinary physical/technical capability values. Supernatural-specific dimensions remain excluded unless another universe policy explicitly admits them.
+## AI generation contract
 
-Initial dimensions should include:
-- existing `resistance_load`;
-- `storage_capacity` from `container.capacity_volume`;
-- `luminous_flux`;
-- `runtime`;
-- `power`;
-- `energy_capacity`;
-- `range`;
-- `speed`;
-- `data_rate`;
-- `digital_storage`;
-- `beam_distance`;
-- `water_resistance_depth`;
-- `payload_capacity`.
+Single and Batch Creator AI provider forms now derive nullable metric slots from the registry.
 
-`charge_time` is represented as a metric but should not receive a monotonic-high grade because lower charge time is normally preferable; leave it ungraded until a monotonic-low or context-aware evaluator is explicitly accepted.
+AI may:
+- map represented measurable specifications to matching registered metric slots;
+- use conservative ordinary inference where already permitted by Creator creation policy;
+- leave unknown/inapplicable values null.
 
-## AI creation contract
+AI must not:
+- invent unknown metric ids;
+- author grade letters;
+- author evaluator ids, thresholds or reference profiles;
+- duplicate container capacity/resistance load into generic metrics;
+- fabricate unknown quantitative precision.
 
-The provider-facing Item form exposes nullable slots for every registered metric. Canonicalization removes null metric entries.
+Final grades remain deterministic derived interpretation.
 
-AI rules:
-- populate a metric only when supported by Creator intent or conservative ordinary inference;
-- do not invent unknown metric ids;
-- do not author grade letters;
-- do not author evaluator ids, thresholds or reference profiles;
-- do not duplicate an authoritative existing module fact as a metric;
-- leave unknown quantitative facts null.
+---
 
-Fresh flashlight example can therefore represent `luminous_flux=1000 lm`, `runtime=10 h`, `beam_distance=<known value or null>` and grading is derived after validation.
+## Persistence / Edit / UI
 
-## Edit / persistence / display
+- metrics persist as normalized **raw Item facts**, not grade authority;
+- GradePlan/GradeProfile remain rebuildable/read-time interpretation;
+- Item Edit's recursive Modules traversal automatically exposes metric `value` and `unit` fields without Item-family editor code;
+- any edited metric is previewed and revalidated through strict current `item-v1` before Apply;
+- draft detail shows `PERFORMANCE METRICS` + `GRADING`;
+- approved Item detail shows `⚙️ PERFORMANCE METRICS` + `🏅 GRADING`;
+- technical `.txt` export retains raw metric facts but no GradePlan authority.
 
-- Metrics persist as raw normalized Item facts, not grade authority.
-- Item Edit exposes metric values/units through the existing recursive Modules editor.
-- Grades are rebuildable/read-time interpretations.
-- Draft and approved Item detail show a human `PERFORMANCE METRICS` section plus `GRADING`.
-- Raw `.txt` export retains canonical metrics but no GradePlan authority.
+Representative accepted test semantics include:
+- flashlight `1 klm` -> normalized `1000 lm` -> Luminous Flux A;
+- runtime `600 min` -> normalized `10 h` -> Runtime B;
+- beam distance `300 m` -> Beam Distance B;
+- 30 L container -> Storage Capacity B from the existing container module;
+- charge time can persist without a fabricated grade;
+- unknown metric/unit rejects;
+- normalized metric payload revalidates across persistence/Edit boundary.
 
-## Acceptance
+---
 
-Foundation completion must prove:
-1. registered metric unit conversion is deterministic and idempotent;
-2. unknown metric ids/units reject;
-3. AI fill schema is generated from the metric registry and canonicalizer removes null metrics;
-4. a fresh flashlight-like payload can represent luminous flux + runtime and derive grades automatically;
-5. a container derives storage-capacity grade from the existing container module without duplicated metric data;
-6. ordinary Items remain valid when no metrics apply;
-7. new metric registrations can be added without Item-family branching;
-8. realistic policy still rejects unauthorized supernatural dimensions;
-9. Item Edit can revalidate normalized persisted metrics;
-10. no DB migration, no canonical Real World mutation, no automatic overall Item grade.
+## Remaining gate before broad fresh generation
 
-Fresh broad Item regeneration should resume only after this foundation and its intended initial dimension catalog are repository-accepted and live-verified enough for Creator acceptance.
+Repository foundation is accepted, but deployment/live behavior must be verified separately.
+
+Before mass Item generation:
+1. verify production runtime includes PR #362 or later;
+2. generate **one small representative fresh batch**, not a large catalog, covering several different classes such as container + flashlight/device + battery/power item + training/load item;
+3. verify AI captures supported raw metrics rather than leaving known specs only in prose;
+4. verify Preview shows normalized human metrics and deterministic dimension grades;
+5. approve and verify approved Item detail shows the same semantics;
+6. enter Item Edit on a metric-bearing Item, edit one metric, Preview/Apply/Done, and verify revalidation/pause restoration;
+7. verify Real World/canonical state remains unchanged.
+
+Only after that representative live pass should broad fresh Item generation resume.
+
+Future metric/dimension additions remain socket registrations rather than Item-family rewrites. Items with genuinely unrepresented/uncovered dimensions remain valid and explicitly ungraded rather than receiving fake precision.
