@@ -50,8 +50,7 @@ def test_body_derivation_uses_ratios_not_raw_larger_is_better():
     assert round(by_key["body.waist_to_shoulders_ratio"]["value"], 3) == 0.635
     assert round(by_key["body.waist_to_hips_ratio"]["value"], 3) == 0.846
     assert round(by_key["body.waist_to_height_ratio"]["value"], 3) == 0.434
-    assert by_key["body.chest_to_waist_ratio"]["kind"] == "derived_context"
-    assert "grade_result" not in by_key["body.chest_to_waist_ratio"]
+    assert "body.chest_to_waist_ratio" not in by_key
 
 
 def test_profile_query_and_telegram_render_body_and_skill_grades_without_persisting_them(tmp_path):
@@ -85,7 +84,8 @@ def test_profile_query_and_telegram_render_body_and_skill_grades_without_persist
         assert "Overall (S) · Expert" in body_text
         assert "Waist / Shoulders: 0.635 (S) · Expert" in body_text
         assert "Waist / Height: 0.434 (S) · Expert" in body_text
-        assert "Chest / Waist: 1.364" in body_text
+        assert "Waist / Chest:" in body_text
+        assert "Chest / Waist:" not in body_text
 
         after_tiers = [
             tuple(row)
