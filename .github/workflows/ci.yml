@@ -9,17 +9,67 @@ on:
       - 'scripts/**'
       - 'pyproject.toml'
       - '.github/workflows/ci.yml'
+      - '.github/workflows/full-regression.yml'
   workflow_dispatch:
+
+concurrency:
+  group: ci-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
 
 jobs:
   test:
     runs-on: ubuntu-latest
+    timeout-minutes: 15
     steps:
       - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
       - uses: actions/setup-python@v5
         with:
           python-version: '3.12'
-      - run: python -m pip install -e '.[dev]'
-      - run: pytest -q
-      - run: sandboxctl --db /tmp/observer.sqlite3 init
-      - run: sandboxctl --db /tmp/observer.sqlite3 status
+          cache: 'pip'
+          cache-dependency-path: 'pyproject.toml'
+
+      - name: Install test dependencies
+        run: python -m pip install -e '.[dev]'
+
+      - name: Select safe test scope
+        id: scope
+        shell: bash
+        env:
+          BASE_SHA: ${{ github.event.pull_request.base.sha }}
+          HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+        run: |
+          set -euo pipefail
+          if [[ "${{ github.event_name }}" == "pull_request" ]]; then
+            python scripts/select_ci_tests.py \
+              --base "$BASE_SHA" \
+              --head "$HEAD_SHA" \
+              --output /tmp/ci-tests.txt \
+              --mode-output /tmp/ci-mode.txt
+          else
+            printf 'full\n' > /tmp/ci-mode.txt
+            : > /tmp/ci-tests.txt
+            echo 'Manual CI dispatch: using full regression mode.'
+          fi
+          echo "mode=$(cat /tmp/ci-mode.txt)" >> "$GITHUB_OUTPUT"
+
+      - name: Run targeted PR tests
+        if: steps.scope.outputs.mode == 'targeted'
+        shell: bash
+        run: |
+          set -euo pipefail
+          mapfile -t TESTS < /tmp/ci-tests.txt
+          printf 'Running %s selected test file(s).\n' "${#TESTS[@]}"
+          pytest -q --durations=15 "${TESTS[@]}"
+
+      - name: Run parallel full regression fallback
+        if: steps.scope.outputs.mode == 'full'
+        run: pytest -q -n auto --dist loadfile --durations=25
+
+      - name: CLI smoke init
+        run: sandboxctl --db /tmp/observer.sqlite3 init
+
+      - name: CLI smoke status
+        run: sandboxctl --db /tmp/observer.sqlite3 status
