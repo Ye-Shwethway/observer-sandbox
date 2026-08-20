@@ -7,7 +7,7 @@ from typing import Any
 from .telegram_sandbox_item_edit import sandbox_item_edit_callback_view
 
 
-def install_world_layer_item_edit_extension(base_module: Any) -> None:
+def install_item_edit_world_layers_extension(base_module: Any) -> None:
     """Install Item edit launch UI and route ``sw:iedit:*`` callbacks."""
     if getattr(base_module, "_item_edit_extension_installed", False):
         return
@@ -37,3 +37,14 @@ def install_world_layer_item_edit_extension(base_module: Any) -> None:
     base_module.sandbox_item_detail_view = sandbox_item_detail_view
     base_module.world_layer_callback_view = world_layer_callback_view
     base_module._item_edit_extension_installed = True
+
+
+# Compatibility alias for the short-lived WIP name used by focused tests and
+# any already-imported callers. The established world-layer extension naming
+# remains the canonical public installer.
+install_world_layer_item_edit_extension = install_item_edit_world_layers_extension
+
+__all__ = [
+    "install_item_edit_world_layers_extension",
+    "install_world_layer_item_edit_extension",
+]
