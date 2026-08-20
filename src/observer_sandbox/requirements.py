@@ -4,7 +4,7 @@ from dataclasses import dataclass
 from typing import Any, Mapping
 
 from .action_conditions import ActionConditionError, _compare
-from .grading import GradeResult, meets_minimum_grade
+from .grading import GradeResult, grade_rank, meets_minimum_grade
 
 
 class RequirementContractError(ValueError):
@@ -77,6 +77,10 @@ def _evaluate_leaf(requirement: Mapping[str, Any], context: RequirementContext) 
         minimum = str(requirement["minimum"] or "").strip().upper()
         if not domain or not dimension or not minimum:
             raise RequirementContractError("minimum_grade requires domain, dimension and minimum")
+        try:
+            grade_rank(minimum)
+        except ValueError as exc:
+            raise RequirementContractError(str(exc)) from exc
         result = context.grades.get((domain, dimension))
         if result is None:
             return _evaluation_item(requirement, satisfied=False, actual=None)
