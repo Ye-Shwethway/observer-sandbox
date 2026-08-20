@@ -24,130 +24,97 @@ Do not infer production deployment from merge alone.
 
 ---
 
-## Current checkpoint
+## Current checkpoint — deliberate Item rollback baseline
 
-### Fresh Item Edit — live PASS
+Creator explicitly chose commit **`b59e632aa8e31647b85eeb244a4436c31e9e1e9d`** (`Fix Item nutrition basis semantics`, PR #369) as the acceptable Item Creation baseline after later realism tightening caused repeated rejection loops and slowed development.
 
-PR #358 merged at `9c93739655fc6981a8c5bfd31a7c83a4cce16f62`; CI #1194 passed. Creator live-confirmed fresh approved Item Edit now works. Current validator accepts both authoring `{value,unit}` and its own normalized `{kind,value,unit}` representation only with the correct physical dimension.
+Rollback PR **#372** restored the repository tree exactly to that checkpoint while preserving Git history. PR #372 merged to `main` as:
 
-### Universal Grading Socket v1 — accepted
+`6fe07ec4fde0375b29477c026e4ace991f8834ce`
 
-PR #360 merged at `9155a94bc75b800d4a10f2a39993647c78d11d9c`; CI #1195 passed.
+The rollback intentionally removes later Item changes from:
+- PR #370 — luminous-efficacy blocking validation;
+- PR #371 — fixture-mobility reconciliation/tightening;
+- interrupted post-#371 realism simplification work on `test`.
 
-Core invariant:
-`authoritative raw state + registered grading sockets + universe policy -> derived GradePlan -> deterministic GradeProfile`.
+**Do not re-add or further tighten fine-grained Item realism validation unless the Creator explicitly authorizes it.** Development velocity now outranks chasing small realism imperfections in generated Item drafts.
 
-Sockets:
-- `EvaluatorSpec`
-- `DimensionSpec`
-- `ReferenceProfile`
-- `UniverseGradingPolicy`
-- rebuildable `GradePlan`
-- deterministic `GradeProfile`
-
-Creator subsequently live-verified the deployed Item detail Grading section on an existing LED Camping Flashlight. It correctly showed explicit ungraded state because that old Item had no registered structured grading evidence.
-
-### PR #362 — broad Item Grading Coverage Foundation — repository accepted
-
-Merged at:
-`b2b2d0b058bd9835cd311b78586b4ee3b09534ef`
-
-CI **#1198** ✅ — 112 selected test files + CLI smoke.
-
-Canonical contract:
-`docs/ITEM_GRADING_COVERAGE_FOUNDATION_V1.md`.
-
-New raw evidence socket:
-`definition.modules.metrics`.
-
-Initial metric registry:
-- luminous flux
-- runtime
-- power
-- energy capacity
-- range
-- speed
-- data rate
-- digital storage
-- beam distance
-- water-resistance depth
-- charge time
-- payload capacity
-
-Strict deterministic unit normalization is registry-driven. Unknown metric ids/units reject. AI provider forms are generated from the same metric registry and null slots canonicalize away.
-
-Current realistic Item grading dimensions now include:
-- resistance load
-- storage capacity from existing container volume
-- luminous flux
-- runtime
-- power
-- energy capacity
-- range
-- speed
-- data rate
-- digital storage
-- beam distance
-- water-resistance depth
-- payload capacity
-
-`charge_time` is raw evidence only in v1 because lower is normally preferable; no fake monotonic-high grade is produced.
-
-Grades describe **named capability magnitude**, not vague overall quality. Overall Item Grade remains intentionally absent without an explicit composite contract.
-
-Draft and approved Item views now expose human-facing performance metrics followed by deterministic grading. Metrics remain raw persisted facts; grades remain rebuildable interpretation. Item Edit's existing recursive Modules editor naturally exposes metric value/unit fields and strict revalidation remains authoritative.
-
-No DB migration. No new canonical Real World mutation path.
+The chosen `b59e632...` baseline still includes the earlier accepted Item schema/canonicalizer work, broad grading foundation, schema-validator compatibility audit, shared AI authoring guidance, metric coherence/evidence validation through PR #367, prompt refinement through PR #368, and nutrition-basis semantics through PR #369. Treat that exact behavior as intentional unless a concrete structural blocker appears.
 
 ---
 
-## Generation hold / live acceptance gate
+## Item creation acceptance policy now
 
-Creator explicitly requested foundation completion **before** broad fresh Item generation to avoid expensive later regeneration.
+Creation-blocking validation should focus on **structural correctness and safe Sandbox materialization**, not exhaustive real-world realism.
 
-Therefore do **not** mass-generate fresh Items yet.
+Retain and respect hard contracts such as:
+- schema/type validity;
+- stable machine tokens/refs;
+- valid batch-local references;
+- stack/instance/module structural consistency;
+- module/capability contracts already present in the chosen baseline;
+- atomic whole-batch validation/materialization;
+- Sandbox isolation and canonical Real World non-mutation.
 
-Before broad generation resumes:
-1. verify deployed runtime includes PR #362 or later;
-2. create one small representative fresh multi-class batch only;
-3. include several classes such as a container, flashlight/device, battery/power item and training/load item;
-4. verify known measurable specs enter structured metrics/modules instead of remaining only in prose;
-5. verify draft metrics + dimension grades;
-6. approve and verify the same semantics on approved Item details;
-7. live-edit one metric-bearing Item through Preview -> Apply -> Done;
-8. verify Sandbox pause restoration and Real World/canonical isolation.
+Do **not** restart a whack-a-mole cycle for small plausible numeric imperfections. If a draft is structurally valid and reasonably usable, prefer forward progress. Fine-grained realism can be improved later as advisory quality work rather than continuously expanding the creation blocker.
 
-Only after this representative live pass should broad Item generation resume.
-
----
-
-## Grading locks
-
-Canonical grade vocabulary:
-`E < D < C < B < A < S < SS < SSS < X < XX`.
-
-Rules:
-- raw facts are authority;
-- evaluator/dimension/reference/universe-policy registrations are sockets;
-- unknown evidence/reference means ungraded, not fabricated precision;
-- AI never owns final grade letters/thresholds;
-- realistic-universe policy must not auto-admit supernatural dimensions;
-- **Item Grade describes the item. Requirement Grade describes the interaction.**
-- Location grade remains separate from access authorization;
-- overall grade requires explicit composite semantics.
+Creator-side prompts should remain short and natural. Technical schema burden belongs in the system-side creation contract/canonicalizer, not in long user prompts.
 
 ---
 
-## Retained locks / next major feature
+## Item/grading foundation retained
 
-I5.2 through I5.10 remain complete and must not be rebuilt. Item ontology/relations, Sandbox isolation, no automatic transmigration, `runtime_ready != running`, canonical fingerprint safety and no unauthorized full Sandbox autonomous ticking remain locked.
+I5.2–I5.10 remain complete and must not be rebuilt.
 
-After the Item grading representative live acceptance gate closes, resume **I5.11 — Sandbox Location Creation + Embedded Contents**.
+Key completed slices include:
+- Universal Item Schema + Single/Batch materialization;
+- Item/container relations and atomic operations;
+- Universal Location Schema v1;
+- Item Edit parity with pause-state restoration and stale guard;
+- Character/Item cleanup controls;
+- Item economics display and AI authoring normalization;
+- Universal Grading Socket v1 (PR #360);
+- broad Item Grading Coverage Foundation (PR #362);
+- batch ref canonicalization and module/capability reconciliation;
+- schema/canonicalizer/validator compatibility audit;
+- shared single+batch Creator AI authoring contract;
+- nutrition-basis semantics (PR #369).
 
-Adrian Vale remains Sandbox-only. Second Real World Character gate remains closed.
+Grading remains derived from authoritative raw facts. AI does not author final grades/thresholds. Item grade describes the Item; requirement grade describes the interaction. Overall Item grade remains absent without an explicit composite contract.
+
+Locked Item ontology:
+`Definition -> unique instance OR stack -> placement/storage -> ownership/carriage/equipment -> runtime state/history`.
+
+Relations remain distinct: `contains`, `located_at`, `stored_in`, `owned_by`, `carried_by`, `equipped_by`. Ownership is orthogonal to physical placement/storage.
+
+---
+
+## Immediate resume point
+
+1. Verify production/runtime has deployed rollback merge `6fe07ec4fde0...` or later before claiming live rollback completion.
+2. Generate **one** small Item Batch with a very short natural Creator prompt.
+3. Judge primarily on structural usability, schema validity, sensible module/metric capture and successful preview/approval flow — **not microscopic realism optimization**.
+4. If structurally acceptable, approve the batch and verify approved Item details.
+5. Exercise one metric-bearing Item through Edit -> Preview -> Apply -> Done and confirm pre-edit pause restoration + canonical Real World isolation.
+6. Then close the representative Item acceptance gate and proceed to **I5.11 — Sandbox Location Creation + Embedded Contents**.
+
+Do not mass-regenerate old Items before this representative acceptance pass.
+
+---
+
+## Retained system locks
+
+- Create anywhere safely; canon nowhere automatically.
+- Sandbox-created content never transmigrates automatically.
+- Target-universe compatibility validation must precede transmigration.
+- `runtime_ready != running`; Created is not alive.
+- `canonical_state_fingerprint()` remains a high-value zero-canonical-mutation invariant.
+- Full autonomous Sandbox ticking remains unauthorized unless Creator explicitly expands scope.
+- Adrian Vale remains Sandbox-only.
+- Second Real World Character gate remains closed until later Mind + Relationship work.
 
 ---
 
 ## Exact resume sentence
 
-**PR #362 merged at `b2b2d0b058bd9835cd311b78586b4ee3b09534ef` after CI #1198 passed 112 selected test files + CLI smoke. Broad Item grading foundation now includes registry-driven raw metrics, AI metric fill, deterministic normalization, expanded realistic magnitude dimensions, performance-metrics UI and Edit/revalidation compatibility. Do not mass-generate fresh Items yet; verify #362 deployment with one small representative multi-class fresh batch and one metric Edit/Apply/Done pass. If that live gate passes, broad fresh Item generation can resume before I5.11.**
+**Creator deliberately rolled Item Creation back to the `b59e632aa8e3` behavior because later fine-grained realism tightening caused repeated rejection loops and blocked progress. Rollback PR #372 restored that exact tree and merged as `6fe07ec4fde0375b29477c026e4ace991f8834ce`. Do not re-tighten Item realism without explicit authorization. Verify that rollback commit (or later) is live, run one short natural-language representative Item Batch, accept it based mainly on structural/schema usability rather than microscopic realism, approve + verify one Item Edit/Apply/Done pass, then proceed to I5.11 Sandbox Location Creation + Embedded Contents.**
