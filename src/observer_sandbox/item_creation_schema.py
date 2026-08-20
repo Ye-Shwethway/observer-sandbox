@@ -82,7 +82,15 @@ def _string_list(value: Any, *, label: str, tokenized: bool = False) -> list[str
 def _quantity(raw: Any, *, kind: str, label: str, positive: bool = False) -> PhysicalQuantity:
     if not isinstance(raw, Mapping):
         raise ItemSchemaError(f"{label} must be a physical quantity object")
-    _exact(raw, {"value", "unit"}, label=label)
+    keys = set(raw)
+    if keys == {"value", "unit"}:
+        pass
+    elif keys == {"kind", "value", "unit"}:
+        normalized_kind = _token(raw["kind"], label=f"{label}.kind")
+        if normalized_kind != kind:
+            raise ItemSchemaError(f"{label}.kind must be {kind!r}")
+    else:
+        _exact(raw, {"value", "unit"}, label=label)
     try:
         quantity = normalize_physical_quantity(kind, raw["value"], str(raw["unit"]))
     except PhysicalQuantityError as exc:
@@ -167,9 +175,6 @@ def _validate_requirements(raw: Any) -> dict[str, Any]:
     if use is None:
         return {"use": None}
     try:
-        # Empty evidence intentionally fails requirement predicates while still
-        # exercising the exact typed contract shape. The result is discarded;
-        # this validation must never infer that an unmet requirement is invalid.
         evaluate_requirements(
             use,
             RequirementContext(grades={}, values={}, states={}),
