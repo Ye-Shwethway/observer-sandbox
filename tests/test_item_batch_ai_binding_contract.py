@@ -50,4 +50,8 @@ def test_batch_ai_uses_creator_creation_binding_and_full_item_schema(tmp_path, m
     assert modules["required"] == ["physical", "stack", "nutrition", "container", "resistance_training"]
     assert modules["additionalProperties"] is False
     assert "Fill the supplied complete Item Batch schema" in captured["prompt"]
+    assert "STACK INVARIANT" in captured["prompt"]
+    assert "Never populate modules.stack for a non-stackable Item" in captured["prompt"]
+    assert "definition.stackable=true" in captured["prompt"]
+    assert "instance.mode='stack'" in captured["prompt"]
     assert "Module exact shapes" not in captured["prompt"]
