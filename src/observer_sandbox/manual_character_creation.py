@@ -6,7 +6,11 @@ import sqlite3
 from datetime import date, datetime
 from typing import Any
 
-from .character_creation_policy import creation_field_keys, sanitize_creation_profile_values
+from .character_creation_policy import (
+    CREATION_FIELD_ALIASES,
+    creation_field_keys,
+    sanitize_creation_profile_values,
+)
 from .creation_sandbox import DEFAULT_SANDBOX_ID
 
 
@@ -14,25 +18,20 @@ class ManualCharacterCreationError(ValueError):
     pass
 
 
-# These are the minimum stable facts required before a manually authored
-# Character may leave draft state. Everything else remains available through
-# the same creation-owned field registry and can be added when known.
-MANUAL_CHARACTER_REQUIRED_FIELDS = (
-    "identity.full_name",
-    "identity.date_of_birth",
-    "identity.sex",
-    "identity.gender",
-    "body.height_in",
-    "body.weight_lb",
-    "body.body_fat_pct",
-    "personality.primary_motivation",
-    "personality.primary_traits",
-    "background.origins",
-)
-
 MANUAL_CHARACTER_COLLECTIONS = frozenset(
     {"skills", "preferences", "hobbies", "habits", "compatibility_tags"}
 )
+
+
+def manual_character_required_field_keys(conn: sqlite3.Connection) -> tuple[str, ...]:
+    """Return the exact canonical Character value keys required by AI creation.
+
+    The structured-AI layer removes source-union compatibility aliases and then
+    requires every remaining creation-owned field exactly once. Manual creation
+    uses the same set so input method never changes the resulting seed contract.
+    """
+    aliases = set(CREATION_FIELD_ALIASES)
+    return tuple(sorted(key for key in creation_field_keys(conn) if key not in aliases))
 
 
 def empty_manual_character_profile(name: str) -> dict[str, Any]:
@@ -135,16 +134,6 @@ def _save(
     return manual_character_draft(conn, int(row["user_id"]), sandbox_id=str(row["sandbox_id"]))
 
 
-def _missing(value: Any) -> bool:
-    if value is None:
-        return True
-    if isinstance(value, str):
-        return not value.strip()
-    if isinstance(value, (list, dict)):
-        return not value
-    return False
-
-
 def manual_character_missing_fields(
     conn: sqlite3.Connection,
     user_id: int,
@@ -153,7 +142,8 @@ def manual_character_missing_fields(
 ) -> list[str]:
     draft = manual_character_draft(conn, user_id, sandbox_id=sandbox_id)
     values = dict(_profile(draft["proposal"]).get("values") or {})
-    return [key for key in MANUAL_CHARACTER_REQUIRED_FIELDS if _missing(values.get(key))]
+    required = manual_character_required_field_keys(conn)
+    return [key for key in required if key not in values]
 
 
 def manual_character_baseline_status(
@@ -162,8 +152,9 @@ def manual_character_baseline_status(
     *,
     sandbox_id: str = DEFAULT_SANDBOX_ID,
 ) -> dict[str, Any]:
+    required = manual_character_required_field_keys(conn)
     missing = manual_character_missing_fields(conn, user_id, sandbox_id=sandbox_id)
-    total = len(MANUAL_CHARACTER_REQUIRED_FIELDS)
+    total = len(required)
     return {
         "ready": not missing,
         "complete": total - len(missing),
@@ -230,8 +221,8 @@ def update_manual_character_field(
     row = _draft_row(conn, user_id, sandbox_id=sandbox_id)
     proposal = _loads(str(row["proposal_json"]))
     field_key = str(field_key or "").strip()
-    if field_key not in creation_field_keys(conn):
-        raise ManualCharacterCreationError(f"Field is not creation-owned or writable: {field_key}")
+    if field_key not in set(manual_character_required_field_keys(conn)):
+        raise ManualCharacterCreationError(f"Field is not a canonical creation-owned field: {field_key}")
     definition = conn.execute(
         "SELECT data_type FROM profile_field_definitions WHERE field_key=?",
         (field_key,),
@@ -355,12 +346,12 @@ def update_manual_character_collection(
 
 __all__ = [
     "MANUAL_CHARACTER_COLLECTIONS",
-    "MANUAL_CHARACTER_REQUIRED_FIELDS",
     "ManualCharacterCreationError",
     "empty_manual_character_profile",
     "manual_character_baseline_status",
     "manual_character_draft",
     "manual_character_missing_fields",
+    "manual_character_required_field_keys",
     "update_manual_character_collection",
     "update_manual_character_field",
 ]
