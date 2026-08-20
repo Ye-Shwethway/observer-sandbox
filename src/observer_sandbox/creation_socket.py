@@ -34,6 +34,12 @@ SOCKETS: Mapping[str, CreationSocketDefinition] = {
         label="Location",
         required_identity_fields=("name",),
     ),
+    "item": CreationSocketDefinition(
+        type_id="item",
+        schema_version=1,
+        label="Item",
+        required_identity_fields=("name",),
+    ),
 }
 
 _ALLOWED_TOP_LEVEL = frozenset(

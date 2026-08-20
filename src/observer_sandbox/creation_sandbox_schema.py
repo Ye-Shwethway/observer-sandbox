@@ -113,6 +113,52 @@ CREATE TABLE IF NOT EXISTS creation_sandbox_runtime_options (
     updated_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
     UNIQUE(sandbox_id, character_object_id, action_key, source_object_id)
 );
+
+CREATE TABLE IF NOT EXISTS creation_sandbox_item_definitions (
+    sandbox_id TEXT NOT NULL REFERENCES creation_sandboxes(sandbox_id) ON DELETE CASCADE,
+    definition_key TEXT NOT NULL,
+    schema_version TEXT NOT NULL,
+    name TEXT NOT NULL,
+    kind TEXT NOT NULL,
+    description TEXT NOT NULL,
+    stackable INTEGER NOT NULL CHECK(stackable IN (0,1)),
+    mobility TEXT NOT NULL CHECK(mobility IN ('movable','fixed')),
+    capabilities_json TEXT NOT NULL DEFAULT '[]',
+    tags_json TEXT NOT NULL DEFAULT '[]',
+    modules_json TEXT NOT NULL DEFAULT '{}',
+    requirements_json TEXT NOT NULL DEFAULT '{}',
+    derived_json TEXT NOT NULL DEFAULT '{}',
+    provenance_json TEXT NOT NULL DEFAULT '{}',
+    created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    updated_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    PRIMARY KEY(sandbox_id, definition_key)
+);
+
+CREATE TABLE IF NOT EXISTS creation_sandbox_item_instances (
+    object_id TEXT PRIMARY KEY REFERENCES creation_sandbox_objects(object_id) ON DELETE CASCADE,
+    sandbox_id TEXT NOT NULL REFERENCES creation_sandboxes(sandbox_id) ON DELETE CASCADE,
+    definition_key TEXT NOT NULL,
+    instance_mode TEXT NOT NULL CHECK(instance_mode IN ('unique','stack')),
+    quantity REAL,
+    unit TEXT,
+    created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    updated_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY(sandbox_id, definition_key)
+        REFERENCES creation_sandbox_item_definitions(sandbox_id, definition_key)
+        ON DELETE RESTRICT
+);
+
+CREATE INDEX IF NOT EXISTS idx_creation_sandbox_item_instances_definition
+ON creation_sandbox_item_instances(sandbox_id, definition_key);
+
+CREATE TABLE IF NOT EXISTS creation_sandbox_item_economic_profiles (
+    object_id TEXT PRIMARY KEY REFERENCES creation_sandbox_objects(object_id) ON DELETE CASCADE,
+    sandbox_id TEXT NOT NULL REFERENCES creation_sandboxes(sandbox_id) ON DELETE CASCADE,
+    classification TEXT NOT NULL,
+    policy_json TEXT NOT NULL,
+    created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    updated_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
+);
 """
 
 
