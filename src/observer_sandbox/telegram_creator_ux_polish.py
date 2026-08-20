@@ -20,6 +20,10 @@ def _is_creator_input_prompt(text: str) -> bool:
         "👤 CHARACTER · MANUAL",
         "📍 LOCATION · AI DRAFT",
         "📍 LOCATION · MANUAL",
+        "📦 ITEM · AI DRAFT",
+        "📦 ITEM · EXACT JSON",
+        "📦 ITEM BATCH · AI DRAFT",
+        "🗂 ITEM BATCH · EXACT JSON",
     }
 
 
@@ -152,13 +156,14 @@ def install_creator_ux_polish() -> None:
 
     from . import telegram_bot as base
     from . import telegram_creator_studio as studio
+    from . import telegram_creator_studio_base as studio_base
 
     original_api = base._api
     original_send = base._send
     original_edit = base._edit
     original_handle = base.handle_command
     original_boot = base._boot_message
-    original_install_input_router = studio._install_input_router
+    original_install_input_router = studio_base._install_input_router
 
     def boot_message() -> str:
         text = original_boot()
@@ -211,7 +216,10 @@ def install_creator_ux_polish() -> None:
     base._edit = edit
     base.handle_command = handle_command
     base._send = send
+    # Patch both the public compatibility wrapper and the underlying Studio
+    # module. Item extensions call the underlying router installer directly.
     studio._install_input_router = install_input_router_with_ux
+    studio_base._install_input_router = install_input_router_with_ux
     _wrap_active_studio_router(base, original_api)
     _INSTALLED = True
 
