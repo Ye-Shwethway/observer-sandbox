@@ -288,8 +288,6 @@ def canonicalize_ai_item_fill(value: dict[str, Any]) -> dict[str, Any]:
         if key:
             definition["key"] = key
         definition["tags"] = _canonicalize_token_list(definition.get("tags"))
-        if definition.get("kind") == "fixture":
-            definition["mobility"] = "fixed"
         _canonicalize_modules_and_instance(payload, definition)
     _canonicalize_ai_economic_policy(payload)
     return payload
