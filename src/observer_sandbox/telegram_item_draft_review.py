@@ -6,6 +6,7 @@ import re
 import urllib.request
 from typing import Any
 
+from .item_grading import item_grading_lines
 from .telegram_economy import format_money_minor
 
 
@@ -185,6 +186,8 @@ def item_detail_view(draft: dict[str, Any], index: int) -> tuple[str, list[list[
         "",
         "PHYSICAL & FUNCTIONAL DETAILS",
         *_module_lines(modules),
+        "",
+        *item_grading_lines(payload),
         "",
         "VALUE",
         *_economics_lines(economic),
