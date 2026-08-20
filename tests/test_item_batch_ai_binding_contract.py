@@ -29,10 +29,12 @@ def test_batch_ai_uses_creator_creation_binding_and_full_item_schema(tmp_path, m
 
     monkeypatch.setattr(batch_studio, "generate_structured", fake_generate)
 
+    creator_intent = "Create five useful camping items"
     with connect(db) as conn:
-        draft = ai_item_batch_draft(conn, 44, "Create one bound Item")
+        draft = ai_item_batch_draft(conn, 44, creator_intent)
 
     assert draft["draft_mode"] == "ai_generated"
+    assert draft["prompt_text"] == creator_intent
     assert captured["provider_id"] == "creator-provider"
     assert captured["model_id"] == "creator-model"
     assert captured["parameters"] == {"temperature": 0.2}
@@ -53,10 +55,15 @@ def test_batch_ai_uses_creator_creation_binding_and_full_item_schema(tmp_path, m
     metrics = modules["properties"]["metrics"]["anyOf"][0]
     assert set(metrics["properties"]) == set(DEFAULT_ITEM_METRIC_REGISTRY.metric_ids())
     assert metrics["additionalProperties"] is False
-    assert "Fill the supplied complete Item Batch schema" in captured["prompt"]
+
+    # The Creator supplies only natural intent; technical shaping belongs to the system prompt/contracts.
+    assert f"Creator intent: {creator_intent}" in captured["prompt"]
+    assert "Use stable unique lowercase refs" in captured["prompt"]
     assert "definition.modules.metrics" in captured["prompt"]
+    assert "Leave unknown or inapplicable slots null" in captured["prompt"]
+    assert "Do not duplicate container capacity or resistance load into metrics" in captured["prompt"]
     assert "STACK INVARIANT" in captured["prompt"]
     assert "Never populate modules.stack for a non-stackable Item" in captured["prompt"]
-    assert "definition.stackable=true" in captured["prompt"]
-    assert "instance.mode='stack'" in captured["prompt"]
+    assert "For requested batch-local storage, use stored_in='$ref'" in captured["prompt"]
+    assert "Do not author derived grades, grading thresholds, evaluator ids or reference profiles" in captured["prompt"]
     assert "Module exact shapes" not in captured["prompt"]
