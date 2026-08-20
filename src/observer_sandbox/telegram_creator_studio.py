@@ -24,6 +24,7 @@ from .manual_character_creation import (
 from .telegram_character_draft_profile import profile_page_view, profile_summary_lines
 
 _NEXT_INPUT_KEYBOARD: list[list[dict[str, str]]] | None = None
+_NEXT_INPUT_DELIVERY: tuple[str, int, int] | None = None
 _ROUTER_ORIGINAL_HANDLE = None
 _ROUTER_ORIGINAL_KEYBOARD = None
 _MANUAL_FIELD_PAGE_SIZE = 12
@@ -47,12 +48,57 @@ _COLLECTION_LABELS = {
 
 def _session(conn: sqlite3.Connection, user_id: int):
     row = conn.execute(
-        """SELECT creation_type,input_mode,expected_input
+        """SELECT creation_type,input_mode,expected_input,prompt_chat_id,prompt_message_id
         FROM creation_sandbox_studio_sessions
         WHERE sandbox_id='creator-default' AND user_id=?""",
         (int(user_id),),
     ).fetchone()
     return dict(row) if row else None
+
+
+def _session_prompt_target(session: dict[str, object] | None) -> tuple[int, int] | None:
+    if not session:
+        return None
+    chat_id = session.get("prompt_chat_id")
+    message_id = session.get("prompt_message_id")
+    if chat_id is None or message_id is None:
+        return None
+    try:
+        return int(chat_id), int(message_id)
+    except (TypeError, ValueError):
+        return None
+
+
+def bind_input_prompt_message(
+    conn: sqlite3.Connection,
+    user_id: int,
+    chat_id: int,
+    message_id: int,
+) -> bool:
+    """Bind the temporary Telegram card that is awaiting guided manual input."""
+    session = _session(conn, user_id)
+    expected = str(session.get("expected_input") or "") if session else ""
+    if not expected.startswith("manual-"):
+        return False
+    conn.execute(
+        """
+        UPDATE creation_sandbox_studio_sessions
+        SET prompt_chat_id=?,prompt_message_id=?,updated_at=CURRENT_TIMESTAMP
+        WHERE sandbox_id='creator-default' AND user_id=?
+        """,
+        (int(chat_id), int(message_id), int(user_id)),
+    )
+    changed = conn.execute("SELECT changes()").fetchone()[0] == 1
+    conn.commit()
+    return changed
+
+
+def consume_next_input_delivery() -> tuple[str, int, int] | None:
+    """Return and clear the one-shot transport action for a consumed input card."""
+    global _NEXT_INPUT_DELIVERY
+    delivery = _NEXT_INPUT_DELIVERY
+    _NEXT_INPUT_DELIVERY = None
+    return delivery
 
 
 def _begin_session(conn: sqlite3.Connection, user_id: int, creation_type: str, input_mode: str) -> None:
@@ -64,12 +110,14 @@ def _begin_session(conn: sqlite3.Connection, user_id: int, creation_type: str, i
     conn.execute(
         """
         INSERT INTO creation_sandbox_studio_sessions(
-            sandbox_id,user_id,creation_type,input_mode,expected_input
-        ) VALUES('creator-default',?,?,?,?)
+            sandbox_id,user_id,creation_type,input_mode,expected_input,prompt_chat_id,prompt_message_id
+        ) VALUES('creator-default',?,?,?,?,NULL,NULL)
         ON CONFLICT(sandbox_id,user_id) DO UPDATE SET
             creation_type=excluded.creation_type,
             input_mode=excluded.input_mode,
             expected_input=excluded.expected_input,
+            prompt_chat_id=NULL,
+            prompt_message_id=NULL,
             updated_at=CURRENT_TIMESTAMP
         """,
         (int(user_id), creation_type, input_mode, expected),
@@ -81,7 +129,8 @@ def _set_expected_input(conn: sqlite3.Connection, user_id: int, expected_input: 
     conn.execute(
         """
         UPDATE creation_sandbox_studio_sessions
-        SET creation_type='character',input_mode='manual',expected_input=?,updated_at=CURRENT_TIMESTAMP
+        SET creation_type='character',input_mode='manual',expected_input=?,
+            prompt_chat_id=NULL,prompt_message_id=NULL,updated_at=CURRENT_TIMESTAMP
         WHERE sandbox_id='creator-default' AND user_id=?
         """,
         (expected_input, int(user_id)),
@@ -90,8 +139,8 @@ def _set_expected_input(conn: sqlite3.Connection, user_id: int, expected_input: 
         conn.execute(
             """
             INSERT INTO creation_sandbox_studio_sessions(
-                sandbox_id,user_id,creation_type,input_mode,expected_input
-            ) VALUES('creator-default',?,'character','manual',?)
+                sandbox_id,user_id,creation_type,input_mode,expected_input,prompt_chat_id,prompt_message_id
+            ) VALUES('creator-default',?,'character','manual',?,NULL,NULL)
             """,
             (int(user_id), expected_input),
         )
@@ -396,7 +445,7 @@ def _install_input_router() -> None:
     _ROUTER_ORIGINAL_KEYBOARD = original_keyboard
 
     def routed_handle(db_path: str | Path, *, user_id: int, text: str) -> str:
-        global _NEXT_INPUT_KEYBOARD
+        global _NEXT_INPUT_KEYBOARD, _NEXT_INPUT_DELIVERY
         raw = (text or "").strip()
         if raw.startswith("/"):
             if raw.split()[0].split("@", 1)[0].lower() == "/cancel":
@@ -405,6 +454,7 @@ def _install_input_router() -> None:
                     session = _session(conn, user_id)
                     if session:
                         expected = str(session.get("expected_input") or "")
+                        prompt_target = _session_prompt_target(session)
                         _clear_session(conn, user_id)
                         if expected.startswith("manual-field:"):
                             section_id, page, _field_key = _manual_field_context(expected)
@@ -416,6 +466,8 @@ def _install_input_router() -> None:
                             view, keyboard = manual_character_builder_view(conn, user_id, notice="✕ Manual input cancelled.")
                         else:
                             view, keyboard = studio_home_view(conn, user_id)
+                        if prompt_target and expected.startswith("manual-"):
+                            _NEXT_INPUT_DELIVERY = ("delete", prompt_target[0], prompt_target[1])
                         _NEXT_INPUT_KEYBOARD = keyboard
                         return view
             return original_handle(db_path, user_id=user_id, text=text)
@@ -427,11 +479,14 @@ def _install_input_router() -> None:
             if not session:
                 return original_handle(db_path, user_id=user_id, text=text)
             expected = str(session.get("expected_input") or "")
+            prompt_target = _session_prompt_target(session)
+            delivery_action: str | None = None
             try:
                 if expected.startswith("manual-field:"):
                     section_id, page, field_key = _manual_field_context(expected)
                     update_manual_character_field(conn, user_id, field_key, raw)
                     _clear_session(conn, user_id)
+                    delivery_action = "delete"
                     if section_id:
                         view, keyboard = _manual_section_view(
                             conn,
@@ -446,6 +501,7 @@ def _install_input_router() -> None:
                     collection = expected.split(":", 1)[1]
                     update_manual_character_collection(conn, user_id, collection, raw)
                     _clear_session(conn, user_id)
+                    delivery_action = "delete"
                     view, keyboard = manual_character_builder_view(conn, user_id, notice="✅ Draft collection updated.")
                 elif session["input_mode"] == "manual":
                     manual_draft(conn, user_id, session["creation_type"], raw)
@@ -460,6 +516,10 @@ def _install_input_router() -> None:
                     view, keyboard = draft_preview_view(conn, user_id)
             except (CreatorStudioError, ManualCharacterCreationError, ValueError, TypeError) as exc:
                 view, keyboard = _manual_retry_view(conn, user_id, expected, exc)
+                if expected.startswith("manual-"):
+                    delivery_action = "edit"
+            if prompt_target and delivery_action:
+                _NEXT_INPUT_DELIVERY = (delivery_action, prompt_target[0], prompt_target[1])
             _NEXT_INPUT_KEYBOARD = keyboard
             return view
 
@@ -769,6 +829,8 @@ def studio_callback_view(conn: sqlite3.Connection, user_id: int, callback_data: 
 
 
 __all__ = [
+    "bind_input_prompt_message",
+    "consume_next_input_delivery",
     "draft_preview_view",
     "manual_character_builder_view",
     "studio_callback_view",
