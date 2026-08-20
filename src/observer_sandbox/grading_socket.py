@@ -4,13 +4,7 @@ from dataclasses import dataclass
 import re
 from typing import Any, Callable, Mapping
 
-from .grading import (
-    GradeProfile,
-    GradeResult,
-    build_grade_profile,
-    evaluate_item_resistance_load,
-    grade_rank,
-)
+from .grading import GradeProfile, GradeResult, evaluate_item_resistance_load, grade_rank
 from .physical_quantity import PhysicalQuantity
 
 
@@ -120,7 +114,7 @@ class GradingSocketRegistry:
         try:
             for grade in supported:
                 grade_rank(grade)
-        except (KeyError, ValueError) as exc:
+        except ValueError as exc:
             raise GradingSocketError(f"Evaluator {evaluator_id} declares an unknown grade") from exc
         self._evaluators[evaluator_id] = (
             EvaluatorSpec(evaluator_id, family, domain, supported),
@@ -189,7 +183,7 @@ class GradingSocketRegistry:
         if ceiling is not None:
             try:
                 grade_rank(ceiling)
-            except (KeyError, ValueError) as exc:
+            except ValueError as exc:
                 raise GradingSocketError(f"Unknown grade ceiling: {ceiling}") from exc
         self._policies[policy_id] = UniverseGradingPolicy(
             policy_id=policy_id,
@@ -343,7 +337,7 @@ class GradingSocketRegistry:
             results[row.dimension_id] = result
         if not results:
             return None
-        return build_grade_profile(plan.domain, results)
+        return GradeProfile(plan.domain, results, None)
 
     def resolve(
         self,
