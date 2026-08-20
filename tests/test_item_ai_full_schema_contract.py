@@ -1,5 +1,6 @@
 from observer_sandbox.creator_studio_item import manual_item_template
 from observer_sandbox.item_ai_contract import (
+    canonicalize_ai_item_batch_fill,
     canonicalize_ai_item_fill,
     item_ai_fill_schema,
     item_batch_ai_fill_schema,
@@ -46,3 +47,37 @@ def test_full_ai_fill_null_placeholders_canonicalize_to_valid_sparse_item():
     assert set(canonical["definition"]["modules"]) == {"physical"}
     assert canonical["instance"] == {"mode": "unique"}
     validate_item_payload(canonical)
+
+
+def test_batch_ai_bare_stored_in_ref_normalizes_to_explicit_local_ref():
+    backpack = manual_item_template()
+    backpack["definition"]["key"] = "backpack"
+    backpack["definition"]["name"] = "Backpack"
+    backpack["definition"]["modules"]["container"] = {
+        "capacity_volume": {"value": 30, "unit": "l"}
+    }
+
+    bars = manual_item_template()
+    bars["definition"]["key"] = "energy_bars"
+    bars["definition"]["name"] = "Energy Bars"
+    bars["relationships"]["stored_in"] = "backpack"
+
+    candidate = canonicalize_ai_item_batch_fill({
+        "items": [
+            {"ref": "backpack", "payload": backpack},
+            {"ref": "energy_bars", "payload": bars},
+        ]
+    })
+
+    assert candidate["items"][1]["payload"]["relationships"]["stored_in"] == "$backpack"
+
+
+def test_batch_ai_unknown_bare_stored_in_target_is_not_guessed():
+    payload = manual_item_template()
+    payload["relationships"]["stored_in"] = "garage_shelf"
+
+    candidate = canonicalize_ai_item_batch_fill({
+        "items": [{"ref": "flashlight", "payload": payload}]
+    })
+
+    assert candidate["items"][0]["payload"]["relationships"]["stored_in"] == "garage_shelf"
