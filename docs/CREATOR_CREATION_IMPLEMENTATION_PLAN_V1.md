@@ -1,6 +1,6 @@
 # Creator Creation Systems — Minimum Implementation Plan v1
 
-Status: **APPROVED IMPLEMENTATION PLAN — SANDBOX CLEANUP / FRESH ITEM RETEST ACTIVE**  
+Status: **APPROVED IMPLEMENTATION PLAN — FRESH ITEM EDIT ACCEPTANCE ACTIVE**  
 Date: 2026-08-20
 
 ## Objective
@@ -20,49 +20,36 @@ Core rules:
 
 ### PR #350 — Item Edit live-entry hardening
 
-Merged commit: `b0083c6155006ba7103878056bceecc95413e4a3`.
-CI #1189 passed.
+Merged commit: `b0083c6155006ba7103878056bceecc95413e4a3`; CI #1189 passed.
 
-Item Edit preflights persisted Items before pause/session creation, restores pause/session state on entry-render failure, and surfaces bounded owner-facing error type/reason details.
+Item Edit preflights persisted Items before pause/session creation, restores pause/session state on entry-render failure, and surfaces bounded owner-facing error type/reason details. Live evidence identified obsolete approved batch data at `modules.physical.mass.kind`.
 
-Live evidence identified obsolete approved batch data at `modules.physical.mass.kind`.
+Policy: do not weaken current `item-v1` validation to admit obsolete Sandbox test data.
 
-Policy: do not weaken current `item-v1` validation to admit obsolete Sandbox test data. Clean old test objects and retest fresh current-schema creation first.
+### PR #351 / #353 / #354 — Sandbox cleanup
 
-### PR #351 — Sandbox Character + Item Batch Delete
+- PR #351: atomic Character+Item Sandbox batch delete; CI #1190 passed.
+- PR #353: scoped Character/Item cleanup controls.
+- PR #354: fixed the real `sw:list:item` callback-composition path after live Telegram proved the Item list bypassed the later wrapper; CI #1192 passed.
 
-Merged commit: `f9131857fcc861a5dc3b747595fc22352cd737ff`.
-CI #1190 passed.
+Cleanup remains Sandbox-only, atomic, canonical-fingerprint guarded, and excludes Locations in this slice.
 
-Backend cleanup contract:
-- Character + Item targets only;
-- active/same-Sandbox/type validation before mutation;
-- one atomic delete operation;
-- FK-dependent Sandbox rows cascade;
-- touched Item definitions removed only when no surviving instance references them;
-- Sandbox delete audit events retained;
-- canonical fingerprint checked before transaction release; mismatch rolls deletion back;
-- Locations deliberately outside this cleanup slice.
+### PR #356 — Item draft review economics presentation
 
-### PR #353 / #354 — Telegram cleanup list wiring
+Merged commit: `4e27e2045c6fee198e97d7c0b95c9eee18789a30`.
+CI **#1193** passed targeted regression + CLI smoke.
 
-PR #353 added scoped delete controls to Character/Item list surfaces, but live Telegram proved only Characters showed the control.
+Fresh current-schema generation showed the valuation data was reasonable but the Telegram review exposed raw implementation units. Example: `market_value_minor = 3000` is USD `$30.00`, but the old view rendered `Market value (minor units): 3000`, which was easy to misread as `$3,000`.
 
-Root cause: the Item world-layer extension had captured a local Item-list closure in `sw:list:item`. A later wrapper around `base.sandbox_list_view` therefore could not decorate the live Item callback path.
+Accepted UI contract:
+- reuse existing `format_money_minor()` rather than duplicate currency conversion;
+- standalone review: `Market value: $30.00`, `Replacement value: $35.00`;
+- consumable review: e.g. `Unit value: $1.50 / bar`;
+- use human labels such as `Value type` and `Net worth`;
+- hide raw `minor units` and redundant `Currency: USD` from the Creator-facing Telegram detail;
+- keep `.txt` export as raw canonical/technical JSON, including `market_value_minor`, `replacement_value_minor`, `unit_value_minor`, etc.
 
-PR **#354** fixes the composition boundary by decorating `sw:list:item` and `sw:list:character` callback results as well as direct list-view calls.
-
-PR #354 merge commit: `0309ff4a0ba0ebeb814556acb58056e5b76fcf9f`.
-CI **#1192** passed targeted regression + CLI smoke.
-
-The regression test explicitly reproduces the captured Item callback bypass that caused the live screenshot mismatch.
-
-Expected live navigation:
-- `📦 Items -> 🗑 Select Items to Delete`;
-- `👥 Characters -> 🗑 Select Characters to Delete`;
-- Sandbox World root -> mixed `🗑 Batch Delete`;
-- scoped Select All never crosses type boundaries;
-- Cancel returns to the originating list with cleanup action still present.
+PR #356 is presentation-only. It does not modify Item schema, economic values, validation, persistence, or approval behavior.
 
 ---
 
@@ -91,10 +78,9 @@ Expected live navigation:
 - Item Creator Studio Single/Batch UX and current full-schema AI fill;
 - Item review/export, realism validation, bounded self-correction;
 - approved Item detail/economic presentation;
-- Sandbox Item field edit/save parity;
-- safe Item Edit entry diagnostics/rollback;
-- atomic Character+Item Sandbox cleanup;
-- scoped Telegram cleanup controls including the real Item callback-composition path.
+- Sandbox Item field edit/save parity and safe entry diagnostics;
+- atomic Character+Item Sandbox cleanup with correct live Item callback composition;
+- human-friendly Item draft value presentation with raw technical export preserved.
 
 ---
 
@@ -103,6 +89,8 @@ Expected live navigation:
 `Creator intent -> complete canonical type schema/form -> AI fills form -> narrow explicitly-authorized canonicalization -> deterministic validation -> preview -> explicit approval -> Sandbox-only materialization`.
 
 AI is not schema designer, validator bypass or direct mutation authority. Unknown nullable numeric facts remain null instead of fabricated precision.
+
+Presentation rule: Creator-facing review should translate canonical representation into human-readable labels/units without changing underlying canonical values. Technical exports may expose canonical/raw field names for audit/debugging.
 
 ---
 
@@ -124,25 +112,23 @@ Ownership does not follow from physical presence/storage. Sandbox-only mutable s
 
 # CURRENT ACCEPTANCE SLICE
 
-## Legacy cleanup -> fresh current-schema Item -> live Edit/Save proof
+## Fresh current-schema Item -> live Edit/Save proof
+
+Legacy cleanup is operational and a fresh current-schema Item batch has been created. The remaining gate is current-data Item Edit acceptance.
 
 Required live sequence:
-1. Confirm production checkpoint includes PR #354 or later.
-2. Open `📦 Items` and verify `🗑 Select Items to Delete` is present.
-3. Select/delete obsolete legacy Items; clean test Character seeds as desired from Characters or mixed root cleanup.
-4. Verify selected objects disappear and Locations remain untouched.
-5. Create fresh current-schema Item(s) or Item Batch through Creator Studio.
-6. Open a fresh approved Item -> `✏️ Edit Item`.
-7. Exercise field input, Preview, Apply/Save, and Done Editing.
-8. Verify Sandbox pre-edit pause state restores correctly.
-9. Verify Real World/canonical state remains unchanged.
+1. Confirm production checkpoint includes PR #356 or later.
+2. Verify Item draft review presents money as formatted currency rather than raw minor-unit integers.
+3. Approve/use a fresh current-schema Item from the recreated batch.
+4. Open the fresh approved Item -> `✏️ Edit Item`.
+5. Exercise field input, Preview, Apply/Save, and Done Editing.
+6. Verify Sandbox pre-edit pause state restores correctly.
+7. Verify Real World/canonical state remains unchanged.
 
 Failure policy:
 - surface exact error/reason;
 - repair concrete current-schema/runtime defects;
 - do not add broad legacy canonicalization or validator relaxation incidentally.
-
-A dedicated legacy migration path may be designed later only if preserving old Sandbox content becomes valuable. Current Creator direction is cleanup and fresh recreation.
 
 ---
 
@@ -178,8 +164,9 @@ Transmigration remains inactive/planning-only. Nothing transmigrates automatical
 ## Test / release policy
 
 - smallest relevant tests while iterating;
-- regression tests must cover actual extension/callback composition paths, not only direct wrappers;
-- PR CI as repository acceptance gate;
+- regression tests cover actual extension/callback composition paths, not only direct wrappers;
+- Creator-facing UI should be human-readable while raw technical exports preserve canonical representation where useful;
+- PR CI is repository acceptance gate;
 - full fallback only for cross-cutting/unmapped risk;
 - deploy/live behavior verified separately from merge;
 - continuity docs updated after material work and persistent branches exact-synced after acceptance.
@@ -188,4 +175,4 @@ Transmigration remains inactive/planning-only. Nothing transmigrates automatical
 
 ## Exact resume point
 
-**PR #354 merged at `0309ff4a0ba0ebeb814556acb58056e5b76fcf9f` after CI #1192 passed. The live Item cleanup control was missing because `sw:list:item` used an earlier captured local Item-list closure and bypassed the later list wrapper. Callback-boundary decoration plus an exact regression now closes that path. Verify deployed `📦 Items -> 🗑 Select Items to Delete`, clean obsolete Sandbox Items/seeds, create fresh current-schema Items, and complete live Item Edit/Save acceptance. I5.11 follows only after that proof is green.**
+**PR #356 merged at `4e27e2045c6fee198e97d7c0b95c9eee18789a30` after CI #1193 passed. Telegram Item draft economics now use shared human-friendly currency formatting while `.txt` export deliberately preserves raw canonical `*_minor` fields. Verify the deployed review presentation, then complete fresh current-schema Item Edit/Preview/Apply/Done acceptance. I5.11 follows only after that proof is green.**

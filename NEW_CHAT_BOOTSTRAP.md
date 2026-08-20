@@ -27,41 +27,47 @@ Do not infer production deployment or Telegram live acceptance from merge alone.
 
 ## Current checkpoint
 
-Live evidence confirmed two separate issues around Sandbox Item cleanup/edit acceptance:
+Recent live acceptance exposed and closed several Item-side issues:
 
 1. Legacy approved Item batches can fail current Item Edit preflight because old persisted payloads contain fields no longer accepted by current `item-v1`, specifically observed: `modules.physical.mass.kind`.
-2. Initial Character+Item batch-delete UI wiring exposed Character cleanup correctly, but the Item extension captured its own local `sw:list:item` callback and bypassed the later `sandbox_list_view` wrapper. This made Item delete controls absent in live Telegram even though direct wrapper tests passed.
+2. Character+Item batch delete was added; the Item list initially missed its delete control because an earlier Item extension captured a local `sw:list:item` callback and bypassed a later list wrapper. PR #354 fixed the actual callback-composition path and CI #1192 passed.
+3. Fresh current-schema Item generation then exposed a presentation-only economics issue: Telegram draft review rendered canonical minor-unit integers directly, e.g. `Market value (minor units): 3000`, even though USD 3000 minor units means `$30.00`. This was data-correct but user-hostile.
 
-Repository fixes now accepted:
-- PR **#350** — live Item Edit failure hardening and bounded diagnostics;
-- PR **#351** — atomic Sandbox Character+Item batch delete;
-- PR **#353** — list-scoped delete controls for Character/Item lists;
-- PR **#354** — fix Item-list callback composition so the real `sw:list:item` path is decorated even when an earlier extension bypasses the base list wrapper.
+### PR #356 — human-friendly Item draft value presentation
 
-PR #354 merge commit: `0309ff4a0ba0ebeb814556acb58056e5b76fcf9f`.
-CI **#1192**: **success**. The regression suite now explicitly reproduces the earlier Item-extension callback-capture/bypass pattern.
+Merged to `main` at `4e27e2045c6fee198e97d7c0b95c9eee18789a30`.
+CI **#1193**: **success** (targeted tests + CLI smoke).
 
-Expected live Item UX after deploy:
-`📦 SANDBOX ITEMS -> 🗑 Select Items to Delete -> item-only checkbox selection -> Select All/Clear -> Review -> final Delete confirmation`.
+Accepted display contract:
+- Telegram Item draft review uses the established `format_money_minor()` formatter;
+- standalone values render as human currency, e.g. `Market value: $30.00`, `Replacement value: $35.00`;
+- consumable unit values render with basis, e.g. `Unit value: $1.50 / bar`;
+- raw `minor units` jargon and redundant `Currency: USD` are removed from the Creator-facing detail view;
+- economic labels are simplified to `Value type` and `Net worth`;
+- `.txt` draft export remains the raw technical/canonical payload with `market_value_minor`, `replacement_value_minor`, `unit_value_minor`, etc. unchanged.
 
-Character list keeps its character-only equivalent. Sandbox World root keeps mixed Character+Item cleanup. Locations remain intentionally excluded from this cleanup slice.
+This is presentation-only; Item schema/economic semantics and persisted values are unchanged.
 
 ---
 
-## Cleanup safety contract
+## Cleanup / Item Edit safety retained
 
 Sandbox batch delete:
-- validates the complete selected active object set before mutation;
-- supports Characters and Items only in this slice;
-- deletes selected objects atomically;
-- relies on Sandbox FK cleanup for dependent rows;
-- preserves shared Item definitions while surviving instances reference them;
-- removes touched Item definitions only when orphaned;
-- records Sandbox delete events;
-- checks `canonical_state_fingerprint()` and rolls back if canonical state changes;
-- never mutates Real World/canonical state.
+- Characters and Items only; Locations excluded;
+- complete target validation before mutation;
+- atomic deletion;
+- dependent Sandbox rows cleaned by FK behavior;
+- shared Item definitions retained while surviving instances reference them and removed only when orphaned;
+- Sandbox delete events retained;
+- `canonical_state_fingerprint()` checked; mismatch rolls back;
+- Real World/canonical state untouched.
 
-Legacy Item schema incompatibility must **not** be solved by weakening the current validator. Preferred acceptance sequence is cleanup -> fresh current-schema creation -> live Edit/Save proof.
+Item Edit:
+- preflights current persisted payload before pause/session creation;
+- bounded owner-facing error type/reason;
+- rollback/restore on failed entry;
+- strict current `item-v1` remains authoritative;
+- do not weaken the validator merely to admit obsolete Sandbox test data.
 
 ---
 
@@ -91,15 +97,14 @@ Core semantic locks remain:
 ## Immediate acceptance sequence
 
 Before resuming I5.11:
-1. verify deployed checkpoint includes PR #354 or later;
-2. open `📦 Items` and confirm `🗑 Select Items to Delete` is visible;
-3. delete legacy Items and test Character seeds as desired;
-4. create fresh current-schema Item(s)/Batch through Creator Studio;
-5. open fresh Item -> `✏️ Edit Item`;
-6. exercise field change -> Preview -> Apply/Save -> Done Editing;
-7. verify Sandbox pause restoration and canonical state isolation.
+1. verify deployed checkpoint includes PR #356 or later;
+2. confirm Item draft review now shows formatted currency rather than raw minor-unit integers;
+3. use the fresh current-schema Item/Batch already generated after legacy cleanup;
+4. approve/open a fresh Item -> `✏️ Edit Item`;
+5. exercise representative field change -> Preview -> Apply/Save -> Done Editing;
+6. verify Sandbox pause restoration and canonical state isolation.
 
-Only after this live cleanup + fresh Item Edit/Save gate passes should development resume **I5.11 — Sandbox Location Creation + Embedded Contents**.
+Only after this fresh current-schema Item Edit/Save gate passes should development resume **I5.11 — Sandbox Location Creation + Embedded Contents**.
 
 Adrian Vale remains Sandbox-only. Second Real World Character gate remains closed. Full autonomous Sandbox ticking remains separately unauthorized.
 
@@ -107,4 +112,4 @@ Adrian Vale remains Sandbox-only. Second Real World Character gate remains close
 
 ## Exact resume sentence
 
-**PR #354 is merged at `0309ff4a0ba0ebeb814556acb58056e5b76fcf9f` after CI #1192 passed. The live Item-list missing-delete-control bug was caused by the Item extension's captured `sw:list:item` callback bypassing the later list wrapper; regression coverage now reproduces and closes that composition path. Verify the deployed Item list shows `🗑 Select Items to Delete`, clean up legacy Items/seed Characters, then create a fresh current-schema Item and prove live Edit/Preview/Apply/Done. Resume I5.11 only after that gate passes.**
+**PR #356 is merged at `4e27e2045c6fee198e97d7c0b95c9eee18789a30` after CI #1193 passed. Telegram Item draft economics now render human-facing currency via the shared formatter (`$30.00`, `$35.00`, `$1.50 / bar`) while the `.txt` export deliberately preserves raw canonical `*_minor` fields. This is presentation-only. Verify the deployed preview, then continue the fresh current-schema Item Edit/Preview/Apply/Done live acceptance. Resume I5.11 only after that gate passes.**
