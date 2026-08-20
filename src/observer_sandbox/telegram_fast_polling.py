@@ -7,6 +7,7 @@ import urllib.error
 from pathlib import Path
 
 from . import telegram_bot as base
+from .telegram_command_menu import sync_bot_commands
 
 
 def _deliver_message_reply(
@@ -43,6 +44,18 @@ def _deliver_message_reply(
     base._send(token, chat_id, reply, keyboard)
 
 
+def _sync_command_menu(token: str, db_path: str | Path) -> None:
+    """Publish the final role-aware help contract as Telegram's command menu."""
+    sync_bot_commands(
+        base._api,
+        token,
+        db_path,
+        help_renderer=base._help,
+        owner_id=base._owner_user_id(),
+        allowed_user_ids=base._allowed_user_ids(),
+    )
+
+
 def run_polling(db_path: str | Path = base.DEFAULT_DB) -> None:
     """Telegram polling loop with eager callback acknowledgement.
 
@@ -59,6 +72,16 @@ def run_polling(db_path: str | Path = base.DEFAULT_DB) -> None:
     token = os.environ.get("OBSERVER_TELEGRAM_BOT_TOKEN", "").strip()
     if not token:
         return
+
+    # Telegram's slash-command menu is runtime-owned. The final role-aware help
+    # contract is reconciled on every service start, so deploys that add/remove a
+    # documented command refresh the chat menu without a BotFather maintenance step.
+    try:
+        _sync_command_menu(token, db_path)
+    except (urllib.error.URLError, TimeoutError, RuntimeError, OSError, ValueError):
+        # Menu publication is presentation metadata; a transient Telegram failure
+        # must not keep the universe/runtime observer offline.
+        pass
 
     owner_id = base._owner_user_id()
     if owner_id is not None:
