@@ -144,7 +144,35 @@ def test_manual_character_section_uses_exact_ai_field_set_and_opens_typed_input(
         text, keyboard = studio_callback_view(conn, 42, field_callbacks[0])
         assert "MANUAL CHARACTER FIELD" in text
         assert "Expected:" in text
-        assert "sw:cs:manual:cancelinput" in _button_callbacks(keyboard)
+        assert "sw:cs:manual:s:identity:0" in _button_callbacks(keyboard)
+
+
+def test_manual_field_save_returns_to_same_section_and_page(tmp_path, monkeypatch):
+    db = tmp_path / "manual-character-section-return.sqlite3"
+    initialize(db)
+    monkeypatch.setenv("OBSERVER_TELEGRAM_OWNER_ID", "42")
+
+    with connect(db) as conn:
+        manual_draft(conn, 42, "character", "Rowan Hale")
+        fields = _manual_fields(conn, "attributes")
+        assert len(fields) > 12
+        target = fields[12]
+        key = str(target["field_key"])
+        raw = _manual_value(key, str(target["data_type"]))
+
+        text, keyboard = studio_callback_view(conn, 42, "sw:cs:manual:f:attributes:12")
+        assert "MANUAL CHARACTER FIELD" in text
+        assert "sw:cs:manual:s:attributes:1" in _button_callbacks(keyboard)
+
+    from observer_sandbox import telegram_bot as base
+
+    result = base.handle_command(db, user_id=42, text=raw)
+    callbacks = _button_callbacks(base._command_keyboard(""))
+    assert "MANUAL CHARACTER · ATTRIBUTES" in result
+    assert "Page 2/" in result
+    assert "✅ Draft field updated." in result
+    assert "sw:cs:manual:home" in callbacks
+    assert any(value.startswith("sw:cs:manual:f:attributes:") for value in callbacks)
 
 
 def test_manual_approval_confirmation_still_uses_revision_lock(tmp_path):
