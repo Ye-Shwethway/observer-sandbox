@@ -50,7 +50,7 @@ def _manual_value(key: str, data_type: str):
         "sexual_anatomy.penis_girth_in": 5,
         "genetics.penis_length_in": 6,
         "genetics.penis_girth_in": 5,
-        "training.training_age_years": 5,
+        "training.training_age_years": 0,
         "raps_ia.iq": 120,
     }
     if key in specials:
@@ -161,7 +161,7 @@ def test_complete_exact_manual_character_approves_into_same_sandbox_profile_stor
 
         status = manual_character_baseline_status(conn, 42)
         assert status["ready"] is True
-        draft_values = draft = manual_character_draft(conn, 42)["proposal"]["properties"]["character_profile"]["values"]
+        draft_values = manual_character_draft(conn, 42)["proposal"]["properties"]["character_profile"]["values"]
         assert set(draft_values) == set(manual_character_required_field_keys(conn))
 
         obj = approve_draft(conn, 42)
