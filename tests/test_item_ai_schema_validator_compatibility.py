@@ -54,7 +54,7 @@ def test_human_readable_token_fields_canonicalize_before_strict_validation():
     assert candidate["definition"]["tags"] == [
         "camping_gear",
         "led_light",
-        "item_1000_lumens",
+        "tag_1000_lumens",
         "water_resistant_outdoor",
     ]
     assert normalized["economic_policy"]["valuation_method"] == "ai_estimate"
@@ -80,14 +80,28 @@ def test_empty_physical_and_metrics_slots_are_removed_before_validation():
     assert normalized["definition"]["modules"] == {}
 
 
-def test_stack_module_is_authority_for_stack_instance_and_nutrition_units():
+def test_explicit_non_stackable_drops_accidental_stack_slot():
+    payload = manual_item_template()
+    payload["definition"]["stackable"] = False
+    payload["definition"]["modules"]["stack"] = {"canonical_unit": "item", "initial_quantity": 1}
+    payload["instance"] = {"mode": "unique", "quantity": None, "unit": None}
+
+    candidate = canonicalize_ai_item_fill(payload)
+    normalized = validate_item_payload(candidate)
+
+    assert "stack" not in candidate["definition"]["modules"]
+    assert candidate["instance"] == {"mode": "unique"}
+    assert normalized["definition"]["stackable"] is False
+
+
+def test_stack_module_aligns_stack_instance_and_nutrition_units_when_stackable():
     payload = manual_item_template()
     payload["definition"].update(
         {
             "key": "Energy Bars",
             "name": "Energy Bars",
             "kind": "consumable",
-            "stackable": False,
+            "stackable": True,
             "capabilities": ["inspect", "use"],
             "tags": ["Energy Bar", "Trail Food"],
             "modules": {
