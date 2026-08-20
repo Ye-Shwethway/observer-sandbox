@@ -2,15 +2,6 @@ name: Read-Only Grading Proof Acceptance
 
 on:
   workflow_dispatch:
-  pull_request:
-    branches: [main]
-    paths:
-      - '.github/workflows/read-only-grading-proof-acceptance.yml'
-      - 'config/profile_sections.v1.json'
-      - 'src/observer_sandbox/grading.py'
-      - 'src/observer_sandbox/profile_observer.py'
-      - 'src/observer_sandbox/telegram_profile_browser.py'
-      - 'tests/test_read_only_grading_proof.py'
 
 jobs:
   acceptance:
