@@ -9,6 +9,7 @@ from .creation_sandbox import DEFAULT_SANDBOX_ID
 from .creation_socket import build_creation_proposal
 from .creator_creation_ai import creator_creation_binding
 from .creator_studio import CreatorStudioError, _save_draft, active_draft, cancel_draft
+from .item_ai_authoring import DEFAULT_ITEM_AI_AUTHORING_INSTRUCTION
 from .item_ai_contract import canonicalize_ai_item_batch_fill, item_batch_ai_fill_schema
 from .item_ai_self_correction import generate_validated_item_candidate
 from .item_creation_economics import DEFAULT_ITEM_ECONOMIC_INSTRUCTION
@@ -90,14 +91,10 @@ def ai_item_batch_draft(
         "Create one batch entry per distinct requested Item type. Use stable unique lowercase refs. "
         "For every Item payload, fill the full item-v1 form: use [] for unused arrays, null for unknown/unused nullable fields, and null for unused module slots. "
         "Do not omit, rename or invent schema fields. Preserve requested stack quantities. "
-        "For definition.modules.metrics, map represented measurable specifications into the matching registered metric slots (for example luminous output, runtime, power, energy capacity, range, speed, data throughput, digital storage, beam distance, water-resistance depth, charge time or payload capacity). Leave unknown or inapplicable slots null. Do not duplicate container capacity or resistance load into metrics because those already have authoritative modules. "
+        + DEFAULT_ITEM_AI_AUTHORING_INSTRUCTION
         + DEFAULT_ITEM_REALISM_INSTRUCTION
         + DEFAULT_ITEM_ECONOMIC_INSTRUCTION
-        + "STACK INVARIANT: ordinary single objects are definition.stackable=false, instance.mode='unique', instance.quantity=null, instance.unit=null, and modules.stack=null. "
-        "Only fungible/countable grouped goods are stackable: definition.stackable=true, instance.mode='stack', modules.stack must be non-null, and instance quantity/unit must agree with modules.stack.initial_quantity/canonical_unit. "
-        "Never populate modules.stack for a non-stackable Item. "
-        "For requested batch-local storage, use stored_in='$ref' and make the target a real container Item. "
-        "Do not author derived grades, grading thresholds, evaluator ids or reference profiles. "
+        + "BATCH RELATION RULE: when the Creator asks or ordinary containment is clearly intended, use stored_in='$ref' only for a real container entry in the same batch. Keep ownership, carriage, equipment and physical location null unless the Creator actually supplied those relationships. "
         "This is proposal-only and does not create canonical state. "
         f"Creator intent: {intent}"
     )
