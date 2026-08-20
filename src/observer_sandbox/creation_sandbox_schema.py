@@ -159,6 +159,21 @@ CREATE TABLE IF NOT EXISTS creation_sandbox_item_economic_profiles (
     created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
     updated_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
+
+CREATE TABLE IF NOT EXISTS creation_sandbox_location_profiles (
+    object_id TEXT PRIMARY KEY REFERENCES creation_sandbox_objects(object_id) ON DELETE CASCADE,
+    sandbox_id TEXT NOT NULL REFERENCES creation_sandboxes(sandbox_id) ON DELETE CASCADE,
+    location_key TEXT NOT NULL,
+    schema_version TEXT NOT NULL,
+    kind TEXT NOT NULL,
+    source_json TEXT NOT NULL,
+    created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    updated_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    UNIQUE(sandbox_id, location_key)
+);
+
+CREATE INDEX IF NOT EXISTS idx_creation_sandbox_location_profiles_scope
+ON creation_sandbox_location_profiles(sandbox_id, kind);
 """
 
 
