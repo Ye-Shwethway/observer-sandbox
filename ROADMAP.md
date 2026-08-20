@@ -6,127 +6,144 @@ Roadmap synchronized: **2026-08-20**
 ## Operating principles
 
 - Current Creator instruction, live repo/schema, verified runtime/DB and current CI/deploy evidence outrank remembered chat context.
-- AI proposes structured facts; deterministic contracts validate and mutate.
+- AI proposes structured facts; deterministic contracts validate, derive and mutate.
 - Telegram is observer/control, never simulation authority.
 - **Create anywhere safely; canon nowhere automatically.**
 - **Schema-valid does not imply universe-compatible.**
 - **Created is not alive.** `runtime_ready != running`.
-- Real World and Creation Sandbox mutable state remain isolated.
-- Reuse established semantics; design universal systems as expandable sockets rather than family-specific switchboards.
+- Universal systems use expandable registry/socket patterns rather than family-specific switchboards.
 - `canonical_state_fingerprint()` remains a high-value zero-canonical-mutation invariant.
 
 ---
 
-## Current checkpoint
+## Current repository checkpoint
 
-Fresh current-schema Item Edit is now **live-confirmed working** by Creator after PR #358.
+### Fresh Item Edit
 
-Latest accepted implementation:
+Creator live-confirmed PR #358 works. Fresh approved Items enter Item Edit and revalidate current normalized physical quantities correctly.
 
-### PR #360 — Universal Grading Sockets + Item Coverage v1
+### PR #360 — Universal Grading Socket v1
 
-Merged commit:
-`9155a94bc75b800d4a10f2a39993647c78d11d9c`
+Merged `9155a94bc75b800d4a10f2a39993647c78d11d9c`; CI #1195 ✅.
 
-CI **#1195** ✅ targeted regression + CLI smoke.
+Provides evaluator/dimension/reference/universe-policy sockets, rebuildable GradePlan and deterministic GradeProfile. Creator live-confirmed deployed Item grading UI on an existing Item.
+
+### PR #362 — Broad Item Grading Coverage Foundation
+
+Merged:
+`b2b2d0b058bd9835cd311b78586b4ee3b09534ef`
+
+CI **#1198** ✅ — 112 selected test files + CLI smoke.
 
 Canonical contract:
-`docs/UNIVERSAL_GRADING_SOCKET_ARCHITECTURE_V1.md`.
+`docs/ITEM_GRADING_COVERAGE_FOUNDATION_V1.md`.
 
-Core architecture:
-`authoritative raw state + registered grading sockets + universe policy -> derived GradePlan -> deterministic GradeProfile`.
+Foundation now adds a generic sparse `definition.modules.metrics` socket backed by `ItemMetricRegistry` rather than one schema module per Item family.
 
-Implemented extension points:
-- evaluator registry / `EvaluatorSpec`;
-- dimension registry / `DimensionSpec`;
-- reference-profile registry;
-- universe grading policy;
-- rebuildable GradePlan;
-- deterministic GradeProfile resolver.
+Initial metric evidence catalog:
+- luminous flux
+- runtime
+- power
+- energy capacity
+- range
+- speed
+- data rate
+- digital storage
+- beam distance
+- water-resistance depth
+- charge time
+- payload capacity
 
-Acceptance proves a synthetic new Item evaluator/dimension can be plugged into a fresh registry without changing resolver core.
+Provider AI forms derive metric slots from the registry. Null slots are removed. Known supported specs can be mapped into metrics; unknown values remain null. AI never authors final grades, thresholds, evaluator ids or reference profiles.
 
-Default realistic policy is explicit/fail-closed: current legitimate `resistance_load` is allowed; newly-registered supernatural dimensions are not automatically admitted; current load grading ceiling is S.
+Expanded realistic Item grading dimensions:
+- resistance load
+- storage capacity from existing container volume
+- luminous flux
+- runtime
+- power
+- energy capacity
+- range
+- speed
+- data rate
+- digital storage
+- beam distance
+- water-resistance depth
+- payload capacity
 
-Current Item UI coverage:
-- training resistance reuses `item-resistance-load-v1` and preserves existing thresholds;
-- 55 lb-equivalent resistance -> S;
-- draft review + approved Item detail display `Resistance Load: S · Expert`;
-- ordinary uncovered Items display `No registered grading dimensions apply to this Item yet.`;
-- no fabricated overall grade;
-- raw draft `.txt` export stays technical/non-authoritative;
-- no DB migration or new persisted GradePlan/grade authority.
+`charge_time` is represented but intentionally not graded monotonic-high because lower is normally preferable.
 
-Deployment/live rendering of #360 remains a separate evidence gate until runtime/Creator verification.
+These grades describe **capability magnitude**, not generic quality. Overall Item Grade remains deferred until an explicit defensible composite exists.
+
+Draft + approved Item UI now exposes performance metrics and derived grades. Metrics persist as raw facts; GradePlan/Profile remain read-time/rebuildable. Existing recursive Item Edit exposes nested metric value/unit fields and strict validator re-entry is acceptance-tested.
+
+No DB migration. No canonical Real World writes.
 
 ---
 
-## Universal grading direction
+## Universal grading locks
 
-Canonical vocabulary:
+Vocabulary:
 `E < D < C < B < A < S < SS < SSS < X < XX`.
 
-Shared vocabulary does not mean shared raw scales.
-
 Rules:
-1. raw authoritative facts remain independent of grades;
-2. grades require explicit registered dimensions/evaluators;
-3. unknown numeric fields are not automatically gradeable;
-4. missing reference/evidence yields ungraded, not invented precision;
-5. overall grade requires an explicit composite evaluator/scheme;
-6. universe policy decides which dimensions/evaluators/references/ceilings are legitimate;
+1. raw represented facts remain authority;
+2. arbitrary numeric fields are not automatically gradeable;
+3. registered evaluator/dimension/reference/universe policy controls grading semantics;
+4. missing evidence/reference -> ungraded, not invented precision;
+5. realistic universe does not auto-admit supernatural dimensions;
+6. AI may fill/propose represented facts but deterministic evaluator owns final grade;
 7. **Item Grade describes the item; Requirement Grade describes the interaction**;
 8. Location grade is not access authorization;
-9. AI may later propose applicability, but registry + policy + evidence + deterministic evaluator remain authority;
-10. future domain additions should use sockets rather than central family switches.
-
-Extension pattern:
-`EvaluatorSpec + DimensionSpec + optional ReferenceProfile + UniverseGradingPolicy allowance`.
+9. overall grade requires explicit composite semantics;
+10. new coverage should normally be added by registration, not resolver or Item-family rewrites.
 
 ---
 
 ## Completed Creator foundation — retained
 
 I5.2–I5.10 remain complete:
-- I5.2 Creation Contract Reuse Map;
-- I5.3 Universal Quantity / Measurement;
-- I5.4 Universal Cross-Domain Grading;
-- I5.5 Requirements / Access;
-- I5.6 Universal Item Schema v1;
-- I5.7 Single Sandbox Item materialization;
-- I5.8 Atomic heterogeneous Item Batch;
-- I5.9 Item / Container Operations;
-- I5.10 Universal Location Schema v1.
+- I5.2 Creation Contract Reuse Map
+- I5.3 Universal Quantity / Measurement
+- I5.4 Universal Cross-Domain Grading
+- I5.5 Requirements / Access
+- I5.6 Universal Item Schema v1
+- I5.7 Single Sandbox Item materialization
+- I5.8 Atomic heterogeneous Item Batch
+- I5.9 Item / Container Operations
+- I5.10 Universal Location Schema v1
 
-Item Creator Studio/Telegram retains strict Single/Batch creation, AI/manual convergence, realism/self-correction, human review + raw export, approved details/economics, Item Edit parity/diagnostics, batch cleanup and human-friendly value presentation.
+Item Creator Studio retains strict Single/Batch AI/manual creation, realism/self-correction, economic valuation, human review + raw export, approved details, Item Edit parity/diagnostics, and Character/Item cleanup.
 
 Locked Item ontology:
 `Definition -> unique instance OR stack -> placement/storage -> ownership/carriage/equipment -> runtime state/history`.
 
-Relations retain separate `contains`, `located_at`, `stored_in`, `owned_by`, `carried_by`, `equipped_by` semantics. Ownership is orthogonal to physical location/storage.
+Relations remain distinct: `contains`, `located_at`, `stored_in`, `owned_by`, `carried_by`, `equipped_by`. Ownership is orthogonal to physical placement/storage.
 
 ---
 
-# CURRENT DEVELOPMENT FAMILY — Item Grading Coverage expansion
+# CURRENT ACCEPTANCE — broad grading foundation live proof
 
-The socket foundation is accepted, but Item grading is **not exhaustively complete**. V1 has one real registered Item dimension (`resistance_load`) plus extension proofs.
+Creator explicitly requested avoiding large Item regeneration until foundation is broad enough.
 
-Next bounded work should expand coverage without hard-coding item families.
+Therefore **do not mass-generate fresh Items yet**.
 
-Priority sequence:
-1. verify deployed PR #360 Item grading UI when available;
-2. identify additional Item raw properties/modules that already have defensible grading semantics or can support evidence-backed reference profiles;
-3. add reusable evaluator/dimension/reference registrations rather than `if backpack / flashlight / sword` logic;
-4. where generation-time classification helps, introduce a strict structured AI applicability-plan proposal whose ids must already resolve through the registries and current universe policy;
-5. final grade letters remain deterministic, never AI authority;
-6. Items with no defensible registered dimension remain valid/ungraded;
-7. defer overall Item grade until a defensible explicit composite exists, including critical-dimension/missing-evidence behavior.
+Required representative live sequence after PR #362 deployment:
+1. create one small fresh multi-class batch only;
+2. include representative container + flashlight/device + battery/power + resistance/load Item where practical;
+3. verify known quantitative specs populate structured modules/metrics rather than prose only;
+4. verify normalized performance metrics in draft detail;
+5. verify deterministic applicable grades and honest ungraded state where evidence is absent;
+6. approve and verify approved details retain the same metrics/grades;
+7. live-edit one metric-bearing Item -> Preview -> Apply -> Done;
+8. verify pre-edit pause state restoration;
+9. verify Real World/canonical state unchanged.
 
-Do not invent durability, quality, efficiency or category baselines unless their underlying raw representation and evaluator/reference authority exist.
+If this representative live gate passes, the broad grading foundation is accepted for normal fresh Item generation. Further future dimensions can be added through sockets without changing existing creation/navigation core, though newly desired raw facts not represented on an old Item may still require explicit edit rather than invented backfill.
 
 ---
 
-# NEXT AFTER Item Grading Coverage checkpoint
+# NEXT AFTER REPRESENTATIVE ITEM ACCEPTANCE
 
 ### I5.11 — Sandbox Location Creation + Embedded Contents
 
@@ -150,10 +167,10 @@ Then I5.12 Location Contents Operations -> I5.13 Character/Location Binding & Ru
 
 ## Transmigration / Character locks
 
-Nothing transmigrates automatically. I6 remains planning/validation only unless Creator expands scope. Adrian Vale remains Sandbox-only. Second Real World Character gate remains closed. Existing Character Manual/AI/profile/edit/grade-target parity stays locked. Full Sandbox autonomous ticking remains separately unauthorized.
+Nothing transmigrates automatically. I6 remains planning/validation only unless Creator expands scope. Adrian Vale remains Sandbox-only. Second Real World Character gate remains closed. Existing Character parity stays locked. Full Sandbox autonomous ticking remains separately unauthorized.
 
 ---
 
 ## Exact resume point
 
-**Creator live-confirmed fresh Item Edit works after PR #358. PR #360 merged at `9155a94bc75b800d4a10f2a39993647c78d11d9c`; CI #1195 is green. Universal Grading Socket v1 now provides evaluator/dimension/reference/universe-policy sockets, a rebuildable GradePlan and deterministic GradeProfile, with current Item resistance-load coverage plus explicit ungraded handling and draft/approved UI. Continue evidence-backed Item Grading Coverage through socket registrations and constrained AI applicability planning where useful; do not hard-code item families or fabricate baselines. Resume I5.11 after the intended grading-coverage checkpoint.**
+**PR #362 merged at `b2b2d0b058bd9835cd311b78586b4ee3b09534ef`; CI #1198 is green across 112 selected test files + CLI smoke. Broad Item grading foundation now has registry-driven raw metrics, provider AI metric fill, deterministic normalization, 13 realistic Item magnitude dimensions including existing resistance load/storage capacity, human metrics+grading UI, and Item Edit revalidation compatibility. Hold mass Item generation until #362 deploys and one representative multi-class fresh batch + metric Edit/Apply/Done live pass succeeds. Then resume normal Item generation and proceed to I5.11.**
