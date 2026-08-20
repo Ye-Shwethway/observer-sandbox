@@ -163,8 +163,7 @@ def install_location_creator_studio_extension(base) -> None:
                     obj = approve_location_draft(conn, user_id, expected_revision)
                 except (CreatorStudioError, ValueError, TypeError) as exc:
                     return draft_preview_view(conn, user_id, notice=f"Approval rejected: {exc}")
-                location = obj.get("location") if isinstance(obj.get("location"), dict) else {}
-                source = location.get("source") if isinstance(location.get("source"), dict) else {}
+                source = obj.get("source") if isinstance(obj.get("source"), dict) else {}
                 identity = source.get("identity") if isinstance(source.get("identity"), dict) else {}
                 return (
                     "✅ SANDBOX LOCATION APPROVED\n━━━━━━━━━━━━━━━━━━\n"
