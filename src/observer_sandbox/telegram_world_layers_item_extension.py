@@ -4,6 +4,7 @@ import sqlite3
 from typing import Any
 
 from .creation_sandbox import DEFAULT_SANDBOX_ID, ensure_sandbox, get_sandbox_object, list_sandbox_objects
+from .item_grading import item_grading_lines
 from .sandbox_item_creation import get_sandbox_item
 from .sandbox_runtime import sandbox_runtime_status
 from .telegram_economy import format_money_minor
@@ -71,12 +72,7 @@ def _economic_lines(item: dict[str, Any]) -> list[str]:
         unit_quantity = economic.get("unit_quantity")
         unit_label = economic.get("unit_label")
         quantity = instance.get("quantity")
-        if (
-            unit_value is not None
-            and unit_quantity is not None
-            and quantity is not None
-            and currency
-        ):
+        if unit_value is not None and unit_quantity is not None and quantity is not None and currency:
             stock = _stock_value_minor(int(unit_value), float(unit_quantity), float(quantity))
             lines.append(f"💵 Current stock  {format_money_minor(stock, str(currency))}")
             lines.append(
@@ -94,9 +90,6 @@ def _economic_lines(item: dict[str, Any]) -> list[str]:
         lines.append("ℹ️ Value treatment  Resource proxy; no independent monetary value")
         return lines
 
-    # Existing approved drafts may legitimately carry the older explicit
-    # economically-immaterial policy. Keep their persisted truth unchanged but
-    # present the absence of valuation in Creator-facing language.
     lines.append("⚠️ Value not assigned to this approved Sandbox Item.")
     return lines
 
@@ -199,6 +192,7 @@ def approved_item_detail_text(conn: sqlite3.Connection, value: dict[str, Any]) -
     lines.extend(_nutrition_lines(modules))
     lines.extend(_physical_lines(modules))
     lines.extend(_special_module_lines(modules))
+    lines.extend(["", *item_grading_lines(item, heading="🏅 GRADING")])
     lines.extend(["", "🧪 Sandbox-only item · canonical universe unchanged."])
     return "\n".join(lines)
 
