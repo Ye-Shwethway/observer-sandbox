@@ -19,27 +19,25 @@ Roadmap synchronized: **2026-08-20**
 
 ## Current repository checkpoint
 
-### Merged `main`
+PR **#348 — Add Sandbox Item edit Telegram routing parity** is merged.
 
-`main` = `2af1ee7d5e2e3e9c0d1da8384d858880e993fb4b` — PR **#347, Align Sandbox Item details and future economic values**.
+Merge commit: `cee6337e9dc479988f2d3a4c78e52b70ef1b7b84`.
 
-Merged Item Telegram/economic refinement line:
-`#334 Single Item UX -> #335 Batch UX -> #336 retry/typing -> #337 full-schema AI fill -> #338 diagnostics -> #339 stack normalization -> #340 exact local stored_in ref -> #341 immaterial valuation placeholder -> #342 review/export -> #343 review-back -> #344 ordinary-realism gate -> #345 one bounded self-correction -> #346 human review/export naming -> #347 approved Item detail/economic parity`.
+Final acceptance head: `b980c52447d84bb072764e5f29cf99d8abd933d9`.
 
-### Current `test` / PR #348
+Acceptance evidence:
+- CI #1188 (`32369393983`) ✅;
+- 68 selected affected test files ✅;
+- CLI init/status smoke ✅;
+- Public Readiness Security Audit #197 (`32369394081`) ✅.
 
-Sandbox Item Edit parity is now an **active PR**, not merely an unwired WIP.
+The accepted slice includes:
+- strict `telegram_sandbox_item_edit.py` editor/session with Preview/Apply, stale guard, immutable `definition.key` / `instance.mode`, Sandbox pause/restore and `update_sandbox_item()` reuse;
+- `telegram_world_layers_item_edit_extension.py` wrapping the actual `sandbox_object_view`, adding `✏️ Edit Item`, and routing canonical `sw:iedit:enter:<object_id>` / `sw:iedit:*` callbacks;
+- `telegram_sandbox_item_edit_adapter.py` routing pending Item-field free text through the legacy polling contract while preserving slash commands and the returned editor keyboard;
+- focused routing regression coverage.
 
-Current implementation line includes:
-- `telegram_sandbox_item_edit.py` — strict Item edit session, Preview/Apply, stale-preview guard, immutable `definition.key` / `instance.mode`, Sandbox pause/restore, existing `update_sandbox_item()` reuse;
-- `telegram_world_layers_item_edit_extension.py` — `✏️ Edit Item` launcher **and `sw:iedit:*` callback routing**;
-- `telegram_sandbox_item_edit_adapter.py` — active field free-text routing through the legacy polling contract while preserving slash commands;
-- `telegram_creator_studio.py` — installs the free-text compatibility adapter before Creator bot hook capture;
-- `tests/test_telegram_sandbox_item_edit_routing.py` — focused callback/text/keyboard/delegation regression coverage.
-
-PR **#348 — Add Sandbox Item edit Telegram routing parity** is open from `test` to `main`.
-
-At this synchronization point, repository mutation and PR creation are confirmed. **CI/merge/deploy/live acceptance are still pending evidence and must not be claimed yet.**
+Repository acceptance is complete. Deployment/live Telegram acceptance remains evidence-gated until the merge-triggered deploy/runtime result is verified.
 
 ---
 
@@ -86,11 +84,11 @@ Sandbox isolation remains mandatory; keep `canonical_state_fingerprint()` as a h
 
 ---
 
-## CURRENT — Sandbox Item Edit Telegram parity
+## COMPLETED — Sandbox Item Edit Telegram parity
 
-PR: **#348**.
+Repository acceptance: ✅ PR #348.
 
-Target behavior now implemented repo-side:
+Behavior:
 - approved active Sandbox Item detail exposes `✏️ Edit Item`;
 - `sw:iedit:*` callbacks enter/navigate the editor using the configured Creator owner identity;
 - selected field value is consumed as the next free-text Telegram message;
@@ -105,21 +103,16 @@ Target behavior now implemented repo-side:
 - Apply rejects stale previews and reuses `update_sandbox_item()`;
 - backend shared-definition, relation, cycle and physical-placement safeguards remain authoritative.
 
-Verification still required before merge:
-- PR #348 Actions/CI green;
-- focused routing tests pass in CI;
-- wider affected Telegram/Item regression suite remains green;
-- mergeability confirmed;
-- after merge, exact-sync `test` to final `main`;
-- deploy/live Telegram evidence only if the workflow actually deploys this slice.
-
-Do not mark Item Edit accepted/live until those evidence gates close.
+Deployment boundary:
+- `.github/workflows/deploy.yml` applies to `main` `src/**` pushes when `VPS_DEPLOY_ENABLED == 'true'`;
+- merge-triggered deployment/runtime evidence is not yet verified at this roadmap checkpoint;
+- do not claim live Telegram acceptance until verified.
 
 ---
 
-## NEXT AFTER Item Edit acceptance
+## NEXT — I5.11 Sandbox Location Creation + Embedded Contents
 
-### I5.11 — Sandbox Location Creation + Embedded Contents
+Start only after closing the deploy/runtime evidence check for PR #348.
 
 Objective: materialize strict I5.10 Locations in isolated Sandbox state, optionally with typed Item contents, without creating a parallel Item model.
 
@@ -162,4 +155,4 @@ Repository mutation proves only repository mutation. PR/CI proves repository acc
 
 ## Exact resume point
 
-**`main` remains `2af1ee7d5e2e3e9c0d1da8384d858880e993fb4b` (PR #347). `test` now contains the routed Sandbox Item Edit implementation and focused routing tests, with PR #348 open to `main`. Callback and free-text gaps have been repo-side wired. Next: inspect PR #348 Actions, fix only concrete failures, merge only on green evidence, then exact-sync `test` and update continuity with the final merge/deploy truth. After Item Edit acceptance, resume I5.11 Location Creation + Embedded Contents.**
+**PR #348 is merged at `cee6337e9dc479988f2d3a4c78e52b70ef1b7b84`; CI #1188 and Security Audit #197 are green. Item Edit callback/free-text parity is repository-accepted. Verify the applicable merge-triggered deployment/runtime result next, then finish continuity/main-test exact sync. After that, begin I5.11 Location Creation + Embedded Contents.**
