@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import copy
+import re
 from typing import Any
 
 from .economic_value import VALID_CLASSIFICATIONS, VALID_NET_WORTH_TREATMENTS
@@ -14,6 +15,7 @@ _VOLUME_UNITS = ["m3", "l", "ml", "in3", "ft3", "floz_us", "cup_us", "pt_us", "q
 _GRADES = ["E", "D", "C", "B", "A", "S", "SS", "SSS", "X", "XX"]
 _OPERATORS = ["lt", "lte", "gt", "gte", "eq", "ne"]
 _IMMATERIAL_VALUATION_METHOD = "creator_explicit"
+_REF_TOKEN_RE = re.compile(r"[^a-z0-9_-]+")
 
 
 def _obj(properties: dict[str, Any], *, required: list[str] | None = None) -> dict[str, Any]:
@@ -196,15 +198,30 @@ def canonicalize_ai_item_fill(value: dict[str, Any]) -> dict[str, Any]:
     return payload
 
 
+def _canonical_batch_ref(value: Any) -> str:
+    token = str(value or "").strip().lower()
+    token = _REF_TOKEN_RE.sub("_", token)
+    token = re.sub(r"_+", "_", token).strip("_-")
+    if token and not token[0].isalpha():
+        token = f"item_{token}"
+    return token
+
+
 def canonicalize_ai_item_batch_fill(value: dict[str, Any]) -> dict[str, Any]:
     candidate = copy.deepcopy(value)
     items = candidate.get("items")
     if isinstance(items, list):
-        local_refs = {
-            str(entry.get("ref") or "").strip().lower()
-            for entry in items
-            if isinstance(entry, dict) and str(entry.get("ref") or "").strip()
-        }
+        aliases: dict[str, str] = {}
+        for entry in items:
+            if not isinstance(entry, dict):
+                continue
+            original = str(entry.get("ref") or "").strip()
+            canonical = _canonical_batch_ref(original)
+            if canonical:
+                aliases[original.lower()] = canonical
+                aliases[canonical] = canonical
+                entry["ref"] = canonical
+
         for entry in items:
             if not isinstance(entry, dict) or not isinstance(entry.get("payload"), dict):
                 continue
@@ -213,9 +230,12 @@ def canonicalize_ai_item_batch_fill(value: dict[str, Any]) -> dict[str, Any]:
             if isinstance(relationships, dict):
                 stored_in = relationships.get("stored_in")
                 if isinstance(stored_in, str):
-                    bare_target = stored_in.strip().lower()
-                    if bare_target in local_refs:
-                        relationships["stored_in"] = f"${bare_target}"
+                    raw_target = stored_in.strip()
+                    prefixed = raw_target.startswith("$")
+                    bare_target = raw_target[1:] if prefixed else raw_target
+                    canonical_target = aliases.get(bare_target.lower())
+                    if canonical_target:
+                        relationships["stored_in"] = f"${canonical_target}"
             entry["payload"] = payload
     return candidate
 
