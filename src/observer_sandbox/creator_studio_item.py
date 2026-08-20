@@ -9,6 +9,7 @@ from .creation_sandbox import DEFAULT_SANDBOX_ID
 from .creation_socket import build_creation_proposal
 from .creator_creation_ai import creator_creation_binding
 from .creator_studio import CreatorStudioError, _save_draft, active_draft, cancel_draft
+from .item_ai_contract import canonicalize_ai_item_fill, item_ai_fill_schema
 from .item_creation_schema import validate_item_payload
 from .sandbox_item_creation import create_sandbox_item
 from .structured_ai import generate_structured
@@ -119,20 +120,11 @@ def ai_item_draft(
     if not binding:
         raise CreatorStudioError("Creator Creation AI is not configured")
     prompt = (
-        "Draft exactly one Item for the isolated Observer Sandbox Creation Sandbox. Return one JSON object only. "
-        "It MUST obey item-v1 exactly. Top-level keys: schema_version, definition, instance, economic_policy, requirements, relationships. "
-        "schema_version must be 'item-v1'. definition keys: key,name,kind,description,stackable,mobility,capabilities,tags,modules. "
-        "Allowed kinds: object, fixture, equipment, consumable, container. Mobility: movable or fixed. "
-        "Allowed capabilities: inspect,eat,store,train,use,equip,wear. Allowed modules only: physical,stack,nutrition,container,resistance_training. "
-        "Use only modules actually needed. Do not author grades; grades are derived. Do not invent unknown fields. "
-        "instance is {'mode':'unique'} for non-stackable items, or {'mode':'stack','quantity':number,'unit':token} for stackable items. "
-        "economic_policy classifications are standalone_asset, component, consumable_stock, resource_proxy, economically_immaterial; "
-        "net_worth_treatment is independent, included_in_parent, derived_stock, or excluded. "
-        "If monetary facts were not requested or cannot be grounded, use classification='economically_immaterial', "
-        "net_worth_treatment='excluded', null monetary fields, and valuation_method='creator_explicit'. "
-        "requirements has exactly {'use': null-or-typed-requirement}. relationships has exactly located_at,stored_in,owned_by,carried_by,equipped_by. "
-        "Leave relationship values null unless the Creator explicitly supplied a real Sandbox object id. Only one physical placement mode may be non-null. "
-        "For physical quantities use supported units and preserve plausible measurements. This is a proposal only; never claim canonical existence. "
+        "Fill the supplied complete item-v1 schema for exactly one Item in the isolated Creation Sandbox. "
+        "Use [] for unused arrays, null for unknown/unused nullable fields, and null for unused module slots. "
+        "Do not omit, rename or invent schema fields. Populate only facts supported by the Creator intent or conservative ordinary inference. "
+        "Do not author derived grades. If monetary facts are not explicitly grounded, use economically_immaterial/excluded with null monetary values. "
+        "This is proposal-only and does not create canonical state. "
         f"Creator intent: {intent}"
     )
     candidate = generate_structured(
@@ -140,12 +132,13 @@ def ai_item_draft(
         provider_id=str(binding["provider_id"]),
         model_id=str(binding["model_id"]),
         prompt=prompt,
-        schema={"type": "object"},
+        schema=item_ai_fill_schema(),
         schema_name="observer_creator_studio_item_v1",
         parameters=dict(binding.get("parameters") or {}),
     )
     if not isinstance(candidate, dict):
         raise CreatorStudioError("Creation AI returned an invalid Item object")
+    candidate = canonicalize_ai_item_fill(candidate)
     try:
         validate_item_payload(candidate)
     except (ValueError, TypeError, KeyError) as exc:
