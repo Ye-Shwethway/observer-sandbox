@@ -1,0 +1,1 @@
+This marker accompanies list-scoped batch-delete regression coverage.
