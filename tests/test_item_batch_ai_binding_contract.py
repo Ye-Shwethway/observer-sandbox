@@ -6,6 +6,7 @@ import observer_sandbox.creator_studio_item_batch as batch_studio
 from observer_sandbox.creator_studio_item import manual_item_template
 from observer_sandbox.creator_studio_item_batch import ai_item_batch_draft
 from observer_sandbox.db import connect
+from observer_sandbox.item_metrics import DEFAULT_ITEM_METRIC_REGISTRY
 from observer_sandbox.runtime import initialize
 
 
@@ -47,9 +48,13 @@ def test_batch_ai_uses_creator_creation_binding_and_full_item_schema(tmp_path, m
         "key", "name", "kind", "description", "stackable", "mobility", "capabilities", "tags", "modules"
     ]
     modules = definition["properties"]["modules"]
-    assert modules["required"] == ["physical", "stack", "nutrition", "container", "resistance_training"]
+    assert modules["required"] == ["physical", "stack", "nutrition", "container", "resistance_training", "metrics"]
     assert modules["additionalProperties"] is False
+    metrics = modules["properties"]["metrics"]["anyOf"][0]
+    assert set(metrics["properties"]) == set(DEFAULT_ITEM_METRIC_REGISTRY.metric_ids())
+    assert metrics["additionalProperties"] is False
     assert "Fill the supplied complete Item Batch schema" in captured["prompt"]
+    assert "definition.modules.metrics" in captured["prompt"]
     assert "STACK INVARIANT" in captured["prompt"]
     assert "Never populate modules.stack for a non-stackable Item" in captured["prompt"]
     assert "definition.stackable=true" in captured["prompt"]
