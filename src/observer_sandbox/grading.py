@@ -255,7 +255,6 @@ def derive_body_grade_items(values: Mapping[str, object]) -> list[dict[str, obje
     shoulders = _number(values, "body.shoulders_in")
     waist = _number(values, "body.waist_in")
     hips = _number(values, "body.hips_in")
-    chest = _number(values, "body.chest_in")
     if waist is None or waist <= 0:
         return []
 
@@ -300,21 +299,6 @@ def derive_body_grade_items(values: Mapping[str, object]) -> list[dict[str, obje
         height,
         BODY_CENTRAL_ADIPOSITY_SCHEME_ID,
     )
-
-    if chest is not None and chest > 0:
-        derived.append(
-            {
-                "kind": "derived_context",
-                "field_key": "body.chest_to_waist_ratio",
-                "domain": "body",
-                "label": "Chest / Waist",
-                "value": round(chest / waist, 3),
-                "data_type": "number",
-                "unit": "ratio",
-                "mode": "derived",
-                "context": "Shape context only in v1; no unsupported exact universal target is encoded.",
-            }
-        )
     return derived
 
 

@@ -166,26 +166,8 @@ def evaluate_metric(metric: BodyMetricDefinition, values: Mapping[str, object]) 
     }
 
 
-def _display_context_items(values: Mapping[str, object], sex: str) -> list[dict[str, Any]]:
+def _display_context_items(values: Mapping[str, object]) -> list[dict[str, Any]]:
     items: list[dict[str, Any]] = []
-    if sex == "male":
-        chest = _number(values, "body.chest_in")
-        waist = _number(values, "body.waist_in")
-        if chest is not None and waist is not None:
-            items.append(
-                {
-                    "kind": "derived_context",
-                    "field_key": "body.chest_to_waist_ratio",
-                    "domain": "body",
-                    "label": "Chest / Waist",
-                    "value": round(chest / waist, 3),
-                    "data_type": "number",
-                    "unit": "ratio",
-                    "mode": "derived",
-                    "role": "display_context",
-                    "context": "Readable inverse of the grade-driving male Waist / Chest metric.",
-                }
-            )
     definition = abdominal_definition(values)
     if definition is not None:
         items.append(
@@ -238,7 +220,7 @@ def evaluate_body(values: Mapping[str, object], sex: object) -> dict[str, Any]:
             value=weighted_score,
         )
 
-    display_items = list(gradeable_items) + _display_context_items(values, profile.sex)
+    display_items = list(gradeable_items) + _display_context_items(values)
     eligible_metrics = len(profile.metrics) + (1 if composition is not None else 0)
 
     return {
