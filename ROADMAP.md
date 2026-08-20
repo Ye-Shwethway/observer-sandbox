@@ -49,6 +49,10 @@ Canonical plan:
 
 `docs/CREATOR_REAL_WORLD_RESET_AND_GENESIS_PLAN_V1.md`
 
+Architecture decision:
+
+`docs/LOCATION_FIRST_GENESIS_DECISION_RECORD_V1.md`
+
 However, the Real World content reset must **not** happen yet.
 
 A viable rebuilt world requires represented Locations before Characters can become runnable. Therefore the immediate authorized feature remains:
