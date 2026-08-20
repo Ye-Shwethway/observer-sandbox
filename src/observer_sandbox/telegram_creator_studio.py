@@ -5,6 +5,7 @@ from . import telegram_creator_studio_base as _base
 from .telegram_creator_studio_item_extension import install_item_creator_studio_extension
 from .telegram_creator_studio_item_retry_extension import install_item_retry_extension
 from .telegram_creator_studio_item_review_extension import install_item_review_extension
+from .telegram_creator_studio_location_extension import install_location_creator_studio_extension
 from .telegram_sandbox_item_edit_adapter import install_sandbox_item_edit_text_adapter
 
 # Install the transport compatibility adapter before telegram_creator_bot captures
@@ -14,6 +15,9 @@ install_sandbox_item_edit_text_adapter(_telegram_bot)
 install_item_creator_studio_extension(_base)
 install_item_retry_extension(_base)
 install_item_review_extension(_base)
+# Location is layered last so it can reuse the fully-composed shared/Item Studio
+# surfaces while owning only the location-v2 Manual route.
+install_location_creator_studio_extension(_base)
 
 for _name in _base.__all__:
     globals()[_name] = getattr(_base, _name)
@@ -23,7 +27,7 @@ __all__ = list(_base.__all__)
 
 def _sync_public_overrides() -> None:
     # Keep the historical module-level patch/test contract intact even though
-    # the implementation is split behind a thin extension wrapper.
+    # the implementation is split behind thin extension wrappers.
     for name in (
         "send_full_draft_document",
         "manual_draft",
