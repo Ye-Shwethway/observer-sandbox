@@ -1,7 +1,7 @@
 # Observer Sandbox — New Chat Bootstrap
 
 Status: **ACTIVE DEVELOPMENT**  
-Last synchronized: **2026-08-20**
+Last synchronized: **2026-08-21**
 
 ## Startup / authority
 
@@ -13,17 +13,7 @@ Read and reconcile in this order:
 5. task-relevant canonical contracts/source
 6. current branch/PR/CI/runtime evidence before completion or live claims.
 
-### Mandatory Creation task gate
-
-For **any** Creator Creation work — planning, coding, review, extension or debugging — read:
-
-`docs/CREATION_SECTION_IMPLEMENTATION_STANDARD_V1.md`
-
-**before material Creation work begins.** `AGENTS.md` carries the repository-level hard lock.
-
-The standard was written after detailed review of the completed Character Creation and Item Creation verticals. It captures the required schema-first, socket/reuse, Manual/AI parity, full structured AI fill, canonicalization/validator compatibility, reusable Telegram UX, typing indicator, human review, raw `.txt` export, Cancel, explicit approval, atomic Sandbox apply, Edit Preview/Apply/Done, pause-state restoration, diagnostics, delete/cleanup and release/live-acceptance patterns.
-
-If a new Creation domain has no canonical versioned schema, **build the schema first**. Do not begin its AI/UI/materialization path until that schema exists.
+For any Creator Creation work, `docs/CREATION_SECTION_IMPLEMENTATION_STANDARD_V1.md` is mandatory before material planning/coding/review/debugging.
 
 Authority:
 `current Creator instruction > live repo contracts/config/schema > verified runtime/DB > CI/deploy evidence > continuity docs > remembered chat`.
@@ -34,138 +24,182 @@ Do not infer production deployment from merge alone.
 
 ---
 
-## Creation Implementation Standard v1 — new canonical meta-contract
+## Current strategic checkpoint
 
-Canonical doc:
+The representative post-rollback Item Batch has been explicitly **approved by Creator**. Treat that acceptance gate as closed for sequencing.
 
-`docs/CREATION_SECTION_IMPLEMENTATION_STANDARD_V1.md`
+The immediate authorized feature is now:
 
-Core pipeline:
+> **I5.11 — Sandbox Location Creation + Embedded Contents**
 
-`versioned domain schema -> registered Creation socket/reuse map -> Manual full-schema form + AI full-schema structured fill -> safe deterministic canonicalization -> strict structural/domain validation -> dependency/graph validation -> write-free human preview + technical .txt export -> explicit Creator approval -> atomic Sandbox-only materialization -> approved detail -> Edit lifecycle -> delete/archive/cleanup`
+This is not merely the next ordinary Creator feature. It is the missing prerequisite for the approved Real World Genesis transition.
 
-Important locks:
-- schema before AI/UI;
-- one shared Creation pipeline, many type sockets;
-- registry/socket expansion instead of family/name-specific switchboards;
-- Manual and AI converge on the same domain validator/materializer;
-- Single and Batch reuse the same member schema; Batch is orchestration only;
-- AI is a form filler, not a schema designer;
-- complete provider-facing fill form/schema is passed to structured generation;
-- Creator prompts stay short/natural; technical rules are system-side;
-- provider schema, canonicalizer and validator are compatibility-tested as one boundary;
-- canonicalization repairs only safe mechanical representation differences, not missing semantic facts;
-- validator must accept its own normalized/read-back representation;
-- one bounded AI self-correction may recover a deterministic proposal error, but retries must not become the normal path;
-- AI generation uses Telegram `typing` feedback when it can take noticeable time;
-- normal review is human-facing; raw `.txt` remains the auditable technical artifact;
-- Cancel before approval causes no materialized domain state;
-- explicit approval is required and applies atomically to Sandbox state only;
-- `canonical_state_fingerprint()` remains a core isolation proof;
-- `Created != running`; approval does not start autonomy/runtime or transmigrate;
-- Edit reuses the authoritative creation schema/validator, uses Preview before Apply, stale guards and audit;
-- Edit preflights before pause mutation and restores the exact prior pause state on Done/session close;
-- error diagnostics are bounded/actionable and secret-safe;
-- repeated validation failures require whole invariant-family audit, not one-error-at-a-time patching;
-- fine-grained realism/subjective quality is **non-blocking by default** unless an explicit domain contract + Creator authorization makes it authoritative.
+Characters and Items cannot form a runnable rebuilt world without represented Locations, containment/topology and valid placement. Therefore Location Creation must reach modern Creation-standard parity before any destructive Real World content reset.
 
-This standard must be reread at the start of I5.11 and all later Creation domains.
+Canonical kickoff docs:
+- `docs/CREATION_SECTION_IMPLEMENTATION_STANDARD_V1.md`
+- `docs/UNIVERSAL_LOCATION_SCHEMA_V1.md`
+- `docs/LOCATION_CREATION_KICKOFF_V1.md`
+- `docs/CREATOR_REAL_WORLD_RESET_AND_GENESIS_PLAN_V1.md`
 
 ---
 
-## Current checkpoint — deliberate Item rollback baseline
+## Approved Real World direction — prototype era will be retired
 
-Creator explicitly chose commit **`b59e632aa8e31647b85eeb244a4436c31e9e1e9d`** (`Fix Item nutrition basis semantics`, PR #369) as the acceptable Item Creation baseline after later realism tightening caused repeated rejection loops and slowed development.
+Creator has explicitly classified the current Real World content as prototype-era exemplars created before the present universal Creation architecture was mature.
 
-Rollback PR **#372** restored the repository tree exactly to that checkpoint while preserving Git history. PR #372 merged to `main` as:
+This includes the current:
+- Darian exemplar Character;
+- Thorne Estate / hard-coded Location graph;
+- Estate objects, fixtures and training equipment;
+- legacy Item/inventory content associated with the exemplar world.
 
-`6fe07ec4fde0375b29477c026e4ace991f8834ce`
+Do **not** spend development effort building a complex legacy-preservation or legacy-reincarnation bridge around that content.
 
-The rollback intentionally removes later Item changes from:
-- PR #370 — luminous-efficacy blocking validation;
-- PR #371 — fixture-mobility reconciliation/tightening;
-- interrupted post-#371 realism simplification work on `test`.
+Approved principle:
 
-**Do not re-add or further tighten fine-grained Item realism validation unless the Creator explicitly authorizes it.** Development velocity now outranks chasing small realism imperfections in generated Item drafts.
+> **Preserve reusable universe infrastructure; retire prototype content; rebuild canonical content from modern Sandbox creations through explicit transmigration.**
 
-The chosen `b59e632...` baseline still includes the earlier accepted Item schema/canonicalizer work, broad grading foundation, schema-validator compatibility audit, shared AI authoring guidance, metric coherence/evidence validation through PR #367, prompt refinement through PR #368, and nutrition-basis semantics through PR #369. Treat that exact behavior as intentional unless a concrete structural blocker appears.
-
----
-
-## Item creation acceptance policy now
-
-Creation-blocking validation should focus on **structural correctness and safe Sandbox materialization**, not exhaustive real-world realism.
-
-Retain and respect hard contracts such as:
-- schema/type validity;
-- stable machine tokens/refs;
-- valid batch-local references;
-- stack/instance/module structural consistency;
-- module/capability contracts already present in the chosen baseline;
-- atomic whole-batch validation/materialization;
-- Sandbox isolation and canonical Real World non-mutation.
-
-Do **not** restart a whack-a-mole cycle for small plausible numeric imperfections. If a draft is structurally valid and reasonably usable, prefer forward progress. Fine-grained realism can be improved later as advisory quality work rather than continuously expanding the creation blocker.
-
-Creator-side prompts should remain short and natural. Technical schema burden belongs in the system-side creation contract/canonicalizer, not in long user prompts.
+The reset is **not authorized to execute yet**. Location Creation comes first.
 
 ---
 
-## Item/grading foundation retained
+## What will be preserved through the future reset
 
-I5.2–I5.10 remain complete and must not be rebuilt.
+The future Genesis reset is a content reset, not an engine reset.
 
-Key completed slices include:
-- Universal Item Schema + Single/Batch materialization;
-- Item/container relations and atomic operations;
-- Universal Location Schema v1;
-- Item Edit parity with pause-state restoration and stale guard;
-- Character/Item cleanup controls;
-- Item economics display and AI authoring normalization;
-- Universal Grading Socket v1 (PR #360);
-- broad Item Grading Coverage Foundation (PR #362);
-- batch ref canonicalization and module/capability reconciliation;
-- schema/canonicalizer/validator compatibility audit;
-- shared single+batch Creator AI authoring contract;
-- nutrition-basis semantics (PR #369).
+Retain and align reusable infrastructure such as:
+- DB/schema foundation;
+- simulation time/clock;
+- weather/environment foundations;
+- economy/money foundations;
+- AI provider/model/binding infrastructure;
+- generic events/actions/runtime;
+- physiology/effects foundations;
+- Mind/Memory foundations;
+- grading, quantity, requirements and economic-value contracts;
+- Creation Sandbox / schema / validator / materializer foundations;
+- generic world/location runtime engines not intrinsically tied to prototype IDs;
+- audit/provenance infrastructure.
 
-Grading remains derived from authoritative raw facts. AI does not author final grades/thresholds. Item grade describes the Item; requirement grade describes the interaction. Overall Item grade remains absent without an explicit composite contract.
+Content-bound seeders/defaults must later be removed, disabled, generalized or converted to optional fixtures so restart/deploy cannot recreate retired prototype content.
 
-Locked Item ontology:
+---
+
+## Approved sequence from here
+
+```text
+NOW: I5.11 Sandbox Location Creation + Embedded Contents
+→ accept Location + embedded Item vertical
+→ audit exact Real World keep/wipe dependency set
+→ remove/disable legacy Darian/Estate/Item reseeding authority
+→ controlled Real World prototype-content reset
+→ preserve shared time/weather/economy/runtime infrastructure
+→ implement Transmigration foundation against clean Real World
+→ Genesis transmigration: Locations -> Items/fixtures -> Characters
+→ validate runtime readiness / affordances
+→ explicit activation
+→ later Reincarnation/Renewal for modern canonical content
+```
+
+Do not automatically continue into the old I5.12–I5.15 order after I5.11 without reconciling those slices against this Genesis transition.
+
+---
+
+## I5.11 implementation lock
+
+Do **not** invent another Location schema. `docs/UNIVERSAL_LOCATION_SCHEMA_V1.md` already exists and is authoritative.
+
+Required Location vertical:
+
+`Location schema -> registered Creation socket -> Manual full-schema + AI full-schema -> canonicalize -> validate -> dependency/graph validation -> write-free review + .txt -> explicit approval -> atomic Sandbox-only materialization -> approved detail -> Edit Preview/Apply/Done -> cleanup`.
+
+Required semantics:
+- stable Location identity independent of display path/name;
+- same-Sandbox active parent validation;
+- acyclic structural parent graph;
+- structural hierarchy through `contains`;
+- topology through `connected_to`;
+- dynamic presence through `located_at`;
+- access distinct from topology;
+- interface destinations must resolve to active same-Sandbox Locations;
+- no arbitrary `contents` bag;
+- embedded Items reuse exact current Item schema/Batch semantics;
+- whole Location + embedded Item graph validates before one atomic write;
+- movable Items normally use `located_at` or valid `stored_in` containers;
+- human-readable review + raw `.txt` technical export;
+- Telegram `typing` during noticeable AI generation;
+- Cancel before approval = zero writes;
+- approved Location does not become runtime-active automatically;
+- `canonical_state_fingerprint()` proves Real World isolation;
+- Location Edit reuses shared schema/validator and Preview/Apply/Done with exact pause restoration where pausing is actually required.
+
+---
+
+## Item baseline / acceptance lock
+
+Creator deliberately selected commit `b59e632aa8e31647b85eeb244a4436c31e9e1e9d` as the acceptable Item Creation behavior after later realism tightening caused repeated rejection loops.
+
+Rollback PR #372 restored that behavior as merge `6fe07ec4fde0375b29477c026e4ace991f8834ce` while preserving history.
+
+Do not re-add/tighten fine-grained Item realism validation without explicit Creator authorization.
+
+The approved representative camping-style multi-class Item Batch is sufficient to close the current representative acceptance gate. Do not regenerate it merely to delay Location work.
+
+Retained Item ontology:
 `Definition -> unique instance OR stack -> placement/storage -> ownership/carriage/equipment -> runtime state/history`.
 
-Relations remain distinct: `contains`, `located_at`, `stored_in`, `owned_by`, `carried_by`, `equipped_by`. Ownership is orthogonal to physical placement/storage.
+Relations remain distinct:
+`contains`, `located_at`, `stored_in`, `owned_by`, `carried_by`, `equipped_by`.
 
 ---
 
-## Immediate resume point
+## Transmigration after Genesis reset
 
-1. Verify production/runtime has deployed rollback merge `6fe07ec4fde0...` or later before claiming live rollback completion.
-2. Generate **one** small Item Batch with a very short natural Creator prompt.
-3. Judge primarily on structural usability, schema validity, sensible module/metric capture and successful preview/approval flow — **not microscopic realism optimization**.
-4. If structurally acceptable, approve the batch and verify approved Item details.
-5. Exercise one metric-bearing Item through Edit -> Preview -> Apply -> Done and confirm pre-edit pause restoration + canonical Real World isolation.
-6. Close the representative Item acceptance gate.
-7. Before starting **I5.11 — Sandbox Location Creation + Embedded Contents**, reread `docs/CREATION_SECTION_IMPLEMENTATION_STANDARD_V1.md` and apply its kickoff checklist.
-8. I5.11 already has `docs/UNIVERSAL_LOCATION_SCHEMA_V1.md`; do not invent another Location schema. Map the existing schema into the shared Creation pipeline and reuse exact Item Batch semantics for embedded contents.
+The approved `docs/CREATOR_STAGING_TRANSMIGRATION_ARCHITECTURE_V1.md` remains authoritative.
 
-Do not mass-regenerate old Items before this representative acceptance pass.
+Transmigration remains an explicit validated atomic promotion, not table copy/paste:
+
+`freeze Sandbox revision -> schema/dependency validation -> target-universe compatibility -> canonical IDs/refs -> conflict check -> mutation plan -> Creator preview -> explicit approval -> atomic canonical materialization -> provenance`.
+
+The clean Real World target should simplify this path by removing prototype-era schema/content coexistence.
+
+Genesis dependency order starts with spatial structure:
+1. Locations/root topology;
+2. Items/fixtures/containers and placement;
+3. Characters with valid starting Location bindings;
+4. runtime readiness/affordance validation;
+5. explicit runtime activation.
+
+A Character must not be activated without a valid represented Location.
 
 ---
 
-## Retained system locks
+## Reincarnation / Renewal — later
+
+Reincarnation remains planned, but it is **not** a mechanism for preserving or upgrading the current prototype Darian/Estate/legacy Item content.
+
+Its future purpose is modern-to-modern renewal:
+
+`modern canonical v1 -> Renew in Sandbox -> edit/regenerate/test -> compatibility + diff -> explicit Creator approval -> canonical v2`.
+
+Because both source and replacement originate from modern Creation/Transmigration contracts, future renewal should avoid most prototype-to-modern inconsistencies.
+
+---
+
+## Retained universal locks
 
 - Create anywhere safely; canon nowhere automatically.
 - Sandbox-created content never transmigrates automatically.
-- Target-universe compatibility validation must precede transmigration.
+- Target-universe compatibility validation precedes transmigration.
 - `runtime_ready != running`; Created is not alive.
-- `canonical_state_fingerprint()` remains a high-value zero-canonical-mutation invariant.
+- `canonical_state_fingerprint()` remains a high-value isolation invariant.
 - Full autonomous Sandbox ticking remains unauthorized unless Creator explicitly expands scope.
-- Adrian Vale remains Sandbox-only.
-- Second Real World Character gate remains closed until later Mind + Relationship work.
+- Until the reset is actually implemented and verified, the current Real World prototype content still exists; do not claim otherwise.
+- Do not make production/deploy/live claims without current evidence.
 
 ---
 
 ## Exact resume sentence
 
-**Creation Implementation Standard v1 is now the mandatory meta-contract for every future Creator Creation section: read `docs/CREATION_SECTION_IMPLEMENTATION_STANDARD_V1.md` before any Creation planning/coding/debugging, build the canonical schema first if missing, then use the shared schema-driven/socket-based Manual+AI -> canonicalize -> validate -> preview/export -> explicit atomic Sandbox approval -> Edit/pause-resume lifecycle. Creator deliberately rolled Item Creation back to the `b59e632aa8e3` behavior because later fine-grained realism tightening blocked progress; do not re-tighten realism without explicit authorization. Verify rollback merge `6fe07ec4fde0...` or later is live, run one short natural-language representative Item Batch, approve + verify one Item Edit/Apply/Done pass, then reread the Creation Standard and proceed to I5.11 using the existing Universal Location Schema v1.**
+**The Item representative acceptance gate is approved and closed. The immediate authorized slice is I5.11 Sandbox Location Creation + Embedded Contents. Read the mandatory Creation Standard, existing Universal Location Schema and Location kickoff contract, then implement the shared schema-driven Manual/AI -> canonicalize -> validate graph -> preview/export -> explicit atomic Sandbox approval -> approved detail -> Edit lifecycle with zero Real World mutation. Do not wipe the Real World yet. After Location acceptance, execute the approved Genesis transition: audit/reset the prototype Darian/Thorne Estate/legacy Item content, remove legacy reseeding authority while preserving reusable time/weather/economy/runtime foundations, then implement Transmigration against the clean target and rebuild canonical content in dependency-safe order: Locations first, Items/fixtures second, Characters third, then readiness/activation. Reincarnation is deferred for later modern canonical renewals.**
