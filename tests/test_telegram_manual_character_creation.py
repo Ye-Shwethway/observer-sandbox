@@ -54,7 +54,7 @@ def _manual_value(key: str, data_type: str):
         "sexual_anatomy.penis_girth_in": 5,
         "genetics.penis_length_in": 6,
         "genetics.penis_girth_in": 5,
-        "training.training_age_years": 5,
+        "training.training_age_years": 0,
         "raps_ia.iq": 120,
     }
     if key in specials:
@@ -93,7 +93,7 @@ def test_manual_character_builder_exposes_full_creation_sections_and_collections
         callbacks = _button_callbacks(keyboard)
 
         assert "MANUAL CHARACTER BUILD" in text
-        assert f"Required baseline: 1/{status['total']}" in text
+        assert f"Exact seed fields: 1/{status['total']}" in text
         assert "sw:cs:manual:s:identity:0" in callbacks
         assert "sw:cs:manual:s:appearance:0" in callbacks
         assert "sw:cs:manual:s:body:0" in callbacks
@@ -115,7 +115,7 @@ def test_manual_draft_preview_locks_approval_until_exact_field_set_is_complete(t
         text, keyboard = draft_preview_view(conn, 42)
         callbacks = _button_callbacks(keyboard)
 
-        assert f"Manual required baseline: 1/{initial['total']}" in text
+        assert f"Manual exact seed fields: 1/{initial['total']}" in text
         assert "sw:cs:approve" not in callbacks
         assert "sw:cs:manual:home" in callbacks
 
@@ -124,11 +124,11 @@ def test_manual_draft_preview_locks_approval_until_exact_field_set_is_complete(t
         text, keyboard = draft_preview_view(conn, 42)
         callbacks = _button_callbacks(keyboard)
         assert complete["ready"] is True
-        assert f"Manual required baseline: {complete['total']}/{complete['total']}" in text
+        assert f"Manual exact seed fields: {complete['total']}/{complete['total']}" in text
         assert "sw:cs:approve" in callbacks
 
 
-def test_manual_character_section_uses_registry_fields_and_opens_typed_input(tmp_path):
+def test_manual_character_section_uses_exact_ai_field_set_and_opens_typed_input(tmp_path):
     with _conn(tmp_path) as conn:
         manual_draft(conn, 42, "character", "Rowan Hale")
         text, keyboard = studio_callback_view(conn, 42, "sw:cs:manual:s:identity:0")
@@ -140,6 +140,20 @@ def test_manual_character_section_uses_registry_fields_and_opens_typed_input(tmp
         assert "MANUAL CHARACTER FIELD" in text
         assert "Expected:" in text
         assert "sw:cs:manual:cancelinput" in _button_callbacks(keyboard)
+
+        # The legacy compatibility alias exists in the wider creation registry,
+        # but AI exact-seed generation removes it. Manual UI must do the same.
+        page = 0
+        seen_text = []
+        while True:
+            section_text, section_keyboard = studio_callback_view(conn, 42, f"sw:cs:manual:s:attributes:{page}")
+            seen_text.append(section_text)
+            callbacks = _button_callbacks(section_keyboard)
+            next_callbacks = [value for value in callbacks if value == f"sw:cs:manual:s:attributes:{page + 1}"]
+            if not next_callbacks:
+                break
+            page += 1
+        assert "Practical Skill" not in "\n".join(seen_text)
 
 
 def test_manual_approval_confirmation_still_uses_revision_lock(tmp_path):
