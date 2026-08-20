@@ -220,7 +220,14 @@ def manual_character_builder_view(
     return "\n".join(lines), keyboard
 
 
-def _manual_section_view(conn: sqlite3.Connection, user_id: int, section_id: str, page: int = 0):
+def _manual_section_view(
+    conn: sqlite3.Connection,
+    user_id: int,
+    section_id: str,
+    page: int = 0,
+    *,
+    notice: str | None = None,
+):
     draft = manual_character_draft(conn, user_id)
     profile = draft["proposal"]["properties"]["character_profile"]
     values = dict(profile.get("values") or {})
@@ -238,6 +245,8 @@ def _manual_section_view(conn: sqlite3.Connection, user_id: int, section_id: str
         f"Page {page + 1}/{total_pages}",
         "Select a canonical creation-owned seed field. Existing values can be revised before approval.",
     ]
+    if notice:
+        lines.extend(["", notice])
     keyboard: list[list[dict[str, str]]] = []
     for offset, field in enumerate(chunk):
         absolute_index = start + offset
@@ -258,13 +267,26 @@ def _manual_section_view(conn: sqlite3.Connection, user_id: int, section_id: str
     return "\n".join(lines), keyboard
 
 
+def _manual_field_context(expected: str) -> tuple[str | None, int, str]:
+    parts = expected.split(":", 3)
+    if len(parts) == 4 and parts[0] == "manual-field":
+        section_id = parts[1]
+        try:
+            page = int(parts[2])
+        except ValueError:
+            page = 0
+        return section_id, max(0, page), parts[3]
+    return None, 0, expected.split(":", 1)[1]
+
+
 def _manual_field_prompt(conn: sqlite3.Connection, user_id: int, section_id: str, index: int):
     fields = _manual_fields(conn, section_id)
     if index < 0 or index >= len(fields):
         return _manual_section_view(conn, user_id, section_id, 0)
     field = fields[index]
     field_key = str(field["field_key"])
-    _set_expected_input(conn, user_id, f"manual-field:{field_key}")
+    page = index // _MANUAL_FIELD_PAGE_SIZE
+    _set_expected_input(conn, user_id, f"manual-field:{section_id}:{page}:{field_key}")
     _install_input_router()
     expected = str(field["data_type"])
     unit = str(field["unit"] or "")
@@ -285,8 +307,8 @@ def _manual_field_prompt(conn: sqlite3.Connection, user_id: int, section_id: str
         f"{examples.get(expected, 'Send the new value.')}\n"
         "The value is validated before it enters the draft.",
         [
-            [{"text": "✕ Cancel Input", "callback_data": "sw:cs:manual:cancelinput"}],
-            [{"text": "← Manual Character", "callback_data": "sw:cs:manual:home"}],
+            [{"text": "✕ Cancel Input", "callback_data": f"sw:cs:manual:s:{section_id}:{page}"}],
+            [{"text": "← Back to Section", "callback_data": f"sw:cs:manual:s:{section_id}:{page}"}],
         ],
     )
 
@@ -318,7 +340,7 @@ def _manual_collection_prompt(conn: sqlite3.Connection, user_id: int, collection
 
 def _manual_retry_view(conn: sqlite3.Connection, user_id: int, expected: str, error: Exception):
     if expected.startswith("manual-field:"):
-        field_key = expected.split(":", 1)[1]
+        _section_id, _page, field_key = _manual_field_context(expected)
         row = conn.execute(
             "SELECT label,data_type,unit FROM profile_field_definitions WHERE field_key=?",
             (field_key,),
@@ -326,10 +348,11 @@ def _manual_retry_view(conn: sqlite3.Connection, user_id: int, expected: str, er
         label = str(row["label"]) if row else field_key
         return (
             f"Manual Character value rejected: {error}\n\n"
-            f"✏️ {label}\nSend a corrected value, or cancel this input.",
+            f"✏️ {label}\nSend a corrected value, or use Back to return to the section.",
             [
-                [{"text": "✕ Cancel Input", "callback_data": "sw:cs:manual:cancelinput"}],
-                [{"text": "← Manual Character", "callback_data": "sw:cs:manual:home"}],
+                [{"text": "← Back to Section", "callback_data": f"sw:cs:manual:s:{_section_id}:{_page}"}]
+                if _section_id
+                else [{"text": "← Manual Character", "callback_data": "sw:cs:manual:home"}],
             ],
         )
     if expected.startswith("manual-collection:"):
@@ -383,7 +406,13 @@ def _install_input_router() -> None:
                     if session:
                         expected = str(session.get("expected_input") or "")
                         _clear_session(conn, user_id)
-                        if expected.startswith("manual-"):
+                        if expected.startswith("manual-field:"):
+                            section_id, page, _field_key = _manual_field_context(expected)
+                            if section_id:
+                                view, keyboard = _manual_section_view(conn, user_id, section_id, page, notice="✕ Manual input cancelled.")
+                            else:
+                                view, keyboard = manual_character_builder_view(conn, user_id, notice="✕ Manual input cancelled.")
+                        elif expected.startswith("manual-"):
                             view, keyboard = manual_character_builder_view(conn, user_id, notice="✕ Manual input cancelled.")
                         else:
                             view, keyboard = studio_home_view(conn, user_id)
@@ -400,10 +429,19 @@ def _install_input_router() -> None:
             expected = str(session.get("expected_input") or "")
             try:
                 if expected.startswith("manual-field:"):
-                    field_key = expected.split(":", 1)[1]
+                    section_id, page, field_key = _manual_field_context(expected)
                     update_manual_character_field(conn, user_id, field_key, raw)
                     _clear_session(conn, user_id)
-                    view, keyboard = manual_character_builder_view(conn, user_id, notice="✅ Draft field updated.")
+                    if section_id:
+                        view, keyboard = _manual_section_view(
+                            conn,
+                            user_id,
+                            section_id,
+                            page,
+                            notice="✅ Draft field updated.",
+                        )
+                    else:
+                        view, keyboard = manual_character_builder_view(conn, user_id, notice="✅ Draft field updated.")
                 elif expected.startswith("manual-collection:"):
                     collection = expected.split(":", 1)[1]
                     update_manual_character_collection(conn, user_id, collection, raw)
@@ -630,13 +668,21 @@ def studio_callback_view(conn: sqlite3.Connection, user_id: int, callback_data: 
         except ManualCharacterCreationError as exc:
             return draft_preview_view(conn, user_id, notice=str(exc))
     if callback_data == "sw:cs:manual:cancelinput":
+        session = _session(conn, user_id)
+        expected = str(session.get("expected_input") or "") if session else ""
         _clear_session(conn, user_id)
         _restore_input_router()
+        if expected.startswith("manual-field:"):
+            section_id, page, _field_key = _manual_field_context(expected)
+            if section_id:
+                return _manual_section_view(conn, user_id, section_id, page, notice="✕ Manual input cancelled.")
         return manual_character_builder_view(conn, user_id, notice="✕ Manual input cancelled.")
     if callback_data.startswith("sw:cs:manual:s:"):
         parts = callback_data.split(":")
         if len(parts) == 6:
             try:
+                _clear_session(conn, user_id)
+                _restore_input_router()
                 return _manual_section_view(conn, user_id, parts[4], int(parts[5]))
             except (ValueError, ManualCharacterCreationError) as exc:
                 return manual_character_builder_view(conn, user_id, notice=f"Section unavailable: {exc}")
