@@ -49,7 +49,13 @@ def _quantity(value: Any, dimension: str, label: str):
     _exact(value, {"value","unit"}, label)
     try: q = normalize_physical_quantity(dimension, value["value"], value["unit"])
     except (PhysicalQuantityError, TypeError, ValueError) as exc: raise LocationCreationSchemaError(str(exc)) from exc
-    return {"dimension": q.dimension, "base_value": q.base_value, "base_unit": q.base_unit, "source_value": q.source_value, "source_unit": q.source_unit}
+    return {
+        "dimension": q.kind,
+        "base_value": q.base_value,
+        "base_unit": q.base_unit,
+        "source_value": float(value["value"]),
+        "source_unit": str(value["unit"]).strip().lower(),
+    }
 
 
 def _economic(raw: Any) -> dict[str, Any] | None:
