@@ -4,7 +4,7 @@ from observer_sandbox.creator_studio_item import manual_item_template
 from observer_sandbox.db import connect
 from observer_sandbox.item_ai_contract import canonicalize_ai_item_batch_fill
 from observer_sandbox.runtime import initialize
-from observer_sandbox.sandbox_item_creation import SandboxItemBatchError, preview_sandbox_item_batch
+from observer_sandbox.sandbox_item_creation import SandboxItemCreationError, preview_sandbox_item_batch
 
 
 def test_canonical_ref_collision_remains_invalid(tmp_path):
@@ -24,5 +24,5 @@ def test_canonical_ref_collision_remains_invalid(tmp_path):
     db = tmp_path / "observer.sqlite3"
     initialize(db)
     with connect(db) as conn:
-        with pytest.raises(SandboxItemBatchError):
+        with pytest.raises(SandboxItemCreationError, match="Duplicate batch ref"):
             preview_sandbox_item_batch(conn, candidate["items"])
