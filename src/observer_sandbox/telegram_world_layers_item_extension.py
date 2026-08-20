@@ -4,9 +4,9 @@ import sqlite3
 from typing import Any
 
 from .creation_sandbox import DEFAULT_SANDBOX_ID, ensure_sandbox, get_sandbox_object, list_sandbox_objects
-from .economic_value import derive_stock_value_minor, format_money_minor
 from .sandbox_item_creation import get_sandbox_item
 from .sandbox_runtime import sandbox_runtime_status
+from .telegram_economy import format_money_minor
 
 
 def _fmt_number(value: Any) -> str:
@@ -43,6 +43,10 @@ def _relations_by_type(conn: sqlite3.Connection, value: dict[str, Any]) -> dict[
     return result
 
 
+def _stock_value_minor(unit_value_minor: int, unit_quantity: float, quantity: float) -> int:
+    return int(round(float(quantity) / float(unit_quantity) * int(unit_value_minor)))
+
+
 def _economic_lines(item: dict[str, Any]) -> list[str]:
     economic = item.get("economic_policy") or {}
     classification = str(economic.get("classification") or "")
@@ -55,9 +59,9 @@ def _economic_lines(item: dict[str, Any]) -> list[str]:
         market = economic.get("market_value_minor")
         replacement = economic.get("replacement_value_minor")
         if market is not None and currency:
-            lines.append(f"💵 Market value      {format_money_minor(market, currency)}")
+            lines.append(f"💵 Market value      {format_money_minor(int(market), str(currency))}")
         if replacement is not None and currency:
-            lines.append(f"♻️ Replacement value {format_money_minor(replacement, currency)}")
+            lines.append(f"♻️ Replacement value {format_money_minor(int(replacement), str(currency))}")
         if len(lines) == 2:
             lines.append("⚠️ Value not assigned to this approved Sandbox Item.")
         return lines
@@ -73,10 +77,10 @@ def _economic_lines(item: dict[str, Any]) -> list[str]:
             and quantity is not None
             and currency
         ):
-            stock = derive_stock_value_minor(unit_value, unit_quantity, quantity)
-            lines.append(f"💵 Current stock  {format_money_minor(stock, currency)}")
+            stock = _stock_value_minor(int(unit_value), float(unit_quantity), float(quantity))
+            lines.append(f"💵 Current stock  {format_money_minor(stock, str(currency))}")
             lines.append(
-                f"🏷 Unit value     {format_money_minor(unit_value, currency)} / "
+                f"🏷 Unit value     {format_money_minor(int(unit_value), str(currency))} / "
                 f"{_fmt_number(unit_quantity)} {unit_label or instance.get('unit') or 'unit'}"
             )
         else:
@@ -106,7 +110,7 @@ def _nutrition_lines(modules: dict[str, Any]) -> list[str]:
     return [
         "",
         "🥗 NUTRIENT FACTS · DEFAULT PORTION",
-        f"🍽 Serving     {_fmt_number(basis)} {unit}" if basis is not None else f"🍽 Serving     —",
+        f"🍽 Serving     {_fmt_number(basis)} {unit}" if basis is not None else "🍽 Serving     —",
         f"🔥 Energy      {_fmt_number(nutrition.get('energy_kcal'))} kcal" if nutrition.get("energy_kcal") is not None else "🔥 Energy      —",
         f"🥩 Protein     {_fmt_number(nutrition.get('protein_g'))} g" if nutrition.get("protein_g") is not None else "🥩 Protein     —",
         f"🌾 Carbs       {_fmt_number(nutrition.get('carbohydrate_g'))} g" if nutrition.get("carbohydrate_g") is not None else "🌾 Carbs       —",
@@ -125,14 +129,13 @@ def _physical_lines(modules: dict[str, Any]) -> list[str]:
         lines.append(f"⚖️ Mass        {_qty(mass)}")
     dimensions = [physical.get("length"), physical.get("width"), physical.get("height")]
     if all(isinstance(value, dict) for value in dimensions):
-        units = [str(value.get("unit")) for value in dimensions]
+        typed_dimensions = [value for value in dimensions if isinstance(value, dict)]
+        units = [str(value.get("unit")) for value in typed_dimensions]
         if len(set(units)) == 1:
-            values = " × ".join(_fmt_number(value.get("value")) for value in dimensions)
+            values = " × ".join(_fmt_number(value.get("value")) for value in typed_dimensions)
             lines.append(f"📏 Size        {values} {units[0]}")
         else:
-            lines.append(
-                "📏 Size        " + " × ".join(_qty(value) for value in dimensions)
-            )
+            lines.append("📏 Size        " + " × ".join(_qty(value) for value in typed_dimensions))
     else:
         for label, value in zip(("Length", "Width", "Height"), dimensions):
             if isinstance(value, dict):
