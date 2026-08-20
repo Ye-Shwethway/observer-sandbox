@@ -189,7 +189,17 @@ def canonicalize_ai_item_fill(value: dict[str, Any]) -> dict[str, Any]:
             if isinstance(metrics, dict):
                 metrics = {key: metric for key, metric in metrics.items() if metric is not None}
                 modules["metrics"] = metrics or None
-            definition["modules"] = {key: item for key, item in modules.items() if item is not None}
+            modules = {key: item for key, item in modules.items() if item is not None}
+            definition["modules"] = modules
+            capabilities = definition.get("capabilities")
+            if isinstance(capabilities, list):
+                for module_name, capability in (
+                    ("nutrition", "eat"),
+                    ("container", "store"),
+                    ("resistance_training", "train"),
+                ):
+                    if module_name in modules and capability not in capabilities:
+                        capabilities.append(capability)
     instance = payload.get("instance")
     if isinstance(instance, dict) and instance.get("mode") == "unique":
         instance.pop("quantity", None)
