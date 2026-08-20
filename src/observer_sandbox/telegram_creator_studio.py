@@ -11,5 +11,24 @@ for _name in _base.__all__:
 __all__ = list(_base.__all__)
 
 
+def _sync_public_overrides() -> None:
+    # Keep the historical module-level patch/test contract intact even though
+    # the implementation is split behind a thin extension wrapper.
+    for name in (
+        "send_full_draft_document",
+        "manual_draft",
+        "ai_draft",
+        "reroll_draft",
+        "approve_draft",
+    ):
+        if name in globals():
+            setattr(_base, name, globals()[name])
+
+
+def studio_callback_view(conn, user_id: int, callback_data: str):
+    _sync_public_overrides()
+    return _base.studio_callback_view(conn, user_id, callback_data)
+
+
 def __getattr__(name: str):
     return getattr(_base, name)
