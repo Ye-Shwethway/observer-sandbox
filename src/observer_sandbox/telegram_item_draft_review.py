@@ -6,6 +6,8 @@ import re
 import urllib.request
 from typing import Any
 
+from .telegram_economy import format_money_minor
+
 
 def _fmt(value: Any) -> str:
     if value is None:
@@ -110,15 +112,29 @@ def _economics_lines(economic: dict[str, Any]) -> list[str]:
     treatment = str(economic.get("net_worth_treatment") or "")
     if classification == "economically_immaterial" and treatment == "excluded":
         return ["• Value tracking: Not included — no monetary value was supplied"]
-    lines = [f"• Classification: {classification.replace('_', ' ').title() or '—'}"]
+
+    lines = [f"• Value type: {classification.replace('_', ' ').title() or '—'}"]
     if treatment:
-        lines.append(f"• Net-worth treatment: {treatment.replace('_', ' ').title()}")
-    currency = economic.get("currency_code")
-    if currency:
-        lines.append(f"• Currency: {currency}")
-    for label, key in (("Market value", "market_value_minor"), ("Replacement value", "replacement_value_minor"), ("Unit value", "unit_value_minor")):
-        if economic.get(key) is not None:
-            lines.append(f"• {label} (minor units): {_fmt(economic.get(key))}")
+        lines.append(f"• Net worth: {treatment.replace('_', ' ').title()}")
+
+    currency = str(economic.get("currency_code") or "USD")
+    market = economic.get("market_value_minor")
+    replacement = economic.get("replacement_value_minor")
+    unit_value = economic.get("unit_value_minor")
+    unit_quantity = economic.get("unit_quantity")
+    unit_label = str(economic.get("unit_label") or "").strip()
+
+    if market is not None:
+        lines.append(f"• Market value: {format_money_minor(int(market), currency)}")
+    if replacement is not None:
+        lines.append(f"• Replacement value: {format_money_minor(int(replacement), currency)}")
+    if unit_value is not None:
+        rendered = format_money_minor(int(unit_value), currency)
+        if unit_quantity is not None and unit_label:
+            quantity = _fmt(unit_quantity)
+            suffix = unit_label if quantity == "1" else f"{quantity} {unit_label}"
+            rendered = f"{rendered} / {suffix}"
+        lines.append(f"• Unit value: {rendered}")
     return lines
 
 

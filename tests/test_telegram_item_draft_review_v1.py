@@ -8,7 +8,7 @@ from observer_sandbox.creator_studio_item_batch import ai_item_batch_draft
 from observer_sandbox.db import connect
 from observer_sandbox.runtime import initialize
 from observer_sandbox.telegram_creator_studio import draft_preview_view, studio_callback_view
-from observer_sandbox.telegram_item_draft_review import render_item_draft_text
+from observer_sandbox.telegram_item_draft_review import item_detail_view, render_item_draft_text
 
 
 def _callbacks(keyboard):
@@ -77,3 +77,75 @@ def test_item_batch_preview_exposes_detail_and_txt_review_actions(tmp_path, monk
         assert '"stored_in": "$camping_backpack"' in exported
         assert "Internal batch ref: camping_backpack" in exported
         assert "Creation Sandbox draft only" in exported
+
+
+def test_item_detail_formats_minor_unit_values_for_humans_but_export_stays_raw():
+    pouch = manual_item_template()
+    pouch["definition"].update({
+        "key": "first_aid_pouch",
+        "name": "Compact Camping First Aid Pouch",
+        "kind": "container",
+    })
+    pouch["economic_policy"] = {
+        "classification": "standalone_asset",
+        "currency_code": "USD",
+        "included_in_parent_ref": None,
+        "market_value_minor": 3000,
+        "net_worth_treatment": "independent",
+        "replacement_value_minor": 3500,
+        "unit_label": None,
+        "unit_quantity": None,
+        "unit_value_minor": None,
+        "valuation_method": "ai_estimate",
+    }
+    draft = {
+        "revision": 1,
+        "draft_mode": "ai_generated",
+        "proposal": {"properties": {"item_payload": pouch}},
+    }
+
+    detail, _ = item_detail_view(draft, 0)
+    assert "Value type: Standalone Asset" in detail
+    assert "Net worth: Independent" in detail
+    assert "Market value: $30.00" in detail
+    assert "Replacement value: $35.00" in detail
+    assert "minor units" not in detail
+    assert "Currency: USD" not in detail
+
+    _, exported = render_item_draft_text(draft)
+    assert '"market_value_minor": 3000' in exported
+    assert '"replacement_value_minor": 3500' in exported
+
+
+def test_item_detail_formats_consumable_unit_value_with_unit_basis():
+    bar = manual_item_template()
+    bar["definition"].update({
+        "key": "energy_bar",
+        "name": "Energy Bar",
+        "kind": "consumable",
+        "stackable": True,
+    })
+    bar["instance"] = {"mode": "stack", "quantity": 6, "unit": "bar"}
+    bar["economic_policy"] = {
+        "classification": "consumable_stock",
+        "currency_code": "USD",
+        "included_in_parent_ref": None,
+        "market_value_minor": None,
+        "net_worth_treatment": "derived_stock",
+        "replacement_value_minor": None,
+        "unit_label": "bar",
+        "unit_quantity": 1,
+        "unit_value_minor": 150,
+        "valuation_method": "ai_estimate",
+    }
+    draft = {
+        "revision": 1,
+        "draft_mode": "ai_generated",
+        "proposal": {"properties": {"item_payload": bar}},
+    }
+
+    detail, _ = item_detail_view(draft, 0)
+    assert "Value type: Consumable Stock" in detail
+    assert "Net worth: Derived Stock" in detail
+    assert "Unit value: $1.50 / bar" in detail
+    assert "minor units" not in detail
