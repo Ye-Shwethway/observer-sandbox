@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import json
 import os
+import re
 import urllib.request
 from typing import Any
 
@@ -12,12 +13,17 @@ def _fmt(value: Any) -> str:
     if isinstance(value, float):
         return f"{value:g}"
     if isinstance(value, bool):
-        return "yes" if value else "no"
+        return "Yes" if value else "No"
     if isinstance(value, list):
         return ", ".join(_fmt(item) for item in value) if value else "—"
     if isinstance(value, dict):
         return ", ".join(f"{key}={_fmt(item)}" for key, item in value.items()) if value else "—"
     return str(value)
+
+
+def _slug(value: str) -> str:
+    text = re.sub(r"[^a-z0-9]+", "-", str(value or "").lower()).strip("-")
+    return text or "item"
 
 
 def _entries(draft: dict[str, Any]) -> list[dict[str, Any]]:
@@ -31,6 +37,26 @@ def _entries(draft: dict[str, Any]) -> list[dict[str, Any]]:
     return []
 
 
+def _ref_names(entries: list[dict[str, Any]]) -> dict[str, str]:
+    names: dict[str, str] = {}
+    for entry in entries:
+        ref = str(entry.get("ref") or "").strip().lower()
+        payload = entry.get("payload") if isinstance(entry.get("payload"), dict) else {}
+        definition = payload.get("definition") if isinstance(payload.get("definition"), dict) else {}
+        if ref:
+            names[ref] = str(definition.get("name") or ref)
+    return names
+
+
+def _relation_display(value: Any, ref_names: dict[str, str]) -> str:
+    if not isinstance(value, str):
+        return _fmt(value)
+    token = value.strip()
+    if token.startswith("$"):
+        return ref_names.get(token[1:].lower(), token[1:])
+    return token
+
+
 def _quantity(value: Any) -> str:
     if not isinstance(value, dict):
         return _fmt(value)
@@ -40,20 +66,60 @@ def _quantity(value: Any) -> str:
 
 
 def _module_lines(modules: dict[str, Any]) -> list[str]:
+    labels = {
+        "physical": "Physical details",
+        "container": "Storage capacity",
+        "nutrition": "Nutrition",
+        "stack": "Quantity grouping",
+        "resistance_training": "Training resistance",
+    }
+    field_labels = {
+        "capacity_volume": "Capacity",
+        "canonical_unit": "Unit",
+        "initial_quantity": "Initial quantity",
+        "resistance_load": "Resistance load",
+        "basis_quantity": "Nutrition basis",
+        "energy_kcal": "Energy",
+        "protein_g": "Protein",
+        "carbohydrate_g": "Carbohydrate",
+        "fat_g": "Fat",
+    }
     lines: list[str] = []
     for module_name in sorted(modules):
         module = modules[module_name]
-        lines.append(f"• {module_name.replace('_', ' ').title()}")
+        lines.append(f"• {labels.get(module_name, module_name.replace('_', ' ').title())}")
         if isinstance(module, dict):
             for key, value in module.items():
                 if isinstance(value, dict) and "value" in value and "unit" in value:
                     rendered = _quantity(value)
                 else:
                     rendered = _fmt(value)
-                lines.append(f"  - {key.replace('_', ' ')}: {rendered}")
+                label = field_labels.get(key, key.replace("_", " ").title())
+                if key.endswith("_g") and rendered != "—":
+                    rendered = f"{rendered} g"
+                elif key == "energy_kcal" and rendered != "—":
+                    rendered = f"{rendered} kcal"
+                lines.append(f"  - {label}: {rendered}")
         else:
             lines.append(f"  - {_fmt(module)}")
-    return lines or ["• None"]
+    return lines or ["• None represented"]
+
+
+def _economics_lines(economic: dict[str, Any]) -> list[str]:
+    classification = str(economic.get("classification") or "")
+    treatment = str(economic.get("net_worth_treatment") or "")
+    if classification == "economically_immaterial" and treatment == "excluded":
+        return ["• Value tracking: Not included — no monetary value was supplied"]
+    lines = [f"• Classification: {classification.replace('_', ' ').title() or '—'}"]
+    if treatment:
+        lines.append(f"• Net-worth treatment: {treatment.replace('_', ' ').title()}")
+    currency = economic.get("currency_code")
+    if currency:
+        lines.append(f"• Currency: {currency}")
+    for label, key in (("Market value", "market_value_minor"), ("Replacement value", "replacement_value_minor"), ("Unit value", "unit_value_minor")):
+        if economic.get(key) is not None:
+            lines.append(f"• {label} (minor units): {_fmt(economic.get(key))}")
+    return lines
 
 
 def item_detail_view(draft: dict[str, Any], index: int) -> tuple[str, list[list[dict[str, str]]]]:
@@ -71,57 +137,64 @@ def item_detail_view(draft: dict[str, Any], index: int) -> tuple[str, list[list[
     modules = definition.get("modules") if isinstance(definition.get("modules"), dict) else {}
     capabilities = definition.get("capabilities") if isinstance(definition.get("capabilities"), list) else []
     tags = definition.get("tags") if isinstance(definition.get("tags"), list) else []
+    ref_names = _ref_names(entries)
+
+    mode = str(instance.get("mode") or "")
+    instance_label = "Individual item" if mode == "unique" else "Grouped quantity" if mode == "stack" else mode.replace("_", " ").title() or "—"
+    mobility = str(definition.get("mobility") or "").replace("_", " ").title() or "—"
 
     lines = [
         "📦 ITEM DRAFT PROFILE",
         "━━━━━━━━━━━━━━━━━━",
-        f"Item {index + 1}/{len(entries)} · ref: {entry.get('ref', '—')}",
+        f"Item {index + 1} of {len(entries)}",
         "",
         "IDENTITY",
         f"• Name: {definition.get('name', 'Unnamed')}",
-        f"• Definition key: {definition.get('key', '—')}",
-        f"• Kind: {str(definition.get('kind', '—')).replace('_', ' ').title()}",
-        f"• Mobility: {str(definition.get('mobility', '—')).title()}",
-        f"• Stackable: {_fmt(definition.get('stackable'))}",
+        f"• Type: {str(definition.get('kind', '—')).replace('_', ' ').title()}",
+        f"• Mobility: {mobility}",
         f"• Description: {definition.get('description', '—')}",
         "",
-        "INSTANCE",
-        f"• Mode: {instance.get('mode', '—')}",
-        f"• Quantity: {_fmt(instance.get('quantity'))}",
-        f"• Unit: {_fmt(instance.get('unit'))}",
-        "",
-        "CAPABILITIES & TAGS",
-        f"• Capabilities: {_fmt(capabilities)}",
-        f"• Tags: {_fmt(tags)}",
-        "",
-        "MODULES",
-        *_module_lines(modules),
-        "",
-        "ECONOMICS",
-        f"• Classification: {_fmt(economic.get('classification'))}",
-        f"• Net-worth treatment: {_fmt(economic.get('net_worth_treatment'))}",
-        f"• Currency: {_fmt(economic.get('currency_code'))}",
-        f"• Market value minor: {_fmt(economic.get('market_value_minor'))}",
-        f"• Replacement value minor: {_fmt(economic.get('replacement_value_minor'))}",
-        f"• Unit value minor: {_fmt(economic.get('unit_value_minor'))}",
-        f"• Unit quantity: {_fmt(economic.get('unit_quantity'))}",
-        f"• Unit label: {_fmt(economic.get('unit_label'))}",
-        f"• Valuation method: {_fmt(economic.get('valuation_method'))}",
-        "",
-        "REQUIREMENTS",
-        f"• Use: {_fmt(requirements.get('use'))}",
-        "",
-        "RELATIONSHIPS",
+        "QUANTITY",
+        f"• Form: {instance_label}",
     ]
-    active_relations = [(key, value) for key, value in relationships.items() if value is not None]
-    if active_relations:
-        lines.extend(f"• {key.replace('_', ' ')} → {_fmt(value)}" for key, value in active_relations)
-    else:
-        lines.append("• None")
+    if mode == "stack":
+        quantity = _fmt(instance.get("quantity"))
+        unit = _fmt(instance.get("unit"))
+        lines.append(f"• Quantity: {quantity} {unit}".rstrip())
     lines.extend([
         "",
-        "✅ Exact item-v1 validation passed in the current draft.",
-        "This is still Creation Sandbox draft state; approval has not occurred.",
+        "CAPABILITIES & TAGS",
+        f"• Capabilities: {_fmt([str(x).replace('_', ' ').title() for x in capabilities])}",
+        f"• Tags: {_fmt(tags)}",
+        "",
+        "PHYSICAL & FUNCTIONAL DETAILS",
+        *_module_lines(modules),
+        "",
+        "VALUE",
+        *_economics_lines(economic),
+    ])
+    if requirements.get("use") is not None:
+        lines.extend(["", "USE REQUIREMENTS", f"• {_fmt(requirements.get('use'))}"])
+
+    active_relations = [(key, value) for key, value in relationships.items() if value is not None]
+    if active_relations:
+        relation_labels = {
+            "stored_in": "Stored in",
+            "located_at": "Located at",
+            "owned_by": "Owned by",
+            "carried_by": "Carried by",
+            "equipped_by": "Equipped by",
+        }
+        lines.extend(["", "PLACEMENT & RELATIONSHIPS"])
+        lines.extend(
+            f"• {relation_labels.get(key, key.replace('_', ' ').title())}: {_relation_display(value, ref_names)}"
+            for key, value in active_relations
+        )
+
+    lines.extend([
+        "",
+        "✅ Item contract and current realism checks passed.",
+        "Review this draft before approving it into the Creation Sandbox.",
     ])
 
     keyboard: list[list[dict[str, str]]] = []
@@ -136,11 +209,23 @@ def item_detail_view(draft: dict[str, Any], index: int) -> tuple[str, list[list[
     return "\n".join(lines), keyboard
 
 
+def _export_filename(draft: dict[str, Any], entries: list[dict[str, Any]]) -> str:
+    revision = draft.get("revision", "—")
+    if not entries:
+        return f"creator-studio-item-draft-r{revision}.txt"
+    first_payload = entries[0].get("payload") if isinstance(entries[0].get("payload"), dict) else {}
+    first_definition = first_payload.get("definition") if isinstance(first_payload.get("definition"), dict) else {}
+    first_name = _slug(str(first_definition.get("name") or entries[0].get("ref") or "item"))
+    if len(entries) == 1:
+        return f"creator-studio-item-{first_name}-r{revision}.txt"
+    return f"creator-studio-item-batch-{first_name}-plus-{len(entries) - 1}-r{revision}.txt"
+
+
 def render_item_draft_text(draft: dict[str, Any]) -> tuple[str, str]:
     entries = _entries(draft)
     revision = draft.get("revision", "—")
     mode = "AI Draft" if draft.get("draft_mode") == "ai_generated" else "Manual"
-    filename = f"creator-studio-item-draft-r{revision}.txt"
+    filename = _export_filename(draft, entries)
     lines = [
         "CREATION SANDBOX ITEM DRAFT",
         "=" * 72,
@@ -156,7 +241,7 @@ def render_item_draft_text(draft: dict[str, Any]) -> tuple[str, str]:
             "",
             f"ITEM {index}: {definition.get('name', 'Unnamed')}",
             "-" * 72,
-            f"Batch ref: {entry.get('ref', '—')}",
+            f"Internal batch ref: {entry.get('ref', '—')}",
             json.dumps(payload, ensure_ascii=False, sort_keys=True, indent=2),
         ])
     lines.extend([
