@@ -1,6 +1,6 @@
 # Creator Creation Systems — Minimum Implementation Plan v1
 
-Status: **APPROVED IMPLEMENTATION PLAN — FRESH ITEM EDIT ACCEPTANCE ACTIVE**  
+Status: **APPROVED IMPLEMENTATION PLAN — ITEM GRADING COVERAGE EXPANSION ACTIVE**  
 Date: 2026-08-20
 
 ## Objective
@@ -11,50 +11,79 @@ Core rules:
 - **Create anywhere safely; canon nowhere automatically.**
 - **Schema-valid does not imply universe-compatible.**
 - **Created is not alive.** `runtime_ready != running`.
-- AI fills structured canonical forms; deterministic services validate and mutate.
+- AI fills/proposes structured facts; deterministic services validate, derive and mutate.
 - Real World and Creation Sandbox mutable state remain isolated.
+- Universal systems should expose expandable sockets instead of requiring one hard-coded implementation per entity family.
 
 ---
 
-## Current repository boundary
+## Current accepted Item boundary
 
-### PR #350 — Item Edit live-entry hardening
+### Fresh Item Edit
 
-Merged at `b0083c6155006ba7103878056bceecc95413e4a3`; CI #1189 passed.
+PR #358 merged at `9c93739655fc6981a8c5bfd31a7c83a4cce16f62`; CI #1194 passed.
 
-Item Edit preflights persisted Items before pause/session creation, restores pause/session state on entry-render failure, and surfaces bounded owner-facing error type/reason details.
+Creator subsequently live-confirmed fresh approved Item Edit works. The earlier `modules.physical.mass.kind` error was a validator idempotence bug: authoring `{value,unit}` normalized/persisted to `{kind,value,unit}` but was not reaccepted. Current validation accepts its own normalized representation only with the correct physical dimension and keeps arbitrary extras invalid.
 
-### PR #351 / #353 / #354 — Sandbox cleanup
+### Universal Grading Socket Architecture v1 + Item Coverage v1
 
-Atomic Character+Item cleanup and scoped Telegram cleanup controls are accepted. PR #354 fixed the actual captured `sw:list:item` callback-composition path; CI #1192 passed. Cleanup remains Sandbox-only, atomic, canonical-fingerprint guarded, and excludes Locations in this slice.
+PR **#360** merged at:
+`9155a94bc75b800d4a10f2a39993647c78d11d9c`
 
-### PR #356 — Item draft review value presentation
+CI **#1195** passed targeted regression + CLI smoke.
 
-Merged at `4e27e2045c6fee198e97d7c0b95c9eee18789a30`; CI #1193 passed.
+Canonical contract:
+`docs/UNIVERSAL_GRADING_SOCKET_ARCHITECTURE_V1.md`.
 
-Creator-facing Telegram review now formats money as human currency through the shared formatter, while `.txt` export retains raw canonical `*_minor` fields.
+Core invariant:
+`authoritative raw state + registered grading sockets + universe policy -> derived GradePlan -> deterministic GradeProfile`.
 
-### PR #358 — fresh Item Edit physical-quantity normalization
+Implemented extension points:
+- evaluator registry (`EvaluatorSpec`);
+- dimension registry (`DimensionSpec`);
+- reference-profile registry (`ReferenceProfile`);
+- universe grading policy (`UniverseGradingPolicy`);
+- rebuildable `GradePlan`;
+- deterministic/read-time `GradeProfile` resolver.
 
-Merged at `9c93739655fc6981a8c5bfd31a7c83a4cce16f62`; CI **#1194** passed targeted regression + CLI smoke.
+V1 Item adapter/UI:
+- full Creator draft payloads normalize through the strict current Item validator before grading;
+- approved Items use their normalized persisted facts directly;
+- current `resistance_load` dimension reuses `item-resistance-load-v1`;
+- 55 lb-equivalent resistance remains S;
+- draft review and approved Item detail can render `Resistance Load: S · Expert`;
+- ordinary Items with no registered applicable dimension show an explicit ungraded state;
+- no fabricated overall Item grade;
+- raw `.txt` export remains technical authoring data and does not gain GradePlan authority;
+- no DB migration or new persisted GradePlan/grade authority.
 
-Fresh current-schema creation disproved the earlier assumption that `modules.physical.mass.kind` was only obsolete legacy data.
+The default realistic-universe policy is explicit/fail-closed. Future supernatural dimensions are not automatically accepted simply because they are registered.
 
-Actual current flow before the fix:
-1. authoring schema supplies a physical quantity as `{value, unit}`;
-2. `validate_item_payload()` normalizes it using `PhysicalQuantity.as_dict()` to `{kind, value, unit}`;
-3. current Item materialization persists that normalized representation;
-4. Item Edit reconstructs the persisted Item and re-runs `validate_item_payload()`;
-5. `_quantity()` previously accepted only `{value, unit}`, so it rejected the validator's own persisted normalized output as `unknown field(s): ['kind']`.
+PR #360 live Telegram rendering remains separately evidence-gated until deployment/Creator verification.
 
-PR #358 establishes bounded validator idempotence:
-- `{value, unit}` authoring shape remains valid;
-- `{kind, value, unit}` normalized shape is valid only if `kind` exactly matches the expected dimension (`mass`, `length`, `volume`, etc.);
-- arbitrary additional fields remain invalid;
-- mismatched `kind` remains invalid;
-- regression covers validation/revalidation and fresh materialization followed by real Item Edit entry.
+---
 
-This is not broad legacy canonicalization or relaxed Item semantics. It recognizes the exact representation generated by the current validator itself.
+## Universal grading contract
+
+Canonical vocabulary:
+`E < D < C < B < A < S < SS < SSS < X < XX`.
+
+Rules:
+- shared vocabulary, domain-specific raw meaning/evaluators;
+- grades derive from authoritative raw facts;
+- arbitrary numbers are not automatically gradeable;
+- no evidence/reference => ungraded rather than invented precision;
+- overall grades require explicit composite semantics;
+- universe policy controls allowed dimensions/evaluators/reference profiles/ceilings;
+- **Item Grade describes the item. Requirement Grade describes the interaction.**
+- no automatic Item-grade -> Character-requirement mapping;
+- Location grade is separate from access authorization;
+- AI may later propose applicability mappings, but all ids must resolve through registries/policy/evidence and final grade remains deterministic.
+
+Normal extension pattern:
+`EvaluatorSpec + DimensionSpec + optional ReferenceProfile + UniverseGradingPolicy allowance`.
+
+Do not add central Item-family branching such as backpack/flashlight/sword-specific grading code.
 
 ---
 
@@ -68,8 +97,7 @@ This is not broad legacy canonicalization or relaxed Item semantics. It recogniz
 - I4 Creator Studio proposal lifecycle;
 - I4.1 Sandbox Character configuration UX;
 - I5/I5.1 Sandbox Observer foundations;
-- Character Manual/AI parity;
-- Sandbox Character profile/edit/grade-target parity;
+- Character Manual/AI + profile/edit/grade-target parity;
 - explicit Real/Sandbox runtime controls;
 - I5.2 reuse map;
 - I5.3 universal quantity/measurement;
@@ -78,69 +106,45 @@ This is not broad legacy canonicalization or relaxed Item semantics. It recogniz
 - I5.6 Universal Item Schema v1;
 - I5.7 single Sandbox Item materialization;
 - I5.8 atomic heterogeneous Item Batch;
-- I5.9 Item/container operations and `update_sandbox_item()`;
+- I5.9 Item/container operations;
 - I5.10 Universal Location Schema v1;
-- Item Creator Studio Single/Batch UX and current full-schema AI fill;
-- Item review/export, realism validation, bounded self-correction;
+- Item Creator Studio Single/Batch AI/manual flows;
+- Item realism/self-correction, human review + raw export;
 - approved Item detail/economic presentation;
-- Sandbox Item field edit/save parity and safe entry diagnostics;
-- atomic Character+Item Sandbox cleanup with correct live Item callback composition;
-- human-friendly Item draft value presentation;
-- re-validatable current physical-quantity normalization for fresh Item Edit.
+- Sandbox Item edit/save parity + diagnostics;
+- atomic Character+Item Sandbox cleanup;
+- human-friendly Item money display;
+- Universal Grading Socket Architecture v1 + first Item socket coverage.
 
----
-
-## Universal Creator AI contract
-
-`Creator intent -> complete canonical type schema/form -> AI fills form -> narrow explicitly-authorized canonicalization -> deterministic validation -> preview -> explicit approval -> Sandbox-only materialization`.
-
-AI is not schema designer, validator bypass or direct mutation authority. Unknown nullable numeric facts remain null instead of fabricated precision.
-
-Validation/normalization rule: deterministic validators must be able to consume the exact normalized representation they themselves persist, or persistence must deliberately store the authoring representation instead. A validator must not reject its own current normalized output on re-entry.
-
-Presentation rule: Creator-facing review translates canonical representation into human-readable labels/units without changing underlying canonical values. Technical exports may expose canonical/raw fields for audit/debugging.
-
----
-
-## Locked Item ontology
-
+Locked Item ontology:
 `Item Definition -> concrete unique instance OR stack -> placement/storage -> ownership/carriage/equipment -> runtime state/history`.
 
-Relations:
-- `contains` = structural/static containment;
-- `located_at` = dynamic physical presence;
-- `stored_in` = storage/container;
-- `owned_by` = ownership;
-- `carried_by` = carriage;
-- `equipped_by` = equipped state.
-
-Ownership does not follow from physical presence/storage. Sandbox-only mutable state must not mutate Real World state.
+Relations retain distinct `contains`, `located_at`, `stored_in`, `owned_by`, `carried_by`, `equipped_by` semantics. Ownership never follows automatically from location/storage.
 
 ---
 
-# CURRENT ACCEPTANCE SLICE
+# CURRENT DEVELOPMENT FAMILY
 
-## Deployed fresh current-schema Item -> live Edit/Save proof
+## Item Grading Coverage expansion
 
-The already-approved fresh batch is still the correct test data. It does **not** need to be deleted/recreated solely because physical quantities contain normalized `kind`.
+V1 proves the scalable socket architecture but does **not** claim exhaustive grading for all possible Items. Only evidence-backed registered dimensions receive grades.
 
-Required live sequence:
-1. Confirm production/runtime checkpoint includes PR #358 or later.
-2. Reopen one of the already-approved fresh current-schema Items.
-3. Enter `✏️ Edit Item`; confirm the prior `modules.physical.mass.kind` error no longer appears.
-4. Exercise field input, Preview, Apply/Save, and Done Editing.
-5. Verify Sandbox pre-edit pause state restores correctly.
-6. Verify Real World/canonical state remains unchanged.
+Next bounded work:
+1. verify PR #360 grading display live when deployed;
+2. inventory current Item schema/modules for additional raw properties that already support defensible grading semantics;
+3. add reusable evaluator/dimension/reference registrations only where their meaning is grounded;
+4. if generation-time semantic classification is useful, add a strict structured AI GradePlan applicability proposal;
+5. AI-proposed ids must already exist in the registries and be permitted by the active universe policy;
+6. deterministic evaluator remains final grade authority;
+7. uncovered Items remain valid and explicitly ungraded;
+8. do not invent durability/quality/efficiency/category baselines without underlying raw facts and evaluator/reference authority;
+9. overall Item grade remains deferred until a defensible explicit composite contract exists, including critical-dimension and missing-evidence behavior.
 
-Failure policy:
-- surface exact error/reason;
-- repair the concrete current-contract/runtime defect;
-- preserve strict unrelated Item validation;
-- distinguish current normalized representation from genuinely obsolete legacy fields before designing compatibility behavior.
+This work should make future dimensions easy to add without rewriting Item creation/materialization/UI navigation core.
 
 ---
 
-# NEXT AFTER FRESH ITEM EDIT ACCEPTANCE
+# NEXT AFTER Item Grading Coverage checkpoint
 
 ## I5.11 — Sandbox Location Creation + Embedded Contents
 
@@ -165,21 +169,22 @@ Then I5.12 Location Contents Operations -> I5.13 Character ↔ Location Binding 
 
 ## I6 / Character locks
 
-Transmigration remains inactive/planning-only. Nothing transmigrates automatically. Adrian Vale remains Sandbox-only. Second Real World Character gate remains closed. Existing Character parity contracts stay locked.
+Transmigration remains inactive/planning-only. Nothing transmigrates automatically. Adrian Vale remains Sandbox-only. Second Real World Character gate remains closed. Existing Character parity contracts stay locked. Full Sandbox autonomous ticking remains separately unauthorized.
 
 ---
 
 ## Test / release policy
 
 - smallest relevant tests while iterating;
-- persistence/re-entry bugs require regression across the actual materialization/read/edit boundary;
-- Creator-facing UI should be human-readable while raw technical exports preserve canonical representation where useful;
+- socket acceptance must prove new registrations can be added without resolver-core edits;
+- universe-policy tests must prove unauthorized dimensions do not auto-enter a universe;
+- UI is human-readable; technical export may preserve raw canonical/authoring representation;
 - PR CI is repository acceptance gate;
-- deploy/live behavior verified separately from merge;
-- continuity docs updated after material work and persistent branches exact-synced after acceptance.
+- deploy/live behavior is verified separately from merge;
+- continuity docs update after material work and persistent branches exact-sync after acceptance.
 
 ---
 
 ## Exact resume point
 
-**PR #358 merged at `9c93739655fc6981a8c5bfd31a7c83a4cce16f62` after CI #1194 passed. Fresh Item Edit failed because current validation persisted normalized physical quantities as `{kind,value,unit}` but the same validator previously re-accepted only authoring `{value,unit}`. The bounded idempotence fix accepts its own normalized shape only with the correct dimension and continues rejecting arbitrary extras. Deploy/verify PR #358, reopen the existing approved fresh batch, finish Edit/Preview/Apply/Done acceptance, then proceed to I5.11.**
+**Creator live-confirmed fresh Item Edit works after PR #358. PR #360 merged at `9155a94bc75b800d4a10f2a39993647c78d11d9c` with CI #1195 green. Universal Grading Socket v1 now provides evaluator/dimension/reference/universe-policy sockets plus rebuildable GradePlan and deterministic GradeProfile; current Item resistance-load grading is registry-driven and uncovered Items remain explicitly ungraded. Continue evidence-backed Item Grading Coverage through socket registrations and, where useful, registry/policy-constrained AI applicability planning. Do not hard-code Item families or fabricate reference scales. Resume I5.11 after the grading-coverage checkpoint.**
