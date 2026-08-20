@@ -25,7 +25,7 @@ def test_real_body_grade_d_changes_composition_and_definition_coherently(tmp_pat
         coherence = proposal["physique_coherence"]
         assert coherence["new_abdominal_definition"] == "limited definition"
         assert coherence["genetic_abdominal_anatomy"] == "preserved"
-        assert any(change["field_key"] == "body.abdominal_definition" for change in proposal["changes"])
+        assert any(metric["field_key"] == "body.abdominal_definition" and metric["value"] == "limited definition" for metric in proposal["new_metrics"])
 
 
 def test_sandbox_body_grade_uses_same_coherence_without_real_writes(tmp_path):
@@ -57,7 +57,6 @@ def test_sandbox_body_grade_uses_same_coherence_without_real_writes(tmp_path):
             "body.forearms_in",
             "body.thighs_in",
             "body.calves_in",
-            "body.abdominal_definition",
             "genetics.body_fat_floor_pct",
         )
         values = {}
@@ -68,6 +67,7 @@ def test_sandbox_body_grade_uses_same_coherence_without_real_writes(tmp_path):
             ).fetchone()
             assert row is not None, key
             values[key] = json.loads(row["value_json"])
+        values["body.abdominal_definition"] = "visible four-pack"
         set_sandbox_profile_values(conn, "sbx_coherence", values, authority="creator", source="test")
 
         real_before = tuple(
@@ -79,7 +79,9 @@ def test_sandbox_body_grade_uses_same_coherence_without_real_writes(tmp_path):
         proposal = preview_sandbox_body_grade_target(conn, "sbx_coherence", "D", mode="preserve_shape")
         assert proposal["new_aggregate"]["grade"] == "D"
         assert _change(proposal, "body.body_fat_pct")["new_value"] > _change(proposal, "body.body_fat_pct")["old_value"]
-        assert proposal["physique_coherence"]["new_abdominal_definition"] == "limited definition"
+        definition = _change(proposal, "body.abdominal_definition")
+        assert definition["old_value"] == "visible four-pack"
+        assert definition["new_value"] == "limited definition"
         assert proposal["physique_coherence"]["genetic_abdominal_anatomy"] == "preserved"
         real_after = tuple(
             tuple(row)
