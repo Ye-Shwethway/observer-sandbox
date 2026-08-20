@@ -5,366 +5,246 @@ Roadmap synchronized: **2026-08-20**
 
 ## Operating principles
 
-- Current Creator instruction, canonical repo contracts/config/schema, verified runtime/DB and current CI/deploy evidence outrank remembered chat context.
+- Current Creator instruction, live repo contracts/config/schema, verified runtime/DB and current CI/deploy evidence outrank remembered chat context.
 - AI proposes structured facts; deterministic contracts validate, derive and mutate.
 - Telegram is observer/control, never simulation authority.
-- Creator-approved state outranks ordinary seed/default refresh.
 - **Create anywhere safely; canon nowhere automatically.**
 - **Schema-valid does not imply universe-compatible.**
-- **Created is not alive.** Creation, runtime readiness and runtime execution are separate boundaries.
+- **Created is not alive.**
 - Real World and Creation Sandbox mutable state remain isolated.
-- Reuse established Real World semantics through adapters instead of creating Sandbox-only duplicate ontologies.
+- Reuse established Real World semantics through adapters instead of cloning ontologies.
 - Grades are derived interpretation, not persisted competing truth.
-- Item grade, actor interaction requirement, Location access and Location operating state are distinct concepts.
+- Item grade, actor requirement, Location access and Location operating state remain distinct.
+- `runtime_ready != running`.
 
 ---
 
 ## Current repository checkpoint
 
-Latest merged implementation checkpoint:
+Latest merged implementation:
 
-### PR #326 — I5.5 Universal Requirement & Access Foundation
+### PR #332 — I5.10 Universal Location Schema v1
 
-Merge:
-`2372a3a32f3b400a029317174fcf7260fee7f1f3`
+Merge: `d670ac8e7a1ee3beaa6001011d8b04383c39533c`  
+Final head: `aaf17efb4e142a5b3691bbd1eba1c9502c39143b`
 
 Evidence:
-- CI #1158 — **SUCCESS**;
-- targeted 2 test files;
-- **22 passed**;
-- CLI init/status — **SUCCESS**;
-- fresh DB healthy, schema version 21;
-- no DB migration;
-- no canonical world mutation.
+- CI #1164 SUCCESS;
+- **126 passed / 22 selected files**;
+- CLI init/status green;
+- fresh DB healthy;
+- schema 21.
 
-I5.5 added:
-- strict typed requirement evaluation;
-- explicit `all` / `any` composition;
-- minimum-grade/raw-value/skill/item/equipment/ownership/residency/authorization/state predicates;
-- separate Location access-policy evaluation;
-- separate operating-state composition;
-- structured fail-closed unmet-requirement evidence.
-
-Access modes currently provided by the foundation contract:
-- `public`;
-- `owner_or_resident`;
-- `authorized`;
-- `restricted`;
-- requirement-based.
-
-Operating state remains separate:
-- `open`;
-- `closed`;
-- `locked`;
-- `blocked`.
+`main` and `test` synchronized to this merge before continuity work.
 
 ---
 
-## Newly completed Item/Location foundation chain
+## Creator Creation foundation status
 
-### I5.2 — Creation Contract Audit & Reuse Map — COMPLETE
+### I5.2 — Reuse Map — COMPLETE
 
-Canonical contract:
-`docs/CREATION_CONTRACT_REUSE_MAP_V1.md`.
+`docs/CREATION_CONTRACT_REUSE_MAP_V1.md`
 
-Locked reuse boundaries:
-- generic creation proposal envelope remains reusable;
-- strict type-specific validators sit under that envelope;
-- Creation Sandbox lifecycle/isolation remains reusable;
-- universal Item definition / concrete instance or stack / storage / ownership remain distinct;
-- existing inventory, valuation, grading and spatial semantics are reused rather than cloned;
-- Sandbox `located_in` is prototype compatibility semantics and must later reconcile to canonical dynamic `located_at` through a Sandbox adapter.
+Keep generic proposal/lifecycle; add exact type validators/adapters. Preserve Item definition/instance/stack/relation/economic separation and world relation meanings.
 
-### I5.3 — Universal Quantity & Measurement Contract — COMPLETE
+### I5.3 — Quantity / Measurement — COMPLETE
 
-PR #324 merge:
-`a4abcbbcb932711bcf164d20bb977314afad5550`
+PR #324 `a4abcbbcb932711bcf164d20bb977314afad5550`; CI #1155, 22 passed.
 
-Evidence:
-- CI #1155 — **SUCCESS**;
-- targeted **22 passed**;
-- CLI init/status green;
-- schema 21 healthy.
+Normalized SI truth for mass/length/area/volume; Imperial-default Creator display; display conversion does not mutate truth.
 
-Canonical contract:
-`docs/UNIVERSAL_QUANTITY_MEASUREMENT_CONTRACT_V1.md`.
+### I5.4 — Cross-Domain Grading — COMPLETE
 
-Implementation:
-`src/observer_sandbox/physical_quantity.py`.
+PR #325 `980a752160a48144ef91bf800c4f4ab8fc5bc98e`; CI #1157, 189 passed.
 
-Rules:
-- normalized presentation-independent physical truth;
-- mass -> kg, length -> m, area -> m², volume -> m³ internally;
-- deterministic conversion;
-- Imperial default Creator presentation (`lb`, `in`, `ft²`, US gal);
-- Metric display supported without state mutation;
-- existing Character body storage and inventory stack persistence remain unchanged.
-
-### I5.4 — Universal Cross-Domain Grade Contract — COMPLETE
-
-PR #325 merge:
-`980a752160a48144ef91bf800c4f4ab8fc5bc98e`
-
-Evidence:
-- CI #1157 — **SUCCESS**;
-- targeted **189 passed**;
-- existing Character/Profile grading regressions green;
-- CLI init/status green;
-- schema 21 healthy.
-
-Canonical contract:
-`docs/UNIVERSAL_CROSS_DOMAIN_GRADING_CONTRACT_V1.md`.
-
-Implementation extends:
-`src/observer_sandbox/grading.py`.
-
-Locked vocabulary:
+Grade order:
 `E < D < C < B < A < S < SS < SSS < X < XX`.
 
-New foundation includes:
-- deterministic grade ordering/comparison;
-- scheme domain/dimension metadata;
-- optional read-time multi-dimension GradeProfile;
-- explicit composite-only overall grade;
-- Item `resistance_load` exemplar derived from normalized physical mass;
-- Location completeness exemplar reusing existing L0-L4 spatial completeness contract.
+Character schemes remain compatible. Item resistance load and Location completeness are explicit separate schemes.
 
-Important distinction:
-- a 55 lb dumbbell may derive S **Item resistance-load grade**;
-- that does not imply S Character Strength to use it;
-- Location completeness grade does not grant access.
+### I5.5 — Requirements / Access — COMPLETE
 
-### I5.5 — Universal Requirement & Access Contract — COMPLETE
+PR #326 `2372a3a32f3b400a029317174fcf7260fee7f1f3`; CI #1158, 22 passed.
 
-Canonical contract:
-`docs/UNIVERSAL_REQUIREMENT_ACCESS_CONTRACT_V1.md`.
+Typed requirements + nested all/any. Location access policy remains separate from operating state.
 
-Implementation:
-`src/observer_sandbox/requirements.py`.
+### I5.6 — Universal Item Schema — COMPLETE
 
-Core separation:
+PR #328 `5820aad0f4abf5efb4b352071cbb67ee8056071b`; CI #1159, 74 passed / 11 files.
 
-`represented state -> derived grade`  
-`interaction -> explicit actor/item/state requirement`  
-`Location -> explicit access policy`  
-`Location current state -> operating/open-state check`.
+Strict Item core + bounded modules: physical, stack, nutrition, container, resistance training. Unknown schema surface fails closed.
 
-No automatic conversion from Item grade to actor requirement and no automatic conversion from Location grade to authorization.
+### I5.7 — Single Sandbox Item Creation — COMPLETE
+
+PR #329 `74d83bc6d50a61a76becb41bc53d6cc65b354257`; CI #1160, 89 passed / 17 files.
+
+Atomic Sandbox Item definition/instance/economic/relation materialization. Canonical state untouched.
+
+### I5.8 — Heterogeneous Item Batch — COMPLETE
+
+PR #330 `716b56e64fa106f633c13c55de9211a7a67e5c8b`; CI #1161, 88 passed / 15 files.
+
+Single path = batch size 1. Write-free preview, forward `$ref` storage, cycle/dependency validation, whole-batch transaction.
+
+### I5.9 — Item / Container Operations — COMPLETE
+
+PR #331 `d4b60e5fdd18706cbd60da8cdde556226c826efe`; CI #1162, 99 passed / 18 files.
+
+Browse/edit/move/store/own/carry/equip/quantity/archive/delete. Shared definitions protected. Incoming dependencies require explicit detach. Sandbox reset clears shared Item definitions too.
+
+### I5.10 — Universal Location Schema — COMPLETE
+
+PR #332 `d670ac8e7a1ee3beaa6001011d8b04383c39533c`; CI #1164, 126 passed / 22 files.
+
+Strict spatial-container schema:
+- identity/kind;
+- parent/exposure;
+- optional normalized extent;
+- access + separate operating state;
+- explicit interfaces/topology;
+- facilities/resources/capabilities;
+- minimal represented environment;
+- optional economic policy;
+- provenance;
+- derived L0-L4 completeness/grade.
+
+Unknown precision stays unknown. Structural parentage never implies traversal.
 
 ---
 
-## Current active dependency chain
+## Locked ontology
+
+### Item
+
+`Definition -> unique instance OR stack -> physical placement/storage -> ownership/carriage/equipment -> runtime state/history`
+
+### Relations
+
+- `contains` — structural/static spatial containment;
+- `located_at` — dynamic physical presence;
+- `stored_in` — inventory/container storage;
+- `owned_by` — ownership;
+- `carried_by` — carriage;
+- `equipped_by` — equipped state.
+
+Do not infer ownership from presence/storage. Do not use `contains` for ordinary movable inventory.
+
+### Grade / access
+
+`Item Grade != actor Requirement != Location Access != Location operating state`.
+
+### Sandbox
+
+All Creator Item/Location mutable state must remain Sandbox-owned. Continue zero-canonical-mutation acceptance with `canonical_state_fingerprint()`.
+
+---
+
+## Active dependency chain
 
 Completed:
 
-`I5.2 reuse audit -> I5.3 quantity/measurement -> I5.4 cross-domain grading -> I5.5 requirements/access`
+`I5.2 reuse -> I5.3 quantity -> I5.4 grading -> I5.5 requirements/access -> I5.6 Item schema -> I5.7 single Item -> I5.8 batch -> I5.9 Item operations -> I5.10 Location schema`
 
 Next:
 
-`I5.6 strict Item schema -> I5.7 single Item creation -> I5.8 batch Item creation -> I5.9 Sandbox Item/container operations -> I5.10 strict Location schema -> I5.11 Location + embedded contents -> I5.12 contents operations -> I5.13 Character/Location binding -> I5.14 runtime affordances -> I5.15 vertical acceptance`.
+`I5.11 Location creation + embedded contents -> I5.12 contents operations -> I5.13 Character/Location binding/readiness -> I5.14 runtime affordances -> I5.15 vertical acceptance`.
 
 ---
 
-## I5.6 — Universal Item Schema v1 — NEXT
+## I5.11 — Sandbox Location Creation + Embedded Contents — NEXT
 
-Goal: define the exact typed Item contract consumed identically by Manual and AI creation.
+### Objective
 
-The schema must preserve the existing universal Item architecture:
+Materialize one strict I5.10 Location into isolated Sandbox state, optionally with typed Item contents, without creating a parallel Item model.
 
-`universal definition -> concrete unique instance OR stack -> physical placement/storage -> ownership -> capabilities/effects -> economic policy`.
+### Empty Location path
 
-Minimum design requirements:
-- strict exact registered core fields;
-- strict conditional modules selected by Item kind/capabilities;
-- no arbitrary AI-created keys;
-- unique/non-stackable versus stackable semantics explicit;
-- normalized physical quantities from I5.3;
-- gradeable dimensions reference registered I5.4 schemes only;
-- action/use requirements use I5.5, never copied from Item grade;
-- economic value policy reuses existing classification/treatment semantics;
-- storage/current-location/ownership remain relation facts, not definition identity;
-- Sandbox staging remains isolated from canonical `entity_definitions`, `entities`, `inventory_stacks`, `relations`, value tables and net-worth state.
+`Location payload -> I5.10 validation -> relation/topology/economic validation -> preview -> atomic Sandbox materialization`.
 
-Representative categories should be modeled as strict modules rather than separate incompatible systems, including:
-- ordinary movable object;
-- fixed fixture;
-- training/equipment object;
-- consumable/resource stock;
-- container object;
-- tool/electronic/medical or other capability-driven variants when represented.
+### Furnished/populated Location path
 
-Do not implement Item creation UI before the Item schema/validator is deterministic.
+`Location payload + contents manifest -> I5.10 validation + I5.6/I5.8 Item validation -> whole graph preview -> atomic apply`.
 
----
+### Required semantics
 
-## Item creation direction
+- active same-Sandbox parent when `parent_ref` is resolved;
+- structural parent graph acyclic;
+- parent uses structural `contains`, not `located_at`;
+- explicit interface destinations validate active same-Sandbox Locations when resolved;
+- Location access/economic/topology state stored only in Sandbox-owned persistence;
+- embedded unique/movable Items use `located_at` to the Location unless their exact manifest says `stored_in` another typed container;
+- fixed structural fixtures may use structural containment only when the composition contract explicitly marks them structural;
+- Item definitions/instances/economics reuse I5.6-I5.9 services/storage;
+- validate the complete graph before Item/Location writes;
+- whole Location+contents apply succeeds or fails atomically;
+- no automatic `runtime_ready` and no autonomous execution.
 
-### I5.7 — Single Item Creation
+Do not allow Location generation to invent an arbitrary unvalidated `contents` properties bag.
 
-One Item is a batch of one at the service boundary.
+### Acceptance target
 
-Manual and AI paths must converge on one exact Item validator and one Sandbox apply boundary.
-
-### I5.8 — Batch Item Creation
-
-Batch may be heterogeneous but every member remains an exact Item proposal.
-
-Required behavior:
-- validate all members;
-- resolve batch-internal references;
-- preview complete graph;
-- approval boundary;
-- atomic apply/rollback;
-- no partial activation if any member fails.
-
-### I5.9 — Sandbox Item / Container Operations
-
-Provide generic inspect/edit/move/store/own/equip/quantity/archive/delete semantics in Sandbox-owned state.
-
-Do not use structural `contains` for ordinary mutable inventory storage.
+Prove:
+- empty strict Location;
+- furnished Location with unique Item + stack/container relationship;
+- parent and interface target validation;
+- parent-cycle failure;
+- invalid embedded Item means zero new Location/Item graph;
+- economic/access/topology data remain Sandbox-only;
+- canonical fingerprint unchanged.
 
 ---
 
-## Location creation direction
+## I5.12 — Location Contents Operations
 
-Canonical spatial definition remains:
-
-> **Location = an identifiable spatial container with extent, contents, boundary/interface semantics, local state and explicit relationships to surrounding space.**
-
-### I5.10 — Universal Location Schema v1
-
-Replace the current name-centric arbitrary-properties Creator Location prototype with a strict spatial-container contract.
-
-Must preserve:
-- stable identity;
-- kind/classification;
-- one canonical structural parent where applicable;
-- extent/exposure where known;
-- boundaries/interfaces/topology;
-- access and operating state;
-- facilities/capabilities/resources;
-- local environment where represented;
-- economic/value policy;
-- provenance;
-- unknown precision remains unknown.
-
-### I5.11 — Location Creation + Embedded Contents
-
-A Location may be created empty or with a typed contents manifest.
-
-Embedded new Items must invoke the same I5.6/I5.8 Item contracts; Location generation must not invent a parallel contents schema.
-
-### I5.12 — Location Contents Operations
-
-Support:
-- add existing Item;
-- create Item;
-- create Item batch;
-- remove/move Item;
-- add child Location.
-
-Relation semantics remain distinct:
-- `contains` structural/static containment;
-- `located_at` dynamic physical presence;
-- `stored_in` inventory storage;
-- `owned_by` ownership;
-- `carried_by` carriage;
-- `equipped_by` equipped state.
+Support add existing Item, create Item, create Item batch, move/remove Item and create child Location. Preserve relation distinctions and explicit dependency policies.
 
 ---
 
-## Runtime closure direction
+## I5.13 — Character ↔ Location Binding & Runtime Readiness
 
-### I5.13 — Character ↔ Location Binding & Runtime Readiness
+Reconcile legacy Sandbox Character `located_in` toward canonical `located_at` through Sandbox-owned adapters/persistence.
 
-Reconcile Sandbox prototype `located_in` toward the canonical `located_at` semantic through Sandbox-owned persistence/adapters.
-
-A Character must not be considered meaningfully runnable merely because a Location name exists.
-
-Target minimum:
-`active Character + usable active Location + runtime options + cognition AI binding + configured Sandbox clock -> runtime_ready`.
-
-### I5.14 — Item / Location Runtime Affordance Bridge
-
-Location labels alone do not grant executable actions.
-
-Deterministic options should derive from represented:
-- fixtures/equipment;
-- Item capabilities;
-- resources;
-- environment/terrain;
-- Location capabilities;
-- explicit requirements/access.
-
-### I5.15 — Sandbox Vertical Acceptance
-
-Prove one complete isolated vertical:
-- strict Character;
-- strict usable Location;
-- typed Items/contents;
-- correct relations;
-- explicit economic policies;
-- Character binding;
-- deterministic legal options/readiness;
-- zero canonical mutation.
-
-Full autonomous Sandbox ticking remains separate unless explicitly authorized.
+A Location name alone is insufficient. Target readiness should require an active **usable** represented place, conceptually L3+, plus explicit AI binding/runtime dependencies unless implementation evidence requires a narrower rule.
 
 ---
 
-## Existing Creator Character checkpoint
+## I5.14 — Runtime Affordance Bridge
 
-Character creation remains the strictness exemplar.
-
-Current established behavior includes:
-- exact AI creation-owned profile schema;
-- sparse canonical skills;
-- registered data types authoritative;
-- exact Manual/AI field-set parity;
-- manual section editing remains in context;
-- accepted input prompt cleanup;
-- Sandbox Character profile browsing/editing/grade-target parity;
-- Real/Sandbox runtime controls isolated;
-- scoped Telegram command menus auto-published from final role-aware help contract.
-
-Do not loosen Character exactness while adding Item/Location schemas.
+Executable options derive from machine-readable Item/fixture capabilities, resources, environment, access and explicit requirements. Location labels and LLM plausibility do not create actions.
 
 ---
 
-## Staging & transmigration locks
+## I5.15 — Vertical Acceptance
 
-Lifecycle direction remains:
+Prove a complete isolated Sandbox vertical:
+- exact Character;
+- exact usable Location;
+- typed contents;
+- correct relations/economics;
+- binding/readiness;
+- deterministic legal options;
+- canonical fingerprint unchanged.
 
-`Draft -> Sandbox Approved -> Sandbox Active -> Tested/Revised -> Ready for Transmigration -> Canonical Approved -> Canonical Active`.
-
-Nothing transmigrates automatically.
-
-Supernatural/impossible systems may be Sandbox-valid but incompatible with the current realistic Real World and valid in a future universe profile.
-
-I6 remains planning/validation only when resumed unless the Creator explicitly changes scope.
-
-Adrian Vale remains Sandbox-only and must not be transmigrated as a side effect of Item/Location work.
-
----
-
-## Second-character gate
-
-No second real production Character may be activated/transmigrated before the established gates remain satisfied, including MIND-F2..F7, relationship adaptation, foundation review and explicit Creator approval.
-
-Sandbox Characters do not violate this gate.
+Full Sandbox autonomous ticking remains separately unauthorized.
 
 ---
 
-## Runtime / production evidence boundary
+## Transmigration / Character locks
 
-Repository and PR-CI evidence is verified through PR #326.
+Nothing transmigrates automatically. I6 remains planning/validation only unless Creator expands scope.
 
-Source changes in I5.3-I5.5 are foundation code, but this roadmap does **not** infer production deployment from merge alone. Verify push/deploy/boot evidence separately before making live-runtime claims.
+Adrian Vale remains Sandbox-only. The second real Character gate remains closed.
 
-Full Sandbox autonomous ticking remains **not implemented**. `runtime_ready != running` remains locked.
+Character Manual/AI exact parity and existing Sandbox profile/edit/grade-target behavior must not be weakened by Item/Location work.
+
+---
+
+## Runtime / deploy evidence boundary
+
+PR/CI evidence above proves repository acceptance only. Do not claim current production deployment or live Telegram behavior from these merges without separate deploy/boot evidence.
 
 ---
 
 ## Exact resume point
 
-**PR #326 is merged at `2372a3a32f3b400a029317174fcf7260fee7f1f3`; CI #1158 succeeded with 22 targeted tests, CLI init/status green and schema 21 healthy. I5.2 reuse mapping, I5.3 quantity/measurement, I5.4 cross-domain grading and I5.5 requirements/access are complete. Next implementation slice: I5.6 Universal Item Schema v1. Build an exact typed Item contract that reuses inventory definition/instance/stack semantics, I5.3 physical quantities, I5.4 registered grading, I5.5 requirements and existing economic-value policy semantics. Do not add Item Telegram creation UI before the schema/validator is deterministic; do not mutate canonical Real World Item/inventory/economic state; do not transmigrate Adrian or another Character.**
+**PR #332 merged at `d670ac8e7a1ee3beaa6001011d8b04383c39533c`; CI #1164 passed 126 tests across 22 selected files, CLI init/status green, schema 21 healthy. I5.2–I5.10 are complete. Next: I5.11 Sandbox Location Creation + Embedded Contents. Reuse the strict I5.10 Location validator and I5.6/I5.8 Item contracts, validate parent/topology/content dependencies before one atomic Sandbox apply, preserve relation meanings, do not infer runtime readiness, and do not mutate canonical Real World state.**
