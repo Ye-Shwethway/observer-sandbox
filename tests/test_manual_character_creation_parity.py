@@ -3,7 +3,7 @@ import json
 import pytest
 
 from observer_sandbox.creator_studio import CreatorStudioError, approve_draft, manual_draft
-from observer_sandbox.db import connect, migrate
+from observer_sandbox.db import connect
 from observer_sandbox.manual_character_creation import (
     ManualCharacterCreationError,
     manual_character_baseline_status,
@@ -11,12 +11,13 @@ from observer_sandbox.manual_character_creation import (
     update_manual_character_collection,
     update_manual_character_field,
 )
+from observer_sandbox.runtime import initialize
 
 
 def _conn(tmp_path):
-    conn = connect(tmp_path / "manual-character.sqlite3")
-    migrate(conn)
-    return conn
+    db = tmp_path / "manual-character.sqlite3"
+    initialize(db)
+    return connect(db)
 
 
 def _fill_required_baseline(conn, user_id=42):
