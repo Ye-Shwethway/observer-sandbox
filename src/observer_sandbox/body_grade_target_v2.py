@@ -58,7 +58,7 @@ def solve_body_grade_target(
     target_grade: str,
     *,
     mode: str,
-) -> tuple[dict[str, float], dict[str, Any], dict[str, Any], list[str]]:
+) -> tuple[dict[str, float], dict[str, Any], dict[str, Any], list[str], dict[str, Any]]:
     grade = str(target_grade or "").strip().upper()
     if grade not in {"E", "D", "C", "B", "A", "S"}:
         raise BodyGradeTargetError(f"Unsupported Body target grade: {grade}")
@@ -100,6 +100,7 @@ def solve_body_grade_target(
         "old_body_fat_pct": round(float(body_fat), 2),
         "new_body_fat_pct": new_bf,
         "lean_mass_preserved_lb": round(float(weight) * (1.0 - float(body_fat) / 100.0), 2),
+        "genetic_abdominal_anatomy": "preserved",
     }
     return proposed, old_eval, projected, sorted(set(projected_fields)), context
 
@@ -143,6 +144,28 @@ def preview_body_grade_target(
             "old_value": float(old_value),
             "new_value": float(new_value),
         })
+
+    definition_row = conn.execute(
+        "SELECT d.label,d.data_type,d.unit,v.mode,v.authority,v.value_json FROM character_profile_values v "
+        "JOIN profile_field_definitions d ON d.field_key=v.field_key "
+        "WHERE v.entity_id=? AND v.field_key='body.abdominal_definition'",
+        (character_id,),
+    ).fetchone()
+    new_definition = context.get("new_abdominal_definition")
+    if definition_row is not None and new_definition is not None:
+        old_definition = json.loads(definition_row["value_json"])
+        if old_definition != new_definition:
+            changes.append({
+                "store": "profile",
+                "field_key": "body.abdominal_definition",
+                "label": str(definition_row["label"]),
+                "data_type": str(definition_row["data_type"]),
+                "unit": definition_row["unit"],
+                "mode": str(definition_row["mode"]),
+                "authority": str(definition_row["authority"]),
+                "old_value": old_definition,
+                "new_value": new_definition,
+            })
     if not changes:
         raise BodyGradeTargetError("Body target proposal produced no raw physique changes")
 
