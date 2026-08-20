@@ -12,6 +12,7 @@ _LENGTH_UNITS = ["m", "cm", "mm", "in", "ft", "yd"]
 _VOLUME_UNITS = ["m3", "l", "ml", "in3", "ft3", "floz_us", "cup_us", "pt_us", "qt_us", "gal_us"]
 _GRADES = ["E", "D", "C", "B", "A", "S", "SS", "SSS", "X", "XX"]
 _OPERATORS = ["lt", "lte", "gt", "gte", "eq", "ne"]
+_IMMATERIAL_VALUATION_METHOD = "creator_explicit"
 
 
 def _obj(properties: dict[str, Any], *, required: list[str] | None = None) -> dict[str, Any]:
@@ -161,6 +162,29 @@ def item_batch_ai_fill_schema() -> dict[str, Any]:
     })
 
 
+def _canonicalize_ai_economic_policy(payload: dict[str, Any]) -> None:
+    economic = payload.get("economic_policy")
+    if not isinstance(economic, dict):
+        return
+
+    classification = economic.get("classification")
+    treatment = economic.get("net_worth_treatment")
+    monetary_keys = ("market_value_minor", "replacement_value_minor", "unit_value_minor")
+    has_monetary_value = any(economic.get(key) is not None for key in monetary_keys)
+
+    # The canonical manual Item template already establishes this exact policy
+    # for ordinary Items whose monetary facts are intentionally not represented.
+    # A structured-output model may satisfy the required string slot with "";
+    # normalize only this fully identified immaterial/excluded/no-money case.
+    if (
+        classification == "economically_immaterial"
+        and treatment == "excluded"
+        and not has_monetary_value
+        and not str(economic.get("valuation_method") or "").strip()
+    ):
+        economic["valuation_method"] = _IMMATERIAL_VALUATION_METHOD
+
+
 def canonicalize_ai_item_fill(value: dict[str, Any]) -> dict[str, Any]:
     """Convert the complete AI fill form into canonical sparse item-v1 source shape.
 
@@ -185,42 +209,31 @@ def canonicalize_ai_item_fill(value: dict[str, Any]) -> dict[str, Any]:
     if isinstance(instance, dict) and instance.get("mode") == "unique":
         instance.pop("quantity", None)
         instance.pop("unit", None)
+    _canonicalize_ai_economic_policy(payload)
     return payload
 
 
 def canonicalize_ai_item_batch_fill(value: dict[str, Any]) -> dict[str, Any]:
-    """Normalize provider batch fill slots while preserving exact batch semantics.
-
-    Models sometimes echo a batch member ref directly in ``stored_in`` instead of
-    using the explicit ``$ref`` syntax. When the bare value exactly matches one of
-    this batch's declared refs, that is not an inference: it is an unambiguous local
-    graph reference, so normalize it to ``$ref`` before the strict I5.8 batch
-    validator runs. Values that do not exactly match a local ref are left untouched
-    and remain subject to normal existing-Sandbox target validation.
-    """
-
     candidate = copy.deepcopy(value)
     items = candidate.get("items")
-    if not isinstance(items, list):
-        return candidate
-
-    refs = {
-        str(entry.get("ref")).strip()
-        for entry in items
-        if isinstance(entry, dict) and isinstance(entry.get("ref"), str) and str(entry.get("ref")).strip()
-    }
-    for entry in items:
-        if not isinstance(entry, dict) or not isinstance(entry.get("payload"), dict):
-            continue
-        payload = canonicalize_ai_item_fill(entry["payload"])
-        relationships = payload.get("relationships")
-        if isinstance(relationships, dict):
-            stored_in = relationships.get("stored_in")
-            if isinstance(stored_in, str):
-                target = stored_in.strip()
-                if target in refs:
-                    relationships["stored_in"] = f"${target}"
-        entry["payload"] = payload
+    if isinstance(items, list):
+        local_refs = {
+            str(entry.get("ref") or "").strip().lower()
+            for entry in items
+            if isinstance(entry, dict) and str(entry.get("ref") or "").strip()
+        }
+        for entry in items:
+            if not isinstance(entry, dict) or not isinstance(entry.get("payload"), dict):
+                continue
+            payload = canonicalize_ai_item_fill(entry["payload"])
+            relationships = payload.get("relationships")
+            if isinstance(relationships, dict):
+                stored_in = relationships.get("stored_in")
+                if isinstance(stored_in, str):
+                    bare_target = stored_in.strip().lower()
+                    if bare_target in local_refs:
+                        relationships["stored_in"] = f"${bare_target}"
+            entry["payload"] = payload
     return candidate
 
 

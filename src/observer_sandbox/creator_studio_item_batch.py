@@ -87,7 +87,7 @@ def ai_item_batch_draft(
         "Only fungible/countable grouped goods are stackable: definition.stackable=true, instance.mode='stack', modules.stack must be non-null, and instance quantity/unit must agree with modules.stack.initial_quantity/canonical_unit. "
         "Never populate modules.stack for a non-stackable Item. "
         "For requested batch-local storage, use stored_in='$ref' and make the target a real container Item. "
-        "Do not author derived grades. If monetary facts are not explicitly grounded, use economically_immaterial/excluded with null monetary values. "
+        "Do not author derived grades. If monetary facts are not explicitly grounded, use classification='economically_immaterial', net_worth_treatment='excluded', null monetary values, null currency/unit valuation fields, and valuation_method='creator_explicit'. "
         "This is proposal-only and does not create canonical state. "
         f"Creator intent: {intent}"
     )
