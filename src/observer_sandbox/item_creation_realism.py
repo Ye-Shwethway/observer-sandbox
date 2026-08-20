@@ -7,6 +7,8 @@ from .item_metrics import DEFAULT_ITEM_METRIC_REGISTRY, ItemMetricError
 from .physical_quantity import PhysicalQuantityError, normalize_physical_quantity
 
 
+_MAX_ORDINARY_LUMINOUS_EFFICACY_LM_PER_W = 300.0
+
 DEFAULT_ITEM_REALISM_INSTRUCTION = (
     "REALISM INVARIANT: unless the target universe explicitly declares different physical laws, "
     "all generated physical facts must obey ordinary real-world physics, geometry, scale and mutual consistency. "
@@ -18,7 +20,9 @@ DEFAULT_ITEM_REALISM_INSTRUCTION = (
     "and it must not exceed the represented initial stack quantity. "
     "Numeric immersion depth requires explicit waterproof/submersible/immersion evidence; generic water-resistant wording "
     "does not justify a depth rating. When power, runtime and stored energy are all represented, reject grossly impossible "
-    "energy budgets instead of treating the metrics as independent guesses. "
+    "energy budgets instead of treating the metrics as independent guesses. When luminous output and electrical power are "
+    "both represented for ordinary lighting equipment, their implied luminous efficacy must remain physically plausible; "
+    "if power cannot be supported consistently, leave it null rather than forcing a complete metric set. "
 )
 
 
@@ -111,17 +115,26 @@ def _validate_metric_coherence(definition: Mapping[str, Any], modules: Mapping[s
     power_w = _metric_value(metrics, "power")
     runtime_h = _metric_value(metrics, "runtime")
     energy_wh = _metric_value(metrics, "energy_capacity")
+    luminous_flux_lm = _metric_value(metrics, "luminous_flux")
+
     if power_w is not None and runtime_h is not None and energy_wh is not None:
         nominal_need_wh = power_w * runtime_h
-        # `power` may be rated/peak rather than average draw. Only reject a
-        # large contradiction: represented energy below 25% of the simple
-        # rated-power x runtime budget is not a conservative ordinary-world fit.
         if energy_wh + 1e-9 < nominal_need_wh * 0.25:
             raise ItemRealismError(
                 "power, runtime and energy_capacity are grossly inconsistent "
                 f"({power_w:g} W × {runtime_h:g} h implies about {nominal_need_wh:g} Wh, "
                 f"but represented energy capacity is only {energy_wh:g} Wh); "
                 "correct the conflicting metrics or leave unsupported metrics null"
+            )
+
+    if luminous_flux_lm is not None and power_w is not None and power_w > 0.0:
+        efficacy = luminous_flux_lm / power_w
+        if efficacy > _MAX_ORDINARY_LUMINOUS_EFFICACY_LM_PER_W + 1e-9:
+            raise ItemRealismError(
+                "luminous_flux and power imply an implausible ordinary-world luminous efficacy "
+                f"({luminous_flux_lm:g} lm / {power_w:g} W = {efficacy:g} lm/W; "
+                f"ceiling {_MAX_ORDINARY_LUMINOUS_EFFICACY_LM_PER_W:g} lm/W); "
+                "correct the conflicting metrics or leave unsupported power null"
             )
 
 
