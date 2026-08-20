@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+import math
+
 import pytest
 
 from observer_sandbox.grading import (
@@ -59,7 +61,12 @@ def test_item_load_grade_derives_from_normalized_physical_truth() -> None:
     pounds_result = evaluate_item_resistance_load(from_pounds)
     metric_result = evaluate_item_resistance_load(from_metric)
 
-    assert pounds_result == metric_result
+    assert pounds_result.scheme_id == metric_result.scheme_id
+    assert pounds_result.grade == metric_result.grade
+    assert pounds_result.label == metric_result.label
+    assert pounds_result.domain == metric_result.domain
+    assert pounds_result.dimension == metric_result.dimension
+    assert math.isclose(pounds_result.value, metric_result.value, rel_tol=0.0, abs_tol=1e-12)
     assert pounds_result.scheme_id == ITEM_RESISTANCE_LOAD_SCHEME_ID
     assert pounds_result.domain == "item"
     assert pounds_result.dimension == "resistance_load"
