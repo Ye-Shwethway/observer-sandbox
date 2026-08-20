@@ -28,9 +28,12 @@ SOCKETS: Mapping[str, CreationSocketDefinition] = {
         label="Character",
         required_identity_fields=("name",),
     ),
+    # The shared envelope tracks only the integer domain revision. New Creator
+    # Location materialization must still pass the exact location-v2 validator;
+    # this generic socket does not replace that domain authority.
     "location": CreationSocketDefinition(
         type_id="location",
-        schema_version=1,
+        schema_version=2,
         label="Location",
         required_identity_fields=("name",),
     ),

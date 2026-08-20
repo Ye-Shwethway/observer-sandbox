@@ -132,11 +132,11 @@ def _sandbox_character(conn) -> str:
     return str(activate_creation_proposal(conn, proposal)["object_id"])
 
 
-def test_item_socket_is_registered_without_changing_character_location_contracts() -> None:
+def test_item_socket_is_registered_without_changing_character_contract() -> None:
     assert socket_definition("item").schema_version == 1
     assert socket_definition("item").required_identity_fields == ("name",)
     assert socket_definition("character").schema_version == 1
-    assert socket_definition("location").schema_version == 1
+    assert socket_definition("location").schema_version == 2
 
 
 def test_single_unique_item_materializes_definition_instance_economy_and_event(tmp_path) -> None:
