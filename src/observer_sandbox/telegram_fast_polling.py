@@ -9,6 +9,40 @@ from pathlib import Path
 from . import telegram_bot as base
 
 
+def _deliver_message_reply(
+    token: str,
+    chat_id: int,
+    reply: str,
+    keyboard: list[list[dict[str, str]]] | None,
+) -> None:
+    """Deliver a plain-text reply while honoring one-shot Creator Studio prompt cleanup."""
+    from .telegram_creator_studio import consume_next_input_delivery
+
+    delivery = consume_next_input_delivery()
+    if delivery and int(delivery[1]) == int(chat_id):
+        action, target_chat_id, target_message_id = delivery
+        if action == "edit":
+            try:
+                base._edit(token, target_chat_id, target_message_id, reply, keyboard)
+                return
+            except Exception:
+                # Keep the response available even if the old prompt can no longer
+                # be edited (for example, Telegram aged it out).
+                pass
+        elif action == "delete":
+            try:
+                base._api(
+                    token,
+                    "deleteMessage",
+                    {"chat_id": target_chat_id, "message_id": target_message_id},
+                    timeout=10,
+                )
+            except Exception:
+                # Prompt cleanup is UX-only and must never discard a valid save.
+                pass
+    base._send(token, chat_id, reply, keyboard)
+
+
 def run_polling(db_path: str | Path = base.DEFAULT_DB) -> None:
     """Telegram polling loop with eager callback acknowledgement.
 
@@ -84,13 +118,23 @@ def run_polling(db_path: str | Path = base.DEFAULT_DB) -> None:
                         pass
 
                     try:
+                        callback_data = str(callback.get("data", ""))
                         with base.connect(db_path) as conn:
                             base.migrate(conn)
                             text, keyboard = base._callback_view(
                                 conn,
                                 user_id,
-                                str(callback.get("data", "")),
+                                callback_data,
                             )
+                            if callback_data.startswith(("sw:cs:manual:f:", "sw:cs:manual:c:")):
+                                from .telegram_creator_studio import bind_input_prompt_message
+
+                                bind_input_prompt_message(
+                                    conn,
+                                    user_id,
+                                    int(chat["id"]),
+                                    int(message["message_id"]),
+                                )
                         base._edit(
                             token,
                             int(chat["id"]),
@@ -122,7 +166,8 @@ def run_polling(db_path: str | Path = base.DEFAULT_DB) -> None:
                 except Exception as exc:
                     reply = f"Observer command failed safely: {type(exc).__name__}"
                 command = text.strip().split()[0].split("@", 1)[0].lower() if text.strip() else ""
-                base._send(token, chat_id, reply, base._command_keyboard(command))
+                keyboard = base._command_keyboard(command)
+                _deliver_message_reply(token, chat_id, reply, keyboard)
         except (urllib.error.URLError, TimeoutError, RuntimeError, OSError, ValueError):
             time.sleep(backoff)
             backoff = min(backoff * 2.0, 30.0)

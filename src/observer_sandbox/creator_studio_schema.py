@@ -19,14 +19,17 @@ CREATE TABLE IF NOT EXISTS creation_sandbox_drafts (
 
 -- Pending Telegram input is presentation/session state, not a staged universe object.
 -- expected_input is an extensible presentation target. Initial creation uses
--- 'name'/'description'; guided editors may use namespaced targets such as
--- 'manual-field:<field_key>' or 'manual-collection:<collection>'.
+-- 'name'/'description'; guided editors use namespaced targets. prompt_chat_id and
+-- prompt_message_id identify the temporary Telegram input card so it can be
+-- removed after the pending input is consumed instead of becoming stale UI.
 CREATE TABLE IF NOT EXISTS creation_sandbox_studio_sessions (
     sandbox_id TEXT NOT NULL,
     user_id INTEGER NOT NULL,
     creation_type TEXT NOT NULL CHECK(creation_type IN ('character','location')),
     input_mode TEXT NOT NULL CHECK(input_mode IN ('manual','ai_generated')),
     expected_input TEXT NOT NULL,
+    prompt_chat_id INTEGER,
+    prompt_message_id INTEGER,
     created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
     updated_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
     PRIMARY KEY(sandbox_id, user_id)
@@ -51,6 +54,8 @@ def _relax_legacy_expected_input_check(conn: sqlite3.Connection) -> None:
             creation_type TEXT NOT NULL CHECK(creation_type IN ('character','location')),
             input_mode TEXT NOT NULL CHECK(input_mode IN ('manual','ai_generated')),
             expected_input TEXT NOT NULL,
+            prompt_chat_id INTEGER,
+            prompt_message_id INTEGER,
             created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
             updated_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
             PRIMARY KEY(sandbox_id, user_id)
@@ -65,9 +70,21 @@ def _relax_legacy_expected_input_check(conn: sqlite3.Connection) -> None:
     )
 
 
+def _ensure_prompt_message_columns(conn: sqlite3.Connection) -> None:
+    columns = {
+        str(row["name"] if isinstance(row, sqlite3.Row) else row[1])
+        for row in conn.execute("PRAGMA table_info(creation_sandbox_studio_sessions)").fetchall()
+    }
+    if "prompt_chat_id" not in columns:
+        conn.execute("ALTER TABLE creation_sandbox_studio_sessions ADD COLUMN prompt_chat_id INTEGER")
+    if "prompt_message_id" not in columns:
+        conn.execute("ALTER TABLE creation_sandbox_studio_sessions ADD COLUMN prompt_message_id INTEGER")
+
+
 def migrate_creator_studio_schema(conn: sqlite3.Connection) -> None:
     conn.executescript(SCHEMA_SQL)
     _relax_legacy_expected_input_check(conn)
+    _ensure_prompt_message_columns(conn)
 
 
 __all__ = ["migrate_creator_studio_schema"]
