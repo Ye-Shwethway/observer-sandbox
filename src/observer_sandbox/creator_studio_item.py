@@ -64,7 +64,7 @@ def manual_item_template() -> dict[str, Any]:
             "unit_label": None,
             "net_worth_treatment": "excluded",
             "included_in_parent_ref": None,
-            "valuation_method": None,
+            "valuation_method": "creator_explicit",
         },
         "requirements": {"use": None},
         "relationships": {
@@ -127,7 +127,7 @@ def ai_item_draft(
         "Use only modules actually needed. Do not author grades; grades are derived. Do not invent unknown fields. "
         "instance is {'mode':'unique'} for non-stackable items, or {'mode':'stack','quantity':number,'unit':token} for stackable items. "
         "economic_policy must use the registered classification/treatment contract. If monetary facts were not requested or cannot be grounded, "
-        "use classification='economically_immaterial', net_worth_treatment='excluded', and null monetary fields. "
+        "use classification='economically_immaterial', net_worth_treatment='excluded', null monetary fields, and valuation_method='creator_explicit'. "
         "requirements has exactly {'use': null-or-typed-requirement}. relationships has exactly located_at,stored_in,owned_by,carried_by,equipped_by. "
         "Leave relationship values null unless the Creator explicitly supplied a real Sandbox object id. Only one physical placement mode may be non-null. "
         "For physical quantities use supported units and preserve plausible measurements. This is a proposal only; never claim canonical existence. "
