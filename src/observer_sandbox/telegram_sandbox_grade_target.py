@@ -4,14 +4,22 @@ import json
 import sqlite3
 from typing import Any
 
+from .body_grade_target_v2 import preview_body_grade_target as preview_real_body_grade_target
 from .creator_profile_edit import CreatorProfileEditError
-from .sandbox_grade_target import preview_sandbox_body_grade_target, preview_sandbox_section_grade_target
+from .sandbox_body_grade_target_v2 import preview_sandbox_body_grade_target
+from .sandbox_grade_target import preview_sandbox_section_grade_target
+from . import telegram_profile_edit_ui as real_profile_edit_ui
 from .telegram_profile_edit_ui import GRADE_GROUPS
 from .telegram_sandbox_profile_edit import (
     _save_session,
     get_sandbox_profile_edit_session,
     sandbox_profile_edit_callback_view as _base_callback_view,
 )
+
+# Real World and Sandbox Telegram buttons share the same coherence solver contract.
+# The Real UI imported the legacy function earlier in runtime startup, so replace
+# its module-global callable before any callback is handled.
+real_profile_edit_ui.preview_body_grade_target = preview_real_body_grade_target
 
 
 def _json(value: Any) -> str:
@@ -56,7 +64,7 @@ def grade_choice_view(*, user_id: int, group: str) -> tuple[str, list[list[dict[
     _session(user_id)
     label = dict(GRADE_GROUPS).get(group, group)
     detail = (
-        "Body uses sex-aware aesthetic ratios and a deterministic inverse measurement solver. Preserve Shape is the default."
+        "Body targets coherent proportions, composition, weight, and derived definition. Preserve Shape keeps lean mass and authored anatomy stable."
         if group == "body"
         else "Choose target grade. Preserve Shape is the default adjustment mode."
     )
@@ -87,11 +95,15 @@ def _preview_view(conn: sqlite3.Connection, *, user_id: int, proposal: dict[str,
     ]
     if proposal.get("kind") == "body_grade_target":
         coverage = proposal.get("new_coverage") or {}
+        coherence = proposal.get("physique_coherence") or {}
         lines.extend([
             f"Reference: {proposal.get('reference_profile')}",
             f"Metric coverage: {coverage.get('active_metrics')}/{coverage.get('eligible_metrics')}",
+            f"Body fat: {coherence.get('old_body_fat_pct')}% → {coherence.get('new_body_fat_pct')}%",
+            f"Visible abs: {coherence.get('old_abdominal_definition')} → {coherence.get('new_abdominal_definition')}",
+            "Genetic abdominal anatomy: preserved",
             "",
-            "Projected proportions:",
+            "Projected physique:",
         ])
         for metric in proposal.get("new_metrics") or []:
             grade = metric.get("grade") or {}
@@ -149,7 +161,7 @@ def _apply_grade_target(conn: sqlite3.Connection, *, user_id: int) -> tuple[str,
                 )
             else:
                 conn.execute(
-                    "UPDATE creation_sandbox_profile_values SET value_json=?,authority='creator',source='creator-sandbox-grade-target-v1',updated_at=CURRENT_TIMESTAMP WHERE object_id=? AND field_key=?",
+                    "UPDATE creation_sandbox_profile_values SET value_json=?,authority='creator',source='creator-sandbox-grade-target-v2',updated_at=CURRENT_TIMESTAMP WHERE object_id=? AND field_key=?",
                     (_json(change["new_value"]), object_id, str(change["field_key"])),
                 )
             if conn.execute("SELECT changes()").fetchone()[0] != 1:
@@ -164,9 +176,10 @@ def _apply_grade_target(conn: sqlite3.Connection, *, user_id: int) -> tuple[str,
             "INSERT INTO creation_sandbox_events(sandbox_id,object_id,event_type,payload_json) VALUES(?,?,'sandbox_profile_grade_target_applied',?)",
             (sandbox_id, object_id, _json({
                 "group": proposal.get("group"), "target_grade": proposal.get("target_grade"), "mode": proposal.get("mode"),
+                "physique_coherence": proposal.get("physique_coherence"),
                 "changes": [{"field_key": c.get("field_key"), "old_value": c.get("old_value"), "new_value": c.get("new_value")} for c in changes],
                 "requested_by": f"telegram:{int(user_id)}", "previous_revision": previous_revision, "revision": revision,
-                "source": "creator-sandbox-grade-target-v1",
+                "source": "creator-sandbox-grade-target-v2",
             })),
         )
         if nested:
