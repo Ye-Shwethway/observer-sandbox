@@ -1,17 +1,19 @@
 from __future__ import annotations
 
 import json
-from copy import deepcopy
 
 import pytest
 
+import observer_sandbox.creator_studio_location as location_studio
 from observer_sandbox.creation_sandbox import canonical_state_fingerprint
 from observer_sandbox.creator_draft_export import render_full_draft_text
 from observer_sandbox.creator_studio import CreatorStudioError, active_draft, cancel_draft
 from observer_sandbox.creator_studio_location import (
+    ai_location_draft,
     approve_location_draft,
     manual_location_draft,
     manual_location_template,
+    reroll_location_draft,
 )
 from observer_sandbox.db import connect
 from observer_sandbox.location_creation_schema_v2 import validate_location_payload_v2
@@ -123,6 +125,75 @@ def test_location_approval_revalidates_graph_and_keeps_failed_draft(tmp_path) ->
         ).fetchone()[0] == 0
 
 
+def test_ai_location_uses_exact_v2_validator_and_reroll_revisions_without_writes(tmp_path, monkeypatch) -> None:
+    db = tmp_path / "observer.sqlite3"
+    initialize(db)
+    calls = []
+
+    def candidate(name: str):
+        value = manual_location_template()
+        value["identity"]["key"] = "place.ai.room"
+        value["identity"]["name"] = name
+        value["identity"]["description"] = "A quiet AI-authored room proposal."
+        value["provenance"] = {"source_status": "provisional", "source_note": "AI proposal"}
+        return value
+
+    monkeypatch.setattr(
+        location_studio,
+        "creator_creation_binding",
+        lambda conn: {"provider_id": "fake", "model_id": "fake-model", "parameters": {}},
+    )
+
+    generated = iter([candidate("AI Quiet Room"), candidate("AI Quiet Room Reroll")])
+
+    def fake_generate(*args, **kwargs):
+        calls.append(kwargs)
+        return next(generated)
+
+    monkeypatch.setattr(location_studio, "generate_structured", fake_generate)
+
+    with connect(db) as conn:
+        before = canonical_state_fingerprint(conn)
+        first = ai_location_draft(conn, 31, "Create a quiet indoor room")
+        stored = first["proposal"]["properties"]["location_payload"]
+        assert first["draft_mode"] == "ai_generated"
+        assert first["revision"] == 1
+        assert stored["identity"]["name"] == "AI Quiet Room"
+        assert stored["provenance"]["source_status"] == "provisional"
+        assert "derived" not in stored
+        assert _location_count(conn) == 0
+
+        second = reroll_location_draft(conn, 31)
+        assert second["revision"] == 2
+        assert second["proposal"]["properties"]["location_payload"]["identity"]["name"] == "AI Quiet Room Reroll"
+        assert _location_count(conn) == 0
+        assert canonical_state_fingerprint(conn) == before
+        assert len(calls) == 2
+        prompt = calls[0]["prompt"]
+        assert "Never author grade, derived" in prompt
+        assert "Never invent a Sandbox object reference" in prompt
+        assert "Creator intent: Create a quiet indoor room" in prompt
+
+
+def test_ai_location_invalid_contract_fails_without_draft_or_materialization(tmp_path, monkeypatch) -> None:
+    db = tmp_path / "observer.sqlite3"
+    initialize(db)
+    bad = manual_location_template()
+    bad["derived"] = {"completeness_level": "L4"}
+    monkeypatch.setattr(
+        location_studio,
+        "creator_creation_binding",
+        lambda conn: {"provider_id": "fake", "model_id": "fake-model", "parameters": {}},
+    )
+    monkeypatch.setattr(location_studio, "generate_structured", lambda *args, **kwargs: bad)
+
+    with connect(db) as conn:
+        with pytest.raises(CreatorStudioError, match="failed exact validation"):
+            ai_location_draft(conn, 37, "Create a room")
+        assert active_draft(conn, 37) is None
+        assert _location_count(conn) == 0
+
+
 def test_location_telegram_revision_confirmation_materializes_via_v2_only(tmp_path) -> None:
     db = tmp_path / "observer.sqlite3"
     initialize(db)
@@ -132,8 +203,9 @@ def test_location_telegram_revision_confirmation_materializes_via_v2_only(tmp_pa
 
         method_text, method_keyboard = studio_callback_view(conn, 23, "sw:cs:type:location")
         assert "CREATE LOCATION" in method_text
-        assert "sw:cs:input:location:manual" in _callbacks(method_keyboard)
-        assert "sw:cs:input:location:ai" not in _callbacks(method_keyboard)
+        callbacks = _callbacks(method_keyboard)
+        assert "sw:cs:input:location:manual" in callbacks
+        assert "sw:cs:input:location:ai" in callbacks
 
         prompt_text, _ = studio_callback_view(conn, 23, "sw:cs:input:location:manual")
         assert "LOCATION · EXACT JSON" in prompt_text
