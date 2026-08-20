@@ -3,6 +3,7 @@ from __future__ import annotations
 from dataclasses import dataclass
 from typing import Any, Mapping
 
+from .body_physique_coherence import abdominal_definition, composition_item
 from .grading import (
     BODY_AESTHETIC_PROPORTION_SCHEME_ID,
     BODY_CENTRAL_ADIPOSITY_SCHEME_ID,
@@ -185,6 +186,22 @@ def _display_context_items(values: Mapping[str, object], sex: str) -> list[dict[
                     "context": "Readable inverse of the grade-driving male Waist / Chest metric.",
                 }
             )
+    definition = abdominal_definition(values)
+    if definition is not None:
+        items.append(
+            {
+                "kind": "derived_context",
+                "field_key": "body.abdominal_definition",
+                "domain": "body",
+                "label": "Visible abdominal definition",
+                "value": definition,
+                "data_type": "text",
+                "unit": None,
+                "mode": "derived",
+                "role": "display_context",
+                "context": "Derived from current body fat relative to the authored sustainable floor; abdominal anatomy is unchanged.",
+            }
+        )
     return items
 
 
@@ -195,6 +212,10 @@ def evaluate_body(values: Mapping[str, object], sex: object) -> dict[str, Any]:
         item = evaluate_metric(metric, values)
         if item is not None:
             gradeable_items.append(item)
+
+    composition = composition_item(values)
+    if composition is not None:
+        gradeable_items.append(composition)
 
     health_items: list[dict[str, Any]] = []
     health = evaluate_metric(HEALTH_WAIST_HEIGHT, values)
@@ -217,10 +238,8 @@ def evaluate_body(values: Mapping[str, object], sex: object) -> dict[str, Any]:
             value=weighted_score,
         )
 
-    # Keep the familiar inverse Chest / Waist display for readability and
-    # backwards-compatible observer output while Waist / Chest is the actual
-    # grade-driving metric. Context items never participate in the composite.
     display_items = list(gradeable_items) + _display_context_items(values, profile.sex)
+    eligible_metrics = len(profile.metrics) + (1 if composition is not None else 0)
 
     return {
         "reference_profile": profile.profile_id,
@@ -230,7 +249,7 @@ def evaluate_body(values: Mapping[str, object], sex: object) -> dict[str, Any]:
         "overall_grade": overall,
         "coverage": {
             "active_metrics": len(gradeable_items),
-            "eligible_metrics": len(profile.metrics),
+            "eligible_metrics": eligible_metrics,
             "active_weight": round(available_weight, 6),
             "weighted_score": None if weighted_score is None else round(weighted_score, 3),
         },
