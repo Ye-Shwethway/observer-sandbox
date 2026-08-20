@@ -5,6 +5,7 @@ from typing import Any
 
 from .economic_value import VALID_CLASSIFICATIONS, VALID_NET_WORTH_TREATMENTS
 from .item_creation_schema import ITEM_CAPABILITIES, ITEM_KINDS, ITEM_MOBILITY
+from .item_metrics import DEFAULT_ITEM_METRIC_REGISTRY
 
 
 _MASS_UNITS = ["kg", "g", "lb", "oz"]
@@ -64,13 +65,6 @@ def _requirement_schema() -> dict[str, Any]:
 
 
 def item_ai_fill_schema() -> dict[str, Any]:
-    """Exact provider-facing fill form for one item-v1 payload.
-
-    The form intentionally carries nullable slots for every registered conditional
-    module. Provider output is normalized back to the canonical sparse source
-    representation before deterministic Item validation.
-    """
-
     physical = _obj({
         "mass": _nullable(_quantity(_MASS_UNITS)),
         "length": _nullable(_quantity(_LENGTH_UNITS)),
@@ -91,6 +85,7 @@ def item_ai_fill_schema() -> dict[str, Any]:
     })
     container = _obj({"capacity_volume": _quantity(_VOLUME_UNITS)})
     resistance = _obj({"resistance_load": _quantity(_MASS_UNITS)})
+    metrics = _obj(DEFAULT_ITEM_METRIC_REGISTRY.ai_schema_properties())
 
     modules = _obj({
         "physical": _nullable(physical),
@@ -98,6 +93,7 @@ def item_ai_fill_schema() -> dict[str, Any]:
         "nutrition": _nullable(nutrition),
         "container": _nullable(container),
         "resistance_training": _nullable(resistance),
+        "metrics": _nullable(metrics),
     })
 
     definition = _obj({
@@ -166,16 +162,10 @@ def _canonicalize_ai_economic_policy(payload: dict[str, Any]) -> None:
     economic = payload.get("economic_policy")
     if not isinstance(economic, dict):
         return
-
     classification = economic.get("classification")
     treatment = economic.get("net_worth_treatment")
     monetary_keys = ("market_value_minor", "replacement_value_minor", "unit_value_minor")
     has_monetary_value = any(economic.get(key) is not None for key in monetary_keys)
-
-    # The canonical manual Item template already establishes this exact policy
-    # for ordinary Items whose monetary facts are intentionally not represented.
-    # A structured-output model may satisfy the required string slot with "";
-    # normalize only this fully identified immaterial/excluded/no-money case.
     if (
         classification == "economically_immaterial"
         and treatment == "excluded"
@@ -186,17 +176,6 @@ def _canonicalize_ai_economic_policy(payload: dict[str, Any]) -> None:
 
 
 def canonicalize_ai_item_fill(value: dict[str, Any]) -> dict[str, Any]:
-    """Convert the complete AI fill form into canonical sparse item-v1 source shape.
-
-    The provider-facing form contains nullable slots for conditional modules. A
-    non-stackable definition can never semantically own a stack module, so an
-    accidentally populated stack slot is treated the same as any other unused
-    nullable fill slot and removed before the strict Item validator runs. This
-    does not repair contradictory stack identity (for example stackable=true with
-    a unique instance) or invent missing stack facts; those remain validation
-    failures.
-    """
-
     payload = copy.deepcopy(value)
     definition = payload.get("definition")
     if isinstance(definition, dict):
@@ -204,6 +183,10 @@ def canonicalize_ai_item_fill(value: dict[str, Any]) -> dict[str, Any]:
         if isinstance(modules, dict):
             if definition.get("stackable") is False:
                 modules["stack"] = None
+            metrics = modules.get("metrics")
+            if isinstance(metrics, dict):
+                metrics = {key: metric for key, metric in metrics.items() if metric is not None}
+                modules["metrics"] = metrics or None
             definition["modules"] = {key: item for key, item in modules.items() if item is not None}
     instance = payload.get("instance")
     if isinstance(instance, dict) and instance.get("mode") == "unique":

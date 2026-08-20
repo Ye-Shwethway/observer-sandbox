@@ -3,23 +3,13 @@ from __future__ import annotations
 from copy import deepcopy
 from typing import Any, Mapping
 
-from .grading_socket import (
-    DEFAULT_GRADING_SOCKET_REGISTRY,
-    DEFAULT_UNIVERSE_GRADING_POLICY_ID,
-    GradingSocketError,
-    GradingSocketRegistry,
-)
+from .grading_socket import GradingSocketError, GradingSocketRegistry
 from .item_creation_schema import ItemSchemaError, validate_item_payload
+from .item_grading_coverage import ITEM_COVERAGE_POLICY_ID, ITEM_GRADING_COVERAGE_REGISTRY
 
 
 def _grading_source(value: Mapping[str, Any]) -> dict[str, Any]:
-    """Return normalized Item facts suitable for socket grading.
-
-    Creator drafts carry the full authoring contract including relationships.
-    Approved Sandbox Items expose the already-normalized persisted Item body and
-    omit relationships from the definition/instance snapshot. Raw Item facts
-    remain authority in both cases; grading never mutates the supplied value.
-    """
+    """Return normalized Item facts suitable for socket grading."""
 
     source: Mapping[str, Any] = value
     nested = value.get("item")
@@ -36,8 +26,8 @@ def _grading_source(value: Mapping[str, Any]) -> dict[str, Any]:
 def resolve_item_grading(
     value: Mapping[str, Any],
     *,
-    universe_policy_id: str = DEFAULT_UNIVERSE_GRADING_POLICY_ID,
-    registry: GradingSocketRegistry = DEFAULT_GRADING_SOCKET_REGISTRY,
+    universe_policy_id: str = ITEM_COVERAGE_POLICY_ID,
+    registry: GradingSocketRegistry = ITEM_GRADING_COVERAGE_REGISTRY,
 ):
     source = _grading_source(value)
     return registry.resolve("item", source, universe_policy_id=universe_policy_id)
@@ -47,8 +37,8 @@ def item_grading_lines(
     value: Mapping[str, Any],
     *,
     heading: str = "GRADING",
-    universe_policy_id: str = DEFAULT_UNIVERSE_GRADING_POLICY_ID,
-    registry: GradingSocketRegistry = DEFAULT_GRADING_SOCKET_REGISTRY,
+    universe_policy_id: str = ITEM_COVERAGE_POLICY_ID,
+    registry: GradingSocketRegistry = ITEM_GRADING_COVERAGE_REGISTRY,
 ) -> list[str]:
     lines = [heading]
     try:

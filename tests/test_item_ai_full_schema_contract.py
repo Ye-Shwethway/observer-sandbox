@@ -7,6 +7,7 @@ from observer_sandbox.item_ai_contract import (
     item_batch_ai_fill_schema,
 )
 from observer_sandbox.item_creation_schema import validate_item_payload
+from observer_sandbox.item_metrics import DEFAULT_ITEM_METRIC_REGISTRY
 from observer_sandbox.runtime import initialize
 from observer_sandbox.sandbox_item_creation import preview_sandbox_item_batch
 
@@ -22,8 +23,11 @@ def test_single_item_ai_schema_is_complete_not_generic_object():
         "key", "name", "kind", "description", "stackable", "mobility", "capabilities", "tags", "modules"
     ]
     modules = definition["properties"]["modules"]
-    assert modules["required"] == ["physical", "stack", "nutrition", "container", "resistance_training"]
+    assert modules["required"] == ["physical", "stack", "nutrition", "container", "resistance_training", "metrics"]
     assert modules["properties"]["container"]["anyOf"][1] == {"type": "null"}
+    metrics = modules["properties"]["metrics"]["anyOf"][0]
+    assert set(metrics["properties"]) == set(DEFAULT_ITEM_METRIC_REGISTRY.metric_ids())
+    assert metrics["additionalProperties"] is False
     relationships = schema["properties"]["relationships"]
     assert relationships["required"] == ["located_at", "stored_in", "owned_by", "carried_by", "equipped_by"]
 
@@ -43,6 +47,7 @@ def test_full_ai_fill_null_placeholders_canonicalize_to_valid_sparse_item():
         "nutrition": None,
         "container": None,
         "resistance_training": None,
+        "metrics": {metric_id: None for metric_id in DEFAULT_ITEM_METRIC_REGISTRY.metric_ids()},
     }
     payload["instance"] = {"mode": "unique", "quantity": None, "unit": None}
 
@@ -110,6 +115,7 @@ def test_camping_batch_ai_boundary_normalization_reaches_whole_graph_preview(tmp
         "nutrition": None,
         "container": {"capacity_volume": {"value": 30, "unit": "l"}},
         "resistance_training": None,
+        "metrics": None,
     }
     backpack["economic_policy"]["valuation_method"] = ""
     backpack["instance"] = {"mode": "unique", "quantity": None, "unit": None}
@@ -135,6 +141,7 @@ def test_camping_batch_ai_boundary_normalization_reaches_whole_graph_preview(tmp
         },
         "container": None,
         "resistance_training": None,
+        "metrics": None,
     }
     bars["instance"] = {"mode": "stack", "quantity": 6, "unit": "bar"}
     bars["economic_policy"]["valuation_method"] = ""

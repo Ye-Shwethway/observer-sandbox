@@ -7,6 +7,7 @@ from typing import Any, Mapping
 
 from .economic_value import VALID_CLASSIFICATIONS, VALID_NET_WORTH_TREATMENTS
 from .grading import GradeResult, evaluate_item_resistance_load
+from .item_metrics import ItemMetricError, normalize_item_metrics
 from .physical_quantity import (
     PhysicalQuantity,
     PhysicalQuantityError,
@@ -18,7 +19,7 @@ from .requirements import RequirementContext, RequirementContractError, evaluate
 ITEM_SCHEMA_VERSION = "item-v1"
 ITEM_KINDS = frozenset({"object", "fixture", "equipment", "consumable", "container"})
 ITEM_MOBILITY = frozenset({"movable", "fixed"})
-ITEM_MODULES = frozenset({"physical", "stack", "nutrition", "container", "resistance_training"})
+ITEM_MODULES = frozenset({"physical", "stack", "nutrition", "container", "resistance_training", "metrics"})
 ITEM_CAPABILITIES = frozenset({"inspect", "eat", "store", "train", "use", "equip", "wear"})
 ITEM_RELATION_TYPES = frozenset({"located_at", "stored_in", "owned_by", "carried_by", "equipped_by"})
 
@@ -165,6 +166,13 @@ def _validate_resistance_module(raw: Any) -> tuple[dict[str, Any], GradeResult]:
     load = _quantity(raw["resistance_load"], kind="mass", label="modules.resistance_training.resistance_load", positive=True)
     grade = evaluate_item_resistance_load(load)
     return {"resistance_load": _quantity_payload(load)}, grade
+
+
+def _validate_metrics_module(raw: Any) -> dict[str, Any]:
+    try:
+        return normalize_item_metrics(raw)
+    except ItemMetricError as exc:
+        raise ItemSchemaError(str(exc)) from exc
 
 
 def _validate_requirements(raw: Any) -> dict[str, Any]:
@@ -366,6 +374,9 @@ def validate_item_payload(payload: Mapping[str, Any]) -> dict[str, Any]:
         grade_results["resistance_load"] = grade
     if "train" in capabilities and "resistance_training" not in modules_raw:
         raise ItemSchemaError("train capability requires modules.resistance_training")
+
+    if "metrics" in modules_raw:
+        normalized_modules["metrics"] = _validate_metrics_module(modules_raw["metrics"])
 
     instance = payload["instance"]
     if not isinstance(instance, Mapping):

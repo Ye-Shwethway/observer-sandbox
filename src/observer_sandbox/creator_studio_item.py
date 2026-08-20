@@ -130,9 +130,10 @@ def ai_item_draft(
         "Fill the supplied complete item-v1 schema for exactly one Item in the isolated Creation Sandbox. "
         "Use [] for unused arrays, null for unknown/unused nullable fields, and null for unused module slots. "
         "Do not omit, rename or invent schema fields. Populate only facts supported by the Creator intent or conservative ordinary inference. "
+        "For definition.modules.metrics, map represented measurable specifications into the matching registered metric slots (for example luminous output, runtime, power, energy capacity, range, speed, data throughput, digital storage, beam distance, water-resistance depth, charge time or payload capacity). Leave unknown or inapplicable metric slots null. Do not duplicate container capacity or resistance load into metrics because those already have authoritative modules. "
         + DEFAULT_ITEM_REALISM_INSTRUCTION
         + DEFAULT_ITEM_ECONOMIC_INSTRUCTION
-        + "Do not author derived grades. "
+        + "Do not author derived grades, grading thresholds, evaluator ids or reference profiles. "
         "This is proposal-only and does not create canonical state. "
         f"Creator intent: {intent}"
     )

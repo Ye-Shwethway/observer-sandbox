@@ -90,13 +90,14 @@ def ai_item_batch_draft(
         "Create one batch entry per distinct requested Item type. Use stable unique lowercase refs. "
         "For every Item payload, fill the full item-v1 form: use [] for unused arrays, null for unknown/unused nullable fields, and null for unused module slots. "
         "Do not omit, rename or invent schema fields. Preserve requested stack quantities. "
+        "For definition.modules.metrics, map represented measurable specifications into the matching registered metric slots (for example luminous output, runtime, power, energy capacity, range, speed, data throughput, digital storage, beam distance, water-resistance depth, charge time or payload capacity). Leave unknown or inapplicable slots null. Do not duplicate container capacity or resistance load into metrics because those already have authoritative modules. "
         + DEFAULT_ITEM_REALISM_INSTRUCTION
         + DEFAULT_ITEM_ECONOMIC_INSTRUCTION
         + "STACK INVARIANT: ordinary single objects are definition.stackable=false, instance.mode='unique', instance.quantity=null, instance.unit=null, and modules.stack=null. "
         "Only fungible/countable grouped goods are stackable: definition.stackable=true, instance.mode='stack', modules.stack must be non-null, and instance quantity/unit must agree with modules.stack.initial_quantity/canonical_unit. "
         "Never populate modules.stack for a non-stackable Item. "
         "For requested batch-local storage, use stored_in='$ref' and make the target a real container Item. "
-        "Do not author derived grades. "
+        "Do not author derived grades, grading thresholds, evaluator ids or reference profiles. "
         "This is proposal-only and does not create canonical state. "
         f"Creator intent: {intent}"
     )
