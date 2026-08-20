@@ -12,9 +12,9 @@ def _item(key: str, name: str):
     return payload
 
 
-def test_human_readable_batch_refs_are_canonicalized_with_local_relationships(tmp_path):
+def test_human_readable_batch_refs_and_module_capabilities_are_canonicalized(tmp_path):
     backpack = _item("hiking_backpack", "30 L Hiking Backpack")
-    backpack["definition"]["capabilities"] = ["inspect", "use", "store"]
+    backpack["definition"]["capabilities"] = ["inspect", "use"]
     backpack["definition"]["modules"]["container"] = {
         "capacity_volume": {"value": 30, "unit": "l"}
     }
@@ -26,6 +26,11 @@ def test_human_readable_batch_refs_are_canonicalized_with_local_relationships(tm
     power_bank["relationships"]["stored_in"] = "$30 L Hiking Backpack"
 
     dumbbell = _item("adjustable_dumbbell", "Adjustable Dumbbell")
+    dumbbell["definition"]["capabilities"] = ["inspect", "use"]
+    dumbbell["definition"]["modules"]["resistance_training"] = {
+        "resistance_load": {"value": 55, "unit": "lb"}
+    }
+
     dry_bag = _item("waterproof_dry_bag", "Waterproof Dry Bag")
 
     candidate = canonicalize_ai_item_batch_fill({
@@ -47,6 +52,8 @@ def test_human_readable_batch_refs_are_canonicalized_with_local_relationships(tm
     ]
     assert candidate["items"][0]["payload"]["relationships"]["stored_in"] == "$item_30_l_hiking_backpack"
     assert candidate["items"][2]["payload"]["relationships"]["stored_in"] == "$item_30_l_hiking_backpack"
+    assert "store" in candidate["items"][1]["payload"]["definition"]["capabilities"]
+    assert "train" in candidate["items"][3]["payload"]["definition"]["capabilities"]
 
     db = tmp_path / "observer.sqlite3"
     initialize(db)
