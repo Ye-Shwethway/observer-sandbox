@@ -230,6 +230,29 @@ def install_sandbox_batch_delete_world_layers_extension(base_module: Any) -> Non
     original_list_view = base_module.sandbox_list_view
     original_callback = base_module.world_layer_callback_view
 
+    def _decorate_list(conn, creation_type: str, view):
+        text, keyboard = view
+        if creation_type not in {"item", "character"}:
+            return text, keyboard
+        if not _candidates(conn, scope=creation_type):
+            return text, keyboard
+        rows = [list(row) for row in (keyboard or [])]
+        callback = f"sw:del:enter:{creation_type}"
+        if any(button.get("callback_data") == callback for row in rows for button in row):
+            return text, rows
+        label = "🗑 Select Items to Delete" if creation_type == "item" else "🗑 Select Characters to Delete"
+        insert_at = len(rows)
+        for index, row in enumerate(rows):
+            if any(
+                str(button.get("callback_data") or "").startswith("sw:cs:")
+                or button.get("callback_data") == "nav:sandbox"
+                for button in row
+            ):
+                insert_at = index
+                break
+        rows.insert(insert_at, [{"text": label, "callback_data": callback}])
+        return text, rows
+
     def sandbox_world_view(conn):
         text, keyboard = original_world_view(conn)
         rows = [list(row) for row in (keyboard or [])]
@@ -243,29 +266,16 @@ def install_sandbox_batch_delete_world_layers_extension(base_module: Any) -> Non
         return text, rows
 
     def sandbox_list_view(conn, creation_type: str):
-        text, keyboard = original_list_view(conn, creation_type)
-        if creation_type not in {"item", "character"}:
-            return text, keyboard
-        if not _candidates(conn, scope=creation_type):
-            return text, keyboard
-        rows = [list(row) for row in (keyboard or [])]
-        callback = f"sw:del:enter:{creation_type}"
-        if any(button.get("callback_data") == callback for row in rows for button in row):
-            return text, rows
-        label = "🗑 Select Items to Delete" if creation_type == "item" else "🗑 Select Characters to Delete"
-        # Keep creation/navigation actions at the bottom while placing cleanup
-        # directly after the object rows.
-        insert_at = len(rows)
-        for index, row in enumerate(rows):
-            if any(
-                str(button.get("callback_data") or "").startswith(("sw:cs:", "nav:sandbox"))
-                or button.get("callback_data") == "nav:sandbox"
-                for button in row
-            ):
-                insert_at = index
-                break
-        rows.insert(insert_at, [{"text": label, "callback_data": callback}])
-        return text, rows
+        return _decorate_list(conn, creation_type, original_list_view(conn, creation_type))
+
+    def _render_target(conn, callback_data: str):
+        if callback_data == "nav:sandbox":
+            return sandbox_world_view(conn)
+        if callback_data == "sw:list:item":
+            return _decorate_list(conn, "item", original_callback(conn, callback_data))
+        if callback_data == "sw:list:character":
+            return _decorate_list(conn, "character", original_callback(conn, callback_data))
+        return original_callback(conn, callback_data)
 
     def world_layer_callback_view(conn, callback_data: str):
         if callback_data.startswith("sw:del:"):
@@ -275,8 +285,10 @@ def install_sandbox_batch_delete_world_layers_extension(base_module: Any) -> Non
                 callback_data=callback_data,
             )
             if isinstance(view, dict) and view.get("return_to"):
-                return original_callback(conn, str(view["return_to"]))
+                return _render_target(conn, str(view["return_to"]))
             return view
+        if callback_data in {"sw:list:item", "sw:list:character", "nav:sandbox"}:
+            return _render_target(conn, callback_data)
         return original_callback(conn, callback_data)
 
     base_module.sandbox_world_view = sandbox_world_view
