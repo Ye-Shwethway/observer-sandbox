@@ -9,7 +9,7 @@ from observer_sandbox.db import connect
 from observer_sandbox.runtime import initialize
 
 
-def test_batch_ai_uses_creator_creation_binding_and_structured_schema(tmp_path, monkeypatch):
+def test_batch_ai_uses_creator_creation_binding_and_full_item_schema(tmp_path, monkeypatch):
     db = tmp_path / "observer.sqlite3"
     initialize(db)
     payload = manual_item_template()
@@ -36,5 +36,18 @@ def test_batch_ai_uses_creator_creation_binding_and_structured_schema(tmp_path, 
     assert captured["model_id"] == "creator-model"
     assert captured["parameters"] == {"temperature": 0.2}
     assert captured["schema_name"] == "observer_creator_studio_item_batch_v1"
-    assert captured["schema"]["required"] == ["items"]
-    assert "container={'capacity_volume'" in captured["prompt"]
+
+    schema = captured["schema"]
+    payload_schema = schema["properties"]["items"]["items"]["properties"]["payload"]
+    assert payload_schema["required"] == [
+        "schema_version", "definition", "instance", "economic_policy", "requirements", "relationships"
+    ]
+    definition = payload_schema["properties"]["definition"]
+    assert definition["required"] == [
+        "key", "name", "kind", "description", "stackable", "mobility", "capabilities", "tags", "modules"
+    ]
+    modules = definition["properties"]["modules"]
+    assert modules["required"] == ["physical", "stack", "nutrition", "container", "resistance_training"]
+    assert modules["additionalProperties"] is False
+    assert "Fill the supplied complete Item Batch schema" in captured["prompt"]
+    assert "Module exact shapes" not in captured["prompt"]
