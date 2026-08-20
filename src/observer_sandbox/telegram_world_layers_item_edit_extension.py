@@ -4,6 +4,7 @@ from __future__ import annotations
 
 from typing import Any
 
+from .creation_sandbox import get_sandbox_object
 from .telegram_sandbox_item_edit import sandbox_item_edit_callback_view
 
 
@@ -12,29 +13,38 @@ def install_item_edit_world_layers_extension(base_module: Any) -> None:
     if getattr(base_module, "_item_edit_extension_installed", False):
         return
 
-    original_item_detail_view = base_module.sandbox_item_detail_view
+    original_object_view = base_module.sandbox_object_view
     original_world_layer_callback_view = base_module.world_layer_callback_view
 
-    def sandbox_item_detail_view(conn, item_id: int):
-        text, keyboard = original_item_detail_view(conn, item_id)
-        rows = [list(row) for row in keyboard]
-        insert_at = max(0, len(rows) - 1)
-        rows.insert(
-            insert_at,
-            [{"text": "✏️ Edit Item", "callback_data": f"sw:iedit:open:{int(item_id)}"}],
-        )
+    def sandbox_object_view(conn, object_id: str):
+        text, keyboard = original_object_view(conn, object_id)
+        try:
+            obj = get_sandbox_object(conn, object_id)
+        except (KeyError, ValueError):
+            return text, keyboard
+        if obj.get("creation_type") != "item" or obj.get("lifecycle_status") != "active":
+            return text, keyboard
+
+        rows = [list(row) for row in (keyboard or [])]
+        callback_data = f"sw:iedit:enter:{object_id}"
+        if not any(
+            button.get("callback_data") == callback_data
+            for row in rows
+            for button in row
+        ):
+            rows.insert(0, [{"text": "✏️ Edit Item", "callback_data": callback_data}])
         return text, rows
 
     def world_layer_callback_view(conn, callback_data: str):
         if callback_data.startswith("sw:iedit:"):
             return sandbox_item_edit_callback_view(
                 conn,
-                callback_data,
                 user_id=base_module._notification_user_id(),
+                callback_data=callback_data,
             )
         return original_world_layer_callback_view(conn, callback_data)
 
-    base_module.sandbox_item_detail_view = sandbox_item_detail_view
+    base_module.sandbox_object_view = sandbox_object_view
     base_module.world_layer_callback_view = world_layer_callback_view
     base_module._item_edit_extension_installed = True
 
