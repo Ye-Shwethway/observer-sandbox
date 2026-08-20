@@ -79,6 +79,48 @@ def test_item_list_exposes_item_scoped_batch_delete(monkeypatch):
     assert "Seed Character" not in labels
 
 
+def test_item_callback_path_is_decorated_even_when_item_extension_bypasses_base_list(monkeypatch):
+    delete_ui._SESSIONS.clear()
+    monkeypatch.setattr(delete_ui, "list_sandbox_objects", lambda conn, sandbox_id: _objects())
+
+    # Reproduce the real layering bug: an earlier Item extension captures its
+    # own local item-list closure, so sw:list:item does not call the later
+    # base.sandbox_list_view wrapper.
+    def base_list(conn, creation_type):
+        if creation_type == "character":
+            return "characters", [[{"text": "Seed Character", "callback_data": "sw:o:char_seed"}]]
+        return "base-items", []
+
+    def captured_item_list(conn):
+        return "items", [
+            [{"text": "Old Item", "callback_data": "sw:o:item_old"}],
+            [{"text": "+ Create Item", "callback_data": "sw:cs:type:item"}],
+            [{"text": "back", "callback_data": "nav:sandbox"}],
+        ]
+
+    def callback(conn, callback_data):
+        if callback_data == "sw:list:item":
+            return captured_item_list(conn)
+        if callback_data == "sw:list:character":
+            return base_list(conn, "character")
+        if callback_data == "nav:sandbox":
+            return "world", []
+        return "legacy", None
+
+    base = SimpleNamespace(
+        sandbox_world_view=lambda conn: ("world", []),
+        sandbox_list_view=base_list,
+        world_layer_callback_view=callback,
+        _notification_user_id=lambda: 4242,
+    )
+    delete_ui.install_sandbox_batch_delete_world_layers_extension(base)
+
+    _, keyboard = base.world_layer_callback_view(object(), "sw:list:item")
+    callbacks = [button.get("callback_data") for row in keyboard for button in row]
+    assert "sw:del:enter:item" in callbacks
+    assert callbacks.index("sw:del:enter:item") < callbacks.index("sw:cs:type:item")
+
+
 def test_character_list_exposes_character_scoped_batch_delete(monkeypatch):
     delete_ui._SESSIONS.clear()
     monkeypatch.setattr(delete_ui, "list_sandbox_objects", lambda conn, sandbox_id: _objects())
@@ -146,17 +188,21 @@ def test_item_scope_select_all_only_deletes_items(monkeypatch):
     assert calls == [["item_old"]]
 
 
-def test_scoped_cancel_returns_to_originating_list(monkeypatch):
+def test_scoped_cancel_returns_to_originating_list_with_delete_action(monkeypatch):
     delete_ui._SESSIONS.clear()
     monkeypatch.setattr(delete_ui, "list_sandbox_objects", lambda conn, sandbox_id: _objects())
     base = _base()
     delete_ui.install_sandbox_batch_delete_world_layers_extension(base)
 
     base.world_layer_callback_view(object(), "sw:del:enter:item")
-    assert base.world_layer_callback_view(object(), "sw:del:cancel")[0] == "items"
+    text, keyboard = base.world_layer_callback_view(object(), "sw:del:cancel")
+    assert text == "items"
+    assert any(button.get("callback_data") == "sw:del:enter:item" for row in keyboard for button in row)
 
     base.world_layer_callback_view(object(), "sw:del:enter:character")
-    assert base.world_layer_callback_view(object(), "sw:del:cancel")[0] == "characters"
+    text, keyboard = base.world_layer_callback_view(object(), "sw:del:cancel")
+    assert text == "characters"
+    assert any(button.get("callback_data") == "sw:del:enter:character" for row in keyboard for button in row)
 
 
 def test_root_cancel_returns_to_world_without_delete(monkeypatch):
