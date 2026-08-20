@@ -41,6 +41,7 @@ Canonical kickoff docs:
 - `docs/UNIVERSAL_LOCATION_SCHEMA_V1.md`
 - `docs/LOCATION_CREATION_KICKOFF_V1.md`
 - `docs/CREATOR_REAL_WORLD_RESET_AND_GENESIS_PLAN_V1.md`
+- `docs/LOCATION_FIRST_GENESIS_DECISION_RECORD_V1.md`
 
 ---
 
@@ -202,4 +203,4 @@ Because both source and replacement originate from modern Creation/Transmigratio
 
 ## Exact resume sentence
 
-**The Item representative acceptance gate is approved and closed. The immediate authorized slice is I5.11 Sandbox Location Creation + Embedded Contents. Read the mandatory Creation Standard, existing Universal Location Schema and Location kickoff contract, then implement the shared schema-driven Manual/AI -> canonicalize -> validate graph -> preview/export -> explicit atomic Sandbox approval -> approved detail -> Edit lifecycle with zero Real World mutation. Do not wipe the Real World yet. After Location acceptance, execute the approved Genesis transition: audit/reset the prototype Darian/Thorne Estate/legacy Item content, remove legacy reseeding authority while preserving reusable time/weather/economy/runtime foundations, then implement Transmigration against the clean target and rebuild canonical content in dependency-safe order: Locations first, Items/fixtures second, Characters third, then readiness/activation. Reincarnation is deferred for later modern canonical renewals.**
+**The Item representative acceptance gate is approved and closed. The immediate authorized slice is I5.11 Sandbox Location Creation + Embedded Contents. Read the mandatory Creation Standard, existing Universal Location Schema, Location kickoff contract and Location-first Genesis decision record, then implement the shared schema-driven Manual/AI -> canonicalize -> validate graph -> preview/export -> explicit atomic Sandbox approval -> approved detail -> Edit lifecycle with zero Real World mutation. Do not wipe the Real World yet. After Location acceptance, execute the approved Genesis transition: audit/reset the prototype Darian/Thorne Estate/legacy Item content, remove legacy reseeding authority while preserving reusable time/weather/economy/runtime foundations, then implement Transmigration against the clean target and rebuild canonical content in dependency-safe order: Locations first, Items/fixtures second, Characters third, then readiness/activation. Reincarnation is deferred for later modern canonical renewals.**
