@@ -75,6 +75,28 @@ def preview_sandbox_body_grade_target(
             "old_value": float(old_value),
             "new_value": float(new_value),
         })
+
+    definition_row = conn.execute(
+        "SELECT d.label,d.data_type,d.unit,v.mode,v.authority,v.value_json FROM creation_sandbox_profile_values v "
+        "JOIN profile_field_definitions d ON d.field_key=v.field_key "
+        "WHERE v.object_id=? AND v.field_key='body.abdominal_definition'",
+        (object_id,),
+    ).fetchone()
+    new_definition = context.get("new_abdominal_definition")
+    if definition_row is not None and new_definition is not None:
+        old_definition = json.loads(definition_row["value_json"])
+        if old_definition != new_definition:
+            changes.append({
+                "store": "profile",
+                "field_key": "body.abdominal_definition",
+                "label": str(definition_row["label"]),
+                "data_type": str(definition_row["data_type"]),
+                "unit": definition_row["unit"],
+                "mode": "derived",
+                "authority": "appearance_engine",
+                "old_value": old_definition,
+                "new_value": new_definition,
+            })
     if not changes:
         raise CreatorProfileEditError("Body target proposal produced no raw physique changes")
 
