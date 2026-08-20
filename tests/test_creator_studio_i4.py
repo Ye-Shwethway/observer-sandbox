@@ -1,12 +1,77 @@
+import json
+
+import pytest
+
 from observer_sandbox.creation_sandbox import canonical_state_fingerprint, list_sandbox_objects
-from observer_sandbox.creator_studio import active_draft, ai_draft, approve_draft, manual_draft
+from observer_sandbox.creator_studio import CreatorStudioError, active_draft, ai_draft, approve_draft, manual_draft
 from observer_sandbox.db import connect
+from observer_sandbox.manual_character_creation import manual_character_required_field_keys, update_manual_character_field
 from observer_sandbox.runtime import initialize
 from observer_sandbox.telegram_creator_bot import _callback_view, _command_keyboard, handle_command
 
 
 def _callbacks(keyboard):
     return [button["callback_data"] for row in keyboard or [] for button in row]
+
+
+def _manual_value(key: str, data_type: str):
+    specials = {
+        "identity.full_name": "Draft Person",
+        "identity.date_of_birth": "2001-05-12",
+        "identity.sex": "male",
+        "identity.gender": "man",
+        "body.height_in": 74,
+        "genetics.height_max_in": 76,
+        "body.weight_lb": 190,
+        "body.body_fat_pct": 12,
+        "genetics.weight_lean_min_lb": 150,
+        "genetics.weight_lean_max_lb": 220,
+        "genetics.body_fat_floor_pct": 6,
+        "body.neck_in": 16,
+        "body.shoulders_in": 48,
+        "body.chest_in": 42,
+        "body.waist_in": 32,
+        "body.hips_in": 38,
+        "body.biceps_relaxed_in": 15,
+        "body.biceps_flexed_in": 16,
+        "body.triceps_in": 14,
+        "body.forearms_in": 13,
+        "body.thighs_in": 23,
+        "body.calves_in": 16,
+        "genetics.waist_target_in": 32,
+        "sexual_anatomy.penis_length_in": 6,
+        "sexual_anatomy.penis_girth_in": 5,
+        "genetics.penis_length_in": 6,
+        "genetics.penis_girth_in": 5,
+        "training.training_age_years": 0,
+        "raps_ia.iq": 120,
+    }
+    if key in specials:
+        value = specials[key]
+    elif key.startswith("genetics.") and data_type in {"number", "integer"}:
+        value = 60
+    elif data_type == "number":
+        value = 50
+    elif data_type == "integer":
+        value = 1
+    elif data_type == "boolean":
+        value = True
+    elif data_type == "date":
+        value = "2001-05-12"
+    elif data_type == "datetime":
+        value = "2025-05-01T07:00:00+00:00"
+    elif data_type == "json":
+        value = []
+    else:
+        value = "manual value"
+    return json.dumps(value) if data_type == "json" else str(value).lower() if isinstance(value, bool) else str(value)
+
+
+def _fill_manual_exact_seed(conn, user_id=111):
+    for key in manual_character_required_field_keys(conn):
+        row = conn.execute("SELECT data_type FROM profile_field_definitions WHERE field_key=?", (key,)).fetchone()
+        assert row is not None
+        update_manual_character_field(conn, user_id, key, _manual_value(key, str(row["data_type"])))
 
 
 def test_creator_studio_registers_drafts_and_input_sessions(tmp_path):
@@ -24,9 +89,16 @@ def test_manual_draft_is_not_object_until_approval(tmp_path):
         before = canonical_state_fingerprint(conn)
         draft = manual_draft(conn, 111, "character", "Draft Person")
         assert draft["proposal"]["identity"]["name"] == "Draft Person"
+        assert draft["proposal"]["properties"]["character_profile"]["values"]["identity.full_name"] == "Draft Person"
         assert list_sandbox_objects(conn) == []
         assert canonical_state_fingerprint(conn) == before
 
+        with pytest.raises(CreatorStudioError, match="baseline is incomplete"):
+            approve_draft(conn, 111)
+        assert list_sandbox_objects(conn) == []
+        assert canonical_state_fingerprint(conn) == before
+
+        _fill_manual_exact_seed(conn)
         obj = approve_draft(conn, 111)
         assert obj["creation_type"] == "character"
         assert obj["identity"]["name"] == "Draft Person"
@@ -97,7 +169,7 @@ def test_telegram_sandbox_world_exposes_creator_studio_and_dual_creation_paths(t
     assert "sw:cs:preview" in _callbacks(_command_keyboard("/create"))
 
 
-def test_guided_plain_text_input_creates_draft_and_preview_keyboard(tmp_path, monkeypatch):
+def test_guided_plain_text_input_creates_structured_manual_builder(tmp_path, monkeypatch):
     db = tmp_path / "observer.sqlite3"
     initialize(db)
     monkeypatch.setenv("OBSERVER_TELEGRAM_OWNER_ID", "111")
@@ -111,11 +183,15 @@ def test_guided_plain_text_input_creates_draft_and_preview_keyboard(tmp_path, mo
 
     from observer_sandbox import telegram_bot as base
     result = base.handle_command(db, user_id=111, text="Guided Darian")
-    assert "CREATION SANDBOX DRAFT" in result
+    assert "MANUAL CHARACTER BUILD" in result
     assert "Guided Darian" in result
-    assert "sw:cs:approve" in _callbacks(base._command_keyboard(""))
+    callbacks = _callbacks(base._command_keyboard(""))
+    assert "sw:cs:preview" in callbacks
+    assert "sw:cs:approve" not in callbacks
     with connect(db) as conn:
-        assert active_draft(conn, 111) is not None
+        draft = active_draft(conn, 111)
+        assert draft is not None
+        assert draft["proposal"]["properties"]["character_profile"]["values"]["identity.full_name"] == "Guided Darian"
         assert list_sandbox_objects(conn) == []
         assert conn.execute("SELECT 1 FROM creation_sandbox_studio_sessions WHERE user_id=111").fetchone() is None
 
