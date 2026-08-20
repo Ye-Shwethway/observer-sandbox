@@ -162,13 +162,24 @@ def item_batch_ai_fill_schema() -> dict[str, Any]:
 
 
 def canonicalize_ai_item_fill(value: dict[str, Any]) -> dict[str, Any]:
-    """Convert the complete AI fill form into canonical sparse item-v1 source shape."""
+    """Convert the complete AI fill form into canonical sparse item-v1 source shape.
+
+    The provider-facing form contains nullable slots for conditional modules. A
+    non-stackable definition can never semantically own a stack module, so an
+    accidentally populated stack slot is treated the same as any other unused
+    nullable fill slot and removed before the strict Item validator runs. This
+    does not repair contradictory stack identity (for example stackable=true with
+    a unique instance) or invent missing stack facts; those remain validation
+    failures.
+    """
 
     payload = copy.deepcopy(value)
     definition = payload.get("definition")
     if isinstance(definition, dict):
         modules = definition.get("modules")
         if isinstance(modules, dict):
+            if definition.get("stackable") is False:
+                modules["stack"] = None
             definition["modules"] = {key: item for key, item in modules.items() if item is not None}
     instance = payload.get("instance")
     if isinstance(instance, dict) and instance.get("mode") == "unique":
