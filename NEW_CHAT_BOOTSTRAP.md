@@ -10,81 +10,119 @@ Read and reconcile in this order:
 2. this file
 3. `ROADMAP.md`
 4. `docs/CREATOR_CREATION_IMPLEMENTATION_PLAN_V1.md`
-5. task-relevant canonical contracts/source
-6. current branch/PR/CI/runtime evidence before completion or live claims.
+5. `docs/UNIVERSAL_GRADING_SOCKET_ARCHITECTURE_V1.md` for grading work
+6. task-relevant canonical contracts/source
+7. current branch/PR/CI/runtime evidence before completion or live claims.
 
 Authority:
 `current Creator instruction > live repo contracts/config/schema > verified runtime/DB > CI/deploy evidence > continuity docs > remembered chat`.
 
 Persistent branches: `main`, `test` only.
 Workflow: `test -> focused verification -> PR/CI -> merge main -> deploy/runtime verification when applicable -> continuity sync -> exact main/test sync`.
-Do not infer production deployment or Telegram live acceptance from merge alone.
+Do not infer production deployment from merge alone.
 
 ---
 
 ## Current checkpoint
 
-Recent Item acceptance produced two useful live corrections.
+### Fresh Item Edit live acceptance — PASS
 
-### PR #356 — human-friendly draft value presentation
+Creator live verification confirmed PR #358's physical-quantity idempotence fix works: freshly-created/approved Items can now enter Item Edit successfully despite persisted normalized `{kind,value,unit}` quantities.
 
-Merged at `4e27e2045c6fee198e97d7c0b95c9eee18789a30`; CI **#1193** passed.
+PR #358 merge: `9c93739655fc6981a8c5bfd31a7c83a4cce16f62`; CI #1194 passed.
 
-Telegram Item draft detail now renders canonical money as human currency (`$30.00`, `$35.00`, `$1.50 / bar`) through the shared economy formatter. Raw `.txt` export intentionally keeps canonical `*_minor` fields for audit/debugging.
+The earlier `modules.physical.mass.kind` failure was a current validator self-normalization bug, not merely legacy data. Current contract accepts authoring `{value,unit}` and its own normalized `{kind,value,unit}` only with the correct physical dimension; unrelated extras remain invalid.
 
-### PR #358 — fresh Item Edit quantity-normalization fix
+### Universal Grading Socket Architecture v1 — repository accepted
 
-Merged at `9c93739655fc6981a8c5bfd31a7c83a4cce16f62`; CI **#1194** passed targeted tests + CLI smoke.
+Creator approved a socket-first grading architecture so unbounded Item/future-universe content does not require one hard-coded grading table per entity family.
 
-Live evidence from a newly-created, newly-approved current-schema batch disproved the earlier assumption that `modules.physical.mass.kind` was merely obsolete legacy data.
+PR **#360** merged at:
+`9155a94bc75b800d4a10f2a39993647c78d11d9c`
 
-Exact root cause:
-- Item authoring input uses physical quantities shaped as `{value, unit}`;
-- `validate_item_payload()` normalizes them through `PhysicalQuantity.as_dict()` into `{kind, value, unit}`;
-- that normalized payload is persisted by current Item materialization;
-- Item Edit reconstructs the persisted Item and re-runs `validate_item_payload()`;
-- the validator previously accepted only `{value, unit}`, so it rejected its own normalized output with `unknown field(s): ['kind']`.
+CI **#1195**: **SUCCESS** — targeted regression + CLI smoke.
 
-PR #358 makes this boundary idempotent in a bounded way:
-- raw authoring `{value, unit}` remains valid;
-- normalized `{kind, value, unit}` is also valid only when `kind` exactly matches the expected physical dimension;
-- arbitrary extra quantity fields remain rejected;
-- mismatched kinds remain rejected;
-- regression explicitly covers `validate -> persisted normalized Item -> enter Item Edit`.
+New canonical doc:
+`docs/UNIVERSAL_GRADING_SOCKET_ARCHITECTURE_V1.md`.
 
-This is not broad legacy-schema relaxation. It is acceptance of the validator's own exact normalized representation.
+Core invariant:
+`authoritative raw state + registered grading sockets + universe policy -> derived GradePlan -> deterministic GradeProfile`.
 
----
+Implemented sockets:
+- `EvaluatorSpec` / evaluator registry;
+- `DimensionSpec` / dimension registry;
+- `ReferenceProfile` registry;
+- `UniverseGradingPolicy`;
+- rebuildable `GradePlan`;
+- deterministic `GradeProfile` resolution.
 
-## Retained safety / ontology locks
+Current Item integration:
+- reuses existing `item-resistance-load-v1` through registered `item / resistance_load`;
+- 55 lb-equivalent training resistance remains S;
+- Creator draft review and approved Sandbox Item detail show human-facing grading such as `Resistance Load: S · Expert`;
+- ordinary Items with no registered applicable dimension explicitly show that no grading dimension applies yet;
+- raw `.txt` export remains non-authoritative authoring data and does not gain GradePlan fields;
+- no DB migration or persisted new grade authority.
 
-- Sandbox-created content stays isolated from Real World.
-- Nothing transmigrates automatically.
-- `runtime_ready != running`.
-- Strict Item semantics remain authoritative.
-- Ownership is orthogonal to location/storage.
-- Item relations remain: `contains`, `located_at`, `stored_in`, `owned_by`, `carried_by`, `equipped_by` with their existing meanings.
-- Item Edit preflights before pausing, restores previous pause state, previews before Apply, uses deterministic `update_sandbox_item()`, and must not mutate canonical Real World state.
-- Sandbox Character+Item cleanup remains atomic/canonical-fingerprint guarded; Locations are still excluded from that cleanup slice.
-- Full Sandbox autonomous ticking remains unauthorized.
+Default realistic-universe policy explicitly allowlists current legitimate dimensions/evaluators and caps current Item load grading at S. Merely registering a future supernatural dimension does not admit it into the realistic universe.
 
-I5.2 through I5.10 remain complete; do not rebuild them.
+Deployment/live Telegram rendering for PR #360 remains separately unverified unless Creator/runtime evidence confirms it.
 
 ---
 
-## Immediate live acceptance
+## Grading semantic locks
 
-Before I5.11:
-1. verify deployed runtime includes PR #358 or later;
-2. reopen one of the freshly-approved Items from the current batch;
-3. enter `✏️ Edit Item` — the prior `modules.physical.mass.kind` failure should no longer occur;
-4. edit a representative field -> Preview -> Apply -> Done Editing;
-5. verify pre-edit Sandbox pause state is restored;
-6. verify Real World/canonical state remains unchanged.
+Canonical vocabulary remains:
+`E < D < C < B < A < S < SS < SSS < X < XX`.
 
-The current approved batch does **not** need to be deleted/recreated merely because it contains normalized `kind`; PR #358 is specifically designed to accept that exact persisted current representation.
+Rules:
+- shared vocabulary, domain-specific evaluators;
+- raw facts remain authority;
+- arbitrary numeric fields are not automatically gradeable;
+- missing evidence/reference => ungraded, not fabricated precision;
+- overall grade requires an explicit composite scheme/evaluator;
+- **Item Grade describes the item. Requirement Grade describes the interaction.**
+- Item grade never automatically becomes a Character requirement;
+- Location grade never automatically becomes access authorization;
+- new universe-specific dimensions require explicit universe-policy allowance.
 
-After live Edit/Save passes, resume **I5.11 — Sandbox Location Creation + Embedded Contents**.
+Future gradeable concepts should normally be added through:
+`EvaluatorSpec + DimensionSpec + optional ReferenceProfile + UniverseGradingPolicy allowance`
+without editing Item-family switches or resolver core.
+
+---
+
+## Retained Creator / Item foundation
+
+I5.2 through I5.10 remain complete and must not be rebuilt:
+- reuse map;
+- universal physical quantity/measurement;
+- cross-domain grading;
+- requirements/access;
+- Universal Item Schema v1;
+- single + batch Item materialization;
+- Item/container operations;
+- Universal Location Schema v1.
+
+Item Creator Studio also retains Single/Batch AI/manual creation, strict validation, realism/self-correction, human review + raw export, approved details/economics, Item Edit parity/diagnostics, and Character/Item batch cleanup.
+
+Sandbox/Real World isolation, no automatic transmigration, `runtime_ready != running`, relation ontology, canonical fingerprint safety and no unauthorized full Sandbox autonomous ticking remain locked.
+
+---
+
+## Immediate next development order
+
+Creator changed the order before I5.11: continue **Item Grading Coverage expansion** on top of the accepted socket architecture, then return to Location creation.
+
+Next bounded grading work should:
+1. verify PR #360 live Telegram grading presentation when deployed;
+2. add additional evidence-backed reusable Item dimensions/reference profiles rather than Item-family switches;
+3. add a structured AI applicability-plan proposal only where useful, with every proposed dimension/evaluator/reference resolved through registries + universe policy + evidence before deterministic grading;
+4. keep unknown/uncovered Items valid and explicitly ungraded;
+5. avoid invented thresholds/reference baselines;
+6. add overall Item grade only when an explicit defensible composite contract exists.
+
+After the intended Item grading coverage checkpoint is accepted, resume **I5.11 — Sandbox Location Creation + Embedded Contents**.
 
 Adrian Vale remains Sandbox-only. Second Real World Character gate remains closed. Full autonomous Sandbox ticking remains separately unauthorized.
 
@@ -92,4 +130,4 @@ Adrian Vale remains Sandbox-only. Second Real World Character gate remains close
 
 ## Exact resume sentence
 
-**PR #358 merged at `9c93739655fc6981a8c5bfd31a7c83a4cce16f62` after CI #1194 passed. Fresh current-schema Item Edit failed because the Item validator persisted its own normalized physical quantity shape `{kind,value,unit}` but previously re-accepted only authoring shape `{value,unit}`. PR #358 makes that normalization boundary idempotent while still rejecting mismatched kinds and arbitrary extras. Verify deployment, reopen the already-approved fresh batch, complete Edit/Preview/Apply/Done, then begin I5.11.**
+**Fresh Item Edit is live-confirmed working after PR #358. PR #360 is merged at `9155a94bc75b800d4a10f2a39993647c78d11d9c` with CI #1195 green and establishes Universal Grading Socket Architecture v1 plus first Item coverage: registry-driven resistance-load grading, explicit ungraded state for uncovered Items, universe-policy gating, and grading in draft/approved Item views without new persisted grade authority. Verify #360 live when available, continue evidence-backed Item Grading Coverage expansion through sockets rather than Item-family hard-coding, then resume I5.11.**
