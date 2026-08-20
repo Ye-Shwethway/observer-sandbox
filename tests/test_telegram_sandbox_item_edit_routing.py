@@ -10,33 +10,70 @@ import observer_sandbox.telegram_world_layers_item_edit_extension as world_exten
 def test_world_layer_routes_item_edit_callbacks_with_owner_identity(monkeypatch):
     calls = []
 
-    def item_detail_view(conn, item_id):
+    def object_view(conn, object_id):
         return "item", [[{"text": "back", "callback_data": "nav:sandbox"}]]
 
     def original_callback(conn, callback_data):
         return "legacy", None
 
     base = SimpleNamespace(
-        sandbox_item_detail_view=item_detail_view,
+        sandbox_object_view=object_view,
         world_layer_callback_view=original_callback,
         _notification_user_id=lambda: 4242,
     )
 
     monkeypatch.setattr(
         world_extension,
+        "get_sandbox_object",
+        lambda conn, object_id: {
+            "object_id": object_id,
+            "creation_type": "item",
+            "lifecycle_status": "active",
+        },
+    )
+    monkeypatch.setattr(
+        world_extension,
         "sandbox_item_edit_callback_view",
-        lambda conn, callback_data, *, user_id: calls.append((callback_data, user_id)) or ("editor", []),
+        lambda conn, *, user_id, callback_data: calls.append((callback_data, user_id)) or ("editor", []),
     )
 
-    world_extension.install_world_layer_item_edit_extension(base)
+    world_extension.install_item_edit_world_layers_extension(base)
 
-    assert base.world_layer_callback_view(object(), "sw:iedit:open:12") == ("editor", [])
-    assert calls == [("sw:iedit:open:12", 4242)]
+    assert base.world_layer_callback_view(object(), "sw:iedit:enter:item_12") == ("editor", [])
+    assert calls == [("sw:iedit:enter:item_12", 4242)]
     assert base.world_layer_callback_view(object(), "nav:sandbox") == ("legacy", None)
 
-    _, keyboard = base.sandbox_item_detail_view(object(), 12)
+    _, keyboard = base.sandbox_object_view(object(), "item_12")
     assert any(
-        button.get("callback_data") == "sw:iedit:open:12"
+        button.get("callback_data") == "sw:iedit:enter:item_12"
+        for row in keyboard
+        for button in row
+    )
+
+
+def test_world_layer_does_not_add_edit_action_to_non_item(monkeypatch):
+    base = SimpleNamespace(
+        sandbox_object_view=lambda conn, object_id: (
+            "location",
+            [[{"text": "back", "callback_data": "nav:sandbox"}]],
+        ),
+        world_layer_callback_view=lambda conn, callback_data: ("legacy", None),
+        _notification_user_id=lambda: 4242,
+    )
+    monkeypatch.setattr(
+        world_extension,
+        "get_sandbox_object",
+        lambda conn, object_id: {
+            "object_id": object_id,
+            "creation_type": "location",
+            "lifecycle_status": "active",
+        },
+    )
+
+    world_extension.install_item_edit_world_layers_extension(base)
+    _, keyboard = base.sandbox_object_view(object(), "loc_12")
+    assert all(
+        not str(button.get("callback_data") or "").startswith("sw:iedit:")
         for row in keyboard
         for button in row
     )
