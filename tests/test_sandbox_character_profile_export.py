@@ -71,7 +71,7 @@ def _seed(conn):
     )
     conn.execute(
         "INSERT INTO creation_sandbox_character_preferences(object_id,preference_type,subject,intensity) VALUES(?,?,?,?)",
-        (CHARACTER_ID, "likes", "quiet mornings", 80.0),
+        (CHARACTER_ID, "like", "quiet mornings", 80.0),
     )
     conn.execute(
         "INSERT INTO creation_sandbox_character_hobbies(object_id,name,proficiency,frequency,enjoyment) VALUES(?,?,?,?,?)",
@@ -101,7 +101,7 @@ def test_full_profile_renderer_exports_current_approved_character_snapshot(tmp_p
         assert "81.0" in text
         assert "profile-export-edit-test" in text
         assert "first_aid | category=medical | score=67.0" in text
-        assert "likes: quiet mornings | intensity=80.0" in text
+        assert "like: quiet mornings | intensity=80.0" in text
         assert "Hiking | proficiency=55.0 | frequency=weekly | enjoyment=90.0" in text
         assert "Hydration | Carries water | frequency=daily | strength=75.0" in text
         assert "Live runtime-owned changing state is intentionally outside this profile export." in text
