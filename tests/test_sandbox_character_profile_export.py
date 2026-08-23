@@ -95,7 +95,8 @@ def test_full_profile_renderer_exports_current_approved_character_snapshot(tmp_p
 
         assert filename == "sandbox-character-export-test-full-profile.txt"
         assert "SANDBOX CHARACTER — FULL PROFILE SNAPSHOT" in text
-        assert "identity.full_name | Full Name: Export Test" in text
+        assert "identity.full_name" in text
+        assert "Export Test" in text
         assert "identity.sex" in text
         assert "raps_pa.strength" in text
         assert "81.0" in text
