@@ -20,6 +20,48 @@ def _slug(value: str) -> str:
     return text or "draft"
 
 
+def send_text_document(
+    chat_id: int,
+    filename: str,
+    text: str,
+    *,
+    caption: str,
+) -> str:
+    """Send one UTF-8 text document through the existing Telegram document path."""
+    token = os.environ.get("OBSERVER_TELEGRAM_BOT_TOKEN", "").strip()
+    if not token:
+        raise RuntimeError("Telegram bot token is not configured")
+    boundary = "----ObserverSandboxTextBoundary7MA4YWxkTrZu0gW"
+    body = bytearray()
+
+    def field(name: str, value: str) -> None:
+        body.extend(f"--{boundary}\r\n".encode())
+        body.extend(f'Content-Disposition: form-data; name="{name}"\r\n\r\n'.encode())
+        body.extend(value.encode("utf-8"))
+        body.extend(b"\r\n")
+
+    field("chat_id", str(int(chat_id)))
+    field("caption", caption)
+    body.extend(f"--{boundary}\r\n".encode())
+    body.extend(f'Content-Disposition: form-data; name="document"; filename="{filename}"\r\n'.encode())
+    body.extend(b"Content-Type: text/plain; charset=utf-8\r\n\r\n")
+    body.extend(text.encode("utf-8"))
+    body.extend(b"\r\n")
+    body.extend(f"--{boundary}--\r\n".encode())
+
+    request = urllib.request.Request(
+        f"https://api.telegram.org/bot{token}/sendDocument",
+        data=bytes(body),
+        headers={"Content-Type": f"multipart/form-data; boundary={boundary}"},
+        method="POST",
+    )
+    with urllib.request.urlopen(request, timeout=30) as response:
+        payload = json.loads(response.read().decode("utf-8"))
+    if not payload.get("ok"):
+        raise RuntimeError(str(payload.get("description") or "Telegram document upload failed"))
+    return filename
+
+
 def render_full_draft_text(conn, user_id: int) -> tuple[str, str]:
     draft = active_draft(conn, user_id)
     if not draft:
@@ -96,39 +138,13 @@ def render_full_draft_text(conn, user_id: int) -> tuple[str, str]:
 
 
 def send_full_draft_document(conn, user_id: int) -> str:
-    token = os.environ.get("OBSERVER_TELEGRAM_BOT_TOKEN", "").strip()
-    if not token:
-        raise RuntimeError("Telegram bot token is not configured")
     filename, text = render_full_draft_text(conn, user_id)
-    boundary = "----ObserverSandboxDraftBoundary7MA4YWxkTrZu0gW"
-    body = bytearray()
-
-    def field(name: str, value: str) -> None:
-        body.extend(f"--{boundary}\r\n".encode())
-        body.extend(f'Content-Disposition: form-data; name="{name}"\r\n\r\n'.encode())
-        body.extend(value.encode("utf-8"))
-        body.extend(b"\r\n")
-
-    field("chat_id", str(int(user_id)))
-    field("caption", "📄 Full Creator Studio draft export")
-    body.extend(f"--{boundary}\r\n".encode())
-    body.extend(f'Content-Disposition: form-data; name="document"; filename="{filename}"\r\n'.encode())
-    body.extend(b"Content-Type: text/plain; charset=utf-8\r\n\r\n")
-    body.extend(text.encode("utf-8"))
-    body.extend(b"\r\n")
-    body.extend(f"--{boundary}--\r\n".encode())
-
-    request = urllib.request.Request(
-        f"https://api.telegram.org/bot{token}/sendDocument",
-        data=bytes(body),
-        headers={"Content-Type": f"multipart/form-data; boundary={boundary}"},
-        method="POST",
+    return send_text_document(
+        user_id,
+        filename,
+        text,
+        caption="📄 Full Creator Studio draft export",
     )
-    with urllib.request.urlopen(request, timeout=30) as response:
-        payload = json.loads(response.read().decode("utf-8"))
-    if not payload.get("ok"):
-        raise RuntimeError(str(payload.get("description") or "Telegram document upload failed"))
-    return filename
 
 
-__all__ = ["render_full_draft_text", "send_full_draft_document"]
+__all__ = ["render_full_draft_text", "send_full_draft_document", "send_text_document"]
