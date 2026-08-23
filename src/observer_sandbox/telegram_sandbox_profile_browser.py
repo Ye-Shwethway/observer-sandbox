@@ -21,6 +21,14 @@ def _profile_menu_keyboard(data):
     keyboard.append(
         [
             {
+                "text": "📄 Export Full Profile (.txt)",
+                "callback_data": f"sw:pexport:{character_id}",
+            }
+        ]
+    )
+    keyboard.append(
+        [
+            {
                 "text": "✏️ Edit Profile",
                 "callback_data": f"sw:pedit:enter:{character_id}",
             }
