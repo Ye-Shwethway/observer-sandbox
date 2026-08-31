@@ -264,7 +264,7 @@ def test_ai_location_invalid_contract_fails_without_draft_or_materialization(tmp
     db = tmp_path / "observer.sqlite3"
     initialize(db)
     bad = manual_location_template()
-    bad["derived"] = {"completeness_level": "L4"}
+    bad["operations"]["initial_state"] = "teleporting"
     monkeypatch.setattr(
         location_studio,
         "creator_creation_binding",
@@ -273,10 +273,12 @@ def test_ai_location_invalid_contract_fails_without_draft_or_materialization(tmp
     monkeypatch.setattr(location_studio, "generate_structured", lambda *args, **kwargs: bad)
 
     with connect(db) as conn:
-        with pytest.raises(CreatorStudioError, match="failed exact validation"):
+        before = canonical_state_fingerprint(conn)
+        with pytest.raises(CreatorStudioError, match="failed exact validation after one deterministic repair"):
             ai_location_draft(conn, 37, "Create a room")
         assert active_draft(conn, 37) is None
         assert _location_count(conn) == 0
+        assert canonical_state_fingerprint(conn) == before
 
 
 def test_location_telegram_revision_confirmation_materializes_via_v2_only(tmp_path) -> None:
