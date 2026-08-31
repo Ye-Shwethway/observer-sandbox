@@ -14,6 +14,8 @@ from observer_sandbox.creator_studio_location import (
     manual_location_draft,
     manual_location_template,
     reroll_location_draft,
+    start_manual_location_draft,
+    update_manual_location_section,
 )
 from observer_sandbox.db import connect
 from observer_sandbox.location_creation_schema_v2 import validate_location_payload_v2
@@ -78,6 +80,7 @@ def test_manual_location_draft_preview_and_export_are_write_free(tmp_path) -> No
         text, keyboard = draft_preview_view(conn, 11)
         assert "LOCATION SANDBOX DRAFT" in text
         assert "Exact location-v2 source validation passed" in text
+        assert "sw:cs:location:sections" in _callbacks(keyboard)
         assert "sw:cs:export" in _callbacks(keyboard)
         assert "sw:cs:approve" in _callbacks(keyboard)
         assert _location_count(conn) == 0
@@ -88,6 +91,88 @@ def test_manual_location_draft_preview_and_export_are_write_free(tmp_path) -> No
         assert "location-v2" in exported
         assert _location_count(conn) == 0
         assert canonical_state_fingerprint(conn) == before
+
+
+def test_guided_manual_location_starts_sparse_valid_draft_and_exposes_all_sections(tmp_path) -> None:
+    db = tmp_path / "observer.sqlite3"
+    initialize(db)
+
+    with connect(db) as conn:
+        before = canonical_state_fingerprint(conn)
+        method_text, method_keyboard = studio_callback_view(conn, 41, "sw:cs:type:location")
+        assert "guided manual authoring" in method_text.lower()
+        assert "sw:cs:location:guided" in _callbacks(method_keyboard)
+
+        text, keyboard = studio_callback_view(conn, 41, "sw:cs:location:guided")
+        assert "LOCATION · GUIDED MANUAL BUILD" in text
+        draft = active_draft(conn, 41)
+        assert draft is not None
+        assert draft["draft_mode"] == "manual"
+        assert draft["revision"] == 1
+        assert _location_count(conn) == 0
+        callbacks = _callbacks(keyboard)
+        for key in (
+            "identity", "structure", "geography", "spatial", "boundary", "access",
+            "operations", "topology", "facilities", "environment", "control",
+            "economic_policy", "provenance",
+        ):
+            assert f"sw:cs:location:section:{key}" in callbacks
+        assert canonical_state_fingerprint(conn) == before
+
+
+def test_guided_manual_section_update_revalidates_whole_payload_and_increments_revision(tmp_path) -> None:
+    db = tmp_path / "observer.sqlite3"
+    initialize(db)
+
+    with connect(db) as conn:
+        before = canonical_state_fingerprint(conn)
+        first = start_manual_location_draft(conn, 43)
+        replacement = {
+            "key": "place.test.library",
+            "name": "Sandbox Library",
+            "kind": "room",
+            "description": "A quiet reading room.",
+            "functional_classes": [],
+            "tags": ["reading"],
+        }
+        second = update_manual_location_section(conn, 43, "identity", json.dumps(replacement))
+        stored = second["proposal"]["properties"]["location_payload"]
+        assert first["revision"] == 1
+        assert second["revision"] == 2
+        assert stored["identity"]["name"] == "Sandbox Library"
+        assert stored["structure"] == manual_location_template()["structure"]
+        assert "derived" not in stored
+        assert _location_count(conn) == 0
+        assert canonical_state_fingerprint(conn) == before
+
+        with pytest.raises(CreatorStudioError, match="Location contract rejected"):
+            update_manual_location_section(conn, 43, "operations", json.dumps({"initial_state": "teleporting"}))
+        unchanged = active_draft(conn, 43)
+        assert unchanged is not None
+        assert unchanged["revision"] == 2
+        assert _location_count(conn) == 0
+        assert canonical_state_fingerprint(conn) == before
+
+
+def test_guided_section_prompt_records_exact_session_and_returns_to_preview_after_update(tmp_path) -> None:
+    db = tmp_path / "observer.sqlite3"
+    initialize(db)
+
+    with connect(db) as conn:
+        studio_callback_view(conn, 47, "sw:cs:location:guided")
+        prompt, keyboard = studio_callback_view(conn, 47, "sw:cs:location:section:boundary")
+        assert "LOCATION · BOUNDARY" in prompt
+        assert '"type": "physical"' in prompt
+        assert "sw:cs:location:sections" in _callbacks(keyboard)
+        session = conn.execute(
+            "SELECT creation_type,input_mode,expected_input FROM creation_sandbox_studio_sessions WHERE sandbox_id='creator-default' AND user_id=?",
+            (47,),
+        ).fetchone()
+        assert dict(session) == {
+            "creation_type": "location",
+            "input_mode": "manual",
+            "expected_input": "location-section:boundary",
+        }
 
 
 def test_stale_location_approval_is_rejected_and_cancel_is_zero_write(tmp_path) -> None:
@@ -204,6 +289,7 @@ def test_location_telegram_revision_confirmation_materializes_via_v2_only(tmp_pa
         method_text, method_keyboard = studio_callback_view(conn, 23, "sw:cs:type:location")
         assert "CREATE LOCATION" in method_text
         callbacks = _callbacks(method_keyboard)
+        assert "sw:cs:location:guided" in callbacks
         assert "sw:cs:input:location:manual" in callbacks
         assert "sw:cs:input:location:ai" in callbacks
 
