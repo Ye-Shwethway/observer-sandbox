@@ -5,12 +5,32 @@ import sqlite3
 
 from .creator_studio import CreatorStudioError, active_draft
 from .creator_studio_location import (
+    MANUAL_LOCATION_SECTIONS,
     ai_location_draft,
     approve_location_draft,
     manual_location_draft,
     manual_location_template,
     reroll_location_draft,
+    start_manual_location_draft,
+    update_manual_location_section,
 )
+
+
+_SECTION_META = {
+    "identity": ("🪪", "Identity"),
+    "structure": ("🏗", "Structure"),
+    "geography": ("🗺", "Geography"),
+    "spatial": ("📐", "Spatial"),
+    "boundary": ("🧱", "Boundary"),
+    "access": ("🚪", "Access"),
+    "operations": ("⚙️", "Operations"),
+    "topology": ("🔗", "Topology"),
+    "facilities": ("🏢", "Facilities"),
+    "environment": ("🌤", "Environment"),
+    "control": ("🔐", "Control"),
+    "economic_policy": ("💰", "Economics"),
+    "provenance": ("🧾", "Provenance"),
+}
 
 
 def _location_payload(draft: dict[str, object] | None) -> dict[str, object] | None:
@@ -24,6 +44,42 @@ def _location_payload(draft: dict[str, object] | None) -> dict[str, object] | No
         return None
     payload = properties.get("location_payload")
     return payload if isinstance(payload, dict) else None
+
+
+def _section_summary(payload: dict[str, object], section_key: str) -> str:
+    value = payload.get(section_key)
+    if section_key == "identity" and isinstance(value, dict):
+        return str(value.get("name") or "Unnamed")
+    if section_key == "structure" and isinstance(value, dict):
+        return f"{value.get('exposure', '—')} · parent={value.get('parent_ref') or 'none'}"
+    if section_key == "geography" and isinstance(value, dict):
+        represented = [value.get(key) for key in ("locality", "region", "country_code") if value.get(key)]
+        return ", ".join(str(item) for item in represented) if represented else "not specified"
+    if section_key == "spatial" and isinstance(value, dict):
+        represented = [key for key in ("area", "length", "width", "height", "elevation") if value.get(key) is not None]
+        return ", ".join(represented) if represented else "sparse"
+    if section_key == "boundary" and isinstance(value, dict):
+        return f"{value.get('type', '—')} · {value.get('enclosure', '—')}"
+    if section_key == "access" and isinstance(value, dict):
+        policy = value.get("policy") if isinstance(value.get("policy"), dict) else {}
+        return str(policy.get("mode") or "—")
+    if section_key == "operations" and isinstance(value, dict):
+        return str(value.get("initial_state") or "—")
+    if section_key == "topology" and isinstance(value, dict):
+        interfaces = value.get("interfaces") if isinstance(value.get("interfaces"), list) else []
+        return f"{len(interfaces)} interface(s)"
+    if section_key == "facilities" and isinstance(value, dict):
+        caps = value.get("capabilities") if isinstance(value.get("capabilities"), list) else []
+        return f"{len(caps)} capability token(s)"
+    if section_key == "environment" and isinstance(value, dict):
+        return f"{value.get('lighting_profile', '—')} · {value.get('weather_exposure', '—')}"
+    if section_key == "control" and isinstance(value, dict):
+        return str(value.get("ownership_class") or "—")
+    if section_key == "economic_policy":
+        return "not specified" if value is None else "represented"
+    if section_key == "provenance" and isinstance(value, dict):
+        return str(value.get("source_status") or "—")
+    return "represented"
 
 
 def install_location_creator_studio_extension(base) -> None:
@@ -40,8 +96,12 @@ def install_location_creator_studio_extension(base) -> None:
         return str(session.get("expected_input") or "") if session else ""
 
     def manual_draft(conn, user_id, creation_type, raw, **kwargs):
-        if creation_type == "location" and _session_expected(conn, user_id) == "location-json":
+        expected = _session_expected(conn, user_id)
+        if creation_type == "location" and expected == "location-json":
             return manual_location_draft(conn, user_id, raw, **kwargs)
+        if creation_type == "location" and expected.startswith("location-section:"):
+            section_key = expected.split(":", 1)[1]
+            return update_manual_location_section(conn, user_id, section_key, raw, **kwargs)
         return original_manual_draft(conn, user_id, creation_type, raw, **kwargs)
 
     def ai_draft(conn, user_id, creation_type, prompt_text, **kwargs):
@@ -57,10 +117,11 @@ def install_location_creator_studio_extension(base) -> None:
             return original_method_view(creation_type)
         return (
             "📍 CREATE LOCATION\n━━━━━━━━━━━━━━━━━━\n"
-            "Choose natural-language AI authoring or exact location-v2 JSON. Both paths use the same deterministic validator and Sandbox materializer.",
+            "Choose guided Manual authoring, exact location-v2 JSON, or natural-language AI. All paths converge on the same validator and Sandbox materializer.",
             [
-                [{"text": "✨ Location · AI", "callback_data": "sw:cs:input:location:ai"}],
+                [{"text": "✍️ Location · Guided Build", "callback_data": "sw:cs:location:guided"}],
                 [{"text": "🧾 Location · Exact JSON", "callback_data": "sw:cs:input:location:manual"}],
+                [{"text": "✨ Location · AI", "callback_data": "sw:cs:input:location:ai"}],
                 [{"text": "← Creation Type", "callback_data": "sw:cs:create"}],
             ],
         )
@@ -89,6 +150,54 @@ def install_location_creator_studio_extension(base) -> None:
             [
                 [{"text": "← Change Method", "callback_data": "sw:cs:type:location"}],
                 [{"text": "✕ Cancel", "callback_data": "sw:cs:input:cancel"}],
+            ],
+        )
+
+    def manual_location_builder_view(conn: sqlite3.Connection, user_id: int, *, notice: str | None = None):
+        draft = active_draft(conn, user_id)
+        payload = _location_payload(draft)
+        if payload is None or not draft or draft.get("draft_mode") != "manual":
+            return draft_preview_view(conn, user_id, notice=notice or "No active guided Manual Location draft.")
+        identity = payload.get("identity") if isinstance(payload.get("identity"), dict) else {}
+        lines = [
+            "✍️ LOCATION · GUIDED MANUAL BUILD",
+            "━━━━━━━━━━━━━━━━━━",
+            f"Name: {identity.get('name', 'Unnamed')}",
+            f"Revision: {draft.get('revision', '—')}",
+            "",
+            "Choose a section. Send only that section's JSON when prompted; the complete location-v2 payload is revalidated before the draft revision is saved.",
+            "",
+        ]
+        keyboard = []
+        for section_key in MANUAL_LOCATION_SECTIONS:
+            icon, label = _SECTION_META[section_key]
+            lines.append(f"{icon} {label}: {_section_summary(payload, section_key)}")
+            keyboard.append([{"text": f"{icon} Edit {label}", "callback_data": f"sw:cs:location:section:{section_key}"}])
+        if notice:
+            lines.extend(["", notice])
+        keyboard.extend([
+            [{"text": "📋 Review Full Draft", "callback_data": "sw:cs:preview"}],
+            [{"text": "✕ Cancel Draft", "callback_data": "sw:cs:cancel"}],
+            [{"text": "← Creator Studio", "callback_data": "sw:studio"}],
+        ])
+        return "\n".join(lines), keyboard
+
+    def location_section_prompt_view(conn: sqlite3.Connection, user_id: int, section_key: str):
+        draft = active_draft(conn, user_id)
+        payload = _location_payload(draft)
+        if payload is None or section_key not in MANUAL_LOCATION_SECTIONS:
+            return manual_location_builder_view(conn, user_id, notice="Section unavailable.")
+        icon, label = _SECTION_META[section_key]
+        current = json.dumps(payload.get(section_key), ensure_ascii=False, indent=2)
+        return (
+            f"{icon} LOCATION · {label.upper()}\n━━━━━━━━━━━━━━━━━━\n"
+            "Send the replacement JSON for this section as your next message.\n"
+            "Only this section changes; the entire Location is then validated and saved as a new draft revision.\n"
+            "Use null/empty values for unknown facts. Do not author grade or derived fields.\n\n"
+            f"Current {label}:\n{current}",
+            [
+                [{"text": "← Guided Builder", "callback_data": "sw:cs:location:sections"}],
+                [{"text": "✕ Cancel Input", "callback_data": "sw:cs:input:cancel"}],
             ],
         )
 
@@ -139,6 +248,8 @@ def install_location_creator_studio_extension(base) -> None:
         if notice:
             lines.extend(["", notice])
         keyboard = []
+        if draft and draft.get("draft_mode") == "manual":
+            keyboard.append([{"text": "✍️ Edit Sections", "callback_data": "sw:cs:location:sections"}])
         if draft and draft.get("draft_mode") == "ai_generated":
             keyboard.append([{"text": "♻️ Reroll", "callback_data": "sw:cs:reroll"}])
         keyboard.extend([
@@ -149,9 +260,9 @@ def install_location_creator_studio_extension(base) -> None:
         ])
         return "\n".join(lines), keyboard
 
-    def begin_location_session(conn: sqlite3.Connection, user_id: int, input_mode: str) -> None:
+    def begin_location_session(conn: sqlite3.Connection, user_id: int, input_mode: str, *, expected: str | None = None) -> None:
         stored_mode = "manual" if input_mode == "manual" else "ai_generated"
-        expected = "location-json" if input_mode == "manual" else "description"
+        expected_input = expected or ("location-json" if input_mode == "manual" else "description")
         conn.execute(
             """
             INSERT INTO creation_sandbox_studio_sessions(
@@ -161,7 +272,7 @@ def install_location_creator_studio_extension(base) -> None:
                 creation_type='location',input_mode=excluded.input_mode,expected_input=excluded.expected_input,
                 prompt_chat_id=NULL,prompt_message_id=NULL,updated_at=CURRENT_TIMESTAMP
             """,
-            (int(user_id), stored_mode, expected),
+            (int(user_id), stored_mode, expected_input),
         )
         conn.commit()
 
@@ -170,6 +281,25 @@ def install_location_creator_studio_extension(base) -> None:
             base._clear_session(conn, user_id)
             base._restore_input_router()
             return method_view("location")
+        if callback_data == "sw:cs:location:guided":
+            base._clear_session(conn, user_id)
+            base._restore_input_router()
+            try:
+                start_manual_location_draft(conn, user_id)
+            except CreatorStudioError as exc:
+                return method_view("location")[0] + f"\n\nGuided draft could not start: {exc}", method_view("location")[1]
+            return manual_location_builder_view(conn, user_id, notice="✅ Sparse valid location-v2 draft started. Fill only what you know.")
+        if callback_data == "sw:cs:location:sections":
+            base._clear_session(conn, user_id)
+            base._restore_input_router()
+            return manual_location_builder_view(conn, user_id)
+        if callback_data.startswith("sw:cs:location:section:"):
+            section_key = callback_data.rsplit(":", 1)[-1]
+            if section_key not in MANUAL_LOCATION_SECTIONS:
+                return manual_location_builder_view(conn, user_id, notice="Unknown Location section.")
+            begin_location_session(conn, user_id, "manual", expected=f"location-section:{section_key}")
+            base._install_input_router()
+            return location_section_prompt_view(conn, user_id, section_key)
         if callback_data in {"sw:cs:input:location:manual", "sw:cs:input:location:ai"}:
             mode = "manual" if callback_data.endswith(":manual") else "ai"
             begin_location_session(conn, user_id, mode)
