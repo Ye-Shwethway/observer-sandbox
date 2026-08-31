@@ -17,7 +17,7 @@ Roadmap synchronized: **2026-08-31**
 
 ## Mandatory Creation gate
 
-Before any Creator Creation planning/coding/review/debugging, read:
+Before Creator Creation planning/coding/review/debugging, read:
 
 `docs/CREATION_SECTION_IMPLEMENTATION_STANDARD_V1.md`
 
@@ -25,73 +25,56 @@ Core vertical:
 
 `versioned schema -> registered socket/reuse map -> Manual full-schema + AI full-schema -> canonicalize -> strict validate -> dependency/graph validate -> write-free preview + .txt -> explicit approval -> atomic Sandbox materialization -> approved detail -> Edit Preview/Apply/Done -> cleanup`
 
-A new domain must not be built as bespoke CRUD.
+A new Creation domain must not be built as bespoke CRUD.
 
 ---
 
 # Current strategic direction — Location first, then Genesis
 
-The current Real World Darian/Thorne Estate/legacy Item world is explicitly prototype-era exemplar content. It is not a preservation constraint.
+The current Real World Darian/Thorne Estate/legacy Item world is prototype-era exemplar content and is not a preservation constraint.
 
 Approved principle:
 
 > **Preserve reusable universe infrastructure; retire prototype content; rebuild canonical content from modern Sandbox creations through explicit transmigration.**
 
-Canonical Genesis plan:
+Canonical Genesis plan: `docs/CREATOR_REAL_WORLD_RESET_AND_GENESIS_PLAN_V1.md`  
+Decision record: `docs/LOCATION_FIRST_GENESIS_DECISION_RECORD_V1.md`
 
-`docs/CREATOR_REAL_WORLD_RESET_AND_GENESIS_PLAN_V1.md`
-
-Decision record:
-
-`docs/LOCATION_FIRST_GENESIS_DECISION_RECORD_V1.md`
-
-The destructive reset is **not authorized yet**.
-
-A rebuilt world requires represented space before Characters and Items can become runnable. Therefore the immediate feature family remains modern Sandbox Location Creation.
+The destructive reset is **not authorized yet**. Full Location acceptance must close first.
 
 ---
 
-# Current authorized feature family — Location Creation
+# Current Location authority
 
-Canonical detailed implementation plan:
+Detailed plan: `docs/LOCATION_CREATION_IMPLEMENTATION_PLAN_V1.md`
 
-`docs/LOCATION_CREATION_IMPLEMENTATION_PLAN_V1.md`
-
-Current refined schema authority:
+Current schema/runtime contracts include:
 
 - `docs/UNIVERSAL_LOCATION_SCHEMA_V2.md`;
+- `docs/LOCATION_GRADING_EVIDENCE_MATRIX_V1.md`;
 - `src/observer_sandbox/location_creation_schema_v2.py`;
 - `src/observer_sandbox/location_schema_registry_v2.py`;
+- `src/observer_sandbox/location_ai_contract.py`;
 - `src/observer_sandbox/sandbox_location_v2.py`;
 - `docs/WORLD_LOCATION_NODE_MODEL.md`;
 - `docs/WORLD_LOCATION_SPATIAL_CONTAINER_CONTRACT_V1.md`;
 - `docs/WORLD_SPATIAL_ACCESS_TRAVEL_CONTRACT_V1.md`;
 - `docs/UNIVERSAL_GRADING_SOCKET_ARCHITECTURE_V1.md`.
 
-The v2 schema is an explicit successor to the retained v1 foundation, not a competing ontology.
+`location-v2` is an explicit successor to the retained v1 foundation, not a competing ontology.
 
----
-
-# Location grading direction
-
-Location grading reuses:
+## Grading lock
 
 `authoritative Location facts + registered grading sockets + universe policy/reference profiles -> derived Location GradeProfile`
 
-Retain `location-completeness-v1` as the mandatory representation-completeness dimension.
-
-Evidence/reference-gated dimensions remain:
-
 - completeness — mandatory;
-- spatial scale — magnitude only, kind/reference aware;
-- infrastructure/facility capability — registry evidence based;
-- connectivity/mobility — graph evidence based and separate from access;
+- spatial scale — evidence/reference gated;
+- infrastructure/facility capability — evidence/reference gated;
+- connectivity — graph/context gated;
 - asset value — economy/reference gated;
-- security/protection — deferred until authoritative raw security evidence exists.
-
-AI/Creator forms do not author grade letters, evaluator ids, thresholds or reference profiles.
-
-No automatic overall Location grade without an explicit approved composite semantic.
+- security — deferred until raw security evidence exists;
+- no AI/Creator-authored grade letters/thresholds/evaluator IDs;
+- no automatic overall Location grade without explicit composite semantics.
 
 ---
 
@@ -99,113 +82,102 @@ No automatic overall Location grade without an explicit approved composite seman
 
 ## ✅ L11.0 — Schema Refinement + Grading Contract
 
-Closed. `location-v2` is locked with Geography, Boundary, typed interfaces, registry-backed functional/facility/resource/capability semantics, definition-vs-runtime state separation, minimal control/ownership and Location grading evidence contracts.
+Closed. `location-v2` locks Geography, Boundary, typed interfaces, registry-backed functional/facility/resource/capability semantics, definition-vs-runtime state separation, minimal control/ownership and grading evidence contracts.
 
 ## ✅ L11.1 — Exact Validator + Registry/Grading Foundation
 
-Closed. Exact v2 validation/canonicalization and registry foundations are executable; derived completeness grading remains non-authored and read-time derived.
+Closed. Exact v2 validation/canonicalization and registry foundations are executable; completeness grading is derived, not authored.
 
 ## ✅ L11.2 — Sandbox Persistence + Graph Materializer
 
-Closed. Validated v2 Locations materialize into isolated Sandbox persistence with stable IDs, same-Sandbox graph checks, acyclic structural hierarchy, typed graph projection, atomic materialization, no runtime activation and canonical isolation.
+Closed. Validated Locations materialize only into isolated Sandbox persistence with stable IDs, same-Sandbox graph checks, acyclic structural hierarchy, typed graph projection, atomic materialization, no runtime activation and canonical isolation.
 
 ## ✅ L11.3 — Manual Full-Schema Creation
 
 Closed through PR #380 / CI #1225.
 
-Current Manual Location authoring provides:
+Manual Location authoring now provides:
 
-- **Guided Build** from a sparse valid `location-v2` draft;
-- all 13 supported sections: Identity, Structure, Geography, Spatial, Boundary, Access, Operations, Topology, Facilities, Environment, Control, Economics, Provenance;
+- Guided Build from a sparse valid `location-v2` draft;
+- all 13 creation-owned sections: Identity, Structure, Geography, Spatial, Boundary, Access, Operations, Topology, Facilities, Environment, Control, Economics, Provenance;
 - one-section-at-a-time replacement with whole-payload revalidation and revision increment;
-- advanced Exact JSON path retained;
+- advanced Exact JSON path;
 - write-free Preview and `.txt` export;
 - Cancel/no materialization;
-- revision-bound explicit approval into Sandbox;
-- same validator/materializer as all other Location paths.
+- revision-bound explicit approval using the same L11.2 materializer.
 
-Invalid section updates leave the previous draft revision intact and create no Location rows.
+## ✅ L11.4 — AI Full-Schema Creation
 
-## ▶ L11.4 — AI Full-Schema Creation — CURRENT NEXT SLICE
+Closed through PR #382 / CI #1226.
 
-Existing foundation already supports natural-language AI Location proposals, v2 registry-aware prompting, exact validation, reroll, shared Preview/export/Approve, no AI-authored grades, no fake Sandbox refs and no runtime/canonical activation.
+The AI Location path now provides:
 
-Remaining contract-completion work:
+- short natural-language Creator intent;
+- complete strict provider-facing `location-v2` structured fill schema instead of loose `{type: object}`;
+- registry-backed nested enums/shapes aligned with the authoritative v2 contract;
+- final authority remains `validate_location_payload_v2()`;
+- at most one deterministic representation-only repair pass;
+- repair may remove non-authoritative grade/derived metadata and normalize safe representation details, but cannot invent missing Location facts, coordinates, topology or refs;
+- semantic-invalid/missing required content fails closed with no saved draft or materialization;
+- AI reroll uses the same schema/validator/revision model;
+- best-effort Telegram `typing` feedback during Location AI generation/reroll;
+- typing transport failures cannot affect Creation semantics;
+- same Preview/export/revision-bound approval/L11.2 materializer as Manual;
+- no runtime activation and no canonical Real World mutation.
 
-1. replace loose provider output schema `{type: object}` with a complete provider-facing structured `location-v2` fill schema aligned to authoritative registries;
-2. add **at most one bounded deterministic repair attempt** for deterministic representation errors only;
-3. add Telegram `typing` feedback during Location AI generation/reroll;
-4. retain the exact same validator, draft revision, Preview/export/approval and L11.2 materializer boundaries;
-5. prove invalid AI output cannot create draft/materialized state unless the bounded repair produces an exact valid payload.
+Verified merge checkpoint for this slice: `7c9d6febb3668cfb32040b92788085eb73e28c30` before continuity-only follow-up.
 
-Do not broaden this slice into nested composition or runtime activation.
+## ▶ L11.5 — Nested Composition + Embedded Items — CURRENT NEXT SLICE
 
-## L11.5 — Nested Composition + Embedded Items
+**Goal:** create useful spatial graphs atomically rather than isolated empty nodes.
 
-Support child Locations and exact Item-schema embedding with local refs, structural/storage/placement distinctions, whole dependency validation and one atomic success/rollback boundary. No generic `contents` bag.
+Required contract:
+
+- nested child Locations reuse exact current `location-v2` member payloads;
+- embedded Items reuse exact current Item schema / Batch semantics;
+- do not invent a weaker Location/Item sub-schema;
+- do not introduce an arbitrary generic `contents` JSON bag;
+- batch-local refs must be deterministic and resolvable before writes;
+- child structural placement uses `contains` semantics;
+- movable Items normally use `located_at`;
+- Item in a valid typed container uses `stored_in`;
+- ownership remains independent of placement;
+- topology destinations may resolve to active same-Sandbox Locations or same-composition local refs;
+- validate the whole dependency graph before any materialization;
+- any invalid member/ref/cycle/dependency => zero materialized writes;
+- one explicit approval must apply the complete composition atomically;
+- write-free Preview and raw export must show nested contents before approval;
+- resulting objects remain not runtime-active and canonical Real World fingerprint remains unchanged.
+
+Implementation should first audit/reuse existing Item Batch local-ref/atomic materializer patterns and existing Location v2 graph materializer before defining the smallest shared composition envelope.
 
 ## L11.6 — Detail/Browse + Edit Parity
 
-Expose hierarchy/topology/facility/environment/economic facts and derived Location GradeProfile. Edit reuses exact schema/validator with stale guard, Preview/Apply/Done, audit and exact pause restoration where needed.
+Expose hierarchy/topology/facility/environment/economic facts and derived Location GradeProfile. Edit reuses exact schema/validator with stale guard, Preview/Apply/Done, audit and exact pause restoration only where a real Sandbox runtime race exists.
 
 ## L11.7 — Full Location Vertical Acceptance
 
-Prove representative property/building and room/outdoor graphs, explicit topology, unknown geography without fabrication, boundary semantics, facilities/resources, grading, nested Locations, embedded Items, Manual/AI parity, atomic approval, failure/no-write behavior, Edit parity, Real World fingerprint stability and non-activation after approval.
+Prove property/building and room/outdoor graphs, explicit topology, unknown geography without fabrication, boundary semantics, facilities/resources, grading, nested Locations, embedded Items, Manual/AI parity, atomic approval, failure/no-write behavior, Edit parity, Real World fingerprint stability and non-activation after approval.
 
 Only after L11.7 closes does the Genesis transition begin.
 
 ---
 
-# Recent UX parity addition
+# Recent Character UX parity
 
-Approved Sandbox Characters now expose a read-only **Full Profile `.txt` export** from both Character detail and Profile menu.
+PR #379 / CI #1223 added read-only **Full Profile `.txt` export** for approved Sandbox Characters from both Character detail and Profile menu.
 
-The export reads the current approved Sandbox profile snapshot, including current edited profile values plus Skills, Preferences, Hobbies and Habits, while intentionally excluding live runtime-owned changing state. It reuses the existing Telegram text-document delivery path and does not mutate Sandbox or Real World state.
-
-Closed through PR #379 / CI #1223.
-
----
-
-# Completed foundation — retain
-
-Completed reusable foundations include:
-
-- universal Creation proposal/socket and isolated Sandbox lifecycle;
-- Character Creation/Edit parity + approved full-profile text export;
-- Item Single/Batch Creation/Edit parity;
-- Universal Quantity/Measurement;
-- Universal Grading Socket Architecture;
-- Requirements/Access;
-- Universal Item Schema and Item/container operations;
-- Universal Location v1 foundation + explicit `location-v2` successor;
-- Location v2 exact validator, registry and Sandbox materializer;
-- human review + raw export;
-- provider schema/canonicalizer/validator compatibility patterns;
-- Sandbox clock/pause/readiness/AI binding;
-- canonical isolation proofs.
-
-Item representative post-rollback acceptance is explicitly approved and closed. Do not restart fine-grained Item realism gating without Creator authorization.
+It exports current approved Sandbox profile values—including Creator edits—plus Skills, Preferences, Hobbies and Habits, while intentionally excluding live runtime-owned changing state. Export is read-only and reuses the shared Telegram document delivery path.
 
 ---
 
 # After Location acceptance — Genesis transition
 
-Sequence:
-
-1. **G1 — Prototype Content Reset Audit & Contract**  
-   Define exact keep/wipe sets and dependency-safe cleanup order.
-
-2. **G2 — Remove legacy reseeding authority**  
-   Remove/disable/generalize Darian/Thorne Estate/legacy Item bootstrap paths so restart/deploy cannot resurrect retired content.
-
-3. **G3 — Controlled Real World content reset**  
-   Retire prototype Characters, Locations, Items/fixtures/inventory and content-bound relations while preserving reusable infrastructure.
-
-4. **G4 — Transmigration Foundation**  
-   Use `docs/CREATOR_STAGING_TRANSMIGRATION_ARCHITECTURE_V1.md`: freeze Sandbox revision -> schema/dependency validation -> target-universe compatibility -> conflict/id resolution -> Creator preview -> explicit approval -> atomic canonical materialization -> provenance.
-
-5. **G5 — Genesis Transmigration**  
-   Dependency order: Locations/root topology -> Items/fixtures/containers + placement -> Characters + valid starting Location -> readiness/affordances -> explicit activation.
+1. **G1 — Prototype Content Reset Audit & Contract** — exact keep/wipe sets and cleanup order.
+2. **G2 — Remove legacy reseeding authority** — Darian/Thorne Estate/legacy Item bootstrap cannot resurrect retired content.
+3. **G3 — Controlled Real World content reset** — retire prototype content while preserving reusable infrastructure.
+4. **G4 — Transmigration Foundation** — freeze Sandbox revision -> schema/dependency validation -> target-universe compatibility -> conflict/id resolution -> Creator preview -> explicit approval -> atomic canonical materialization -> provenance.
+5. **G5 — Genesis Transmigration** — Locations/root topology -> Items/fixtures/containers + placement -> Characters + valid starting Location -> readiness/affordances -> explicit activation.
 
 A Character cannot be activated without a valid represented Location.
 
@@ -215,7 +187,7 @@ Preserve reusable time/clock, weather/environment, economy/money, AI/provider, g
 
 # Future Reincarnation / Renewal
 
-Reincarnation is for modern-to-modern canonical renewal, not for preserving prototype-era content:
+Reincarnation is modern-to-modern canonical renewal, not preservation of prototype-era content:
 
 `modern canonical v1 -> Renew in Sandbox -> edit/regenerate/test -> compatibility + diff -> Creator approval -> canonical v2`
 
@@ -230,8 +202,9 @@ Reincarnation is for modern-to-modern canonical renewal, not for preserving prot
 - missing grading evidence/reference => ungraded, not invented precision;
 - Location grade never automatically becomes access authorization;
 - overall grade requires explicit composite semantics;
-- until the future reset is actually implemented and verified, current Real World prototype content still exists.
+- current Real World prototype content still exists until future reset is actually implemented and verified;
+- do not make deploy/live claims without current evidence.
 
 ## Exact resume point
 
-**Begin L11.4 contract completion. Keep the existing AI Location foundation, but replace its loose provider schema with the complete authoritative `location-v2` structured fill schema, add at most one bounded deterministic repair attempt, add Telegram typing feedback, and prove all AI outputs still converge on the same exact validator/draft/Preview/export/revision-bound approval/L11.2 materializer. Do not start L11.5 nested composition until L11.4 is green and merged.**
+**Begin L11.5 by auditing the existing Item Batch local-ref/atomic materializer and current Location v2 materializer. Define the smallest shared composition envelope that embeds exact `location-v2` child payloads and exact current Item payloads, resolves deterministic local refs for parent/topology/placement/storage, validates the entire graph before writes, previews/exports the whole composition, and applies it in one Sandbox-only atomic approval. Do not create a generic contents bag or weaker duplicate schemas.**
