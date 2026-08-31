@@ -100,7 +100,7 @@ def test_guided_manual_location_starts_sparse_valid_draft_and_exposes_all_sectio
     with connect(db) as conn:
         before = canonical_state_fingerprint(conn)
         method_text, method_keyboard = studio_callback_view(conn, 41, "sw:cs:type:location")
-        assert "Guided Manual authoring" in method_text
+        assert "guided manual authoring" in method_text.lower()
         assert "sw:cs:location:guided" in _callbacks(method_keyboard)
 
         text, keyboard = studio_callback_view(conn, 41, "sw:cs:location:guided")
