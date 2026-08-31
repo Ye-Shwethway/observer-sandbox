@@ -1,7 +1,7 @@
 # Observer Sandbox — New Chat Bootstrap
 
 Status: **ACTIVE DEVELOPMENT**  
-Last synchronized: **2026-08-21**
+Last synchronized: **2026-08-31**
 
 ## Startup / authority
 
@@ -27,17 +27,34 @@ Do not infer production deployment from merge alone.
 
 # Current checkpoint
 
-The representative post-rollback Item acceptance gate is explicitly approved and closed.
+The representative post-rollback Item acceptance gate remains explicitly approved and closed.
 
-The immediate authorized work is **modern Sandbox Location Creation**, because Characters and Items cannot form a runnable rebuilt world without represented spatial structure, topology and placement.
+The immediate authorized feature family remains **modern Sandbox Location Creation**, because Characters and Items cannot form a runnable rebuilt world without represented spatial structure, topology and placement.
 
-Canonical current docs:
+Current verified implementation progression:
+
+- **L11.0 — closed**: explicit `location-v2` schema refinement + grading contract;
+- **L11.1 — closed**: exact validator + registry/grading foundation;
+- **L11.2 — closed**: isolated Sandbox Location persistence + graph materializer;
+- **L11.3 — closed**: full Manual Location authoring including Guided Build + Exact JSON + Preview/export/approval;
+- **L11.4 — current next slice**: complete the AI structured-fill contract.
+
+Recent verified checkpoints:
+
+- PR #379 / CI #1223 — approved Sandbox Character full-profile `.txt` export;
+- PR #380 / CI #1225 — Guided Manual Location Builder completion;
+- PR #380 merge checkpoint: `fe48d16bf9e6825e08bd12e90424dfa7636307c4` before continuity-only follow-up.
+
+Do not make deploy/live claims from these merges alone.
+
+Canonical current docs/contracts:
 
 - `docs/CREATION_SECTION_IMPLEMENTATION_STANDARD_V1.md`
 - `docs/CREATOR_CREATION_IMPLEMENTATION_PLAN_V1.md`
 - `docs/LOCATION_CREATION_IMPLEMENTATION_PLAN_V1.md`
 - `docs/LOCATION_CREATION_KICKOFF_V1.md`
-- `docs/UNIVERSAL_LOCATION_SCHEMA_V1.md`
+- `docs/UNIVERSAL_LOCATION_SCHEMA_V2.md`
+- `docs/LOCATION_GRADING_EVIDENCE_MATRIX_V1.md`
 - `docs/WORLD_LOCATION_NODE_MODEL.md`
 - `docs/WORLD_LOCATION_SPATIAL_CONTAINER_CONTRACT_V1.md`
 - `docs/WORLD_SPATIAL_ACCESS_TRAVEL_CONTRACT_V1.md`
@@ -47,25 +64,104 @@ Canonical current docs:
 
 ---
 
-# Immediate resume — L11.0 Schema Refinement + Grading Contract
+# Closed Location foundation
 
-Do **not** start Location UI/AI/materialization yet.
+## L11.0 — Schema refinement
 
-The existing `location-v1` schema/validator are the authoritative foundation, but Creator approved one refinement pass before implementation.
+`location-v2` is the explicit successor to the retained v1 Location foundation. It is not a competing ontology.
 
-Do not create a competing second Location ontology. If the refined exact payload remains compatible, retain the existing version. If required/top-level/nested structure changes incompatibly, create an explicit successor such as `location-v2` rather than silently changing `location-v1` semantics.
+It includes the approved refinement scope:
 
-Approved refinement scope:
-
-1. optional Geography module;
+1. optional Geography;
 2. explicit Boundary semantics;
-3. richer registry-backed interface kinds;
+3. registry-backed interface kinds;
 4. registry-backed functional classes/facility/resource/capability vocabulary;
 5. stable definition/configuration vs initial/live runtime-state separation;
 6. minimal control/ownership semantics;
 7. Location-specific universal grading evidence/profile.
 
-L11.0 must lock the final exact schema, registry vocabulary, ownership/state map and grading evidence matrix before L11.1 begins.
+## L11.1 — Exact validator / grading foundation
+
+The exact v2 validator/canonicalizer and registry vocabulary are executable. Derived grading remains non-authored. Unknown precision remains unknown.
+
+## L11.2 — Sandbox persistence/materializer
+
+Validated Locations materialize only into Creation Sandbox state with stable IDs, same-Sandbox parent/reference checks, acyclic hierarchy, explicit topology projection, atomic apply and zero canonical Real World writes. Approval does not activate runtime.
+
+## L11.3 — Manual full-schema creation
+
+Manual Location Creation now supports:
+
+- **Guided Build** seeded from one sparse valid `location-v2` source payload;
+- all 13 supported creation-owned sections:
+  - Identity
+  - Structure
+  - Geography
+  - Spatial
+  - Boundary
+  - Access
+  - Operations
+  - Topology
+  - Facilities
+  - Environment
+  - Control
+  - Economics
+  - Provenance
+- one-section-at-a-time replacement JSON;
+- whole-payload exact validation before each new draft revision is saved;
+- invalid section update => prior revision remains intact / zero Location materialization;
+- advanced Exact JSON path retained;
+- write-free Preview and `.txt` export;
+- explicit revision-bound Approve into Sandbox;
+- same L11.2 validator/materializer path;
+- no runtime activation and no canonical Real World mutation.
+
+---
+
+# Immediate resume — L11.4 AI Full-Schema Location Creation completion
+
+An AI Location foundation already exists. Do not rebuild it.
+
+Already present:
+
+- natural-language Location intent;
+- `location-v2` registry-aware authoring prompt;
+- exact v2 validation;
+- reroll/revision support;
+- same Preview/export/Approve flow as Manual;
+- same L11.2 materializer;
+- unknown facts remain null/empty;
+- AI cannot author grades/derived fields;
+- AI cannot invent Sandbox object refs;
+- no runtime/canonical activation.
+
+Remaining L11.4 contract gaps to close:
+
+1. **Complete provider-facing structured fill schema**
+   - replace the current loose `{type: object}` provider schema;
+   - derive/align the provider schema from authoritative `location-v2` structure + registries;
+   - include exact required fields, nested shapes, enums and nullability supported by the provider contract;
+   - final deterministic validator remains authoritative.
+
+2. **Bounded deterministic repair**
+   - at most one repair attempt;
+   - repair only deterministic representation/schema-shape issues;
+   - do not use repair to invent missing world facts, coordinates, value, topology or refs;
+   - if repaired payload still fails exact validation => no saved draft / zero materialization.
+
+3. **Telegram typing feedback**
+   - send typing/action feedback during AI generation and reroll so long model calls do not look dead;
+   - Telegram remains adapter only.
+
+4. **Convergence proof**
+   - AI and Manual still land in the exact same source payload contract;
+   - same draft revision model;
+   - same Preview/export;
+   - same explicit approval confirmation;
+   - same L11.2 materializer;
+   - `canonical_state_fingerprint()` unchanged by draft/review/failed AI generation.
+
+Do **not** start L11.5 nested composition before this closes.
 
 ---
 
@@ -75,9 +171,9 @@ Reuse:
 
 `authoritative Location facts + registered grading sockets + universe policy/reference profiles -> derived Location GradeProfile`
 
-Current `location-completeness-v1` remains the mandatory representation-completeness dimension.
+`location-completeness-v1` remains the mandatory representation-completeness dimension.
 
-Planned/evidence-gated dimensions:
+Evidence/reference-gated dimensions:
 
 - completeness — mandatory;
 - spatial scale — magnitude only, kind/reference aware;
@@ -95,18 +191,13 @@ Rules:
 
 ---
 
-# Location slice sequence
+# Later Location slice sequence
 
-- **L11.0** Schema Refinement + Grading Contract
-- **L11.1** Exact Validator + Registry/Grading Foundation
-- **L11.2** Sandbox Persistence + Graph Materializer
-- **L11.3** Manual Full-Schema Creation
-- **L11.4** AI Full-Schema Creation
 - **L11.5** Nested Composition + Embedded Items
 - **L11.6** Approved Detail/Browse + Edit Parity
 - **L11.7** Full Location Vertical Acceptance
 
-All later Location work follows the shared Creation pipeline:
+All Location work follows the shared Creation pipeline:
 
 `versioned schema -> registered socket -> Manual/AI same exact payload -> canonicalize -> strict validate -> graph/dependency validate -> write-free preview/export -> explicit Sandbox approval -> atomic materialization -> detail/browse -> Edit Preview/Apply/Done -> cleanup`
 
@@ -131,6 +222,16 @@ No automatic runtime activation or Real World mutation.
 - whole composition validates before one atomic apply;
 - movable Items normally use `located_at`, or `stored_in` when a valid typed container exists;
 - ownership remains independent.
+
+---
+
+# Recent Character export parity
+
+Already-created active Sandbox Characters expose **📄 Export Full Profile (.txt)** from both Character detail and Profile menu.
+
+The export reads current approved Sandbox profile persistence, so Creator-edited current values are exported rather than stale original creation values. It includes profile fields, Skills, Preferences, Hobbies, Habits and object/provenance context. Live runtime-owned changing state is intentionally outside the profile export.
+
+Export is read-only and reuses the existing Telegram text-document delivery path.
 
 ---
 
@@ -176,4 +277,4 @@ Do not build a complex legacy-upgrade bridge for current prototype content.
 
 ## Exact resume sentence
 
-**Begin L11.0 from `docs/LOCATION_CREATION_IMPLEMENTATION_PLAN_V1.md`. Refine the existing Location schema foundation before UI/AI/materialization: lock optional Geography, Boundary, registry-backed interface/functional/facility/resource semantics, definition-vs-initial/live runtime ownership, minimal control/ownership and the Location GradeProfile/evidence matrix. Use an explicit successor schema version if exact payload compatibility breaks. Then proceed L11.1 through L11.7. Only after full Location acceptance begin the approved prototype Real World reset and Genesis transmigration transition.**
+**Continue L11.4 from the existing AI Location foundation. Replace the loose provider output schema with the complete authoritative `location-v2` structured fill schema, add at most one bounded deterministic repair attempt, add Telegram typing feedback, and prove AI/Manual still converge on the same exact validator, draft revision model, Preview/export, revision-bound approval and L11.2 materializer. Then merge green and only afterward begin L11.5 nested Location + embedded Item composition.**
