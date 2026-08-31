@@ -9,6 +9,7 @@ from .creation_sandbox import DEFAULT_SANDBOX_ID
 from .creation_socket import build_creation_proposal
 from .creator_creation_ai import creator_creation_binding
 from .creator_studio import CreatorStudioError, _save_draft, active_draft, cancel_draft
+from .location_ai_contract import location_ai_fill_schema, repair_location_ai_candidate
 from .location_creation_schema_v2 import LocationCreationSchemaV2Error, validate_location_payload_v2
 from .location_schema_registry_v2 import (
     BOUNDARY_TYPES,
@@ -210,6 +211,21 @@ def _tokens(values) -> str:
     return ",".join(sorted(str(value) for value in values))
 
 
+def _validated_ai_location_candidate(candidate: dict[str, Any]) -> dict[str, Any]:
+    """Validate once, then permit one deterministic representation-only repair."""
+    try:
+        return validate_location_payload_v2(candidate)
+    except LocationCreationSchemaV2Error as first_error:
+        repaired = repair_location_ai_candidate(candidate)
+        try:
+            return validate_location_payload_v2(repaired)
+        except LocationCreationSchemaV2Error as final_error:
+            raise CreatorStudioError(
+                "Creation AI Location failed exact validation after one deterministic repair: "
+                f"{final_error}"
+            ) from first_error
+
+
 def ai_location_draft(
     conn: sqlite3.Connection,
     user_id: int,
@@ -252,16 +268,13 @@ def ai_location_draft(
         provider_id=str(binding["provider_id"]),
         model_id=str(binding["model_id"]),
         prompt=prompt,
-        schema={"type": "object"},
+        schema=location_ai_fill_schema(),
         schema_name="observer_creator_studio_location_v2",
         parameters=dict(binding.get("parameters") or {}),
     )
     if not isinstance(candidate, dict):
         raise CreatorStudioError("Creation AI returned an invalid Location object")
-    try:
-        validated = validate_location_payload_v2(candidate)
-    except LocationCreationSchemaV2Error as exc:
-        raise CreatorStudioError(f"Creation AI Location failed exact validation: {exc}") from exc
+    validated = _validated_ai_location_candidate(candidate)
     source = _source_payload(validated)
     return _save_draft(
         conn,
