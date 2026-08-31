@@ -33,6 +33,23 @@ from .sandbox_location_v2 import SandboxLocationV2Error, materialize_sandbox_loc
 from .structured_ai import generate_structured
 
 
+MANUAL_LOCATION_SECTIONS = (
+    "identity",
+    "structure",
+    "geography",
+    "spatial",
+    "boundary",
+    "access",
+    "operations",
+    "topology",
+    "facilities",
+    "environment",
+    "control",
+    "economic_policy",
+    "provenance",
+)
+
+
 def _source_payload(value: dict[str, Any]) -> dict[str, Any]:
     payload = copy.deepcopy(value)
     payload.pop("derived", None)
@@ -107,6 +124,24 @@ def _validate_location_creation_payload(candidate: dict[str, Any]) -> dict[str, 
         raise CreatorStudioError(f"Location contract rejected the draft: {exc}") from exc
 
 
+def start_manual_location_draft(
+    conn: sqlite3.Connection,
+    user_id: int,
+    *,
+    sandbox_id: str = DEFAULT_SANDBOX_ID,
+) -> dict[str, Any]:
+    validated = _validate_location_creation_payload(manual_location_template())
+    source = _source_payload(validated)
+    return _save_draft(
+        conn,
+        user_id,
+        _wrap_location_proposal(source, mode="manual", user_id=user_id),
+        draft_mode="manual",
+        prompt_text=None,
+        sandbox_id=sandbox_id,
+    )
+
+
 def manual_location_draft(
     conn: sqlite3.Connection,
     user_id: int,
@@ -120,6 +155,45 @@ def manual_location_draft(
         raise CreatorStudioError(f"Location JSON is invalid: {exc.msg}") from exc
     if not isinstance(candidate, dict):
         raise CreatorStudioError("Location draft must be one JSON object")
+    validated = _validate_location_creation_payload(candidate)
+    source = _source_payload(validated)
+    return _save_draft(
+        conn,
+        user_id,
+        _wrap_location_proposal(source, mode="manual", user_id=user_id),
+        draft_mode="manual",
+        prompt_text=None,
+        sandbox_id=sandbox_id,
+    )
+
+
+def update_manual_location_section(
+    conn: sqlite3.Connection,
+    user_id: int,
+    section_key: str,
+    raw_json: str,
+    *,
+    sandbox_id: str = DEFAULT_SANDBOX_ID,
+) -> dict[str, Any]:
+    if section_key not in MANUAL_LOCATION_SECTIONS:
+        raise CreatorStudioError(f"Unknown Location section: {section_key}")
+    draft = active_draft(conn, user_id, sandbox_id=sandbox_id)
+    if not draft or draft.get("creation_type") != "location" or draft.get("draft_mode") != "manual":
+        raise CreatorStudioError("No active manual Location draft")
+    stored = draft.get("proposal", {}).get("properties", {}).get("location_payload")
+    if not isinstance(stored, dict):
+        raise CreatorStudioError("Stored Location draft payload is missing")
+    try:
+        section_value = json.loads(str(raw_json or ""))
+    except json.JSONDecodeError as exc:
+        raise CreatorStudioError(f"Location section JSON is invalid: {exc.msg}") from exc
+    if section_key != "economic_policy" and not isinstance(section_value, dict):
+        raise CreatorStudioError(f"Location section {section_key} must be one JSON object")
+    if section_key == "economic_policy" and section_value is not None and not isinstance(section_value, dict):
+        raise CreatorStudioError("Location economic_policy must be one JSON object or null")
+
+    candidate = copy.deepcopy(stored)
+    candidate[section_key] = section_value
     validated = _validate_location_creation_payload(candidate)
     source = _source_payload(validated)
     return _save_draft(
@@ -242,9 +316,12 @@ def approve_location_draft(
 
 
 __all__ = [
+    "MANUAL_LOCATION_SECTIONS",
     "ai_location_draft",
     "approve_location_draft",
     "manual_location_draft",
     "manual_location_template",
     "reroll_location_draft",
+    "start_manual_location_draft",
+    "update_manual_location_section",
 ]
