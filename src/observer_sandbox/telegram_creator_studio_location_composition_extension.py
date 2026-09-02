@@ -160,6 +160,10 @@ def install_location_composition_creator_studio_extension(base) -> None:
         )
 
     def studio_callback_view(conn: sqlite3.Connection, user_id: int, callback_data: str):
+        if callback_data == "sw:cs:type:location":
+            base._clear_session(conn, user_id)
+            base._restore_input_router()
+            return method_view("location")
         if callback_data == "sw:cs:location:composition:starter":
             base._clear_session(conn, user_id)
             base._restore_input_router()
