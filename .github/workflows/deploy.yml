@@ -43,6 +43,32 @@ jobs:
           chmod 600 ~/.ssh/id_ed25519
           ssh-keyscan -p "$VPS_PORT" -H "$VPS_HOST" >> ~/.ssh/known_hosts
 
+      - name: Ensure deploy disk headroom
+        env:
+          VPS_HOST: ${{ secrets.VPS_HOST }}
+          VPS_USER: ${{ secrets.VPS_USER }}
+          VPS_PORT: ${{ secrets.VPS_PORT || '22' }}
+        run: |
+          ssh -p "$VPS_PORT" "$VPS_USER@$VPS_HOST" '
+            set -euo pipefail
+            APP=/opt/observer-sandbox
+            mkdir -p "$APP"
+            available_kb=$(df -Pk "$APP" | awk "NR==2 {print \$4}")
+            echo "DEPLOY_FREE_KB_BEFORE=$available_kb"
+            if [ "$available_kb" -lt 262144 ]; then
+              echo "Low disk headroom; pruning rebuildable deployment caches only."
+              rm -rf "$HOME/.cache/pip" "$APP/.pytest_cache" "$APP/build" "$APP/dist"
+              find "$APP" -type d -name __pycache__ -prune -exec rm -rf {} + 2>/dev/null || true
+              rm -rf "$APP/.venv"
+              sudo -n /usr/bin/journalctl --vacuum-size=100M >/dev/null 2>&1 || true
+              sudo -n /usr/bin/apt-get clean >/dev/null 2>&1 || true
+            fi
+            available_kb=$(df -Pk "$APP" | awk "NR==2 {print \$4}")
+            echo "DEPLOY_FREE_KB_AFTER=$available_kb"
+            df -h "$APP"
+            test "$available_kb" -ge 262144
+          '
+
       - name: Sync application files
         env:
           VPS_HOST: ${{ secrets.VPS_HOST }}
@@ -216,6 +242,8 @@ jobs:
         run: |
           ssh -p "$VPS_PORT" "$VPS_USER@$VPS_HOST" '
             set +e
+            echo "=== DISK ==="
+            df -h / /opt /var 2>&1
             echo "=== SYSTEMD STATUS ==="
             /usr/bin/systemctl status observer-sandbox --no-pager -l
             echo "=== SYSTEMD STATE ==="
