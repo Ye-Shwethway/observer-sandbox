@@ -39,7 +39,7 @@ def _safe_error_reason(error: Exception) -> str:
 def install_location_ai_feedback_extension(base) -> None:
     original_ai_draft = base.ai_draft
     original_callback = base.studio_callback_view
-    original_retry_view = base._manual_retry_view
+    original_retry_view = getattr(base, "_manual_retry_view", None)
 
     def ai_draft(conn, user_id, creation_type, prompt_text, **kwargs):
         session = base._session(conn, user_id)
@@ -63,10 +63,12 @@ def install_location_ai_feedback_extension(base) -> None:
                 "━━━━━━━━━━━━━━━━━━\n"
                 f"Reason: {reason}\n\n"
                 "Nothing was approved or materialized. Your Location AI input session is still open. "
-                "You can send the prompt again after reviewing the reason below, change method, or cancel.",
+                "You can send the prompt again after reviewing the reason, change method, or cancel.",
                 keyboard,
             )
-        return original_retry_view(conn, user_id, expected, error)
+        if original_retry_view is not None:
+            return original_retry_view(conn, user_id, expected, error)
+        raise error
 
     def studio_callback_view(conn, user_id: int, callback_data: str):
         if callback_data == "sw:cs:reroll":
@@ -76,7 +78,8 @@ def install_location_ai_feedback_extension(base) -> None:
         return original_callback(conn, user_id, callback_data)
 
     base.ai_draft = ai_draft
-    base._manual_retry_view = retry_view
+    if original_retry_view is not None:
+        base._manual_retry_view = retry_view
     base.studio_callback_view = studio_callback_view
 
 
