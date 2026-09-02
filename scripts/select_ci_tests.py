@@ -7,8 +7,6 @@ from pathlib import Path
 from typing import Iterable
 
 
-# Changes here can alter almost every runtime contract. Prefer a parallel full
-# suite instead of pretending an impact selector can prove their blast radius.
 FULL_SUITE_EXACT = {
     "pyproject.toml",
     ".github/workflows/ci.yml",
@@ -23,10 +21,6 @@ FULL_SUITE_PREFIXES = (
     "src/observer_sandbox/schema",
 )
 
-# Leaf modules are intentionally narrow adapters/extensions. Once one of these
-# rules matches, do not expand through generic domain/token rules; those rules
-# are deliberately conservative for shared modules and can otherwise turn a
-# one-line presentation/router change into most of the suite.
 LEAF_SOURCE_RULES: tuple[tuple[str, tuple[str, ...]], ...] = (
     (
         "src/observer_sandbox/telegram_creator_studio_location_composition_extension.py",
@@ -35,11 +29,19 @@ LEAF_SOURCE_RULES: tuple[tuple[str, tuple[str, ...]], ...] = (
             "tests/test_telegram_creator_studio_location_v2.py",
         ),
     ),
+    (
+        "src/observer_sandbox/telegram_world_layers_location_extension.py",
+        ("tests/test_telegram_sandbox_location_detail_v1.py",),
+    ),
+    (
+        "src/observer_sandbox/telegram_world_layers.py",
+        (
+            "tests/test_telegram_sandbox_location_detail_v1.py",
+            "tests/test_creator_studio_location_composition_navigation.py",
+        ),
+    ),
 )
 
-# Explicit, intentionally broad feature families. Rules select tests, not
-# implementation modules, so adding a test that follows the naming contract is
-# automatically picked up without editing this file.
 DOMAIN_RULES: tuple[tuple[tuple[str, ...], tuple[str, ...]], ...] = (
     (
         ("grading",),
@@ -153,14 +155,11 @@ def select_tests(paths: Iterable[str], *, root: Path = Path(".")) -> tuple[str, 
 
             stem = Path(path).stem.lower()
             matched = False
-
             selected |= _expand((f"tests/test_{stem}.py", f"tests/test_{stem}_*.py"), root=root)
-
             for source_needles, test_patterns in DOMAIN_RULES:
                 if any(needle in stem for needle in source_needles):
                     matched = True
                     selected |= _expand(test_patterns, root=root)
-
             tokens = _source_tokens(path)
             token_hits = set()
             for test_path in (root / "tests").glob("test_*.py"):
@@ -170,7 +169,6 @@ def select_tests(paths: Iterable[str], *, root: Path = Path(".")) -> tuple[str, 
             if token_hits:
                 matched = True
                 selected |= token_hits
-
             if not matched:
                 unmapped_runtime.append(path)
             continue
@@ -206,12 +204,10 @@ def main() -> int:
     parser.add_argument("--output", required=True)
     parser.add_argument("--mode-output", required=True)
     args = parser.parse_args()
-
     paths = changed_files(args.base, args.head)
     mode, tests, reason = select_tests(paths)
     Path(args.output).write_text("\n".join(tests) + ("\n" if tests else ""), encoding="utf-8")
     Path(args.mode_output).write_text(mode + "\n", encoding="utf-8")
-
     print(f"CI test mode: {mode}")
     print(f"Reason: {reason}")
     print("Changed files:")
