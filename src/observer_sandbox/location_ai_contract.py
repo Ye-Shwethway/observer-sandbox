@@ -28,6 +28,57 @@ from .location_schema_registry_v2 import (
 )
 
 
+_QUANTITY_UNITS: dict[str, frozenset[str]] = {
+    "length": frozenset({"m", "cm", "mm", "in", "ft", "yd"}),
+    "area": frozenset({"m2", "cm2", "in2", "ft2", "yd2"}),
+}
+
+# Provider output commonly uses human-readable unit names even when the
+# Creator intent is unambiguous. These are representation aliases only: the
+# numeric value is never changed and no missing physical fact is invented.
+_QUANTITY_UNIT_ALIASES: dict[str, str] = {
+    "meter": "m",
+    "meters": "m",
+    "metre": "m",
+    "metres": "m",
+    "centimeter": "cm",
+    "centimeters": "cm",
+    "centimetre": "cm",
+    "centimetres": "cm",
+    "millimeter": "mm",
+    "millimeters": "mm",
+    "millimetre": "mm",
+    "millimetres": "mm",
+    "inch": "in",
+    "inches": "in",
+    "foot": "ft",
+    "feet": "ft",
+    "yard": "yd",
+    "yards": "yd",
+    "square_meter": "m2",
+    "square_meters": "m2",
+    "square_metre": "m2",
+    "square_metres": "m2",
+    "sqm": "m2",
+    "m²": "m2",
+    "square_centimeter": "cm2",
+    "square_centimeters": "cm2",
+    "square_centimetre": "cm2",
+    "square_centimetres": "cm2",
+    "cm²": "cm2",
+    "square_inch": "in2",
+    "square_inches": "in2",
+    "in²": "in2",
+    "square_foot": "ft2",
+    "square_feet": "ft2",
+    "sq_ft": "ft2",
+    "ft²": "ft2",
+    "square_yard": "yd2",
+    "square_yards": "yd2",
+    "yd²": "yd2",
+}
+
+
 def _enum(values) -> dict[str, Any]:
     return {"type": "string", "enum": sorted(str(value) for value in values)}
 
@@ -59,7 +110,7 @@ def _quantity(kind: str) -> dict[str, Any]:
             {
                 "kind": {"type": "string", "enum": [kind]},
                 "value": {"type": "number", "minimum": 0},
-                "unit": {"type": "string", "minLength": 1},
+                "unit": _enum(_QUANTITY_UNITS[kind]),
             }
         )
     )
@@ -96,9 +147,6 @@ def _requirement_leaf_schemas() -> list[dict[str, Any]]:
 
 
 def _requirement_schema() -> dict[str, Any]:
-    # The shared Requirement validator remains authoritative. The provider schema
-    # supports typed leaves plus one explicit all/any composition layer; generated
-    # Location access policies do not need unrestricted recursive authoring.
     leaves = _requirement_leaf_schemas()
     child = {"anyOf": leaves}
     return {
@@ -257,6 +305,17 @@ def _strip_forbidden(value: Any) -> Any:
     return value
 
 
+def _normalize_quantity_alias(value: Any) -> None:
+    if not isinstance(value, dict):
+        return
+    unit = value.get("unit")
+    if not isinstance(unit, str):
+        return
+    token = unit.strip().lower()
+    if token in _QUANTITY_UNIT_ALIASES:
+        value["unit"] = _QUANTITY_UNIT_ALIASES[token]
+
+
 def repair_location_ai_candidate(candidate: dict[str, Any]) -> dict[str, Any]:
     """One deterministic representation-only repair pass.
 
@@ -276,6 +335,17 @@ def repair_location_ai_candidate(candidate: dict[str, Any]) -> dict[str, Any]:
     provenance = repaired.get("provenance")
     if isinstance(provenance, dict):
         provenance["source_status"] = "provisional"
+
+    spatial = repaired.get("spatial")
+    if isinstance(spatial, dict):
+        for key in ("area", "length", "width", "height", "elevation"):
+            _normalize_quantity_alias(spatial.get(key))
+
+    topology = repaired.get("topology")
+    if isinstance(topology, dict) and isinstance(topology.get("interfaces"), list):
+        for interface in topology["interfaces"]:
+            if isinstance(interface, dict):
+                _normalize_quantity_alias(interface.get("distance"))
 
     for path in _OPTIONAL_TEXT_PATHS:
         current: Any = repaired
