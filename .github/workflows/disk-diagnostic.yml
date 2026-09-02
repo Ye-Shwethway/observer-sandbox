@@ -1,0 +1,46 @@
+name: VPS Disk Diagnostic
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - '.github/workflows/disk-diagnostic.yml'
+  workflow_dispatch:
+
+jobs:
+  disk:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Configure SSH
+        env:
+          VPS_SSH_KEY: ${{ secrets.VPS_SSH_KEY }}
+          VPS_HOST: ${{ secrets.VPS_HOST }}
+          VPS_PORT: ${{ secrets.VPS_PORT || '22' }}
+        run: |
+          install -m 700 -d ~/.ssh
+          printf '%s\n' "$VPS_SSH_KEY" > ~/.ssh/id_ed25519
+          chmod 600 ~/.ssh/id_ed25519
+          ssh-keyscan -p "$VPS_PORT" -H "$VPS_HOST" >> ~/.ssh/known_hosts
+      - name: Inspect disk usage
+        env:
+          VPS_HOST: ${{ secrets.VPS_HOST }}
+          VPS_USER: ${{ secrets.VPS_USER }}
+          VPS_PORT: ${{ secrets.VPS_PORT || '22' }}
+        run: |
+          ssh -p "$VPS_PORT" "$VPS_USER@$VPS_HOST" '
+            set -u
+            echo "=== FILESYSTEMS ==="
+            df -h / /opt /var /home 2>&1
+            echo "=== ROOT TOP LEVEL (KiB) ==="
+            sudo -n du -x -k -d1 / 2>/dev/null | sort -n || true
+            echo "=== VAR TOP LEVEL (KiB) ==="
+            sudo -n du -x -k -d1 /var 2>/dev/null | sort -n || true
+            echo "=== OPT TOP LEVEL (KiB) ==="
+            sudo -n du -x -k -d2 /opt 2>/dev/null | sort -n | tail -n 30 || true
+            echo "=== HOME TOP LEVEL (KiB) ==="
+            sudo -n du -x -k -d2 /home 2>/dev/null | sort -n | tail -n 30 || true
+            echo "=== VAR LIB TOP LEVEL (KiB) ==="
+            sudo -n du -x -k -d2 /var/lib 2>/dev/null | sort -n | tail -n 40 || true
+            echo "=== VAR LOG TOP LEVEL (KiB) ==="
+            sudo -n du -x -k -d2 /var/log 2>/dev/null | sort -n | tail -n 30 || true
+          '
