@@ -77,6 +77,30 @@ def test_location_composition_leaf_selects_small_explicit_family(tmp_path):
     ]
 
 
+def test_location_ai_feedback_leaf_selects_only_feedback_contract_family(tmp_path):
+    _touch(
+        tmp_path,
+        "tests/test_creator_studio_location_ai_feedback.py",
+        "tests/test_location_ai_contract_v2.py",
+        "tests/test_creator_studio_location_v2.py",
+        "tests/test_telegram_bot.py",
+        "tests/test_location_schema_v2.py",
+    )
+
+    mode, tests, reason = select_tests(
+        ["src/observer_sandbox/telegram_creator_studio_location_feedback_extension.py"],
+        root=tmp_path,
+    )
+
+    assert mode == "targeted"
+    assert reason == "selected 3 test file(s)"
+    assert tests == [
+        "tests/test_creator_studio_location_ai_feedback.py",
+        "tests/test_creator_studio_location_v2.py",
+        "tests/test_location_ai_contract_v2.py",
+    ]
+
+
 def test_selector_change_runs_selector_unit_test_not_full_suite(tmp_path):
     _touch(tmp_path, "tests/test_select_ci_tests.py")
 
