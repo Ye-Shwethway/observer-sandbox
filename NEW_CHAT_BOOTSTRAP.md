@@ -37,7 +37,7 @@ Verified progression:
 - ✅ L11.2 — isolated Sandbox persistence + graph materializer
 - ✅ L11.3 — Manual full-schema creation: Guided Build + Exact JSON + Preview/export/approval
 - ✅ L11.4 — AI full-schema creation
-- ▶ **L11.5 — Nested Composition + Embedded Items — IMPLEMENTED ON `test`, PR #384 PENDING FINAL CI/MERGE/DEPLOY**
+- ▶ **L11.5 — Nested Composition + Embedded Items — IMPLEMENTED ON `test`, PENDING MERGE/DEPLOY/CREATOR SMOKE**
 - L11.6 — Detail/Browse + Edit parity
 - L11.7 — Full Location vertical acceptance
 
@@ -55,7 +55,7 @@ L11.5 current `test` truth:
 - revision-bound whole-composition confirmation and atomic approval;
 - resulting members remain not runtime-started and canonical Real World fingerprint remains unchanged.
 
-CI #1232 on commit `74c8d3b4cfbf88176b899a4d28ca2e44aba93891` passed the selected regression set and CLI smoke after one UI callback-routing fix. A continuity-only/no-op follow-up may advance the `test` head; verify the current head CI before merge.
+Runtime code checkpoint `74c8d3b4cfbf88176b899a4d28ca2e44aba93891` passed CI #1232 including the selected regression set and CLI smoke. The commits after that checkpoint change continuity documentation only; `74c8d3b..latest` compare proves no runtime/source delta. Public Readiness Security Audit #210 is green. A later redundant CI run on the docs-advanced PR head became runner-stalled and is not a reason to repeat an already-green unchanged runtime suite; repository policy explicitly does not require full Python CI for docs-only changes.
 
 Recent prior checkpoints:
 
@@ -202,4 +202,4 @@ Do not build a complex legacy preservation bridge.
 
 ## Exact resume sentence
 
-**Verify the current PR #384 head CI, merge only if green, then verify the automatic production deploy including runtime health and Telegram API connectivity. Once production is green, have the Creator smoke-test `Creator Studio -> Create -> Location -> Nested Composition · Starter -> Preview/Export -> Approve Whole Composition -> Confirm`. If that passes, close L11.5 and proceed to L11.6 Detail/Browse + Edit parity.**
+**Merge PR #384 using the already-green runtime checkpoint because subsequent commits are docs-only by exact compare, then verify the automatic production deploy including runtime health and Telegram API connectivity. Once production is green, have the Creator smoke-test `Creator Studio -> Create -> Location -> Nested Composition · Starter -> Preview/Export -> Approve Whole Composition -> Confirm`. If that passes, close L11.5 and proceed to L11.6 Detail/Browse + Edit parity.**
