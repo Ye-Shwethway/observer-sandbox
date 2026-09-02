@@ -52,6 +52,41 @@ def test_telegram_change_selects_telegram_family_only(tmp_path):
     }
 
 
+def test_location_composition_leaf_selects_small_explicit_family(tmp_path):
+    _touch(
+        tmp_path,
+        "tests/test_creator_studio_location_composition_v1.py",
+        "tests/test_creator_studio_location_composition_navigation.py",
+        "tests/test_telegram_creator_studio_location_v2.py",
+        "tests/test_telegram_bot.py",
+        "tests/test_location_schema_v2.py",
+        "tests/test_world_qualified_runtime_controls.py",
+    )
+
+    mode, tests, reason = select_tests(
+        ["src/observer_sandbox/telegram_creator_studio_location_composition_extension.py"],
+        root=tmp_path,
+    )
+
+    assert mode == "targeted"
+    assert reason == "selected 3 test file(s)"
+    assert tests == [
+        "tests/test_creator_studio_location_composition_navigation.py",
+        "tests/test_creator_studio_location_composition_v1.py",
+        "tests/test_telegram_creator_studio_location_v2.py",
+    ]
+
+
+def test_selector_change_runs_selector_unit_test_not_full_suite(tmp_path):
+    _touch(tmp_path, "tests/test_select_ci_tests.py")
+
+    mode, tests, reason = select_tests(["scripts/select_ci_tests.py"], root=tmp_path)
+
+    assert mode == "targeted"
+    assert tests == ["tests/test_select_ci_tests.py"]
+    assert reason == "selected 1 test file(s)"
+
+
 def test_directly_changed_test_is_selected(tmp_path):
     _touch(tmp_path, "tests/test_inventory_foundation_v1.py")
 
