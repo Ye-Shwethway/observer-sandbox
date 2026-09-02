@@ -134,7 +134,7 @@ def test_location_composition_telegram_revision_bound_approval_materializes_whol
         assert "Locations: 2" in approved
         assert "Items: 1" in approved
         assert active_draft(conn, 77) is None
-        assert "sw:world" in _callbacks(approved_keyboard)
+        assert "nav:sandbox" in _callbacks(approved_keyboard)
 
         counts = _counts(conn)
         assert counts["objects"] == 3

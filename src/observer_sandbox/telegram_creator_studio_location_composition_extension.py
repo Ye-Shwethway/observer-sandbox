@@ -203,7 +203,7 @@ def install_location_composition_creator_studio_extension(base) -> None:
                     "The complete graph was materialized atomically in Creation Sandbox only. "
                     "No member was runtime-started and canonical Real World state remains unchanged.",
                     [
-                        [{"text": "🌌 Sandbox World", "callback_data": "sw:world"}],
+                        [{"text": "🌌 Sandbox World", "callback_data": "nav:sandbox"}],
                         [{"text": "🛠 Creator Studio", "callback_data": "sw:studio"}],
                     ],
                 )
