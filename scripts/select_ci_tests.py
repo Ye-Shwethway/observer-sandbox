@@ -30,6 +30,14 @@ LEAF_SOURCE_RULES: tuple[tuple[str, tuple[str, ...]], ...] = (
         ),
     ),
     (
+        "src/observer_sandbox/telegram_creator_studio_location_feedback_extension.py",
+        (
+            "tests/test_creator_studio_location_ai_feedback.py",
+            "tests/test_location_ai_contract_v2.py",
+            "tests/test_creator_studio_location_v2.py",
+        ),
+    ),
+    (
         "src/observer_sandbox/telegram_world_layers_location_extension.py",
         ("tests/test_telegram_sandbox_location_detail_v1.py",),
     ),
