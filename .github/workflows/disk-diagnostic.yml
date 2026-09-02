@@ -29,25 +29,18 @@ jobs:
         run: |
           ssh -p "$VPS_PORT" "$VPS_USER@$VPS_HOST" '
             set -u
+            echo "=== ID / GROUPS ==="
+            id
+            echo "=== SUDO ALLOW LIST ==="
+            sudo -n -l 2>&1 || true
             echo "=== FILESYSTEMS ==="
             df -h / /opt /var /home 2>&1
-            echo "=== READABLE ROOT TREE (KiB) ==="
-            du -x -k -d1 / 2>/dev/null | sort -n || true
-            echo "=== READABLE VAR TREE (KiB) ==="
-            du -x -k -d2 /var 2>/dev/null | sort -n | tail -n 60 || true
-            echo "=== READABLE USR TREE (KiB) ==="
-            du -x -k -d1 /usr 2>/dev/null | sort -n || true
-            echo "=== APP/RUNTIME/HOME (KiB) ==="
-            du -x -k -d2 /opt/observer-sandbox /var/lib/observer-sandbox "$HOME" 2>/dev/null | sort -n | tail -n 60 || true
             echo "=== JOURNAL USAGE ==="
             journalctl --disk-usage 2>&1 || true
             echo "=== DOCKER USAGE ==="
             docker system df 2>&1 || true
             echo "=== DOCKER DIR ==="
             ls -ld /var/lib/docker 2>&1 || true
-            du -x -k -d1 /var/lib/docker 2>/dev/null | sort -n | tail -n 30 || true
-            echo "=== SNAP USAGE ==="
-            du -x -k -d2 /var/lib/snapd /snap 2>/dev/null | sort -n | tail -n 40 || true
-            echo "=== LARGE READABLE FILES UNDER VAR ==="
-            find /var -xdev -type f -size +100M -printf "%s %p\n" 2>/dev/null | sort -n | tail -n 50 || true
+            echo "=== READABLE ROOT TREE (KiB) ==="
+            du -x -k -d1 / 2>/dev/null | sort -n || true
           '
