@@ -1,7 +1,7 @@
 # Observer Sandbox Roadmap
 
 Status: **ACTIVE**  
-Roadmap synchronized: **2026-08-31**
+Roadmap synchronized: **2026-09-02**
 
 ## Operating principles
 
@@ -56,6 +56,9 @@ Current schema/runtime contracts include:
 - `src/observer_sandbox/location_schema_registry_v2.py`;
 - `src/observer_sandbox/location_ai_contract.py`;
 - `src/observer_sandbox/sandbox_location_v2.py`;
+- `src/observer_sandbox/sandbox_location_composition.py`;
+- `src/observer_sandbox/creator_studio_location_composition.py`;
+- `src/observer_sandbox/telegram_creator_studio_location_composition_extension.py`;
 - `docs/WORLD_LOCATION_NODE_MODEL.md`;
 - `docs/WORLD_LOCATION_SPATIAL_CONTAINER_CONTRACT_V1.md`;
 - `docs/WORLD_SPATIAL_ACCESS_TRAVEL_CONTRACT_V1.md`;
@@ -96,62 +99,43 @@ Closed. Validated Locations materialize only into isolated Sandbox persistence w
 
 Closed through PR #380 / CI #1225.
 
-Manual Location authoring now provides:
-
-- Guided Build from a sparse valid `location-v2` draft;
-- all 13 creation-owned sections: Identity, Structure, Geography, Spatial, Boundary, Access, Operations, Topology, Facilities, Environment, Control, Economics, Provenance;
-- one-section-at-a-time replacement with whole-payload revalidation and revision increment;
-- advanced Exact JSON path;
-- write-free Preview and `.txt` export;
-- Cancel/no materialization;
-- revision-bound explicit approval using the same L11.2 materializer.
+Manual Location authoring provides Guided Build over all 13 creation-owned sections, advanced Exact JSON, whole-payload revalidation, write-free Preview/export, Cancel/no-write and revision-bound Sandbox approval.
 
 ## ✅ L11.4 — AI Full-Schema Creation
 
 Closed through PR #382 / CI #1226.
 
-The AI Location path now provides:
+AI Location uses the complete strict provider-facing `location-v2` fill contract, exact deterministic validation, at most one bounded representation-only repair, reroll/typing feedback and the same Preview/export/approval/materializer as Manual.
 
-- short natural-language Creator intent;
-- complete strict provider-facing `location-v2` structured fill schema instead of loose `{type: object}`;
-- registry-backed nested enums/shapes aligned with the authoritative v2 contract;
-- final authority remains `validate_location_payload_v2()`;
-- at most one deterministic representation-only repair pass;
-- repair may remove non-authoritative grade/derived metadata and normalize safe representation details, but cannot invent missing Location facts, coordinates, topology or refs;
-- semantic-invalid/missing required content fails closed with no saved draft or materialization;
-- AI reroll uses the same schema/validator/revision model;
-- best-effort Telegram `typing` feedback during Location AI generation/reroll;
-- typing transport failures cannot affect Creation semantics;
-- same Preview/export/revision-bound approval/L11.2 materializer as Manual;
+## ▶ L11.5 — Nested Composition + Embedded Items — IMPLEMENTED, PENDING PRODUCTION/CREATOR SMOKE
+
+The implementation now provides:
+
+- explicit `location-composition-v1` envelope;
+- nested child Locations using exact `location-v2` payloads;
+- embedded Items using exact current `item-v1` payloads;
+- deterministic `$ref` local references;
+- structural parent, local topology, Item `located_at` and typed `stored_in` resolution;
+- same-Sandbox ref validation, parent-cycle rejection, Item storage-cycle rejection and container-target validation;
+- whole dependency graph validation before writes;
+- one transaction across all Location + Item members with full rollback on failure;
+- stable Sandbox IDs and normal Location/Item persistence/readback;
+- shared Creator Studio draft/revision/cancel/export infrastructure;
+- Telegram `Nested Composition · Starter` first proof: `Property -> child Room -> movable Item`;
+- Telegram `Nested Composition · Exact JSON` path for complete envelope replacement;
+- human whole-graph Preview + `.txt` export before approval;
+- revision-bound whole-composition confirmation and one atomic approval;
 - no runtime activation and no canonical Real World mutation.
 
-Verified merge checkpoint for this slice: `7c9d6febb3668cfb32040b92788085eb73e28c30` before continuity-only follow-up.
+Code checkpoint `74c8d3b4cfbf88176b899a4d28ca2e44aba93891` passed CI #1232 including selected regression and CLI smoke. Commits after that checkpoint are continuity-only by exact compare; Public Readiness Security Audit #210 is green. Verify the merged production deploy and Creator Telegram smoke before marking L11.5 fully closed.
 
-## ▶ L11.5 — Nested Composition + Embedded Items — CURRENT NEXT SLICE
+Expected production smoke path:
 
-**Goal:** create useful spatial graphs atomically rather than isolated empty nodes.
-
-Required contract:
-
-- nested child Locations reuse exact current `location-v2` member payloads;
-- embedded Items reuse exact current Item schema / Batch semantics;
-- do not invent a weaker Location/Item sub-schema;
-- do not introduce an arbitrary generic `contents` JSON bag;
-- batch-local refs must be deterministic and resolvable before writes;
-- child structural placement uses `contains` semantics;
-- movable Items normally use `located_at`;
-- Item in a valid typed container uses `stored_in`;
-- ownership remains independent of placement;
-- topology destinations may resolve to active same-Sandbox Locations or same-composition local refs;
-- validate the whole dependency graph before any materialization;
-- any invalid member/ref/cycle/dependency => zero materialized writes;
-- one explicit approval must apply the complete composition atomically;
-- write-free Preview and raw export must show nested contents before approval;
-- resulting objects remain not runtime-active and canonical Real World fingerprint remains unchanged.
-
-Implementation should first audit/reuse existing Item Batch local-ref/atomic materializer patterns and existing Location v2 graph materializer before defining the smallest shared composition envelope.
+`Creator Studio -> Create -> Location -> Nested Composition · Starter -> Preview/Export -> Approve Whole Composition -> Confirm Whole Composition`
 
 ## L11.6 — Detail/Browse + Edit Parity
+
+**NEXT after L11.5 production/Creator smoke.**
 
 Expose hierarchy/topology/facility/environment/economic facts and derived Location GradeProfile. Edit reuses exact schema/validator with stale guard, Preview/Apply/Done, audit and exact pause restoration only where a real Sandbox runtime race exists.
 
@@ -207,4 +191,4 @@ Reincarnation is modern-to-modern canonical renewal, not preservation of prototy
 
 ## Exact resume point
 
-**Begin L11.5 by auditing the existing Item Batch local-ref/atomic materializer and current Location v2 materializer. Define the smallest shared composition envelope that embeds exact `location-v2` child payloads and exact current Item payloads, resolves deterministic local refs for parent/topology/placement/storage, validates the entire graph before writes, previews/exports the whole composition, and applies it in one Sandbox-only atomic approval. Do not create a generic contents bag or weaker duplicate schemas.**
+**Merge PR #384 using the already-green runtime code checkpoint because subsequent commits are docs-only by exact compare, then require the automatic production deploy to pass runtime health and Telegram API connectivity. Have the Creator smoke-test Nested Composition · Starter through Preview/Export and whole-composition approval. If that passes, mark L11.5 closed and begin L11.6 approved Location Detail/Browse + Edit parity.**

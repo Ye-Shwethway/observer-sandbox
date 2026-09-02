@@ -7,6 +7,7 @@ from .telegram_creator_studio_item_retry_extension import install_item_retry_ext
 from .telegram_creator_studio_item_review_extension import install_item_review_extension
 from .telegram_creator_studio_location_extension import install_location_creator_studio_extension
 from .telegram_creator_studio_location_feedback_extension import install_location_ai_feedback_extension
+from .telegram_creator_studio_location_composition_extension import install_location_composition_creator_studio_extension
 from .telegram_sandbox_item_edit_adapter import install_sandbox_item_edit_text_adapter
 
 # Install the transport compatibility adapter before telegram_creator_bot captures
@@ -20,6 +21,9 @@ install_item_review_extension(_base)
 # location-v2 Manual/AI routes. UX-only typing feedback is layered after routing.
 install_location_creator_studio_extension(_base)
 install_location_ai_feedback_extension(_base)
+# L11.5 composes exact Location + Item members on top of the already-composed
+# Location Studio surface while preserving the shared draft/export/approval shell.
+install_location_composition_creator_studio_extension(_base)
 
 for _name in _base.__all__:
     globals()[_name] = getattr(_base, _name)
