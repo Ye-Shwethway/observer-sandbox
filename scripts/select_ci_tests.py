@@ -11,7 +11,6 @@ from typing import Iterable
 # suite instead of pretending an impact selector can prove their blast radius.
 FULL_SUITE_EXACT = {
     "pyproject.toml",
-    "scripts/select_ci_tests.py",
     ".github/workflows/ci.yml",
     ".github/workflows/full-regression.yml",
     "src/observer_sandbox/db.py",
@@ -22,6 +21,20 @@ FULL_SUITE_EXACT = {
 FULL_SUITE_PREFIXES = (
     "src/observer_sandbox/migration",
     "src/observer_sandbox/schema",
+)
+
+# Leaf modules are intentionally narrow adapters/extensions. Once one of these
+# rules matches, do not expand through generic domain/token rules; those rules
+# are deliberately conservative for shared modules and can otherwise turn a
+# one-line presentation/router change into most of the suite.
+LEAF_SOURCE_RULES: tuple[tuple[str, tuple[str, ...]], ...] = (
+    (
+        "src/observer_sandbox/telegram_creator_studio_location_composition_extension.py",
+        (
+            "tests/test_creator_studio_location_composition*.py",
+            "tests/test_telegram_creator_studio_location_v2.py",
+        ),
+    ),
 )
 
 # Explicit, intentionally broad feature families. Rules select tests, not
@@ -96,6 +109,13 @@ def _source_tokens(path: str) -> set[str]:
     return {token for token in stem.split("_") if len(token) >= 3 and token not in ignored}
 
 
+def _leaf_patterns(path: str) -> tuple[str, ...] | None:
+    for source_path, patterns in LEAF_SOURCE_RULES:
+        if path == source_path:
+            return patterns
+    return None
+
+
 def select_tests(paths: Iterable[str], *, root: Path = Path(".")) -> tuple[str, list[str], str]:
     changed = sorted(set(paths))
     if not changed:
@@ -113,7 +133,24 @@ def select_tests(paths: Iterable[str], *, root: Path = Path(".")) -> tuple[str, 
             selected.add(path)
             continue
 
+        if path == "scripts/select_ci_tests.py":
+            selector_test = "tests/test_select_ci_tests.py"
+            if (root / selector_test).exists():
+                selected.add(selector_test)
+            else:
+                unmapped_runtime.append(path)
+            continue
+
         if path.startswith("src/observer_sandbox/") and path.endswith(".py"):
+            leaf_patterns = _leaf_patterns(path)
+            if leaf_patterns is not None:
+                leaf_tests = _expand(leaf_patterns, root=root)
+                if leaf_tests:
+                    selected |= leaf_tests
+                else:
+                    unmapped_runtime.append(path)
+                continue
+
             stem = Path(path).stem.lower()
             matched = False
 
