@@ -127,7 +127,7 @@ The implementation now provides:
 - revision-bound whole-composition confirmation and one atomic approval;
 - no runtime activation and no canonical Real World mutation.
 
-Code checkpoint `74c8d3b4cfbf88176b899a4d28ca2e44aba93891` passed CI #1232 including selected regression and CLI smoke. Commits after that checkpoint through the continuity update changed only continuity documentation; Public Readiness Security Audit #210 is green. Verify the final merged production deploy and Creator Telegram smoke before marking L11.5 fully closed.
+Code checkpoint `74c8d3b4cfbf88176b899a4d28ca2e44aba93891` passed CI #1232 including selected regression and CLI smoke. Commits after that checkpoint are continuity-only by exact compare; Public Readiness Security Audit #210 is green. Verify the merged production deploy and Creator Telegram smoke before marking L11.5 fully closed.
 
 Expected production smoke path:
 
@@ -191,4 +191,4 @@ Reincarnation is modern-to-modern canonical renewal, not preservation of prototy
 
 ## Exact resume point
 
-**Verify/merge PR #384 from `test` to `main` using the already-green runtime code checkpoint, then require the automatic production deploy to pass runtime health and Telegram API connectivity. Have the Creator smoke-test Nested Composition · Starter through Preview/Export and whole-composition approval. If that passes, mark L11.5 closed and begin L11.6 approved Location Detail/Browse + Edit parity.**
+**Merge PR #384 using the already-green runtime code checkpoint because subsequent commits are docs-only by exact compare, then require the automatic production deploy to pass runtime health and Telegram API connectivity. Have the Creator smoke-test Nested Composition · Starter through Preview/Export and whole-composition approval. If that passes, mark L11.5 closed and begin L11.6 approved Location Detail/Browse + Edit parity.**
