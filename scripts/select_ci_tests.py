@@ -21,6 +21,12 @@ FULL_SUITE_PREFIXES = (
     "src/observer_sandbox/schema",
 )
 
+_LOCATION_EDIT_TESTS = (
+    "tests/test_sandbox_location_operations_v2.py",
+    "tests/test_telegram_sandbox_location_edit_v1.py",
+    "tests/test_telegram_sandbox_location_detail_v1.py",
+)
+
 LEAF_SOURCE_RULES: tuple[tuple[str, tuple[str, ...]], ...] = (
     (
         "src/observer_sandbox/telegram_creator_studio_location_composition_extension.py",
@@ -54,6 +60,23 @@ LEAF_SOURCE_RULES: tuple[tuple[str, tuple[str, ...]], ...] = (
         (
             "tests/test_telegram_sandbox_location_detail_v1.py",
             "tests/test_creator_studio_location_composition_navigation.py",
+            "tests/test_telegram_sandbox_location_edit_v1.py",
+        ),
+    ),
+    # L11.6 Location Edit is a bounded vertical. Keep changes in its backend,
+    # Telegram editor, text adapter and world-layer adapter on the exact edit
+    # contract family instead of expanding generic telegram_/sandbox_/location
+    # domains across hundreds of unrelated tests.
+    ("src/observer_sandbox/sandbox_location_operations.py", _LOCATION_EDIT_TESTS),
+    ("src/observer_sandbox/telegram_sandbox_location_edit.py", _LOCATION_EDIT_TESTS),
+    ("src/observer_sandbox/telegram_sandbox_location_edit_adapter.py", _LOCATION_EDIT_TESTS),
+    ("src/observer_sandbox/telegram_world_layers_location_edit_extension.py", _LOCATION_EDIT_TESTS),
+    (
+        "src/observer_sandbox/telegram_creator_studio.py",
+        (
+            "tests/test_telegram_sandbox_location_edit_v1.py",
+            "tests/test_creator_studio_location_composition_navigation.py",
+            "tests/test_creator_studio_navigation_canonicalization.py",
         ),
     ),
 )
