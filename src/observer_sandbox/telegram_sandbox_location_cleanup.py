@@ -46,14 +46,6 @@ def location_cleanup_review(conn, *, user_id: int, object_id: str):
     fingerprint = location_source_fingerprint(location["source"])
     dependencies = location_delete_dependencies(conn, object_id)
     name = str(location.get("source", {}).get("identity", {}).get("name") or object_id)
-    _save_session(
-        user_id,
-        {
-            "object_id": object_id,
-            "name": name,
-            "source_fingerprint": fingerprint,
-        },
-    )
 
     lines = [
         "🗑 SANDBOX LOCATION CLEANUP",
@@ -62,6 +54,7 @@ def location_cleanup_review(conn, *, user_id: int, object_id: str):
         "",
     ]
     if dependencies:
+        _save_session(user_id, None)
         lines.extend([
             "⛔ This Location cannot be deleted yet.",
             "Active Sandbox state still depends on it:",
@@ -81,6 +74,14 @@ def location_cleanup_review(conn, *, user_id: int, object_id: str):
             [{"text": "← Locations", "callback_data": "sw:list:location"}],
         ]
 
+    _save_session(
+        user_id,
+        {
+            "object_id": object_id,
+            "name": name,
+            "source_fingerprint": fingerprint,
+        },
+    )
     lines.extend([
         "No active Sandbox dependencies were found.",
         "",
@@ -90,7 +91,7 @@ def location_cleanup_review(conn, *, user_id: int, object_id: str):
     ])
     return "\n".join(lines), [
         [{"text": "🗑 Confirm Delete Location", "callback_data": "sw:ldel:apply"}],
-        [{"text": "← Cancel", "callback_data": f"sw:o:{object_id}"}],
+        [{"text": "← Cancel", "callback_data": "sw:ldel:cancel"}],
     ]
 
 
@@ -98,6 +99,13 @@ def location_cleanup_callback_view(conn, *, user_id: int, callback_data: str):
     if callback_data.startswith("sw:ldel:start:"):
         object_id = callback_data.split(":", 3)[3]
         return location_cleanup_review(conn, user_id=user_id, object_id=object_id)
+
+    if callback_data == "sw:ldel:cancel":
+        session = _session(user_id)
+        _save_session(user_id, None)
+        if session is None:
+            return {"return_to": "sw:list:location"}
+        return {"return_to": f"sw:o:{session['object_id']}"}
 
     if callback_data == "sw:ldel:apply":
         session = _session(user_id)
