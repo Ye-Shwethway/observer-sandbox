@@ -25,23 +25,19 @@ def _location(
     enclosure: str,
 ):
     payload = manual_location_template()
-    payload["identity"].update(
-        {
-            "key": key,
-            "name": name,
-            "kind": kind,
-            "description": f"Representative L11.7 acceptance Location: {name}.",
-        }
-    )
+    payload["identity"].update({
+        "key": key,
+        "name": name,
+        "kind": kind,
+        "description": f"Representative L11.7 acceptance Location: {name}.",
+    })
     payload["structure"].update({"parent_ref": parent_ref, "exposure": exposure})
     payload["spatial"]["surface"] = surface
-    payload["boundary"].update(
-        {
-            "type": boundary_type,
-            "enclosure": enclosure,
-            "notes": None,
-        }
-    )
+    payload["boundary"].update({
+        "type": boundary_type,
+        "enclosure": enclosure,
+        "notes": None,
+    })
     return {"ref": ref, "payload": payload}
 
 
@@ -61,16 +57,14 @@ def _interface(destination_ref: str):
 
 def _container_item(ref: str, *, located_at: str):
     payload = manual_item_template()
-    payload["definition"].update(
-        {
-            "key": "item.acceptance.storage_box",
-            "name": "Storage Box",
-            "kind": "container",
-            "description": "Container Item embedded in the Location acceptance graph.",
-            "capabilities": ["inspect", "store", "use"],
-            "tags": ["storage", "acceptance"],
-        }
-    )
+    payload["definition"].update({
+        "key": "item.acceptance.storage_box",
+        "name": "Storage Box",
+        "kind": "container",
+        "description": "Container Item embedded in the Location acceptance graph.",
+        "capabilities": ["inspect", "store", "use"],
+        "tags": ["storage", "acceptance"],
+    })
     payload["definition"]["modules"]["container"] = {
         "capacity_volume": {"value": 20, "unit": "l"}
     }
@@ -80,16 +74,14 @@ def _container_item(ref: str, *, located_at: str):
 
 def _object_item(ref: str, *, stored_in: str):
     payload = manual_item_template()
-    payload["definition"].update(
-        {
-            "key": "item.acceptance.flashlight",
-            "name": "Flashlight",
-            "kind": "object",
-            "description": "Ordinary object Item stored in the acceptance container.",
-            "capabilities": ["inspect", "use"],
-            "tags": ["light", "acceptance"],
-        }
-    )
+    payload["definition"].update({
+        "key": "item.acceptance.flashlight",
+        "name": "Flashlight",
+        "kind": "object",
+        "description": "Ordinary object Item stored in the acceptance container.",
+        "capabilities": ["inspect", "use"],
+        "tags": ["light", "acceptance"],
+    })
     payload["relationships"]["stored_in"] = stored_in
     return {"ref": ref, "payload": payload}
 
@@ -105,25 +97,20 @@ def _representative_envelope():
         boundary_type="mixed",
         enclosure="partially_enclosed",
     )
-    property_payload = property_member["payload"]
-    property_payload["geography"].update(
-        {
-            "address_text": None,
-            "locality": "South Lake Tahoe",
-            "region": "California",
-            "country_code": "US",
-            "position": None,
-            "bounds": None,
-        }
-    )
-    property_payload["facilities"].update(
-        {
-            "capabilities": ["enter", "leave", "inspect"],
-            "facility_types": ["living_space"],
-            "resource_types": ["electric_power", "potable_water"],
-            "utilities": ["electricity", "potable_water"],
-        }
-    )
+    property_member["payload"]["geography"].update({
+        "address_text": None,
+        "locality": "South Lake Tahoe",
+        "region": "California",
+        "country_code": "US",
+        "position": None,
+        "bounds": None,
+    })
+    property_member["payload"]["facilities"].update({
+        "capabilities": ["enter", "leave", "inspect"],
+        "facility_types": ["living_space"],
+        "resource_types": ["electric_power", "potable_water"],
+        "utilities": ["electricity", "potable_water"],
+    })
 
     building_member = _location(
         "building",
@@ -136,14 +123,12 @@ def _representative_envelope():
         boundary_type="physical",
         enclosure="enclosed",
     )
-    building_member["payload"]["facilities"].update(
-        {
-            "capabilities": ["enter", "leave", "rest", "work"],
-            "facility_types": ["living_space"],
-            "resource_types": ["electric_power", "data_network"],
-            "utilities": ["electricity", "internet"],
-        }
-    )
+    building_member["payload"]["facilities"].update({
+        "capabilities": ["enter", "leave", "rest", "work"],
+        "facility_types": ["living_space"],
+        "resource_types": ["electric_power", "data_network"],
+        "utilities": ["electricity", "internet"],
+    })
 
     room_member = _location(
         "room",
@@ -156,17 +141,16 @@ def _representative_envelope():
         boundary_type="physical",
         enclosure="enclosed",
     )
-    room_member["payload"]["facilities"].update(
-        {
-            "capabilities": ["inspect", "read", "research", "work"],
-            "facility_types": ["research"],
-            "resource_types": ["data_network"],
-            "utilities": ["electricity", "internet"],
-        }
-    )
-    room_member["payload"]["environment"].update(
-        {"lighting_profile": "mixed", "weather_exposure": "protected"}
-    )
+    room_member["payload"]["facilities"].update({
+        "capabilities": ["inspect", "read", "research", "work"],
+        "facility_types": ["research"],
+        "resource_types": ["data_network"],
+        "utilities": ["electricity", "internet"],
+    })
+    room_member["payload"]["environment"].update({
+        "lighting_profile": "mixed",
+        "weather_exposure": "protected",
+    })
     room_member["payload"]["topology"]["interfaces"] = [_interface("$garden")]
 
     garden_member = _location(
@@ -180,17 +164,16 @@ def _representative_envelope():
         boundary_type="open",
         enclosure="unenclosed",
     )
-    garden_member["payload"]["facilities"].update(
-        {
-            "capabilities": ["inspect", "recreate"],
-            "facility_types": ["recreation"],
-            "resource_types": [],
-            "utilities": [],
-        }
-    )
-    garden_member["payload"]["environment"].update(
-        {"lighting_profile": "natural", "weather_exposure": "exposed"}
-    )
+    garden_member["payload"]["facilities"].update({
+        "capabilities": ["inspect", "recreate"],
+        "facility_types": ["recreation"],
+        "resource_types": [],
+        "utilities": [],
+    })
+    garden_member["payload"]["environment"].update({
+        "lighting_profile": "natural",
+        "weather_exposure": "exposed",
+    })
 
     return {
         "schema_version": "location-composition-v1",
@@ -220,13 +203,9 @@ def test_l11_7_representative_property_building_room_outdoor_vertical(tmp_path) 
         canonical_before = canonical_state_fingerprint(conn)
         counts_before = _counts(conn)
         preview = preview_location_composition(conn, envelope)
-
         assert preview["count"] == 6
         assert [entry["ref"] for entry in preview["locations"]] == [
-            "property",
-            "building",
-            "room",
-            "garden",
+            "property", "building", "room", "garden"
         ]
         assert _counts(conn) == counts_before
         assert canonical_state_fingerprint(conn) == canonical_before
@@ -247,9 +226,7 @@ def test_l11_7_representative_property_building_room_outdoor_vertical(tmp_path) 
         assert garden["source"]["structure"]["parent_ref"] == refs["property"]
         assert garden["source"]["identity"]["kind"] == "outdoor_zone"
         assert garden["source"]["boundary"] == {
-            "type": "open",
-            "enclosure": "unenclosed",
-            "notes": None,
+            "type": "open", "enclosure": "unenclosed", "notes": None
         }
         assert room["source"]["boundary"]["enclosure"] == "enclosed"
 
@@ -257,10 +234,7 @@ def test_l11_7_representative_property_building_room_outdoor_vertical(tmp_path) 
         assert property_location["source"]["geography"]["position"] is None
         assert property_location["source"]["geography"]["bounds"] is None
         assert set(room["source"]["facilities"]["capabilities"]) == {
-            "inspect",
-            "read",
-            "research",
-            "work",
+            "inspect", "read", "research", "work"
         }
         assert room["source"]["facilities"]["resource_types"] == ["data_network"]
         assert room["source"]["facilities"]["utilities"] == ["electricity", "internet"]
@@ -269,31 +243,21 @@ def test_l11_7_representative_property_building_room_outdoor_vertical(tmp_path) 
         assert interface["destination_ref"] == refs["garden"]
         assert interface["kind"] == "door"
         assert interface["traversal_modes"] == ["walk"]
-        assert conn.execute(
-            "SELECT 1 FROM creation_sandbox_relations WHERE source_object_id=? AND relation_type='connected_to' AND target_object_id=?",
-            (refs["room"], refs["garden"]),
-        ).fetchone() is not None
-        assert conn.execute(
-            "SELECT 1 FROM creation_sandbox_relations WHERE source_object_id=? AND relation_type='connected_to' AND target_object_id=?",
-            (refs["garden"], refs["room"]),
-        ).fetchone() is not None
+        for source_id, target_id in ((refs["room"], refs["garden"]), (refs["garden"], refs["room"])):
+            assert conn.execute(
+                "SELECT 1 FROM creation_sandbox_relations WHERE source_object_id=? AND relation_type='connected_to' AND target_object_id=?",
+                (source_id, target_id),
+            ).fetchone() is not None
 
         profile = location_grade_profile_v2(room)
         assert profile is not None
         assert profile.overall is None
-        assert "completeness" in profile.dimensions
+        assert set(profile.dimensions) == {"completeness"}
         assert profile.dimensions["completeness"].grade is not None
 
         assert conn.execute(
             "SELECT 1 FROM creation_sandbox_actor_runtime WHERE object_id IN (?,?,?,?,?,?) LIMIT 1",
-            (
-                refs["property"],
-                refs["building"],
-                refs["room"],
-                refs["garden"],
-                refs["box"],
-                refs["flashlight"],
-            ),
+            (refs["property"], refs["building"], refs["room"], refs["garden"], refs["box"], refs["flashlight"]),
         ).fetchone() is None
         assert canonical_state_fingerprint(conn) == canonical_before
 
@@ -307,22 +271,14 @@ def test_l11_7_embedded_item_kinds_and_storage_relationships_are_preserved(tmp_p
         canonical_before = canonical_state_fingerprint(conn)
         created = materialize_location_composition(conn, envelope, requested_by="l11.7-items")
         refs = created["refs"]
-
-        rows = conn.execute(
-            "SELECT object_id,definition_key,source_json FROM creation_sandbox_item_instances ORDER BY definition_key"
-        ).fetchall()
-        assert len(rows) == 2
-        kinds = {}
-        import json
-
-        for row in rows:
-            source = json.loads(row["source_json"])
-            kinds[row["definition_key"]] = source["definition"]["kind"]
+        kinds = {
+            item["item"]["definition"]["key"]: item["item"]["definition"]["kind"]
+            for item in created["items"]
+        }
         assert kinds == {
             "item.acceptance.flashlight": "object",
             "item.acceptance.storage_box": "container",
         }
-
         assert conn.execute(
             "SELECT 1 FROM creation_sandbox_relations WHERE source_object_id=? AND relation_type='located_at' AND target_object_id=?",
             (refs["box"], refs["room"]),
