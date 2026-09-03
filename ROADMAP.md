@@ -33,6 +33,10 @@ Approved-object Edit UX must not default to whole-section JSON replacement. The 
 
 Raw/exact JSON may remain only as a clearly labeled advanced fallback where useful. Character/Profile Edit is the interaction-parity reference; typed field editors may vary by domain while the exact validator/materializer remains shared authority.
 
+For canonical-isolation proofs around Sandbox mutation, fingerprint samples belong inside one writer transaction before commit:
+
+`writer lock -> canonical before -> Sandbox writes -> canonical after -> rollback on mismatch / commit on match`.
+
 ---
 
 # Current strategic direction — Location first, then Genesis
@@ -133,7 +137,9 @@ Implemented authority includes:
 - revision-bound approval;
 - no runtime activation or canonical mutation.
 
-## ▶ L11.6 — Detail/Browse + Edit + Cleanup Parity — PRODUCTION GREEN, CREATOR SMOKE REMAINS
+## ✅ L11.6 — Detail/Browse + Edit + Cleanup Parity
+
+**CLOSED after Creator production smoke.**
 
 Implementation chain:
 
@@ -141,9 +147,11 @@ Implementation chain:
 - PR #398 — Telegram Edit Preview/Apply/Done backend parity;
 - PR #399 — complete human detail/readback;
 - PR #400 — dependency-aware cleanup;
-- PR #402 — field-by-field Creator-friendly Location Edit UX.
+- PR #402 — field-by-field Creator-friendly Location Edit UX;
+- PR #404 — human-readable changed-field edit Preview;
+- PR #405 — canonical-isolation race/atomic rollback fix for Apply/Delete.
 
-Current capabilities:
+Closed capabilities:
 
 - approved Location browse/detail;
 - readable hierarchy/geography, quantities, boundaries, access/control, environment, facilities/resources/capabilities, topology, economics and relationships;
@@ -157,29 +165,29 @@ Current capabilities:
 - physical quantities accept human units such as `12 ft`, `36 m`, `1800 ft2`;
 - Topology has structured interface list/add/edit/delete controls;
 - complete-section JSON is retained only as explicit `Advanced JSON` fallback;
+- Preview shows human-readable changed fields instead of raw section JSON;
 - Preview -> Apply -> Done remains mandatory;
 - atomic projection rewrite and update audit event;
+- canonical-isolation proof occurs inside one SQLite writer transaction before commit;
+- legitimate concurrent Real World runtime writes cannot cause post-commit false alarms;
+- actual canonical mutation during Sandbox update/delete rolls back atomically;
 - no runtime pause because approved Location runtime is not running yet;
 - dependency-aware Delete Location;
 - active Character/Item relations, actor runtime placement and authoritative Location references block delete;
 - no cascaded graph rewrite;
 - safe delete requires fresh source-fingerprint review and explicit confirmation;
-- blocked review arms no delete session and Cancel invalidates an armed review;
-- canonical Real World fingerprint is verified unchanged.
+- blocked review arms no delete session and Cancel invalidates an armed review.
 
 Verification:
 
-- PR #402 CI #1275 — targeted Location regression ✅, CLI init/status smoke ✅, full fallback correctly skipped;
-- merge checkpoint `58c542654cfb82b0ea9b9fcf625662a4977d79f6`;
-- production deploy #386 — sync/install/cognition recovery/service entrypoint/restart/runtime health ✅.
+- PR #402 / CI #1275 / deploy #386 ✅;
+- PR #404 / CI #1278 / deploy #387 ✅;
+- PR #405 / CI #1279 / deploy #388 ✅;
+- Creator production smoke confirmed the field-level Edit, readable Preview and successful Apply path ✅.
 
-Creator production smoke still required before marking this slice fully closed:
+## ▶ L11.7 — Full Location Vertical Acceptance
 
-`Location detail -> field-by-field Edit (text + toggle + reference + topology representative paths) -> Preview/Apply/Done -> dependency-blocked Delete -> Cancel -> fresh review -> confirmed deletion of expendable unreferenced Location`
-
-## L11.7 — Full Location Vertical Acceptance
-
-**NEXT after L11.6 Creator smoke.**
+**NEXT. This is the final Location slice before Genesis.**
 
 Prove at least:
 
@@ -198,9 +206,12 @@ Prove at least:
 13. atomic approval;
 14. invalid parent/cycle/cross-Sandbox/local-ref => zero writes;
 15. Creator-friendly Edit Preview/Apply/Done parity;
-16. dependency-safe cleanup;
-17. `canonical_state_fingerprint()` unchanged;
-18. approved Locations remain not runtime-active.
+16. human-readable changed-field Preview;
+17. dependency-safe cleanup;
+18. canonical isolation under one transactional invariant;
+19. approved Locations remain not runtime-active.
+
+L11.7 should primarily be an **acceptance/hardening pass**, not a new feature-design phase. Any implementation work should be narrowly driven by acceptance failures.
 
 Only after L11.7 closes does the Genesis transition begin.
 
@@ -250,4 +261,4 @@ Reincarnation is modern-to-modern canonical renewal, not preservation of prototy
 
 ## Exact resume point
 
-**Production is green through PR #402 / CI #1275 / deploy #386. Perform the Creator Telegram smoke for field-by-field Location Edit and dependency-safe Delete. If text entry, Facilities toggles, human-readable reference selection, structured Topology, Preview/Apply/Done, dependency blocking, Cancel invalidation, explicit safe deletion and post-delete navigation pass, mark L11.6 closed and begin L11.7 Full Location Vertical Acceptance.**
+**L11.6 is closed after Creator production smoke. Production is green through PR #405 / CI #1279 / deploy #388. Begin L11.7 Full Location Vertical Acceptance and only patch issues that the acceptance matrix actually exposes.**
