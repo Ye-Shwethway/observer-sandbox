@@ -28,11 +28,14 @@ def install_location_cleanup_world_layers_extension(base) -> None:
     def world_layer_callback_view(conn: sqlite3.Connection, callback_data: str):
         if callback_data.startswith("sw:ldel:"):
             try:
-                return location_cleanup_callback_view(
+                view = location_cleanup_callback_view(
                     conn,
                     user_id=base._notification_user_id(),
                     callback_data=callback_data,
                 )
+                if isinstance(view, dict) and view.get("return_to"):
+                    return original_callback(conn, str(view["return_to"]))
+                return view
             except SandboxLocationCleanupError as exc:
                 return (
                     "❌ SANDBOX LOCATION CLEANUP\n━━━━━━━━━━━━━━━━━━\n"
