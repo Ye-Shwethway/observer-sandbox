@@ -331,7 +331,7 @@ def install_location_creator_studio_extension(base) -> None:
                     "Materialized in Creation Sandbox only. Runtime is not started and canonical Real World remains unchanged.",
                     [
                         [{"text": "🛠 Creator Studio", "callback_data": "sw:studio"}],
-                        [{"text": "🌌 Sandbox World", "callback_data": "sw:world"}],
+                        [{"text": "🌌 Sandbox World", "callback_data": "nav:sandbox"}],
                     ],
                 )
         return original_callback(conn, user_id, callback_data)
