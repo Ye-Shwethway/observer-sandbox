@@ -96,7 +96,7 @@ def test_location_detail_formats_quantities_resources_topology_and_economics_hum
             "currency_code": "USD",
             "market_value_minor": 25000000,
             "replacement_value_minor": 20000000,
-            "net_worth_treatment": "include",
+            "net_worth_treatment": "independent",
             "included_in_parent_ref": None,
             "valuation_method": "test evidence",
         }
