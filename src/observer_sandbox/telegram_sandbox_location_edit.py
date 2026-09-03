@@ -44,7 +44,6 @@ class SandboxLocationEditError(ValueError):
 
 
 _SESSIONS: dict[int, dict[str, Any]] = {}
-
 _SECTION_LABELS = {
     "identity": "🪪 Identity",
     "structure": "🏗 Structure",
@@ -60,8 +59,6 @@ _SECTION_LABELS = {
     "economic_policy": "💰 Economics",
     "provenance": "🧾 Provenance",
 }
-
-# Short ids keep Telegram callback_data comfortably below its 64-byte ceiling.
 _FIELD_SPECS: dict[str, dict[str, Any]] = {
     "in_name": {"section": "identity", "path": ("identity", "name"), "label": "Name", "kind": "text"},
     "in_kind": {"section": "identity", "path": ("identity", "kind"), "label": "Kind", "kind": "enum", "choices": LOCATION_KINDS},
@@ -108,7 +105,6 @@ _FIELD_SPECS: dict[str, dict[str, Any]] = {
     "prov_status": {"section": "provenance", "path": ("provenance", "source_status"), "label": "Source Status", "kind": "enum", "choices": SOURCE_STATUSES},
     "prov_note": {"section": "provenance", "path": ("provenance", "source_note"), "label": "Source Note", "kind": "text", "nullable": True},
 }
-
 _ACCESS_SIMPLE_MODES = ("public", "owner_or_resident", "authorized", "restricted")
 _QUANTITY_RE = re.compile(r"^\s*(-?\d+(?:\.\d+)?)\s*([A-Za-z0-9_]+)\s*$")
 
@@ -151,10 +147,13 @@ def _human(value: Any) -> str:
     if isinstance(value, list):
         return ", ".join(str(v).replace("_", " ").title() for v in value) if value else "None"
     if isinstance(value, dict) and {"kind", "value", "unit"} <= set(value):
-        return f"{value['value']:g} {str(value['unit']).replace('m2', 'm²')}" if isinstance(value["value"], (int, float)) else str(value)
+        if isinstance(value.get("value"), (int, float)):
+            return f"{float(value['value']):g} {str(value['unit']).replace('m2', 'm²')}"
     if isinstance(value, dict):
         return json.dumps(value, ensure_ascii=False, sort_keys=True)
-    return str(value).replace("_", " ").title() if isinstance(value, str) and value.islower() else str(value)
+    if isinstance(value, str) and value.islower():
+        return value.replace("_", " ").title()
+    return str(value)
 
 
 def _preflight_proposal(conn: sqlite3.Connection, *, user_id: int, section: str, proposal: dict[str, Any]):
@@ -170,11 +169,13 @@ def _preflight_proposal(conn: sqlite3.Connection, *, user_id: int, section: str,
         )
     except SandboxLocationOperationError as exc:
         raise SandboxLocationEditError(str(exc)) from exc
-    session["pending_section"] = section
-    session["pending_source"] = proposal
-    session["pending_input"] = None
-    session["pending_field_id"] = None
-    session["token_working"] = None
+    session.update({
+        "pending_section": section,
+        "pending_source": proposal,
+        "pending_input": None,
+        "pending_field_id": None,
+        "token_working": None,
+    })
     _save_session(user_id, session)
     return location_edit_preview_view(conn, user_id=user_id)
 
@@ -248,7 +249,6 @@ def location_section_prompt_view(conn: sqlite3.Connection, *, user_id: int, sect
     source = _current_source(conn, session)
     session.update({"pending_section": None, "pending_source": None, "pending_input": None, "pending_field_id": None, "token_working": None})
     _save_session(user_id, session)
-
     if section == "topology":
         return topology_view(conn, user_id=user_id)
     if section == "economic_policy" and source["economic_policy"] is None:
@@ -256,7 +256,6 @@ def location_section_prompt_view(conn: sqlite3.Connection, *, user_id: int, sect
             "💰 ECONOMICS · EDIT\n━━━━━━━━━━━━━━━━━━\nNo economic policy is represented for this Location.\n\nEnable one to edit its fields, or leave it unrepresented.",
             [[{"text": "➕ Enable Economics", "callback_data": "sw:ledit:eco:on"}], [{"text": "← Edit Location", "callback_data": "sw:ledit:home"}]],
         )
-
     lines = [f"{_SECTION_LABELS[section]} · EDIT", "━━━━━━━━━━━━━━━━━━", "Select one field to edit."]
     keyboard: list[list[dict[str, str]]] = []
     for field_id, spec in _section_specs(section):
@@ -270,11 +269,11 @@ def location_section_prompt_view(conn: sqlite3.Connection, *, user_id: int, sect
     return "\n".join(lines), keyboard
 
 
-def _rows_for_choices(field_id: str, values: list[str], *, prefix: str = "choose") -> list[list[dict[str, str]]]:
+def _choice_rows(field_id: str, values: list[str], prefix: str) -> list[list[dict[str, str]]]:
     rows: list[list[dict[str, str]]] = []
-    for index in range(0, len(values), 2):
+    for start in range(0, len(values), 2):
         row = []
-        for value in values[index:index + 2]:
+        for value in values[start:start + 2]:
             row.append({"text": value.replace("_", " ").title(), "callback_data": f"sw:ledit:{prefix}:{field_id}:{value}"})
         rows.append(row)
     return rows
@@ -282,21 +281,16 @@ def _rows_for_choices(field_id: str, values: list[str], *, prefix: str = "choose
 
 def field_editor_view(conn: sqlite3.Connection, *, user_id: int, field_id: str):
     spec = _FIELD_SPECS.get(field_id)
-    if spec is None:
-        raise SandboxLocationEditError("Unknown Location field selection")
     session = get_sandbox_location_edit_session(user_id=user_id)
-    if session is None:
-        raise SandboxLocationEditError("Sandbox Location edit session expired")
-    source = _current_source(conn, session)
-    current = _get_path(source, spec["path"])
+    if spec is None or session is None:
+        raise SandboxLocationEditError("Unknown or expired Location field selection")
+    current = _get_path(_current_source(conn, session), spec["path"])
     kind = str(spec["kind"])
     session.update({"pending_field_id": field_id, "pending_input": None, "token_working": None, "pending_section": None, "pending_source": None})
     _save_session(user_id, session)
     header = f"✏️ {spec['label'].upper()}\n━━━━━━━━━━━━━━━━━━\nCurrent: {_human(current)}\n\n"
-
     if kind == "enum":
-        values = sorted(str(v) for v in spec["choices"])
-        keyboard = _rows_for_choices(field_id, values)
+        keyboard = _choice_rows(field_id, sorted(str(v) for v in spec["choices"]), "choose")
         keyboard.append([{"text": "← Back", "callback_data": f"sw:ledit:s:{spec['section']}"}])
         return header + "Choose the new value.", keyboard
     if kind == "tokens":
@@ -306,32 +300,27 @@ def field_editor_view(conn: sqlite3.Connection, *, user_id: int, field_id: str):
     if kind == "reference":
         return reference_picker_view(conn, user_id=user_id, field_id=field_id)
     if kind == "access":
-        policy = current if isinstance(current, dict) else {}
-        mode = str(policy.get("mode") or "unknown")
-        keyboard = _rows_for_choices(field_id, list(_ACCESS_SIMPLE_MODES), prefix="access")
-        if mode == "requirements":
-            keyboard.append([{"text": "🧰 Edit Requirement Contract", "callback_data": "sw:ledit:access:req"}])
+        keyboard = _choice_rows(field_id, list(_ACCESS_SIMPLE_MODES), "access")
+        keyboard.append([{"text": "🧰 Requirement-based Access", "callback_data": "sw:ledit:access:req"}])
         keyboard.append([{"text": "← Back", "callback_data": "sw:ledit:s:access"}])
-        return header + "Choose a standard access mode. Requirement-based access has an advanced contract editor.", keyboard
-
+        return header + "Choose a standard access mode. Requirement-based access uses the universal advanced requirement contract editor.", keyboard
     session["pending_input"] = kind
     _save_session(user_id, session)
-    examples = {
+    prompt = {
         "text": "Send the new text as your next message.",
         "csv": "Send tags separated by commas, for example: home, private, lakeside",
         "country": "Send a two-letter country code, for example: US or MM.",
-        "currency": "Send an ISO-style currency code, for example: USD or MMK.",
+        "currency": "Send a currency code, for example: USD or MMK.",
         "integer": "Send a non-negative whole number in minor currency units.",
         "quantity": "Send value and unit, for example: 120 ft, 36 m, or 1800 ft2.",
         "position": "Send latitude, longitude, for example: 38.9399, -119.9772",
         "bounds": "Send south, west, north, east as four comma-separated numbers.",
-    }
-    text = header + examples.get(kind, "Send the new value as your next message.") + "\nNothing changes until Preview → Apply."
+    }.get(kind, "Send the new value as your next message.")
     keyboard: list[list[dict[str, str]]] = []
     if spec.get("nullable"):
         keyboard.append([{"text": "⊘ Clear / Unset", "callback_data": f"sw:ledit:clear:{field_id}"}])
     keyboard.append([{"text": "✕ Cancel Field Edit", "callback_data": f"sw:ledit:s:{spec['section']}"}])
-    return text, keyboard
+    return header + prompt + "\nNothing changes until Preview → Apply.", keyboard
 
 
 def token_picker_view(conn: sqlite3.Connection, *, user_id: int, field_id: str):
@@ -351,9 +340,9 @@ def token_picker_view(conn: sqlite3.Connection, *, user_id: int, field_id: str):
     return "\n".join(lines), keyboard
 
 
-def _active_refs(conn: sqlite3.Connection, session: dict[str, Any], *, ref_type: str) -> list[dict[str, Any]]:
+def _active_refs(conn: sqlite3.Connection, session: dict[str, Any], ref_type: str) -> list[dict[str, Any]]:
     sandbox_id = str(get_sandbox_location_v2(conn, str(session["object_id"]))["sandbox_id"])
-    result = []
+    result: list[dict[str, Any]] = []
     for value in list_sandbox_objects(conn, sandbox_id=sandbox_id):
         if value.get("lifecycle_status") != "active" or str(value.get("object_id")) == str(session["object_id"]):
             continue
@@ -368,7 +357,7 @@ def reference_picker_view(conn: sqlite3.Connection, *, user_id: int, field_id: s
     session = get_sandbox_location_edit_session(user_id=user_id)
     if spec is None or session is None:
         raise SandboxLocationEditError("Reference picker expired")
-    refs = _active_refs(conn, session, ref_type=str(spec.get("ref_type") or "any"))
+    refs = _active_refs(conn, session, str(spec.get("ref_type") or "any"))
     session["ref_picker_ids"] = [str(value["object_id"]) for value in refs]
     _save_session(user_id, session)
     lines = [f"🔗 {spec['label'].upper()}", "━━━━━━━━━━━━━━━━━━", "Choose a represented object. Raw object IDs are not required."]
@@ -399,7 +388,7 @@ def _parse_text_value(spec: dict[str, Any], text: str) -> Any:
             raise SandboxLocationEditError("Value must not be empty; use Clear / Unset for nullable fields")
         return raw
     if kind == "csv":
-        values = []
+        values: list[str] = []
         for part in raw.split(","):
             token = part.strip().lower().replace(" ", "_")
             if token and token not in values:
@@ -426,10 +415,9 @@ def _parse_text_value(spec: dict[str, Any], text: str) -> Any:
         if not match:
             raise SandboxLocationEditError("Send a value followed by a unit, for example: 12 ft or 36 m")
         try:
-            quantity = normalize_physical_quantity(str(spec["dimension"]), float(match.group(1)), match.group(2))
+            return normalize_physical_quantity(str(spec["dimension"]), float(match.group(1)), match.group(2)).as_dict()
         except (PhysicalQuantityError, ValueError) as exc:
             raise SandboxLocationEditError(str(exc)) from exc
-        return quantity.as_dict()
     if kind == "position":
         parts = [part.strip() for part in raw.split(",")]
         if len(parts) != 2:
@@ -450,7 +438,13 @@ def _parse_text_value(spec: dict[str, Any], text: str) -> Any:
     raise SandboxLocationEditError("This field does not accept free-text input")
 
 
-def advanced_json_prompt_view(conn: sqlite3.Connection, *, user_id: int, section: str, *, access_requirements_only: bool = False):
+def advanced_json_prompt_view(
+    conn: sqlite3.Connection,
+    *,
+    user_id: int,
+    section: str,
+    access_requirements_only: bool = False,
+):
     session = get_sandbox_location_edit_session(user_id=user_id)
     if session is None:
         raise SandboxLocationEditError("Sandbox Location edit session expired")
@@ -463,7 +457,8 @@ def advanced_json_prompt_view(conn: sqlite3.Connection, *, user_id: int, section
     current: Any = source[section]
     title = _SECTION_LABELS[section]
     if access_requirements_only:
-        current = source["access"]["policy"].get("requirements") if source["access"]["policy"].get("mode") == "requirements" else None
+        policy = source["access"]["policy"]
+        current = policy.get("requirements") if policy.get("mode") == "requirements" else None
         title = "🚪 Access Requirements"
     return (
         f"🧰 {title} · ADVANCED JSON\n━━━━━━━━━━━━━━━━━━\n"
@@ -479,10 +474,10 @@ def handle_sandbox_location_edit_text(conn: sqlite3.Connection, *, user_id: int,
     session = get_sandbox_location_edit_session(user_id=user_id)
     if session is None or not session.get("pending_input"):
         return None
-    pending_input = str(session["pending_input"])
-    field_id = session.get("pending_field_id")
-
-    if pending_input == "section_json":
+    pending = str(session["pending_input"])
+    if pending.startswith("interface:") or pending in {"interface_modes", "interface_dest"}:
+        return None
+    if pending == "section_json":
         section = str(session["pending_section"])
         try:
             replacement = json.loads((text or "").strip())
@@ -491,8 +486,7 @@ def handle_sandbox_location_edit_text(conn: sqlite3.Connection, *, user_id: int,
         proposal = _current_source(conn, session)
         proposal[section] = replacement
         return _preflight_proposal(conn, user_id=user_id, section=section, proposal=proposal)
-
-    if pending_input == "access_requirements_json":
+    if pending == "access_requirements_json":
         try:
             requirement = json.loads((text or "").strip())
         except json.JSONDecodeError as exc:
@@ -500,25 +494,29 @@ def handle_sandbox_location_edit_text(conn: sqlite3.Connection, *, user_id: int,
         proposal = _current_source(conn, session)
         proposal["access"]["policy"] = {"mode": "requirements", "requirements": requirement}
         return _preflight_proposal(conn, user_id=user_id, section="access", proposal=proposal)
-
-    spec = _FIELD_SPECS.get(str(field_id or ""))
+    field_id = str(session.get("pending_field_id") or "")
+    spec = _FIELD_SPECS.get(field_id)
     if spec is None:
         raise SandboxLocationEditError("Location field input expired; open the field again")
     value = _parse_text_value(spec, text)
-    proposal = _proposal_for_field(conn, session, spec, value)
-    return _preflight_proposal(conn, user_id=user_id, section=str(spec["section"]), proposal=proposal)
+    return _preflight_proposal(
+        conn,
+        user_id=user_id,
+        section=str(spec["section"]),
+        proposal=_proposal_for_field(conn, session, spec, value),
+    )
 
 
 def topology_view(conn: sqlite3.Connection, *, user_id: int):
     session = get_sandbox_location_edit_session(user_id=user_id)
     if session is None:
         raise SandboxLocationEditError("Sandbox Location edit session expired")
-    source = _current_source(conn, session)
-    interfaces = list(source["topology"]["interfaces"])
+    interfaces = list(_current_source(conn, session)["topology"]["interfaces"])
     lines = ["🔗 TOPOLOGY · EDIT", "━━━━━━━━━━━━━━━━━━", "Manage interfaces one at a time. No JSON is required for the normal path."]
     keyboard: list[list[dict[str, str]]] = []
     for index, interface in enumerate(interfaces):
-        keyboard.append([{"text": f"✏️ {interface.get('name') or interface.get('key') or f'Interface {index + 1}'}"[:60], "callback_data": f"sw:ledit:if:{index}"}])
+        label = str(interface.get("name") or interface.get("key") or f"Interface {index + 1}")
+        keyboard.append([{"text": f"✏️ {label}"[:60], "callback_data": f"sw:ledit:if:{index}"}])
     keyboard.append([{"text": "➕ Add Interface", "callback_data": "sw:ledit:ifadd"}])
     keyboard.append([{"text": "🧰 Advanced JSON", "callback_data": "sw:ledit:json:topology"}])
     keyboard.append([{"text": "← Edit Location", "callback_data": "sw:ledit:home"}])
@@ -535,8 +533,7 @@ def interface_view(conn: sqlite3.Connection, *, user_id: int, index: int):
     if index < 0 or index >= len(interfaces):
         raise SandboxLocationEditError("Interface selection is no longer available")
     interface = interfaces[index]
-    session["pending_interface_index"] = index
-    session["pending_input"] = None
+    session.update({"pending_interface_index": index, "pending_input": None, "token_working": None})
     _save_session(user_id, session)
     lines = [f"🔗 {str(interface.get('name') or interface.get('key')).upper()}", "━━━━━━━━━━━━━━━━━━", "Choose the interface field to edit."]
     keyboard = [
@@ -555,6 +552,18 @@ def interface_view(conn: sqlite3.Connection, *, user_id: int, index: int):
     return "\n".join(lines), keyboard
 
 
+def _interface_proposal(conn: sqlite3.Connection, session: dict[str, Any], key: str, value: Any) -> dict[str, Any]:
+    source = _current_source(conn, session)
+    index = int(session["pending_interface_index"])
+    field = {
+        "name": "name", "key": "key", "kind": "kind", "dest": "destination_ref",
+        "dir": "directionality", "enabled": "enabled", "modes": "traversal_modes",
+        "dur": "base_duration_minutes", "dist": "distance",
+    }[key]
+    source["topology"]["interfaces"][index][field] = value
+    return source
+
+
 def _interface_field_view(conn: sqlite3.Connection, *, user_id: int, key: str):
     session = get_sandbox_location_edit_session(user_id=user_id)
     if session is None or session.get("pending_interface_index") is None:
@@ -564,46 +573,43 @@ def _interface_field_view(conn: sqlite3.Connection, *, user_id: int, key: str):
     if key in {"name", "key", "dur", "dist"}:
         session["pending_input"] = f"interface:{key}"
         _save_session(user_id, session)
-        prompt = {"name": "Send the new interface name.", "key": "Send a stable lowercase interface key.", "dur": "Send base duration in minutes, or use Clear.", "dist": "Send distance such as 12 ft or 4 m, or use Clear."}[key]
-        keyboard = []
+        prompt = {
+            "name": "Send the new interface name.",
+            "key": "Send a stable lowercase interface key.",
+            "dur": "Send base duration in minutes, or use Clear.",
+            "dist": "Send distance such as 12 ft or 4 m, or use Clear.",
+        }[key]
+        keyboard: list[list[dict[str, str]]] = []
         if key in {"dur", "dist"}:
             keyboard.append([{"text": "⊘ Clear / Unset", "callback_data": f"sw:ledit:ifclear:{key}"}])
         keyboard.append([{"text": "← Interface", "callback_data": f"sw:ledit:if:{index}"}])
         return f"🔗 INTERFACE · {key.upper()}\n━━━━━━━━━━━━━━━━━━\n{prompt}\nNothing changes until Preview → Apply.", keyboard
     if key == "kind":
-        return "🔗 INTERFACE KIND\n━━━━━━━━━━━━━━━━━━\nChoose a kind.", _rows_for_choices("ifkind", sorted(INTERFACE_KINDS), prefix="ifchoose") + [[{"text": "← Interface", "callback_data": f"sw:ledit:if:{index}"}]]
+        return "🔗 INTERFACE KIND\n━━━━━━━━━━━━━━━━━━\nChoose a kind.", _choice_rows("ifkind", sorted(INTERFACE_KINDS), "ifchoose") + [[{"text": "← Interface", "callback_data": f"sw:ledit:if:{index}"}]]
     if key == "dir":
-        return "🔗 INTERFACE DIRECTION\n━━━━━━━━━━━━━━━━━━\nChoose directionality.", _rows_for_choices("ifdir", sorted(DIRECTIONALITY), prefix="ifchoose") + [[{"text": "← Interface", "callback_data": f"sw:ledit:if:{index}"}]]
+        return "🔗 INTERFACE DIRECTION\n━━━━━━━━━━━━━━━━━━\nChoose directionality.", _choice_rows("ifdir", sorted(DIRECTIONALITY), "ifchoose") + [[{"text": "← Interface", "callback_data": f"sw:ledit:if:{index}"}]]
     if key == "enabled":
         return "🔗 INTERFACE ENABLED\n━━━━━━━━━━━━━━━━━━\nChoose state.", [[{"text": "✅ Enabled", "callback_data": "sw:ledit:ifbool:1"}, {"text": "⛔ Disabled", "callback_data": "sw:ledit:ifbool:0"}], [{"text": "← Interface", "callback_data": f"sw:ledit:if:{index}"}]]
     if key == "modes":
-        # v2 currently has a bounded traversal registry; render it as toggles for forward compatibility.
-        session["token_working"] = list(interface["traversal_modes"])
+        if session.get("pending_input") != "interface_modes":
+            session["token_working"] = list(interface["traversal_modes"])
         session["pending_input"] = "interface_modes"
         _save_session(user_id, session)
-        selected = set(session["token_working"])
+        selected = set(str(v) for v in (session.get("token_working") or []))
         keyboard = [[{"text": ("☑️ " if value in selected else "◻️ ") + value.title(), "callback_data": f"sw:ledit:ifmode:{value}"}] for value in sorted(TRAVERSAL_MODES)]
         keyboard.append([{"text": "✅ Review Selection", "callback_data": "sw:ledit:ifmodedone"}])
         keyboard.append([{"text": "← Interface", "callback_data": f"sw:ledit:if:{index}"}])
         return "🔗 INTERFACE TRAVERSAL\n━━━━━━━━━━━━━━━━━━\nTap modes to select/unselect them. At least one is required.", keyboard
     if key == "dest":
-        refs = _active_refs(conn, session, ref_type="location")
-        session["ref_picker_ids"] = [str(v["object_id"]) for v in refs]
+        refs = _active_refs(conn, session, "location")
+        session["ref_picker_ids"] = [str(value["object_id"]) for value in refs]
         session["pending_input"] = "interface_dest"
         _save_session(user_id, session)
-        keyboard = [[{"text": f"📍 {str(v.get('identity', {}).get('name') or v['object_id'])}"[:60], "callback_data": f"sw:ledit:ifref:{i}"}] for i, v in enumerate(refs)]
+        keyboard = [[{"text": f"📍 {str(value.get('identity', {}).get('name') or value['object_id'])}"[:60], "callback_data": f"sw:ledit:ifref:{idx}"}] for idx, value in enumerate(refs)]
         keyboard.append([{"text": "⊘ Clear / Unset", "callback_data": "sw:ledit:ifclear:dest"}])
         keyboard.append([{"text": "← Interface", "callback_data": f"sw:ledit:if:{index}"}])
         return "🔗 INTERFACE DESTINATION\n━━━━━━━━━━━━━━━━━━\nChoose a Location. Raw IDs are not required.", keyboard
     raise SandboxLocationEditError("Unknown interface field")
-
-
-def _interface_proposal(conn: sqlite3.Connection, session: dict[str, Any], key: str, value: Any) -> dict[str, Any]:
-    source = _current_source(conn, session)
-    index = int(session["pending_interface_index"])
-    field = {"name": "name", "key": "key", "kind": "kind", "dir": "directionality", "enabled": "enabled", "modes": "traversal_modes", "dur": "base_duration_minutes", "dist": "distance", "dest": "destination_ref"}[key]
-    source["topology"]["interfaces"][index][field] = value
-    return source
 
 
 def _handle_interface_text(conn: sqlite3.Connection, *, user_id: int, key: str, text: str):
@@ -667,7 +673,12 @@ def apply_sandbox_location_edit(conn: sqlite3.Connection, *, user_id: int):
     if session is None or not isinstance(session.get("pending_source"), dict):
         raise SandboxLocationEditError("No Location edit proposal is ready to Apply")
     try:
-        updated = update_sandbox_location_v2(conn, str(session["object_id"]), session["pending_source"], expected_source_fingerprint=str(session["base_fingerprint"]))
+        updated = update_sandbox_location_v2(
+            conn,
+            str(session["object_id"]),
+            session["pending_source"],
+            expected_source_fingerprint=str(session["base_fingerprint"]),
+        )
     except SandboxLocationOperationError as exc:
         raise SandboxLocationEditError(str(exc)) from exc
     session["base_fingerprint"] = location_source_fingerprint(updated["source"])
@@ -688,8 +699,7 @@ def _choose_field_value(conn: sqlite3.Connection, *, user_id: int, field_id: str
     session = get_sandbox_location_edit_session(user_id=user_id)
     if spec is None or session is None:
         raise SandboxLocationEditError("Location field selection expired")
-    proposal = _proposal_for_field(conn, session, spec, value)
-    return _preflight_proposal(conn, user_id=user_id, section=str(spec["section"]), proposal=proposal)
+    return _preflight_proposal(conn, user_id=user_id, section=str(spec["section"]), proposal=_proposal_for_field(conn, session, spec, value))
 
 
 def location_edit_callback_view(conn: sqlite3.Connection, *, user_id: int, callback_data: str):
@@ -712,15 +722,17 @@ def location_edit_callback_view(conn: sqlite3.Connection, *, user_id: int, callb
         _, _, _, field_id, mode = callback_data.split(":", 4)
         return _choose_field_value(conn, user_id=user_id, field_id=field_id, value={"mode": mode})
     if callback_data.startswith("sw:ledit:clear:"):
-        field_id = callback_data.split(":", 3)[3]
-        return _choose_field_value(conn, user_id=user_id, field_id=field_id, value=None)
+        return _choose_field_value(conn, user_id=user_id, field_id=callback_data.split(":", 3)[3], value=None)
     if callback_data.startswith("sw:ledit:tok:"):
         _, _, _, field_id, token = callback_data.split(":", 4)
         session = get_sandbox_location_edit_session(user_id=user_id)
         if session is None or session.get("pending_field_id") != field_id:
             raise SandboxLocationEditError("Token selection expired")
-        selected = set(str(v) for v in (session.get("token_working") or []))
-        selected.remove(token) if token in selected else selected.add(token)
+        selected = set(str(value) for value in (session.get("token_working") or []))
+        if token in selected:
+            selected.remove(token)
+        else:
+            selected.add(token)
         session["token_working"] = sorted(selected)
         _save_session(user_id, session)
         return token_picker_view(conn, user_id=user_id, field_id=field_id)
@@ -743,17 +755,25 @@ def location_edit_callback_view(conn: sqlite3.Connection, *, user_id: int, callb
         session = get_sandbox_location_edit_session(user_id=user_id)
         if session is None:
             raise SandboxLocationEditError("Reference selection expired")
-        ids = list(session.get("ref_picker_ids") or [])
+        refs = list(session.get("ref_picker_ids") or [])
         index = int(raw_index)
-        if index < 0 or index >= len(ids):
+        if index < 0 or index >= len(refs):
             raise SandboxLocationEditError("Reference selection is no longer available")
-        return _choose_field_value(conn, user_id=user_id, field_id=field_id, value=ids[index])
+        return _choose_field_value(conn, user_id=user_id, field_id=field_id, value=refs[index])
     if callback_data == "sw:ledit:eco:on":
         session = get_sandbox_location_edit_session(user_id=user_id)
         if session is None:
             raise SandboxLocationEditError("Sandbox Location edit session expired")
         proposal = _current_source(conn, session)
-        proposal["economic_policy"] = {"classification": "economically_immaterial", "currency_code": None, "market_value_minor": None, "replacement_value_minor": None, "net_worth_treatment": "excluded", "included_in_parent_ref": None, "valuation_method": None}
+        proposal["economic_policy"] = {
+            "classification": "economically_immaterial",
+            "currency_code": None,
+            "market_value_minor": None,
+            "replacement_value_minor": None,
+            "net_worth_treatment": "excluded",
+            "included_in_parent_ref": None,
+            "valuation_method": None,
+        }
         return _preflight_proposal(conn, user_id=user_id, section="economic_policy", proposal=proposal)
     if callback_data == "sw:ledit:eco:off":
         session = get_sandbox_location_edit_session(user_id=user_id)
@@ -767,11 +787,15 @@ def location_edit_callback_view(conn: sqlite3.Connection, *, user_id: int, callb
         if session is None:
             raise SandboxLocationEditError("Sandbox Location edit session expired")
         proposal = _current_source(conn, session)
-        used = {str(v.get("key")) for v in proposal["topology"]["interfaces"]}
+        used = {str(value.get("key")) for value in proposal["topology"]["interfaces"]}
         number = 1
         while f"interface_{number}" in used:
             number += 1
-        proposal["topology"]["interfaces"].append({"key": f"interface_{number}", "name": f"New Interface {number}", "kind": "door", "destination_ref": None, "directionality": "two_way", "enabled": True, "traversal_modes": ["walk"], "base_duration_minutes": None, "distance": None})
+        proposal["topology"]["interfaces"].append({
+            "key": f"interface_{number}", "name": f"New Interface {number}", "kind": "door",
+            "destination_ref": None, "directionality": "two_way", "enabled": True,
+            "traversal_modes": ["walk"], "base_duration_minutes": None, "distance": None,
+        })
         return _preflight_proposal(conn, user_id=user_id, section="topology", proposal=proposal)
     if callback_data.startswith("sw:ledit:if:"):
         return interface_view(conn, user_id=user_id, index=int(callback_data.split(":", 3)[3]))
@@ -793,11 +817,11 @@ def location_edit_callback_view(conn: sqlite3.Connection, *, user_id: int, callb
         session = get_sandbox_location_edit_session(user_id=user_id)
         if session is None:
             raise SandboxLocationEditError("Interface reference picker expired")
-        ids = list(session.get("ref_picker_ids") or [])
+        refs = list(session.get("ref_picker_ids") or [])
         index = int(callback_data.split(":", 3)[3])
-        if index < 0 or index >= len(ids):
+        if index < 0 or index >= len(refs):
             raise SandboxLocationEditError("Interface destination is no longer available")
-        return _preflight_proposal(conn, user_id=user_id, section="topology", proposal=_interface_proposal(conn, session, "dest", ids[index]))
+        return _preflight_proposal(conn, user_id=user_id, section="topology", proposal=_interface_proposal(conn, session, "dest", refs[index]))
     if callback_data.startswith("sw:ledit:ifclear:"):
         session = get_sandbox_location_edit_session(user_id=user_id)
         if session is None:
@@ -809,9 +833,13 @@ def location_edit_callback_view(conn: sqlite3.Connection, *, user_id: int, callb
         if session is None:
             raise SandboxLocationEditError("Interface traversal picker expired")
         token = callback_data.split(":", 3)[3]
-        selected = set(str(v) for v in (session.get("token_working") or []))
-        selected.remove(token) if token in selected else selected.add(token)
+        selected = set(str(value) for value in (session.get("token_working") or []))
+        if token in selected:
+            selected.remove(token)
+        else:
+            selected.add(token)
         session["token_working"] = sorted(selected)
+        session["pending_input"] = "interface_modes"
         _save_session(user_id, session)
         return _interface_field_view(conn, user_id=user_id, key="modes")
     if callback_data == "sw:ledit:ifmodedone":
@@ -832,8 +860,6 @@ def location_edit_callback_view(conn: sqlite3.Connection, *, user_id: int, callb
             raise SandboxLocationEditError("Interface is no longer available")
         del proposal["topology"]["interfaces"][index]
         return _preflight_proposal(conn, user_id=user_id, section="topology", proposal=proposal)
-    if callback_data == "sw:ledit:cancelinput":
-        return location_edit_home_view(conn, user_id=user_id)
     if callback_data == "sw:ledit:apply":
         return apply_sandbox_location_edit(conn, user_id=user_id)
     if callback_data == "sw:ledit:discard":
@@ -848,7 +874,6 @@ def location_edit_callback_view(conn: sqlite3.Connection, *, user_id: int, callb
     raise KeyError(callback_data)
 
 
-# Text adapter uses this for interface scalar inputs before the generic field parser.
 def handle_sandbox_location_interface_edit_text(conn: sqlite3.Connection, *, user_id: int, text: str):
     session = get_sandbox_location_edit_session(user_id=user_id)
     if session is None:
