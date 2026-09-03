@@ -55,7 +55,7 @@ def test_location_detail_exposes_field_by_field_identity_edit_preview_apply_done
         assert sandbox_runtime_status(conn, location["sandbox_id"]) == runtime_before
 
         section_text, section_keyboard = world_layer_callback_view(conn, "sw:ledit:s:identity")
-        assert "IDENTITY · EDIT" in section_text
+        assert "Identity · EDIT" in section_text
         assert "Select one field" in section_text
         assert "sw:ledit:f:in_name" in _callbacks(section_keyboard)
         assert "sw:ledit:json:identity" in _callbacks(section_keyboard)
@@ -102,7 +102,7 @@ def test_location_facilities_use_toggle_picker_instead_of_json(tmp_path, monkeyp
 
         world_layer_callback_view(conn, f"sw:ledit:start:{object_id}")
         section_text, section_keyboard = world_layer_callback_view(conn, "sw:ledit:s:facilities")
-        assert "FACILITIES · EDIT" in section_text
+        assert "Facilities · EDIT" in section_text
         assert "sw:ledit:f:fac_cap" in _callbacks(section_keyboard)
         assert "sw:ledit:f:fac_type" in _callbacks(section_keyboard)
         assert "sw:ledit:f:fac_res" in _callbacks(section_keyboard)
