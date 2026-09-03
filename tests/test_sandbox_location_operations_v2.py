@@ -156,3 +156,58 @@ def test_location_update_rejects_invalid_cross_sandbox_graph_target_before_write
         ).fetchone()
         assert current is not None
         assert "sbx_location_missing" not in current["source_json"]
+
+
+def test_location_update_preserves_unrelated_incoming_topology_projection(tmp_path) -> None:
+    db = tmp_path / "observer.sqlite3"
+    initialize(db)
+
+    with connect(db) as conn:
+        target_payload = manual_location_template()
+        target_payload["identity"].update({
+            "key": "place.topology.target",
+            "name": "Target Room",
+            "kind": "room",
+            "description": "Target room",
+        })
+        target = materialize_sandbox_location_v2(conn, target_payload)
+
+        source_payload = manual_location_template()
+        source_payload["identity"].update({
+            "key": "place.topology.source",
+            "name": "Source Room",
+            "kind": "room",
+            "description": "Source room",
+        })
+        source_payload["topology"]["interfaces"] = [{
+            "key": "door_to_target",
+            "name": "Door to target",
+            "kind": "door",
+            "destination_ref": target["object_id"],
+            "directionality": "outbound",
+            "enabled": True,
+            "traversal_modes": ["walk"],
+            "base_duration_minutes": 1.0,
+            "distance": None,
+        }]
+        source = materialize_sandbox_location_v2(conn, source_payload)
+        before_relation = conn.execute(
+            "SELECT id FROM creation_sandbox_relations WHERE source_object_id=? AND target_object_id=? AND relation_type='connected_to'",
+            (source["object_id"], target["object_id"]),
+        ).fetchone()
+        assert before_relation is not None
+
+        proposal = copy.deepcopy(target["source"])
+        proposal["identity"]["name"] = "Edited Target Room"
+        update_sandbox_location_v2(
+            conn,
+            target["object_id"],
+            proposal,
+            expected_source_fingerprint=location_source_fingerprint(target["source"]),
+        )
+
+        after_relation = conn.execute(
+            "SELECT id FROM creation_sandbox_relations WHERE source_object_id=? AND target_object_id=? AND relation_type='connected_to'",
+            (source["object_id"], target["object_id"]),
+        ).fetchone()
+        assert after_relation is not None
