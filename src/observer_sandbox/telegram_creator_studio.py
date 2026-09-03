@@ -9,11 +9,13 @@ from .telegram_creator_studio_location_extension import install_location_creator
 from .telegram_creator_studio_location_feedback_extension import install_location_ai_feedback_extension
 from .telegram_creator_studio_location_composition_extension import install_location_composition_creator_studio_extension
 from .telegram_sandbox_item_edit_adapter import install_sandbox_item_edit_text_adapter
+from .telegram_sandbox_location_edit_adapter import install_sandbox_location_edit_text_adapter
 
-# Install the transport compatibility adapter before telegram_creator_bot captures
-# the legacy handle_command/_command_keyboard hooks. This keeps field-edit text
-# routing available through the existing polling loop without widening its API.
+# Install transport compatibility adapters before telegram_creator_bot captures
+# the legacy handle_command/_command_keyboard hooks. They only intercept text
+# while an explicit Item/Location edit input session is active.
 install_sandbox_item_edit_text_adapter(_telegram_bot)
+install_sandbox_location_edit_text_adapter(_telegram_bot)
 install_item_creator_studio_extension(_base)
 install_item_retry_extension(_base)
 install_item_review_extension(_base)
