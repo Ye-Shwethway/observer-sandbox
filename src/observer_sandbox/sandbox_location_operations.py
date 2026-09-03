@@ -182,6 +182,7 @@ def update_sandbox_location_v2(
     actual_fingerprint = str(preflight["before_fingerprint"])
     sandbox_id = str(current["sandbox_id"])
     canonical_before = canonical_state_fingerprint(conn)
+    previous_connection_rows = _interface_rows(object_id, current["source"])
 
     try:
         conn.execute("BEGIN IMMEDIATE")
@@ -189,10 +190,18 @@ def update_sandbox_location_v2(
             "DELETE FROM creation_sandbox_relations WHERE sandbox_id=? AND target_object_id=? AND relation_type='contains'",
             (sandbox_id, object_id),
         )
-        conn.execute(
-            "DELETE FROM creation_sandbox_relations WHERE sandbox_id=? AND relation_type='connected_to' AND (source_object_id=? OR target_object_id=?)",
-            (sandbox_id, object_id, object_id),
-        )
+        # Replace only topology pairs projected by this Location's current source.
+        # Do not erase unrelated incoming connected_to rows authored elsewhere.
+        for old_source_id, old_target_id, _ in previous_connection_rows:
+            conn.execute(
+                """
+                DELETE FROM creation_sandbox_relations
+                WHERE sandbox_id=? AND relation_type='connected_to'
+                  AND source_object_id=? AND target_object_id=?
+                  AND metadata_json LIKE '%\"projection\":\"location-v2\"%'
+                """,
+                (sandbox_id, old_source_id, old_target_id),
+            )
         conn.execute(
             "DELETE FROM creation_sandbox_relations WHERE sandbox_id=? AND source_object_id=? AND relation_type='owned_by'",
             (sandbox_id, object_id),
