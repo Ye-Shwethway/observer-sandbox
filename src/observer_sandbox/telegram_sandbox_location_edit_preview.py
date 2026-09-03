@@ -36,9 +36,7 @@ def _human(conn: sqlite3.Connection, value: Any) -> str:
     if resolved is not None:
         return resolved
     if isinstance(value, str):
-        if value.islower() and ("_" in value or "-" in value):
-            return _title(value)
-        return value
+        return _title(value) if value.islower() else value
     if isinstance(value, (int, float)) and not isinstance(value, bool):
         return f"{value:g}" if isinstance(value, float) else str(value)
     if isinstance(value, list):
