@@ -104,6 +104,22 @@ def _diff_values(
     return [(_label_for(path, labels), current, proposed)]
 
 
+def _render_change(conn: sqlite3.Connection, label: str, before: Any, after: Any) -> list[str]:
+    lines = [f"• {label}: {_human(conn, before)} → {_human(conn, after)}"]
+    if (
+        isinstance(before, list)
+        and isinstance(after, list)
+        and all(not isinstance(item, (dict, list)) for item in [*before, *after])
+    ):
+        added = [item for item in after if item not in before]
+        removed = [item for item in before if item not in after]
+        if added:
+            lines.append("  Added: " + ", ".join(str(item) for item in added))
+        if removed:
+            lines.append("  Removed: " + ", ".join(str(item) for item in removed))
+    return lines
+
+
 def _interface_name(value: dict[str, Any], fallback: str) -> str:
     return str(value.get("name") or value.get("key") or fallback)
 
@@ -124,9 +140,13 @@ def _topology_diff(conn: sqlite3.Connection, current: Any, proposed: Any) -> lis
         old = before_by_key[key]
         for field in ("name", "kind", "destination_ref", "directionality", "enabled", "traversal_modes", "base_duration_minutes", "distance"):
             if old.get(field) != item.get(field):
-                lines.append(
-                    f"• {_interface_name(item, key)} · {_title(field)}: "
-                    f"{_human(conn, old.get(field))} → {_human(conn, item.get(field))}"
+                lines.extend(
+                    _render_change(
+                        conn,
+                        f"{_interface_name(item, key)} · {_title(field)}",
+                        old.get(field),
+                        item.get(field),
+                    )
                 )
     if not lines and before != after:
         lines.append(f"• Interfaces: {_human(conn, before)} → {_human(conn, after)}")
@@ -148,10 +168,9 @@ def human_location_edit_preview_view(location_edit_module: Any, conn: sqlite3.Co
     else:
         labels = _field_labels(location_edit_module)
         rows = _diff_values(current, proposed, path=(section,), labels=labels)
-        change_lines = [
-            f"• {label}: {_human(conn, before)} → {_human(conn, after)}"
-            for label, before, after in rows
-        ]
+        change_lines = []
+        for label, before, after in rows:
+            change_lines.extend(_render_change(conn, label, before, after))
 
     if not change_lines:
         change_lines = ["• No effective field change detected."]
