@@ -1,7 +1,7 @@
 # Observer Sandbox Roadmap
 
 Status: **ACTIVE**  
-Roadmap synchronized: **2026-09-03**
+Roadmap synchronized: **2026-09-04**
 
 ## Operating principles
 
@@ -98,15 +98,14 @@ Approved principle:
 The current Real World Darian/Thorne Estate/legacy Item world is prototype-era exemplar content, not a preservation constraint. However it remains present until a later explicitly authorized destructive reset is actually executed and verified.
 
 Canonical Genesis plan: `docs/CREATOR_REAL_WORLD_RESET_AND_GENESIS_PLAN_V1.md`  
-Decision record: `docs/LOCATION_FIRST_GENESIS_DECISION_RECORD_V1.md`
+Decision record: `docs/LOCATION_FIRST_GENESIS_DECISION_RECORD_V1.md`  
+G1 reset audit contract: `docs/GENESIS_G1_PROTOTYPE_CONTENT_RESET_AUDIT_V1.md`
 
-## ▶ G1 — Prototype Content Reset Audit & Contract — NEXT
+## 🟡 G1 — Prototype Content Reset Audit & Contract — REVIEW IN PROGRESS
 
 **G1 is audit/contract only. It does not delete or mutate canonical Real World content.**
 
-Goal: derive the exact safe reset contract before any destructive execution.
-
-Required outputs:
+The repo-grounded G1 contract now inventories:
 
 1. **KEEP set** — reusable universe infrastructure and canonical services/tables that survive;
 2. **WIPE set** — prototype Characters, Locations, Items/fixtures/inventory and their prototype-owned runtime/state;
@@ -116,25 +115,32 @@ Required outputs:
 6. **POST-RESET verification contract** — prove prototype content absent while reusable infrastructure remains healthy;
 7. **NO-TOUCH set** — Creation Sandbox and unrelated reusable systems that the reset must not damage.
 
-Audit at least:
+Key G1 findings now locked for review:
 
-- Darian, Quasi, Elias and other prototype Character rows/state where applicable;
-- Thorne Estate and legacy canonical Location hierarchy/topology;
-- legacy Item definitions/instances/fixtures/inventory/economic profiles;
-- actor placement/readiness/runtime references;
-- Mind/Memory or other character-owned state that should retire with prototype Characters vs generic engines that must survive;
-- bootstrap and seed code/config/scripts;
-- generic time/clock, weather/environment, economy/money, provider/AI, event/action/runtime, physiology/effects, grading, requirements, quantities and Creation infrastructure.
+- ordinary `runtime.status()` calls `_initialize_conn()`, so current status/health execution can invoke prototype seeders;
+- `seed_home_and_darian()` can recreate the Thorne Estate graph and Darian after a DB-only deletion;
+- Estate inventory, Darian economy, Estate media and several represented simulator seeders are content-bound bootstrap surfaces;
+- generic Item definitions must be separated from Estate-specific stack materialization rather than wiped wholesale;
+- current production Character seed directory contains Darian only; Quasi/Elias must not be assumed active without production DB evidence;
+- the future clean Real World may contain zero canonical Characters, but current `status()` fails in that legitimate state because actor resolution is unconditional;
+- therefore healthy empty-canonical-world semantics are a hard G2/G3 prerequisite;
+- `world_observer_universe` is retained by default as the target universe/root identity while Estate/Character bootstrap assumptions are removed, unless a separate explicit universe-identity migration is later approved;
+- the exact G3 row manifest remains production-DB-preflight-driven and must fail closed on unexpected dependencies.
 
-G1 closes only when the contract is repo-grounded and explicit enough that G2/G3 cannot accidentally wipe reusable systems or allow retired content to resurrect.
+G1 remains non-destructive until this contract is merged/reviewed. The current review vehicle is PR #409.
 
-## G2 — Remove legacy reseeding authority
+## G2 — Remove legacy reseeding authority + support healthy empty canonical world
 
-After G1 approval, remove/disable only the identified prototype reseed/bootstrap authority so retired Darian/Thorne Estate/legacy Items cannot return after reset.
+After G1 approval:
+
+- remove/generalize only the identified prototype reseed/bootstrap authority so retired Darian/Thorne Estate/legacy Items cannot return after reset;
+- separate reusable definitions/contracts from Estate/Darian fixture materialization;
+- make init/status/runtime health valid with zero canonical Characters and no synthetic default actor;
+- prove normal init/status/restart does not recreate prototype content.
 
 ## G3 — Controlled Real World content reset
 
-Execute the approved G1 wipe contract atomically/controllably, preserving the KEEP/NO-TOUCH sets and proving post-reset health.
+Execute the approved G1 wipe contract atomically/controllably only after G2 is production-green and the destructive reset is explicitly authorized. Preserve KEEP/NO-TOUCH sets, require verified backup/preflight, and prove post-restart no-reseed health.
 
 ## G4 — Transmigration Foundation
 
@@ -176,9 +182,9 @@ A new Creation domain must not be built as bespoke CRUD.
 - Location grade never automatically becomes access authorization;
 - overall grade requires explicit composite semantics;
 - current Real World prototype content still exists until future reset is actually implemented and verified;
-- **G1 is audit/contract only; destructive reset is not authorized merely by entering G1**;
+- **G1 is audit/contract only; destructive reset is not authorized merely by entering or merging G1**;
 - do not make deploy/live claims without current evidence.
 
 ## Exact resume point
 
-**Location Creation is fully accepted through L11.7 / PR #407 / CI #1282. Start G1 Prototype Content Reset Audit & Contract by inventorying exact KEEP, WIPE, RESEED-AUTHORITY REMOVE, NO-TOUCH and dependency-order sets. Do not perform destructive canonical mutation in G1.**
+**G1 Prototype Content Reset Audit & Contract is under review in PR #409. Validate the docs-only security gate, merge the reviewed contract, then close G1 continuity and begin G2 reseed-authority removal/generalization plus healthy zero-Character canonical runtime. Do not perform destructive canonical reset in G1 or G2.**
