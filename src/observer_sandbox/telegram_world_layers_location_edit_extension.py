@@ -3,7 +3,12 @@ from __future__ import annotations
 import sqlite3
 
 from .creation_sandbox import get_sandbox_object
-from .telegram_sandbox_location_edit import SandboxLocationEditError, location_edit_callback_view
+from . import telegram_sandbox_location_edit as location_edit_module
+from .telegram_sandbox_location_edit_preview import install_location_edit_preview_renderer
+
+
+install_location_edit_preview_renderer(location_edit_module)
+SandboxLocationEditError = location_edit_module.SandboxLocationEditError
 
 
 def install_location_edit_world_layers_extension(base) -> None:
@@ -24,7 +29,7 @@ def install_location_edit_world_layers_extension(base) -> None:
     def world_layer_callback_view(conn: sqlite3.Connection, callback_data: str):
         if callback_data.startswith("sw:ledit:"):
             try:
-                return location_edit_callback_view(
+                return location_edit_module.location_edit_callback_view(
                     conn,
                     user_id=base._notification_user_id(),
                     callback_data=callback_data,
