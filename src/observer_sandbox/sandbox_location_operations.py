@@ -181,11 +181,16 @@ def update_sandbox_location_v2(
     source = preflight["source"]
     actual_fingerprint = str(preflight["before_fingerprint"])
     sandbox_id = str(current["sandbox_id"])
-    canonical_before = canonical_state_fingerprint(conn)
     previous_connection_rows = _interface_rows(object_id, current["source"])
 
     try:
+        # The canonical invariant must be sampled and rechecked while the same
+        # IMMEDIATE transaction owns the writer lock. Sampling outside this
+        # transaction races legitimate Real World runtime writes and can report a
+        # false canonical mutation after the Sandbox edit has already committed.
         conn.execute("BEGIN IMMEDIATE")
+        canonical_before = canonical_state_fingerprint(conn)
+
         conn.execute(
             "DELETE FROM creation_sandbox_relations WHERE sandbox_id=? AND target_object_id=? AND relation_type='contains'",
             (sandbox_id, object_id),
@@ -274,13 +279,16 @@ def update_sandbox_location_v2(
                 }),
             ),
         )
+
+        # Check before commit, while unrelated writers are excluded. A real
+        # canonical mutation caused by this transaction is rolled back atomically.
+        if canonical_state_fingerprint(conn) != canonical_before:
+            raise SandboxLocationOperationError("Canonical Real World changed during Sandbox Location update")
         conn.commit()
     except Exception:
         conn.rollback()
         raise
 
-    if canonical_state_fingerprint(conn) != canonical_before:
-        raise SandboxLocationOperationError("Canonical Real World changed during Sandbox Location update")
     return get_sandbox_location_v2(conn, object_id)
 
 
