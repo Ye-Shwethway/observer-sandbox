@@ -1,7 +1,9 @@
 # Location Vertical Acceptance v1
 
-Status: **L11.7 acceptance candidate**  
-Date: **2026-09-03**
+Status: **ACCEPTED — L11.7 executable acceptance green**  
+Date: **2026-09-03**  
+Acceptance PR: **#407**  
+Acceptance CI: **#1281 — green**
 
 This document is the executable-evidence map for the final `location-v2` vertical acceptance gate. It does not create a second Location contract. Authority remains the exact Location schema/registry/materializer/Creator Studio services plus the Creation Section Implementation Standard.
 
@@ -9,7 +11,13 @@ This document is the executable-evidence map for the final `location-v2` vertica
 
 L11.7 is a vertical proof pass, not a new feature family. Existing regression evidence is reused where it already proves the required behavior. New tests are added only for representative cross-slice scenarios that were not previously exercised as one graph.
 
-A passing L11.7 means the modern Sandbox Location vertical is accepted for the current scope. It does **not** authorize runtime activation, automatic transmigration, or destructive Real World reset by itself.
+The modern Sandbox Location vertical is accepted for the current approved scope. This does **not** authorize runtime activation, automatic transmigration, or destructive Real World reset by itself.
+
+## Acceptance result
+
+The representative acceptance suite first exposed one acceptance-test-only mistake in CI #1280: the test guessed a non-existent `source_json` column on `creation_sandbox_item_instances`. No production implementation defect was involved. The test was corrected to use the approved `get_sandbox_item()` return authority through `created["items"]`.
+
+CI #1281 then passed both representative L11.7 scenarios plus CLI init/status smoke. No production source change was required by L11.7.
 
 ## Acceptance matrix
 
@@ -36,7 +44,7 @@ A passing L11.7 means the modern Sandbox Location vertical is accepted for the c
 
 ## Representative graph
 
-The L11.7 cross-slice scenario intentionally exercises this graph in one atomic composition:
+The L11.7 cross-slice scenario exercises this graph in one atomic composition:
 
 `Property -> Building -> Room`
 
@@ -60,10 +68,10 @@ Current `location-v2` grading policy has one active universal dimension: **compl
 - spatial scale, infrastructure/facility capability, connectivity and asset value remain ungraded unless their approved evidence/reference sockets are actually available;
 - security remains deferred until raw security evidence exists.
 
-L11.7 must not manufacture grades merely to make the acceptance matrix look fuller.
+L11.7 does not manufacture grades merely to make the acceptance matrix look fuller.
 
-## Closure rule
+## Closure
 
-L11.7 may be marked closed only after the repository CI selected for this acceptance change passes, including the representative acceptance scenarios and all path-aware affected Location regressions. Any discovered implementation defect must be fixed narrowly and re-verified before closure.
+L11.7 executable acceptance is green. No production implementation patch was required. After PR #407 merges, Location Creation is complete for the approved current scope and the next major authorized sequence is the Genesis transition beginning with **G1 — Prototype Content Reset Audit & Contract**.
 
-After L11.7 closes, Location Creation is complete for the approved current scope and the next major authorized sequence is the Genesis transition beginning with **G1 — Prototype Content Reset Audit & Contract**. The later destructive reset remains a separate explicit operation, not an automatic consequence of this acceptance pass.
+The later destructive reset remains a separate explicit operation, not an automatic consequence of this acceptance pass.
