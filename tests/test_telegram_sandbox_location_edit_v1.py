@@ -62,7 +62,7 @@ def test_location_detail_exposes_field_by_field_identity_edit_preview_apply_done
         assert "complete replacement JSON" not in section_text
 
         prompt_text, _ = world_layer_callback_view(conn, "sw:ledit:f:in_name")
-        assert "EDIT NAME" in prompt_text
+        assert "✏️ NAME" in prompt_text
         assert "Send the new text" in prompt_text
         assert "{" not in prompt_text
 
