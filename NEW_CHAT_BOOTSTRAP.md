@@ -1,7 +1,7 @@
 # Observer Sandbox — New Chat Bootstrap
 
 Status: **ACTIVE DEVELOPMENT**  
-Last synchronized: **2026-09-02**
+Last synchronized: **2026-09-03**
 
 ## Startup / authority
 
@@ -11,10 +11,9 @@ Read and reconcile in this order:
 3. `ROADMAP.md`
 4. `docs/CREATOR_CREATION_IMPLEMENTATION_PLAN_V1.md`
 5. `docs/LOCATION_CREATION_IMPLEMENTATION_PLAN_V1.md`
-6. task-relevant canonical contracts/source
-7. current branch/PR/CI/runtime evidence before completion/live claims.
-
-For Creator Creation work, `docs/CREATION_SECTION_IMPLEMENTATION_STANDARD_V1.md` is mandatory.
+6. `docs/CREATION_SECTION_IMPLEMENTATION_STANDARD_V1.md` for Creator Creation work
+7. task-relevant canonical contracts/source
+8. current branch/PR/CI/runtime evidence before completion/live claims.
 
 Authority:
 `current Creator instruction > live repo contracts/config/schema > verified runtime/DB > CI/deploy evidence > continuity docs > remembered chat`.
@@ -28,49 +27,66 @@ Do not infer production deployment from merge alone.
 
 # Current checkpoint
 
-Immediate authorized feature family: **modern Sandbox Location Creation**.
+Immediate feature family: **modern Sandbox Location Creation**.
 
 Verified progression:
 
 - ✅ L11.0 — `location-v2` schema refinement + grading contract
 - ✅ L11.1 — exact validator + registry/grading foundation
 - ✅ L11.2 — isolated Sandbox persistence + graph materializer
-- ✅ L11.3 — Manual full-schema creation: Guided Build + Exact JSON + Preview/export/approval
+- ✅ L11.3 — Manual full-schema creation
 - ✅ L11.4 — AI full-schema creation
-- ▶ **L11.5 — Nested Composition + Embedded Items — IMPLEMENTED ON `test`, PENDING MERGE/DEPLOY/CREATOR SMOKE**
-- L11.6 — Detail/Browse + Edit parity
+- ✅ L11.5 — Nested Composition + Embedded Items
+- ▶ **L11.6 — Detail/Browse + Edit + Cleanup parity — IMPLEMENTED AND PRODUCTION DEPLOY GREEN; CREATOR TELEGRAM SMOKE REMAINS**
 - L11.7 — Full Location vertical acceptance
 
-L11.5 current `test` truth:
+Latest implementation chain:
 
-- explicit `location-composition-v1` envelope;
-- exact `location-v2` child members and exact current `item-v1` members;
-- deterministic `$ref` resolution for structural parent, topology, `located_at`, and `stored_in`;
-- same-Sandbox reference checks, structural cycle checks, Item storage cycle checks, container validation and whole-graph dependency validation before writes;
-- one transaction for all Location + Item member materialization with rollback on failure;
-- shared Creator Studio draft/revision/export/cancel infrastructure;
-- Telegram `🧩 Nested Composition · Starter` first proof (`Property -> Room -> movable Item`);
-- Telegram `🧾 Nested Composition · Exact JSON` replacement/input path;
-- human whole-graph Preview + `.txt` export before approval;
-- revision-bound whole-composition confirmation and atomic approval;
-- resulting members remain not runtime-started and canonical Real World fingerprint remains unchanged.
+- PR #397 — guarded Sandbox Location update service;
+- PR #398 — Telegram Location Edit Preview/Apply/Done parity;
+- PR #399 — complete human Location detail/readback;
+- PR #400 — dependency-aware Sandbox Location cleanup.
 
-Runtime code checkpoint `74c8d3b4cfbf88176b899a4d28ca2e44aba93891` passed CI #1232 including the selected regression set and CLI smoke. The commits after that checkpoint change continuity documentation only; `74c8d3b..latest` compare proves no runtime/source delta. Public Readiness Security Audit #210 is green. A later redundant CI run on the docs-advanced PR head became runner-stalled and is not a reason to repeat an already-green unchanged runtime suite; repository policy explicitly does not require full Python CI for docs-only changes.
+PR #400 CI #1271 passed targeted regression plus CLI init/status smoke. Full-regression fallback was correctly skipped under path-aware CI selection.
 
-Recent prior checkpoints:
+Production deploy #385 for merge `8fa1655bd97421ea6b3e99f200ae316d2eb0ff4c` passed sync, install, cognition recovery, installed service entrypoint, runtime restart and runtime health. Failure diagnostics were not needed.
 
-- PR #379 / CI #1223 — approved Sandbox Character Full Profile `.txt` export
-- PR #380 / CI #1225 — Guided Manual Location Builder
-- PR #382 / CI #1226 — complete Location AI full-schema creation
-- PR #383 — continuity advanced to L11.5
+## L11.6 current truth
 
-No deploy/live claim is implied until the current runtime-affecting PR is merged and deploy/runtime health is verified.
+Approved Sandbox Location detail now exposes:
+
+- readable identity, hierarchy/geography, physical quantities, boundary, access/control, environment, facilities/resources/capabilities, topology, economics and relationships;
+- derived Location completeness GradeProfile presentation with no invented overall grade;
+- `Edit Location` using exact `location-v2` source/validator;
+- source-fingerprint stale protection;
+- whole-payload preflight and same-Sandbox graph validation;
+- Preview -> Apply -> Done;
+- atomic projection rewrite and update audit evidence;
+- no Sandbox time pause because approved Location runtime is not running yet;
+- `Delete Location` with dependency-aware fail-closed review;
+- active Character/Item relations, actor runtime placement and authoritative Location references block deletion;
+- no cascading graph rewrite;
+- safe delete requires a fresh source-fingerprint-bound review and explicit confirmation;
+- blocked review arms no delete session; Cancel invalidates the armed session;
+- deletion remains Sandbox-only and checks `canonical_state_fingerprint()` unchanged.
+
+## Creator smoke before closing L11.6
+
+On Telegram production:
+
+1. `Sandbox World -> Locations -> <approved Location>`;
+2. confirm readable detail and `✏️ Edit Location` + `🗑 Delete Location` actions;
+3. edit a harmless field through Preview -> Apply -> Done and confirm detail readback;
+4. open delete review on a Location with active dependencies and confirm deletion is blocked with readable reasons;
+5. open delete review on an expendable unreferenced Location, Cancel once, reopen review, then explicitly confirm deletion;
+6. confirm navigation remains healthy after delete.
+
+Do not mark L11.6 fully closed until this Creator smoke passes.
 
 ---
 
-# Current Location contracts
+# Current Location authority
 
-- `docs/CREATION_SECTION_IMPLEMENTATION_STANDARD_V1.md`
 - `docs/LOCATION_CREATION_IMPLEMENTATION_PLAN_V1.md`
 - `docs/UNIVERSAL_LOCATION_SCHEMA_V2.md`
 - `docs/LOCATION_GRADING_EVIDENCE_MATRIX_V1.md`
@@ -79,91 +95,46 @@ No deploy/live claim is implied until the current runtime-affecting PR is merged
 - `src/observer_sandbox/location_ai_contract.py`
 - `src/observer_sandbox/sandbox_location_v2.py`
 - `src/observer_sandbox/sandbox_location_composition.py`
-- `src/observer_sandbox/creator_studio_location_composition.py`
-- `src/observer_sandbox/telegram_creator_studio_location_composition_extension.py`
+- `src/observer_sandbox/sandbox_location_operations.py`
+- `src/observer_sandbox/sandbox_location_cleanup.py`
+- `src/observer_sandbox/telegram_sandbox_location_edit.py`
+- `src/observer_sandbox/telegram_sandbox_location_cleanup.py`
 - `docs/WORLD_LOCATION_NODE_MODEL.md`
 - `docs/WORLD_LOCATION_SPATIAL_CONTAINER_CONTRACT_V1.md`
 - `docs/WORLD_SPATIAL_ACCESS_TRAVEL_CONTRACT_V1.md`
 - `docs/UNIVERSAL_GRADING_SOCKET_ARCHITECTURE_V1.md`
 
-`location-v2` is an explicit successor to the retained v1 Location foundation, not a competing ontology.
+`location-v2` is the explicit successor to the retained v1 Location foundation, not a competing ontology.
 
 ---
 
-# Closed Location foundation
+# Next after L11.6 Creator smoke
 
-## L11.0 — Schema / grading
+Proceed to **L11.7 — Full Location Vertical Acceptance**.
 
-`location-v2` includes Geography, Boundary, typed interfaces, registry-backed functional/facility/resource/capability semantics, definition/configuration vs initial/live runtime-state separation, minimal control/ownership and Location grading evidence/profile contracts.
+Acceptance must cover at least:
 
-Grades are derived. Creator/AI does not author final grade letters, thresholds, evaluator IDs or reference profiles.
+- property/building and room/outdoor hierarchies;
+- explicit topology/interfaces;
+- access policy distinct from operating state;
+- partial/unknown geography without fabrication;
+- boundary semantics;
+- facilities/resources/capabilities;
+- derived grading where evidence exists;
+- nested child Locations and embedded Items;
+- Manual/AI parity;
+- write-free Preview/export;
+- atomic approval and rollback/no-write failures;
+- Edit Preview/Apply/Done;
+- dependency-safe cleanup;
+- canonical Real World fingerprint stability;
+- approved Locations remain not runtime-active.
 
-## L11.1 — Exact validator
-
-Exact v2 validation/canonicalization is executable. Unknown precision remains unknown. Completeness remains derived, not authored.
-
-## L11.2 — Sandbox persistence/materializer
-
-Validated Locations materialize only into Creation Sandbox state with stable IDs, same-Sandbox graph checks, acyclic hierarchy, explicit topology projection and atomic apply. Approval does not activate runtime and does not mutate canonical Real World state.
-
-## L11.3 — Manual full-schema creation
-
-Manual supports Guided Build from sparse valid `location-v2`, all 13 creation-owned sections, one-section replacement with whole-payload revalidation and revision increments, advanced Exact JSON, write-free Preview + `.txt`, Cancel/no-write and revision-bound explicit approval through the L11.2 materializer.
-
-## L11.4 — AI full-schema creation
-
-AI Location uses short natural-language Creator intent, complete strict provider-facing `location-v2` structured schema, authoritative registry-backed nested shapes/enums, final deterministic `validate_location_payload_v2()` authority, at most one deterministic representation-only repair pass, reroll through the same draft/revision model, best-effort Telegram typing feedback and the same Preview/export/approval/materializer as Manual.
-
----
-
-# L11.5 — Nested Composition + Embedded Items
-
-Current implementation uses the smallest explicit composition envelope:
-
-`location-composition-v1 = {schema_version, locations:[{ref,payload: exact location-v2}], items:[{ref,payload: exact item-v1}]}`
-
-Locks:
-
-- no generic `contents` bag;
-- no weaker duplicate Location/Item schemas;
-- deterministic local refs resolve before writes;
-- child structural relation = `contains`;
-- movable Item placement = `located_at`;
-- typed container storage = `stored_in`;
-- ownership remains independent;
-- topology may target active same-Sandbox Locations or same-composition Location refs;
-- invalid member/ref/cycle/dependency => zero materialized writes;
-- Preview/export remain member-write-free;
-- one explicit revision-bound approval applies the whole graph atomically;
-- no runtime activation;
-- `canonical_state_fingerprint()` remains unchanged.
-
-The Telegram smoke path after successful production deploy is:
-
-`Creator Studio -> Create -> Location -> 🧩 Nested Composition · Starter -> review Property/Room/Item -> optional Export -> Approve Whole Composition -> Confirm Whole Composition`.
-
-Do not call this live/testable until deploy runtime health and Telegram API connectivity have passed for the merged checkpoint.
+Only after L11.7 closes does the approved Genesis transition begin.
 
 ---
 
-# Next after L11.5 production verification
-
-Proceed to **L11.6 — Detail/Browse + Edit Parity**:
-
-- approved Location browse/detail;
-- readable hierarchy/topology/facility/environment/economic facts;
-- Location GradeProfile presentation;
-- Edit using the same exact schema/validator;
-- stale guard;
-- Preview -> Apply -> Done;
-- audit and exact pause restoration only where a real Sandbox runtime race exists;
-- cleanup/archive parity.
-
-Do not enter destructive Real World reset/Genesis work until L11.7 closes.
-
----
-
-# Approved Real World Genesis direction — later
+# Approved later Genesis direction
 
 Current Darian, Thorne Estate and legacy Item/fixture/inventory content are prototype-era exemplars, not preservation constraints.
 
@@ -171,9 +142,9 @@ Approved principle:
 
 > **Preserve reusable universe infrastructure; retire prototype content; rebuild canonical content from modern Sandbox creations through explicit transmigration.**
 
-Destructive reset is **not authorized before L11.7**.
+Destructive Real World reset remains unauthorized before L11.7.
 
-After Location acceptance:
+Later sequence:
 
 `prototype keep/wipe audit -> remove legacy reseeding -> controlled Real World content reset -> preserve reusable systems -> Transmigration foundation -> Genesis Locations -> Items/fixtures -> Characters -> readiness/affordances -> explicit activation`
 
@@ -181,25 +152,20 @@ A Character cannot be activated without a valid represented Location.
 
 ---
 
-# Future Reincarnation
-
-`modern canonical v1 -> Renew in Sandbox -> edit/regenerate/test -> compatibility + diff -> explicit Creator approval -> canonical v2`
-
-Do not build a complex legacy preservation bridge.
-
----
-
 ## Retained universal locks
 
 - Create anywhere safely; canon nowhere automatically.
 - No automatic transmigration.
+- Schema-valid does not imply universe-compatible.
 - Target-universe compatibility precedes canonical promotion.
 - `runtime_ready != running`; Created is not alive.
 - Full autonomous Sandbox ticking remains separately unauthorized.
-- Fine realism remains non-blocking unless explicitly authorized.
+- AI proposes facts; deterministic contracts validate/derive/mutate.
+- Grades are derived; missing evidence/reference means ungraded, not invented precision.
+- No automatic overall Location grade without explicit composite semantics.
 - Current Real World prototype content still exists until reset is actually implemented and verified.
 - Do not make deploy/live claims without current evidence.
 
 ## Exact resume sentence
 
-**Merge PR #384 using the already-green runtime checkpoint because subsequent commits are docs-only by exact compare, then verify the automatic production deploy including runtime health and Telegram API connectivity. Once production is green, have the Creator smoke-test `Creator Studio -> Create -> Location -> Nested Composition · Starter -> Preview/Export -> Approve Whole Composition -> Confirm`. If that passes, close L11.5 and proceed to L11.6 Detail/Browse + Edit parity.**
+**Production is green through PR #400 / deploy #385. Have the Creator smoke-test approved Location Detail -> Edit Preview/Apply/Done -> dependency-blocked Delete -> Cancel invalidation -> confirmed deletion of an expendable unreferenced Location. If that passes, mark L11.6 closed and begin L11.7 Full Location Vertical Acceptance.**
