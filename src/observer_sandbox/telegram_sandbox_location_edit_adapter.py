@@ -4,13 +4,15 @@ from pathlib import Path
 from typing import Any
 
 from .db import connect, migrate
-from .telegram_sandbox_location_edit import (
-    SandboxLocationEditError,
-    get_sandbox_location_edit_session,
-    handle_sandbox_location_edit_text,
-    handle_sandbox_location_interface_edit_text,
-)
+from . import telegram_sandbox_location_edit as location_edit_module
+from .telegram_sandbox_location_edit_preview import install_location_edit_preview_renderer
 
+
+install_location_edit_preview_renderer(location_edit_module)
+SandboxLocationEditError = location_edit_module.SandboxLocationEditError
+get_sandbox_location_edit_session = location_edit_module.get_sandbox_location_edit_session
+handle_sandbox_location_edit_text = location_edit_module.handle_sandbox_location_edit_text
+handle_sandbox_location_interface_edit_text = location_edit_module.handle_sandbox_location_interface_edit_text
 
 _PENDING_KEYBOARD: list[list[dict[str, str]]] | None = None
 
@@ -43,7 +45,6 @@ def install_sandbox_location_edit_text_adapter(base_module: Any) -> None:
                     )
             except SandboxLocationEditError as exc:
                 latest = get_sandbox_location_edit_session(user_id=user_id) or session
-                field_id = str(latest.get("pending_field_id") or "")
                 section = str(latest.get("pending_section") or "")
                 back = f"sw:ledit:s:{section}" if section else "sw:ledit:home"
                 if str(latest.get("pending_input") or "").startswith("interface:"):
