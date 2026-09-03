@@ -105,6 +105,34 @@ def _validate_graph(conn: sqlite3.Connection, current: dict[str, Any], source: M
         )
 
 
+def preflight_sandbox_location_update_v2(
+    conn: sqlite3.Connection,
+    object_id: str,
+    payload: Mapping[str, Any],
+    *,
+    expected_source_fingerprint: str,
+) -> dict[str, Any]:
+    current = _active_location(conn, object_id)
+    current_source = deepcopy(current["source"])
+    actual_fingerprint = location_source_fingerprint(current_source)
+    if str(expected_source_fingerprint or "") != actual_fingerprint:
+        raise SandboxLocationOperationError("Location changed since edit started; review the latest approved state before applying")
+    try:
+        validated = validate_location_payload_v2(payload)
+    except LocationCreationSchemaV2Error as exc:
+        raise SandboxLocationOperationError(str(exc)) from exc
+    source = {key: deepcopy(value) for key, value in validated.items() if key != "derived"}
+    if str(source["identity"]["key"]) != str(current_source["identity"]["key"]):
+        raise SandboxLocationOperationError("Location identity key is immutable after creation")
+    _validate_graph(conn, current, source)
+    return {
+        "current": current,
+        "source": source,
+        "before_fingerprint": actual_fingerprint,
+        "after_fingerprint": location_source_fingerprint(source),
+    }
+
+
 def _interface_rows(object_id: str, source: Mapping[str, Any]) -> list[tuple[str, str, dict[str, Any]]]:
     grouped: dict[tuple[str, str], dict[str, Any]] = {}
     for interface in source["topology"]["interfaces"]:
@@ -143,30 +171,20 @@ def update_sandbox_location_v2(
     *,
     expected_source_fingerprint: str,
 ) -> dict[str, Any]:
-    current = _active_location(conn, object_id)
-    current_source = deepcopy(current["source"])
-    actual_fingerprint = location_source_fingerprint(current_source)
-    if str(expected_source_fingerprint or "") != actual_fingerprint:
-        raise SandboxLocationOperationError("Location changed since edit started; review the latest approved state before applying")
-
-    try:
-        validated = validate_location_payload_v2(payload)
-    except LocationCreationSchemaV2Error as exc:
-        raise SandboxLocationOperationError(str(exc)) from exc
-    source = {key: deepcopy(value) for key, value in validated.items() if key != "derived"}
-
-    if str(source["identity"]["key"]) != str(current_source["identity"]["key"]):
-        raise SandboxLocationOperationError("Location identity key is immutable after creation")
-
-    _validate_graph(conn, current, source)
+    preflight = preflight_sandbox_location_update_v2(
+        conn,
+        object_id,
+        payload,
+        expected_source_fingerprint=expected_source_fingerprint,
+    )
+    current = preflight["current"]
+    source = preflight["source"]
+    actual_fingerprint = str(preflight["before_fingerprint"])
     sandbox_id = str(current["sandbox_id"])
     canonical_before = canonical_state_fingerprint(conn)
 
     try:
         conn.execute("BEGIN IMMEDIATE")
-
-        # Remove projections owned by this Location definition. Incoming non-structural
-        # relations from unrelated objects are preserved.
         conn.execute(
             "DELETE FROM creation_sandbox_relations WHERE sandbox_id=? AND target_object_id=? AND relation_type='contains'",
             (sandbox_id, object_id),
@@ -260,5 +278,6 @@ def update_sandbox_location_v2(
 __all__ = [
     "SandboxLocationOperationError",
     "location_source_fingerprint",
+    "preflight_sandbox_location_update_v2",
     "update_sandbox_location_v2",
 ]
