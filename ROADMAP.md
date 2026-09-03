@@ -95,52 +95,73 @@ Approved principle:
 
 > **Preserve reusable universe infrastructure; retire prototype content; rebuild canonical content from modern Sandbox creations through explicit transmigration.**
 
-The current Real World Darian/Thorne Estate/legacy Item world is prototype-era exemplar content, not a preservation constraint. However it remains present until a later explicitly authorized destructive reset is actually executed and verified.
+The current Real World Darian/Thorne Estate/legacy Item world is prototype-era exemplar content, not a preservation constraint. It remains present until the later explicitly authorized destructive reset is actually executed and verified.
 
 Canonical Genesis plan: `docs/CREATOR_REAL_WORLD_RESET_AND_GENESIS_PLAN_V1.md`  
 Decision record: `docs/LOCATION_FIRST_GENESIS_DECISION_RECORD_V1.md`  
 G1 reset audit contract: `docs/GENESIS_G1_PROTOTYPE_CONTENT_RESET_AUDIT_V1.md`
 
-## 🟡 G1 — Prototype Content Reset Audit & Contract — REVIEW IN PROGRESS
+## ✅ G1 — Prototype Content Reset Audit & Contract — CLOSED
 
-**G1 is audit/contract only. It does not delete or mutate canonical Real World content.**
+PR #409 merged the reviewed non-destructive G1 reset contract as `0dab6ca980510a8ef1553dd7d34fa86c5a0bc047` after Public Readiness Security Audit #236 passed.
 
-The repo-grounded G1 contract now inventories:
+G1 performed **no canonical Real World mutation** and authorized no destructive reset.
+
+Locked G1 outputs:
 
 1. **KEEP set** — reusable universe infrastructure and canonical services/tables that survive;
-2. **WIPE set** — prototype Characters, Locations, Items/fixtures/inventory and their prototype-owned runtime/state;
-3. **RESEED-AUTHORITY REMOVE set** — bootstrap/seed/recovery paths that could recreate retired prototype content;
-4. **DEPENDENCY / ORDER set** — graph and FK/reference ordering for safe later cleanup;
-5. **BACKUP / ROLLBACK contract** — required pre-reset snapshot and abort criteria;
-6. **POST-RESET verification contract** — prove prototype content absent while reusable infrastructure remains healthy;
-7. **NO-TOUCH set** — Creation Sandbox and unrelated reusable systems that the reset must not damage.
+2. **WIPE set** — prototype Characters, Locations, Items/fixtures/inventory and prototype-owned runtime/state;
+3. **RESEED-AUTHORITY REMOVE / GENERALIZE set** — startup paths that can recreate retired prototype content;
+4. **DEPENDENCY / ORDER set** — graph/FK/reference cleanup ordering;
+5. **BACKUP / ROLLBACK contract** — pre-reset snapshot and abort requirements;
+6. **POST-RESET verification contract** — including post-restart no-reseed proof;
+7. **NO-TOUCH set** — Creation Sandbox and unrelated reusable systems.
 
-Key G1 findings now locked for review:
+Key G1 findings:
 
-- ordinary `runtime.status()` calls `_initialize_conn()`, so current status/health execution can invoke prototype seeders;
-- `seed_home_and_darian()` can recreate the Thorne Estate graph and Darian after a DB-only deletion;
-- Estate inventory, Darian economy, Estate media and several represented simulator seeders are content-bound bootstrap surfaces;
-- generic Item definitions must be separated from Estate-specific stack materialization rather than wiped wholesale;
-- current production Character seed directory contains Darian only; Quasi/Elias must not be assumed active without production DB evidence;
-- the future clean Real World may contain zero canonical Characters, but current `status()` fails in that legitimate state because actor resolution is unconditional;
-- therefore healthy empty-canonical-world semantics are a hard G2/G3 prerequisite;
-- `world_observer_universe` is retained by default as the target universe/root identity while Estate/Character bootstrap assumptions are removed, unless a separate explicit universe-identity migration is later approved;
-- the exact G3 row manifest remains production-DB-preflight-driven and must fail closed on unexpected dependencies.
+- ordinary `runtime.status()` currently calls `_initialize_conn()`, so status/health can invoke content seeders;
+- `seed_home_and_darian()` can recreate the Thorne Estate graph and Darian after DB-only deletion;
+- Estate campus, Estate inventory, Darian economy, Estate media, and several represented simulator seeders are content-bound startup surfaces;
+- generic Item definitions must be separated from Estate-specific stack/materialization rather than wiped wholesale;
+- current production Character seed directory contains Darian only; Quasi/Elias are deletion candidates only if live DB preflight proves active prototype rows exist;
+- `world_observer_universe` is retained by default as the target universe/root identity while Estate/Character bootstrap assumptions are removed, unless a separate explicit universe-identity migration is approved;
+- exact G3 deletion rows remain production-DB-preflight-driven and fail closed on unexpected dependencies;
+- a clean post-reset Real World may legitimately contain zero canonical Characters;
+- current `status()` cannot represent that state healthily because `resolve_actor_id()` is unconditional;
+- healthy empty-canonical-world semantics are therefore a hard prerequisite before destructive reset.
 
-G1 remains non-destructive until this contract is merged/reviewed. The current review vehicle is PR #409.
+## ▶ G2 — Remove legacy reseeding authority + healthy empty canonical world — NEXT
 
-## G2 — Remove legacy reseeding authority + support healthy empty canonical world
+G2 is implementation work, but remains **non-destructive to current canonical prototype content**.
 
-After G1 approval:
+Required G2 outcomes:
 
-- remove/generalize only the identified prototype reseed/bootstrap authority so retired Darian/Thorne Estate/legacy Items cannot return after reset;
-- separate reusable definitions/contracts from Estate/Darian fixture materialization;
-- make init/status/runtime health valid with zero canonical Characters and no synthetic default actor;
-- prove normal init/status/restart does not recreate prototype content.
+- remove/generalize `seed_home_and_darian()` from ordinary startup;
+- remove/generalize `seed_estate_campus()` from ordinary startup;
+- split generic Item definition registration from Estate-specific `seed_home_inventory()` materialization;
+- remove Darian-specific `seed_initial_economy()` bootstrap while preserving generic economy infrastructure;
+- generalize/remove the hard-coded Thorne Estate information-media seed;
+- separate reusable technology/tactical/represented-skill action/task contracts from Thorne Estate simulator fixture materialization;
+- preserve generic action vocabulary such as controlled H2H and field-medicine stabilization where it creates no live exemplar fixture;
+- audit any remaining content-bound memory/familiarity/value/bootstrap path before declaring reseed authority removed;
+- allow init/status/runtime health with zero canonical Characters;
+- never create a synthetic/default Character merely for health;
+- ensure actor-specific recovery/progression/migration only runs when a valid actor exists;
+- prove ordinary init/status/restart cannot recreate Darian, Thorne Estate, Estate inventory/economy/media/simulator fixtures.
+
+G2 must use focused/path-aware tests, PR/CI, merge, production deploy/runtime health, and post-deploy verification before G3 can be considered.
 
 ## G3 — Controlled Real World content reset
 
-Execute the approved G1 wipe contract atomically/controllably only after G2 is production-green and the destructive reset is explicitly authorized. Preserve KEEP/NO-TOUCH sets, require verified backup/preflight, and prove post-restart no-reseed health.
+Only after G2 is production-green **and Creator explicitly authorizes destructive execution**:
+
+- run live production DB preflight;
+- create/verify backup and reset manifest;
+- execute the approved bounded transaction;
+- preserve KEEP/NO-TOUCH sets;
+- pass FK/integrity/orphan checks;
+- restart normally and prove retired content does not reseed;
+- remain healthy with zero canonical Characters if Genesis Character transmigration has not yet occurred.
 
 ## G4 — Transmigration Foundation
 
@@ -181,10 +202,11 @@ A new Creation domain must not be built as bespoke CRUD.
 - missing grading evidence/reference => ungraded, not invented precision;
 - Location grade never automatically becomes access authorization;
 - overall grade requires explicit composite semantics;
-- current Real World prototype content still exists until future reset is actually implemented and verified;
-- **G1 is audit/contract only; destructive reset is not authorized merely by entering or merging G1**;
+- current Real World prototype content still exists until G3 is explicitly authorized, executed and verified;
+- **G1 closure does not authorize destructive reset**;
+- **G2 removes resurrection/bootstrap authority but must not delete current prototype canonical content**;
 - do not make deploy/live claims without current evidence.
 
 ## Exact resume point
 
-**G1 Prototype Content Reset Audit & Contract is under review in PR #409. Validate the docs-only security gate, merge the reviewed contract, then close G1 continuity and begin G2 reseed-authority removal/generalization plus healthy zero-Character canonical runtime. Do not perform destructive canonical reset in G1 or G2.**
+**G1 Prototype Content Reset Audit & Contract is closed through PR #409 / Public Readiness Security Audit #236 / merge `0dab6ca980510a8ef1553dd7d34fa86c5a0bc047`. Begin G2: remove/generalize prototype reseed authority and add healthy zero-canonical-Character init/status semantics, while leaving current Darian/Thorne Estate prototype rows untouched until separately authorized G3.**
