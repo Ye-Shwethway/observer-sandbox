@@ -101,6 +101,36 @@ def test_location_ai_feedback_leaf_selects_only_feedback_contract_family(tmp_pat
     ]
 
 
+def test_location_edit_vertical_selects_only_explicit_contract_family(tmp_path):
+    _touch(
+        tmp_path,
+        "tests/test_sandbox_location_operations_v2.py",
+        "tests/test_telegram_sandbox_location_edit_v1.py",
+        "tests/test_telegram_sandbox_location_detail_v1.py",
+        "tests/test_telegram_bot.py",
+        "tests/test_location_schema_v2.py",
+        "tests/test_world_qualified_runtime_controls.py",
+    )
+
+    mode, tests, reason = select_tests(
+        [
+            "src/observer_sandbox/sandbox_location_operations.py",
+            "src/observer_sandbox/telegram_sandbox_location_edit.py",
+            "src/observer_sandbox/telegram_sandbox_location_edit_adapter.py",
+            "src/observer_sandbox/telegram_world_layers_location_edit_extension.py",
+        ],
+        root=tmp_path,
+    )
+
+    assert mode == "targeted"
+    assert reason == "selected 3 test file(s)"
+    assert tests == [
+        "tests/test_sandbox_location_operations_v2.py",
+        "tests/test_telegram_sandbox_location_detail_v1.py",
+        "tests/test_telegram_sandbox_location_edit_v1.py",
+    ]
+
+
 def test_selector_change_runs_selector_unit_test_not_full_suite(tmp_path):
     _touch(tmp_path, "tests/test_select_ci_tests.py")
 
