@@ -10,10 +10,9 @@ Read and reconcile in this order:
 2. this file
 3. `ROADMAP.md`
 4. `docs/CREATOR_CREATION_IMPLEMENTATION_PLAN_V1.md`
-5. `docs/LOCATION_CREATION_IMPLEMENTATION_PLAN_V1.md`
-6. `docs/CREATION_SECTION_IMPLEMENTATION_STANDARD_V1.md` for Creator Creation work
-7. task-relevant canonical contracts/source
-8. current branch/PR/CI/runtime evidence before completion/live claims.
+5. `docs/CREATION_SECTION_IMPLEMENTATION_STANDARD_V1.md` for Creator Creation work
+6. task-relevant canonical plans/contracts/source
+7. current branch/PR/CI/runtime evidence before completion/live claims.
 
 Authority:
 `current Creator instruction > live repo contracts/config/schema > verified runtime/DB > CI/deploy evidence > continuity docs > remembered chat`.
@@ -27,9 +26,9 @@ Do not infer production deployment from merge alone.
 
 # Current checkpoint
 
-Immediate feature family: **modern Sandbox Location Creation**.
+## ✅ Modern Sandbox Location Creation — FULL VERTICAL ACCEPTED
 
-Verified progression:
+All Location slices are closed:
 
 - ✅ L11.0 — `location-v2` schema refinement + grading contract
 - ✅ L11.1 — exact validator + registry/grading foundation
@@ -37,153 +36,104 @@ Verified progression:
 - ✅ L11.3 — Manual full-schema creation
 - ✅ L11.4 — AI full-schema creation
 - ✅ L11.5 — Nested Composition + Embedded Items
-- ✅ **L11.6 — Detail/Browse + Edit + Cleanup parity — CLOSED AFTER CREATOR PRODUCTION SMOKE**
-- ▶ **L11.7 — Full Location Vertical Acceptance — NEXT**
+- ✅ L11.6 — Detail/Browse + Edit + Cleanup parity
+- ✅ **L11.7 — Full Location Vertical Acceptance**
 
-Latest implementation chain:
+Final acceptance authority:
+- `docs/LOCATION_VERTICAL_ACCEPTANCE_V1.md`
+- `tests/test_location_vertical_acceptance_v1.py`
+- PR #407 — Full Location Vertical Acceptance
+- CI #1281 — representative acceptance green after correcting a test-only DB-column assumption
+- CI #1282 — final acceptance rerun + CLI init/status smoke green
+- PR #407 merge: `c3e8cbb556d0037c8310261398c19a0939bec09a`
 
-- PR #397 — guarded Sandbox Location update service;
-- PR #398 — Telegram Location Edit Preview/Apply/Done backend parity;
-- PR #399 — complete human Location detail/readback;
-- PR #400 — dependency-aware Sandbox Location cleanup;
-- PR #402 — Creator-friendly field-by-field Location Edit UX replacing whole-section JSON as the normal path;
-- PR #404 — human-readable changed-field Location Edit Preview replacing raw section JSON preview;
-- PR #405 — canonical-isolation transaction race fix for Location Apply/Delete.
+L11.7 required **no production implementation patch**. CI #1280 exposed only an acceptance-test mistake: the test guessed `creation_sandbox_item_instances.source_json`. The test was corrected to use approved `get_sandbox_item()` output, then acceptance passed.
 
-Verification:
+## Accepted Location vertical
 
-- PR #402 CI #1275 passed the targeted Location regression family plus CLI init/status smoke;
-- production deploy #386 passed sync/install/cognition recovery/service entrypoint/restart/runtime health;
-- PR #404 CI #1278 passed 321 targeted tests plus CLI smoke;
-- production deploy #387 passed runtime health;
-- PR #405 CI #1279 passed transactional isolation regressions plus CLI smoke;
-- production deploy #388 passed install/restart/runtime health;
-- Creator production smoke then confirmed Location field editing and Apply are working correctly.
+The accepted current scope includes:
 
-## L11.6 closed truth
-
-Approved Sandbox Location detail exposes:
-
-- readable identity, hierarchy/geography, physical quantities, boundary, access/control, environment, facilities/resources/capabilities, topology, economics and relationships;
-- derived Location completeness GradeProfile presentation with no invented overall grade;
-- `Edit Location` using exact `location-v2` source/validator;
-- normal Edit UX is `Section -> Field -> friendly typed input/choice -> Preview -> Apply`, matching Character/Profile interaction principles;
-- scalar text and numeric values are entered directly rather than as JSON;
-- enum-backed values use buttons;
-- registry-backed multi-value fields such as Facilities capabilities/types/resources/utilities use select/unselect toggles;
-- same-Sandbox references are chosen by human-readable object name rather than raw object ID;
-- physical quantities accept human inputs such as `12 ft`, `36 m` or `1800 ft2`;
-- Topology uses a structured interface list/add/edit/delete flow;
-- complete-section JSON remains available only behind an explicit `Advanced JSON` fallback;
-- access requirement trees retain an advanced structured-contract editor where the underlying universal requirement object is genuinely nested;
-- source-fingerprint stale protection;
-- whole-payload preflight and same-Sandbox graph validation;
-- human-readable Preview shows changed fields only rather than raw section JSON;
-- Preview -> Apply -> Done;
-- atomic projection rewrite and update audit evidence;
-- canonical isolation checks occur inside the SQLite writer transaction, before commit;
-- real canonical mutation causes atomic rollback rather than post-commit failure;
-- unrelated live Real World runtime writes no longer cause false canonical-change alarms;
-- no Sandbox time pause because approved Location runtime is not running yet;
-- `Delete Location` with dependency-aware fail-closed review;
-- active Character/Item relations, actor runtime placement and authoritative Location references block deletion;
-- no cascading graph rewrite;
-- safe delete requires a fresh source-fingerprint-bound review and explicit confirmation;
-- blocked review arms no delete session; Cancel invalidates the armed session;
-- deletion remains Sandbox-only with the same transactional canonical-isolation invariant.
-
-## Mandatory Creator-facing Edit UX rule
-
-Normal approved-object editing is not a raw schema maintenance workflow.
-
-Default interaction:
-
-`Object Detail -> Edit -> Section -> Field -> friendly typed input/choice -> Preview -> Apply -> Continue/Done`
-
-Do **not** require complete replacement JSON for an ordinary field or section. Exact/raw JSON may exist only as a clearly labeled advanced fallback. Character/Profile Edit is the interaction-parity reference; each Creation domain may add typed editors appropriate to its schema while preserving one exact validator/materializer authority.
-
-## Transactional canonical-isolation rule
-
-Sandbox mutation paths that prove canonical Real World isolation must not compare fingerprints across an unlocked or post-commit window.
-
-Required pattern:
-
-`acquire writer transaction -> sample canonical fingerprint -> Sandbox-only writes -> resample canonical fingerprint -> mismatch => rollback / match => commit`
-
-This avoids false positives from legitimate concurrent Real World runtime writes while still fail-closing if the Sandbox transaction itself mutates canonical state.
-
----
-
-# Current Location authority
-
-- `docs/LOCATION_CREATION_IMPLEMENTATION_PLAN_V1.md`
-- `docs/UNIVERSAL_LOCATION_SCHEMA_V2.md`
-- `docs/LOCATION_GRADING_EVIDENCE_MATRIX_V1.md`
-- `src/observer_sandbox/location_creation_schema_v2.py`
-- `src/observer_sandbox/location_schema_registry_v2.py`
-- `src/observer_sandbox/location_ai_contract.py`
-- `src/observer_sandbox/sandbox_location_v2.py`
-- `src/observer_sandbox/sandbox_location_composition.py`
-- `src/observer_sandbox/sandbox_location_operations.py`
-- `src/observer_sandbox/sandbox_location_cleanup.py`
-- `src/observer_sandbox/telegram_sandbox_location_edit.py`
-- `src/observer_sandbox/telegram_sandbox_location_edit_adapter.py`
-- `src/observer_sandbox/telegram_sandbox_location_cleanup.py`
-- `docs/WORLD_LOCATION_NODE_MODEL.md`
-- `docs/WORLD_LOCATION_SPATIAL_CONTAINER_CONTRACT_V1.md`
-- `docs/WORLD_SPATIAL_ACCESS_TRAVEL_CONTRACT_V1.md`
-- `docs/UNIVERSAL_GRADING_SOCKET_ARCHITECTURE_V1.md`
-
-`location-v2` is the explicit successor to the retained v1 Location foundation, not a competing ontology.
-
----
-
-# Next — L11.7 Full Location Vertical Acceptance
-
-L11.7 is the final Location acceptance slice before Genesis work.
-
-Acceptance must prove at least:
-
-- property/building and room/outdoor hierarchies;
-- explicit topology/interfaces;
-- access policy distinct from operating state;
+- exact `location-v2` schema/normalization;
+- registry-backed location kinds, functions, facilities/resources/capabilities/utilities and topology vocabulary;
 - partial/unknown geography without fabrication;
-- boundary semantics;
-- facilities/resources/capabilities;
-- derived grading where evidence exists;
-- nested child Locations and embedded Items;
-- Manual/AI parity;
-- write-free Preview/export;
-- atomic approval and rollback/no-write failures;
-- Creator-friendly field-by-field Edit Preview/Apply/Done;
-- human-readable changed-field preview;
-- dependency-safe cleanup;
-- transactional canonical Real World fingerprint stability;
+- physical/open/mixed boundary semantics;
+- access policy separate from operating state;
+- property -> building -> room and property -> outdoor-zone hierarchy;
+- explicit typed interfaces/topology;
+- atomic same-Sandbox graph materialization;
+- nested Location compositions and embedded heterogeneous Item kinds;
+- deterministic `$ref` resolution and cycle/dependency rejection;
+- Manual Guided/Exact JSON and AI full-schema parity;
+- write-free Preview and `.txt` export;
+- revision-bound explicit approval;
+- approved browse/detail;
+- Creator-friendly field Edit: `Section -> Field -> friendly input/choice -> changed-field Preview -> Apply -> Continue/Done`;
+- raw JSON only as explicit Advanced fallback;
+- source-fingerprint stale protection and graph preflight;
+- dependency-aware fail-closed cleanup with explicit confirmation;
+- canonical Real World isolation;
 - approved Locations remain not runtime-active.
 
-Only after L11.7 closes does the approved Genesis transition begin.
+## Grading lock
+
+Current Location grading activates **completeness only**. This is intentional:
+
+- grades are derived, never authored by AI/Creator;
+- `GradeProfile.overall` remains `None`;
+- spatial scale, infrastructure/facility capability, connectivity and asset value remain evidence/reference gated;
+- security remains deferred until raw security evidence exists;
+- missing evidence/reference means ungraded, not invented precision.
+
+## Transactional canonical-isolation lock
+
+For Sandbox mutation paths that prove Real World isolation:
+
+`acquire writer transaction -> canonical fingerprint before -> Sandbox-only writes -> canonical fingerprint after -> mismatch => rollback / match => commit`
+
+Never compare across an unlocked or post-commit window.
 
 ---
 
-# Approved later Genesis direction
+# Current strategic direction — Genesis transition
 
-Current Darian, Thorne Estate and legacy Item/fixture/inventory content are prototype-era exemplars, not preservation constraints.
+Location-first prerequisite is now satisfied.
 
 Approved principle:
 
 > **Preserve reusable universe infrastructure; retire prototype content; rebuild canonical content from modern Sandbox creations through explicit transmigration.**
 
-Destructive Real World reset remains unauthorized before L11.7.
+Current Real World Darian, Thorne Estate and legacy Item/fixture/inventory content remain prototype-era exemplar content until the future reset is explicitly performed.
+
+## ▶ NEXT — G1 Prototype Content Reset Audit & Contract
+
+G1 is an **audit/contract slice**, not the destructive reset itself.
+
+It must determine exact keep/wipe scope and cleanup ordering before any canonical mutation. At minimum audit:
+
+- prototype Characters and Character-owned runtime/state;
+- Thorne Estate / legacy Location rows and graph projections;
+- legacy Items, fixtures, inventory, definitions and economic profiles;
+- bootstrap/reseed paths capable of recreating retired content;
+- generic reusable universe infrastructure that must survive;
+- references/dependencies that constrain deletion order;
+- canonical services/tables that are infrastructure rather than prototype content;
+- rollback/backup and verification requirements for later destructive execution.
+
+G1 should produce a reviewed reset contract with explicit **KEEP**, **WIPE**, **RESEED-AUTHORITY REMOVE**, and **ORDER/DEPENDENCY** sets. It must not perform the destructive reset.
 
 Later sequence:
 
-`prototype keep/wipe audit -> remove legacy reseeding -> controlled Real World content reset -> preserve reusable systems -> Transmigration foundation -> Genesis Locations -> Items/fixtures -> Characters -> readiness/affordances -> explicit activation`
+1. **G1 — Prototype Content Reset Audit & Contract**
+2. **G2 — Remove legacy reseeding authority**
+3. **G3 — Controlled Real World content reset**
+4. **G4 — Transmigration Foundation**
+5. **G5 — Genesis Transmigration** — Locations -> Items/fixtures/containers -> Characters -> readiness/affordances -> explicit activation
 
 A Character cannot be activated without a valid represented Location.
 
 ---
 
-## Retained universal locks
+# Retained universal locks
 
 - Create anywhere safely; canon nowhere automatically.
 - No automatic transmigration.
@@ -192,11 +142,11 @@ A Character cannot be activated without a valid represented Location.
 - `runtime_ready != running`; Created is not alive.
 - Full autonomous Sandbox ticking remains separately unauthorized.
 - AI proposes facts; deterministic contracts validate/derive/mutate.
-- Grades are derived; missing evidence/reference means ungraded, not invented precision.
 - No automatic overall Location grade without explicit composite semantics.
-- Current Real World prototype content still exists until reset is actually implemented and verified.
+- Prototype Real World content still exists until reset is actually implemented and verified.
+- **G1 is audit/contract only; no destructive Real World mutation is authorized by entering G1.**
 - Do not make deploy/live claims without current evidence.
 
 ## Exact resume sentence
 
-**L11.6 is closed after Creator production smoke. Production is green through PR #405 / CI #1279 / deploy #388. Begin L11.7 Full Location Vertical Acceptance, proving the complete modern Location vertical end-to-end before any Genesis/reset work.**
+**Location Creation is fully accepted through L11.7 / PR #407 / CI #1282. Begin G1 Prototype Content Reset Audit & Contract: inventory exact KEEP/WIPE/reseed-removal/dependency-order sets without performing destructive canonical mutation.**
