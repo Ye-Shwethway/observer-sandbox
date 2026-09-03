@@ -23,9 +23,15 @@ Before Creator Creation planning/coding/review/debugging, read:
 
 Core vertical:
 
-`versioned schema -> registered socket/reuse map -> Manual full-schema + AI full-schema -> canonicalize -> strict validate -> dependency/graph validate -> write-free preview + .txt -> explicit approval -> atomic Sandbox materialization -> approved detail -> Edit Preview/Apply/Done -> dependency-safe cleanup`
+`versioned schema -> registered socket/reuse map -> Manual full-schema + AI full-schema -> canonicalize -> strict validate -> dependency/graph validate -> write-free preview + .txt -> explicit approval -> atomic Sandbox materialization -> approved detail -> Creator-friendly field Edit Preview/Apply/Done -> dependency-safe cleanup`
 
 A new Creation domain must not be built as bespoke CRUD.
+
+Approved-object Edit UX must not default to whole-section JSON replacement. The normal interaction is:
+
+`Object Detail -> Edit -> Section -> Field -> friendly typed input/choice -> Preview -> Apply -> Continue/Done`
+
+Raw/exact JSON may remain only as a clearly labeled advanced fallback where useful. Character/Profile Edit is the interaction-parity reference; typed field editors may vary by domain while the exact validator/materializer remains shared authority.
 
 ---
 
@@ -60,6 +66,7 @@ Primary executable contracts now include:
 - `src/observer_sandbox/sandbox_location_operations.py`;
 - `src/observer_sandbox/sandbox_location_cleanup.py`;
 - `src/observer_sandbox/telegram_sandbox_location_edit.py`;
+- `src/observer_sandbox/telegram_sandbox_location_edit_adapter.py`;
 - `src/observer_sandbox/telegram_sandbox_location_cleanup.py`;
 - `docs/WORLD_LOCATION_NODE_MODEL.md`;
 - `docs/WORLD_LOCATION_SPATIAL_CONTAINER_CONTRACT_V1.md`;
@@ -131,9 +138,10 @@ Implemented authority includes:
 Implementation chain:
 
 - PR #397 — guarded Sandbox Location update service;
-- PR #398 — Telegram Edit Preview/Apply/Done parity;
+- PR #398 — Telegram Edit Preview/Apply/Done backend parity;
 - PR #399 — complete human detail/readback;
-- PR #400 — dependency-aware cleanup.
+- PR #400 — dependency-aware cleanup;
+- PR #402 — field-by-field Creator-friendly Location Edit UX.
 
 Current capabilities:
 
@@ -141,7 +149,15 @@ Current capabilities:
 - readable hierarchy/geography, quantities, boundaries, access/control, environment, facilities/resources/capabilities, topology, economics and relationships;
 - derived completeness GradeProfile presentation;
 - exact-schema Edit with graph preflight and source-fingerprint stale guard;
-- Preview -> Apply -> Done;
+- normal Edit is section -> field rather than complete-section JSON;
+- scalar values use direct friendly input;
+- enums use buttons;
+- registry-backed lists such as Facilities capabilities/types/resources/utilities use multi-select toggles;
+- same-Sandbox references use human-readable object pickers rather than raw IDs;
+- physical quantities accept human units such as `12 ft`, `36 m`, `1800 ft2`;
+- Topology has structured interface list/add/edit/delete controls;
+- complete-section JSON is retained only as explicit `Advanced JSON` fallback;
+- Preview -> Apply -> Done remains mandatory;
 - atomic projection rewrite and update audit event;
 - no runtime pause because approved Location runtime is not running yet;
 - dependency-aware Delete Location;
@@ -153,13 +169,13 @@ Current capabilities:
 
 Verification:
 
-- PR #400 CI #1271 — targeted regression ✅, CLI init/status smoke ✅, full fallback correctly skipped;
-- merge checkpoint `8fa1655bd97421ea6b3e99f200ae316d2eb0ff4c`;
-- production deploy #385 — sync/install/cognition recovery/service entrypoint/restart/runtime health ✅.
+- PR #402 CI #1275 — targeted Location regression ✅, CLI init/status smoke ✅, full fallback correctly skipped;
+- merge checkpoint `58c542654cfb82b0ea9b9fcf625662a4977d79f6`;
+- production deploy #386 — sync/install/cognition recovery/service entrypoint/restart/runtime health ✅.
 
 Creator production smoke still required before marking this slice fully closed:
 
-`Location detail -> Edit Preview/Apply/Done -> dependency-blocked Delete -> Cancel -> fresh review -> confirmed deletion of expendable unreferenced Location`
+`Location detail -> field-by-field Edit (text + toggle + reference + topology representative paths) -> Preview/Apply/Done -> dependency-blocked Delete -> Cancel -> fresh review -> confirmed deletion of expendable unreferenced Location`
 
 ## L11.7 — Full Location Vertical Acceptance
 
@@ -181,7 +197,7 @@ Prove at least:
 12. Preview/export write-free;
 13. atomic approval;
 14. invalid parent/cycle/cross-Sandbox/local-ref => zero writes;
-15. Edit Preview/Apply/Done parity;
+15. Creator-friendly Edit Preview/Apply/Done parity;
 16. dependency-safe cleanup;
 17. `canonical_state_fingerprint()` unchanged;
 18. approved Locations remain not runtime-active.
@@ -234,4 +250,4 @@ Reincarnation is modern-to-modern canonical renewal, not preservation of prototy
 
 ## Exact resume point
 
-**Production is green through PR #400 / deploy #385. Perform the Creator Telegram smoke for Location Detail/Edit/Delete. If dependency blocking, Cancel invalidation, explicit safe deletion and post-delete navigation all pass, mark L11.6 closed and begin L11.7 Full Location Vertical Acceptance.**
+**Production is green through PR #402 / CI #1275 / deploy #386. Perform the Creator Telegram smoke for field-by-field Location Edit and dependency-safe Delete. If text entry, Facilities toggles, human-readable reference selection, structured Topology, Preview/Apply/Done, dependency blocking, Cancel invalidation, explicit safe deletion and post-delete navigation pass, mark L11.6 closed and begin L11.7 Full Location Vertical Acceptance.**
