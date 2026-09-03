@@ -45,9 +45,29 @@ def _sync_public_overrides() -> None:
             setattr(_base, name, globals()[name])
 
 
+def _canonicalize_navigation_keyboard(keyboard):
+    """Normalize legacy Creator Studio navigation callbacks at the public boundary."""
+    if not isinstance(keyboard, list):
+        return keyboard
+    normalized = []
+    for row in keyboard:
+        if not isinstance(row, list):
+            normalized.append(row)
+            continue
+        normalized_row = []
+        for button in row:
+            if isinstance(button, dict) and button.get("callback_data") == "sw:world":
+                button = dict(button)
+                button["callback_data"] = "nav:sandbox"
+            normalized_row.append(button)
+        normalized.append(normalized_row)
+    return normalized
+
+
 def studio_callback_view(conn, user_id: int, callback_data: str):
     _sync_public_overrides()
-    return _base.studio_callback_view(conn, user_id, callback_data)
+    text, keyboard = _base.studio_callback_view(conn, user_id, callback_data)
+    return text, _canonicalize_navigation_keyboard(keyboard)
 
 
 def __getattr__(name: str):
