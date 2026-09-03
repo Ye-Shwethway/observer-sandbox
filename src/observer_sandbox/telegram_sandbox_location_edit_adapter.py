@@ -8,6 +8,7 @@ from .telegram_sandbox_location_edit import (
     SandboxLocationEditError,
     get_sandbox_location_edit_session,
     handle_sandbox_location_edit_text,
+    handle_sandbox_location_interface_edit_text,
 )
 
 
@@ -24,21 +25,38 @@ def install_sandbox_location_edit_text_adapter(base_module: Any) -> None:
         global _PENDING_KEYBOARD
         command_line = (text or "").strip()
         session = get_sandbox_location_edit_session(user_id=user_id)
-        if session is None or not session.get("pending_section") or command_line.startswith("/"):
+        if session is None or not session.get("pending_input") or command_line.startswith("/"):
             return original_handle_command(db_path, user_id=user_id, text=text)
         with connect(db_path) as conn:
             migrate(conn)
             try:
-                result = handle_sandbox_location_edit_text(conn, user_id=user_id, text=command_line)
+                result = handle_sandbox_location_interface_edit_text(
+                    conn,
+                    user_id=user_id,
+                    text=command_line,
+                )
+                if result is None:
+                    result = handle_sandbox_location_edit_text(
+                        conn,
+                        user_id=user_id,
+                        text=command_line,
+                    )
             except SandboxLocationEditError as exc:
+                latest = get_sandbox_location_edit_session(user_id=user_id) or session
+                field_id = str(latest.get("pending_field_id") or "")
+                section = str(latest.get("pending_section") or "")
+                back = f"sw:ledit:s:{section}" if section else "sw:ledit:home"
+                if str(latest.get("pending_input") or "").startswith("interface:"):
+                    index = latest.get("pending_interface_index")
+                    back = f"sw:ledit:if:{index}" if index is not None else "sw:ledit:s:topology"
                 _PENDING_KEYBOARD = [
-                    [{"text": "✕ Cancel Section Edit", "callback_data": "sw:ledit:cancelinput"}],
+                    [{"text": "← Back", "callback_data": back}],
                     [{"text": "✅ Done Editing", "callback_data": "sw:ledit:done"}],
                 ]
                 return (
-                    "❌ LOCATION SECTION REJECTED\n━━━━━━━━━━━━━━━━━━\n"
+                    "❌ LOCATION FIELD REJECTED\n━━━━━━━━━━━━━━━━━━\n"
                     f"{exc}\n\n"
-                    "Send a corrected complete section JSON, or cancel this section edit."
+                    "Send a corrected value, or go back without changing anything."
                 )
         if result is None:
             return original_handle_command(db_path, user_id=user_id, text=text)
