@@ -43,8 +43,6 @@ def location_delete_dependencies(conn: sqlite3.Connection, object_id: str) -> li
 
     dependencies: dict[tuple[str, str], dict[str, str]] = {}
 
-    # Non-Location objects express placement/ownership/etc. through resolved
-    # relations. Any active incoming relation makes deletion unsafe.
     rows = conn.execute(
         """
         SELECT o.object_id,o.creation_type,o.identity_json,r.relation_type
@@ -61,16 +59,13 @@ def location_delete_dependencies(conn: sqlite3.Connection, object_id: str) -> li
     for row in rows:
         source_id = str(row["object_id"])
         relation = str(row["relation_type"])
-        key = (source_id, relation)
-        dependencies[key] = {
+        dependencies[(source_id, relation)] = {
             "object_id": source_id,
             "creation_type": str(row["creation_type"]),
             "name": _name_from_identity_json(row["identity_json"], source_id),
             "reason": relation.replace("_", " "),
         }
 
-    # Runtime actor placement is checked independently so a damaged/missing
-    # relation projection can never make a Location appear deletable.
     runtime_rows = conn.execute(
         """
         SELECT o.object_id,o.creation_type,o.identity_json
@@ -84,17 +79,13 @@ def location_delete_dependencies(conn: sqlite3.Connection, object_id: str) -> li
     ).fetchall()
     for row in runtime_rows:
         source_id = str(row["object_id"])
-        key = (source_id, "runtime_location")
-        dependencies[key] = {
+        dependencies[(source_id, "runtime_location")] = {
             "object_id": source_id,
             "creation_type": str(row["creation_type"]),
             "name": _name_from_identity_json(row["identity_json"], source_id),
             "reason": "runtime current location",
         }
 
-    # Location-to-Location authority lives in exact source_json. Scan that source
-    # rather than relying only on relation projections, because directionality and
-    # economic/control references are not all represented by the same row shape.
     location_rows = conn.execute(
         """
         SELECT p.object_id,p.source_json,o.identity_json
@@ -160,11 +151,13 @@ def delete_sandbox_location_v2(
     obj = get_sandbox_object(conn, object_id)
     sandbox_id = str(obj["sandbox_id"])
     name = str(obj.get("identity", {}).get("name") or object_id)
-    canonical_before = canonical_state_fingerprint(conn)
 
-    savepoint = "sandbox_location_delete"
-    conn.execute(f"SAVEPOINT {savepoint}")
     try:
+        # Keep the canonical isolation sample and verification under one writer
+        # lock so unrelated Real World runtime writes cannot create a false alarm.
+        conn.execute("BEGIN IMMEDIATE")
+        canonical_before = canonical_state_fingerprint(conn)
+
         conn.execute(
             """
             INSERT INTO creation_sandbox_events(sandbox_id,object_id,event_type,payload_json)
@@ -199,11 +192,9 @@ def delete_sandbox_location_v2(
         )
         if canonical_state_fingerprint(conn) != canonical_before:
             raise SandboxLocationCleanupError("Canonical Real World changed during Sandbox Location delete")
-        conn.execute(f"RELEASE SAVEPOINT {savepoint}")
         conn.commit()
     except Exception:
-        conn.execute(f"ROLLBACK TO SAVEPOINT {savepoint}")
-        conn.execute(f"RELEASE SAVEPOINT {savepoint}")
+        conn.rollback()
         raise
 
     return {
